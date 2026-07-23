@@ -223,7 +223,13 @@ export default class MaintenanceService {
     delete publicValue.updatedBy;
     return {
       ...publicValue,
-      material: value.material ? { uuid: value.material.uuid, name: value.material.name } : null,
+      material: value.material
+        ? {
+            uuid: value.material.uuid,
+            name: value.material.name,
+            engineHours: value.material.engineHours,
+          }
+        : null,
       ...getDeadlineDetails({ ...publicValue, materialEngineHours: value.material?.engineHours }),
     };
   }
