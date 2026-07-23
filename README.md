@@ -82,6 +82,22 @@ Backend : `NODE_ENV`, `PORT`, `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`,
 
 Frontend : `VITE_API_URL`, par défaut `/api`.
 
+## Sequelize CLI
+
+`sequelize-cli` est configuré pour utiliser les mêmes variables `DATABASE_*` que le backend. Les migrations et seeders générés sont en CommonJS afin de rester compatibles avec le projet principal en ES Modules.
+
+```bash
+npm run db:create
+npm run db:migration:generate -- --name add-example-table
+npm run db:migrate
+npm run db:migrate:status
+npm run db:migrate:undo
+npm run db:seed:generate -- --name example-data
+npm run db:seed
+```
+
+Les fichiers SQL présents dans `migrations/` sont des migrations historiques à appliquer avec le processus de déploiement existant ; seules les migrations JavaScript générées par `sequelize-cli` sont suivies par `db:migrate`.
+
 ## Dépannage
 
 Si Vite ou `npm ci` échoue avec `EPERM` dans un dossier synchronisé, fermez les processus utilisant `frontend/dist` ou `frontend/node_modules`, puis relancez la commande. Ne versionnez jamais `.env`, `node_modules` ou `frontend/dist`.

@@ -1,0 +1,15 @@
+const path = require('path');
+
+/**
+ * Sequelize CLI paths.
+ *
+ * The application remains ES Modules, while Sequelize CLI loads its configuration
+ * and generated migration files through CommonJS.
+ *
+ * @type {{config: string, 'migrations-path': string, 'seeders-path': string}}
+ */
+module.exports = {
+  config: path.resolve('sequelize-cli.config.cjs'),
+  'migrations-path': path.resolve('migrations'),
+  'seeders-path': path.resolve('seeders'),
+};
