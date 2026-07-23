@@ -21,10 +21,12 @@ export default function DataTable({ columns, rows, onEdit, onStatus }) {
                 </td>
               ))}
               <td className="space-x-2 px-4 py-3">
-                <button onClick={() => onEdit(row)}>Editer</button>
-                <button onClick={() => onStatus(row)}>
-                  {row.active ? 'Désactiver' : 'Activer'}
-                </button>
+                {onEdit && <button onClick={() => onEdit(row)}>Editer</button>}
+                {onStatus && (
+                  <button onClick={() => onStatus(row)}>
+                    {row.active ? 'Désactiver' : 'Activer'}
+                  </button>
+                )}
               </td>
             </tr>
           ))}

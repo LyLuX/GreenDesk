@@ -1,4 +1,4 @@
-import MaterialRepository from '../../../core/database/repositories/material.repository.js';
+import MaterialRepository from '../repository/material.repository.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';

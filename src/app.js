@@ -18,6 +18,7 @@ import userRoutes from './modules/users/routes/user.routes.js';
 import categoryRoutes from './modules/categories/routes/category.routes.js';
 import propertyRoutes from './modules/properties/routes/property.routes.js';
 import materialRoutes from './modules/materials/routes/material.routes.js';
+import dashboardRoutes from './modules/dashboard/routes/dashboard.routes.js';
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use('/api/v1/permissions', permissionRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/materials', materialRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

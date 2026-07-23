@@ -1,59 +1,88 @@
-import { NavLink, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
+import PermissionRoute from './auth/PermissionRoute.jsx';
+import ProtectedRoute from './auth/ProtectedRoute.jsx';
+import AppLayout from './layouts/AppLayout.jsx';
+import DashboardPage from './pages/DashboardPage.jsx';
+import ForbiddenPage from './pages/ForbiddenPage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
+import NotFoundPage from './pages/NotFoundPage.jsx';
 import ReferencePage from './pages/ReferencePage.jsx';
-import { navigationItems } from './navigation.js';
-const columns = (fields) => [
-  ...fields.map(([key, label]) => ({ key, label })),
+const secure = (permission, page) => (
+  <ProtectedRoute>
+    <PermissionRoute permission={permission}>{page}</PermissionRoute>
+  </ProtectedRoute>
+);
+const table = (keys) => [
+  ...keys.map(([key, label]) => ({ key, label })),
   { key: 'active', label: 'Statut', render: (row) => (row.active ? 'Actif' : 'Inactif') },
 ];
 export default function App() {
   return (
-    <>
-      <nav className="flex gap-5 bg-slate-900 px-6 py-4 text-white">
-      {navigationItems.map((item) => <NavLink key={item.path} to={item.path}>{item.label}</NavLink>)}
-      </nav>
-      <Routes>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/403" element={<ForbiddenPage />} />
+      <Route
+        element={
+          <ProtectedRoute>
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/dashboard" element={secure('dashboard.read', <DashboardPage />)} />
         <Route
           path="/categories"
-          element={
+          element={secure(
+            'categories.read',
             <ReferencePage
               title="Catégories"
               path="/categories"
+              createPermission="categories.create"
+              updatePermission="categories.update"
+              disablePermission="categories.disable"
               fields={[
-                ['name', 'Nom', true],
-                ['description', 'Description'],
-              ].map(([name, label, required]) => ({ name, label, required }))}
-              columns={columns([
+                { name: 'name', label: 'Nom', required: true },
+                { name: 'description', label: 'Description' },
+              ]}
+              columns={table([
                 ['name', 'Nom'],
                 ['description', 'Description'],
               ])}
-            />
-          }
+            />,
+          )}
         />
         <Route
           path="/properties"
-          element={
+          element={secure(
+            'properties.read',
             <ReferencePage
               title="Propriétés"
               path="/properties"
+              createPermission="properties.create"
+              updatePermission="properties.update"
+              disablePermission="properties.disable"
               fields={[
                 { name: 'name', label: 'Nom', required: true },
                 { name: 'type', label: 'Type', required: true },
                 { name: 'unit', label: 'Unité' },
               ]}
-              columns={columns([
+              columns={table([
                 ['name', 'Nom'],
                 ['type', 'Type'],
                 ['unit', 'Unité'],
               ])}
-            />
-          }
+            />,
+          )}
         />
         <Route
           path="/materials"
-          element={
+          element={secure(
+            'materials.read',
             <ReferencePage
               title="Matériaux"
               path="/materials"
+              createPermission="materials.create"
+              updatePermission="materials.update"
+              disablePermission="materials.disable"
               fields={[
                 { name: 'name', label: 'Nom', required: true },
                 { name: 'reference', label: 'Référence' },
@@ -61,21 +90,18 @@ export default function App() {
                 { name: 'purchasePrice', label: 'Prix achat', type: 'number', required: true },
                 { name: 'salePrice', label: 'Prix vente', type: 'number', required: true },
               ]}
-              columns={columns([
+              columns={table([
                 ['name', 'Nom'],
                 ['reference', 'Référence'],
                 ['unit', 'Unité'],
                 ['purchasePrice', 'Achat'],
                 ['salePrice', 'Vente'],
               ])}
-            />
-          }
+            />,
+          )}
         />
-        <Route
-          path="*"
-          element={<ReferencePage title="Catégories" path="/categories" fields={[]} columns={[]} />}
-        />
-      </Routes>
-    </>
+      </Route>
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
   );
 }

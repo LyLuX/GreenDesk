@@ -2,7 +2,7 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['node_modules/', 'coverage/'],
+    ignores: ['node_modules/', 'coverage/', 'frontend/dist/'],
   },
   {
     files: ['**/*.js'],
@@ -22,5 +22,9 @@ export default [
     languageOptions: {
       globals: globals.jest,
     },
+  },
+  {
+    files: ['frontend/src/**/*.js'],
+    languageOptions: { globals: globals.browser },
   },
 ];

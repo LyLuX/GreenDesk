@@ -1,11 +1,15 @@
 import User from '../model/user.model.js';
 import Role from '../../roles/model/role.model.js';
+import Permission from '../../permissions/model/permission.model.js';
 
 const roleInclude = [
   {
     model: Role,
     as: 'roles',
     attributes: ['uuid', 'name', 'description'],
+    include: [
+      { model: Permission, as: 'permissions', attributes: ['name'], through: { attributes: [] } },
+    ],
     through: { attributes: [] },
   },
 ];

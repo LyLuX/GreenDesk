@@ -4,7 +4,11 @@ import client from './api/client.js';
 
 describe('frontend reference navigation', () => {
   it('declares the three business reference routes', () => {
-    expect(navigationItems.map((item) => item.path)).toEqual(['/categories', '/properties', '/materials']);
+    expect(navigationItems.map((item) => item.path)).toEqual([
+      '/categories',
+      '/properties',
+      '/materials',
+    ]);
   });
 
   it('uses the centralized API prefix', () => {

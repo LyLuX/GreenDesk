@@ -31,8 +31,15 @@ export default class AuthService {
     }
     await this.authRepository.update(user, { lastLoginAt: new Date() });
     const roles = (user.roles ?? []).map((role) => role.name);
+    const permissions = [
+      ...new Set(
+        (user.roles ?? []).flatMap((role) =>
+          (role.permissions ?? []).map((permission) => permission.name),
+        ),
+      ),
+    ];
     const accessToken = jwt.sign(
-      { sub: user.uuid, userId: user.id, email: user.email, roles },
+      { sub: user.uuid, userId: user.id, email: user.email, roles, permissions },
       env.jwt.secret,
       {
         expiresIn: env.jwt.accessTokenTtl,
@@ -53,6 +60,7 @@ export default class AuthService {
         lastName: safeUser.lastName,
         email: safeUser.email,
         roles,
+        permissions,
       },
     };
   }

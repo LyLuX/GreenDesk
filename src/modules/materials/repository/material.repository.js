@@ -1,5 +1,6 @@
-import Material from '../../../modules/materials/model/material.model.js';
 import { Op } from 'sequelize';
+
+import Material from '../model/material.model.js';
 
 /** Sequelize persistence operations for material catalogue records. */
 export default class MaterialRepository {
@@ -9,18 +10,23 @@ export default class MaterialRepository {
       order: [['name', 'ASC']],
     });
   }
+
   async findByUuid(uuid) {
     return Material.findOne({ where: { uuid } });
   }
+
   async findByName(name) {
     return Material.findOne({ where: { name } });
   }
+
   async findByReference(reference) {
     return reference ? Material.findOne({ where: { reference } }) : null;
   }
+
   async create(values) {
     return Material.create(values);
   }
+
   async update(material, values) {
     return material.update(values);
   }
