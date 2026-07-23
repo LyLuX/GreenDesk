@@ -199,8 +199,10 @@ a:hover {
 }
 
 .auth-logo {
-  width: 118px;
-  height: 118px;
+  display: block;
+  width: 150px;
+  height: 150px;
+  margin-inline: auto;
   object-fit: contain;
 }
 
