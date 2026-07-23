@@ -9,6 +9,7 @@ describe('frontend reference navigation', () => {
       '/materials',
       '/categories',
       '/properties',
+      '/brands',
     ]);
   });
 

@@ -7,7 +7,7 @@ export default class DashboardService {
   }
   async getSummary() {
     const counts = await this.repository.getCounts();
-    return {
+    const summary = {
       materials: {
         total: counts.materialsTotal,
         active: counts.materialsActive,
@@ -16,5 +16,13 @@ export default class DashboardService {
       categories: { total: counts.categoriesTotal },
       properties: { total: counts.propertiesTotal },
     };
+    if (counts.brandsTotal !== undefined) summary.brands = { total: counts.brandsTotal };
+    if (counts.totalValue !== undefined)
+      summary.fleet = {
+        totalValue: counts.totalValue,
+        averageCost: counts.averageCost,
+        averageAge: counts.averageAge,
+      };
+    return summary;
   }
 }

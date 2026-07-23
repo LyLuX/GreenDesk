@@ -10,18 +10,33 @@ export default class MaterialFileService {
     this.materialService = materialService;
   }
   async add(materialUuid, file, kind, documentType) {
-    const material = await this.materialService.getByUuid(materialUuid);
-    if (kind === 'photo' && (await this.repository.countPhotos(material.id)) >= 10)
-      throw new AppError('A material can have at most 10 photos', HTTP_STATUS.BAD_REQUEST);
-    return this.repository.create({
-      materialId: material.id,
-      kind,
-      documentType: documentType ?? null,
-      originalName: file.originalname,
-      fileName: file.filename,
-      mimeType: file.mimetype,
-      size: file.size,
-    });
+    if (!file) throw new AppError('A file is required', HTTP_STATUS.BAD_REQUEST);
+    if (
+      kind === 'document' &&
+      !['invoice', 'manual', 'certificate', 'other'].includes(documentType)
+    )
+      throw new AppError('A valid document type is required', HTTP_STATUS.BAD_REQUEST);
+    const material = await this.materialService.getEntityByUuid(materialUuid);
+    try {
+      if (kind === 'photo' && (await this.repository.countPhotos(material.id)) >= 10)
+        throw new AppError('A material can have at most 10 photos', HTTP_STATUS.BAD_REQUEST);
+      return this.toPublic(
+        await this.repository.create({
+          materialId: material.id,
+          kind,
+          documentType: documentType ?? null,
+          originalName: file.originalname,
+          fileName: file.filename,
+          mimeType: file.mimetype,
+          size: file.size,
+        }),
+      );
+    } catch (error) {
+      await fs
+        .unlink(path.join(process.cwd(), 'uploads', 'materials', file.filename))
+        .catch(() => {});
+      throw error;
+    }
   }
   async remove(uuid) {
     const file = await this.repository.findByUuid(uuid);
@@ -35,6 +50,18 @@ export default class MaterialFileService {
     const file = await this.repository.findByUuid(uuid);
     if (!file || file.kind !== 'photo')
       throw new AppError('Photo not found', HTTP_STATUS.NOT_FOUND);
-    return this.repository.setPrimary(file);
+    return this.toPublic(await this.repository.setPrimary(file));
+  }
+  async getForDownload(uuid) {
+    const file = await this.repository.findByUuid(uuid);
+    if (!file) throw new AppError('File not found', HTTP_STATUS.NOT_FOUND);
+    return file;
+  }
+  toPublic(file) {
+    const value = typeof file.toJSON === 'function' ? file.toJSON() : file;
+    const publicFile = { ...value };
+    delete publicFile.id;
+    delete publicFile.materialId;
+    return publicFile;
   }
 }

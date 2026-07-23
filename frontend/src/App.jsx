@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 import ReferencePage from './pages/ReferencePage.jsx';
 import MaterialDetailPage from './pages/MaterialDetailPage.jsx';
+import BrandsPage from './pages/BrandsPage.jsx';
 import { formatCurrency } from './utils/formatters.js';
 const secure = (permission, page) => (
   <ProtectedRoute>
@@ -88,6 +89,47 @@ export default function App() {
               fields={[
                 { name: 'name', label: 'Nom', required: true },
                 { name: 'reference', label: 'Référence' },
+                {
+                  name: 'brandUuid',
+                  label: 'Marque',
+                  relation: 'brand',
+                  optionsResource: 'brands',
+                },
+                {
+                  name: 'categoryUuid',
+                  label: 'Catégorie',
+                  relation: 'category',
+                  optionsResource: 'categories',
+                },
+                {
+                  name: 'propertyUuid',
+                  label: 'Propriété',
+                  relation: 'property',
+                  optionsResource: 'properties',
+                },
+                { name: 'model', label: 'Modèle' },
+                { name: 'serialNumber', label: 'Numéro de série' },
+                { name: 'year', label: 'Année', type: 'number', valueType: 'number', min: '1900' },
+                { name: 'purchaseDate', label: 'Date d’achat', type: 'date' },
+                {
+                  name: 'currentValue',
+                  label: 'Valeur actuelle',
+                  type: 'number',
+                  valueType: 'number',
+                  step: '0.01',
+                  min: '0',
+                },
+                {
+                  name: 'engineHours',
+                  label: 'Heures moteur',
+                  type: 'number',
+                  valueType: 'number',
+                  step: '0.1',
+                  min: '0',
+                },
+                { name: 'commissionedAt', label: 'Mise en service', type: 'date' },
+                { name: 'retiredAt', label: 'Sortie de service', type: 'date' },
+                { name: 'notes', label: 'Notes', multiline: true },
                 { name: 'unit', label: 'Unité', required: true },
                 {
                   name: 'purchasePrice',
@@ -111,14 +153,31 @@ export default function App() {
               columns={table([
                 ['name', 'Nom'],
                 ['reference', 'Référence'],
+                ['brand', 'Marque', (value) => value?.name ?? '—'],
                 ['unit', 'Unité'],
                 ['purchasePrice', 'Achat', formatCurrency],
                 ['salePrice', 'Vente', formatCurrency],
               ])}
+              filters={[
+                {
+                  name: 'active',
+                  label: 'Statut',
+                  options: [
+                    { value: 'true', label: 'Actif' },
+                    { value: 'false', label: 'Inactif' },
+                  ],
+                },
+                { name: 'brandUuid', label: 'Marque', optionsResource: 'brands' },
+                { name: 'categoryUuid', label: 'Catégorie', optionsResource: 'categories' },
+                { name: 'propertyUuid', label: 'Propriété', optionsResource: 'properties' },
+              ]}
+              pagination
+              detailPath={(row) => `/materials/${row.uuid}`}
             />,
           )}
         />
         <Route path="/materials/:uuid" element={secure('materials.read', <MaterialDetailPage />)} />
+        <Route path="/brands" element={secure('brand.read', <BrandsPage />)} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

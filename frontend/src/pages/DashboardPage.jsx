@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getDashboardSummary } from '../api/dashboard.api.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
+import { formatCurrency } from '../utils/formatters.js';
 export default function DashboardPage() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -30,12 +31,18 @@ export default function DashboardPage() {
   const materials = data.materials ?? {};
   const categories = data.categories ?? {};
   const properties = data.properties ?? {};
+  const brands = data.brands ?? {};
+  const fleet = data.fleet ?? {};
   const cards = [
     ['Matériaux', materials.total ?? 0],
     ['Matériaux actifs', materials.active ?? 0],
     ['Matériaux inactifs', materials.inactive ?? 0],
     ['Catégories', categories.total ?? 0],
     ['Propriétés', properties.total ?? 0],
+    ['Marques', brands.total ?? 0],
+    ['Valeur du parc', formatCurrency(fleet.totalValue)],
+    ['Coût moyen', formatCurrency(fleet.averageCost)],
+    ['Âge moyen', `${Number(fleet.averageAge ?? 0).toFixed(1)} ans`],
   ];
   return (
     <main className="p-6">

@@ -4,17 +4,24 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Modules disponibles
 
-Authentification, utilisateurs, rôles, permissions, audit, catégories, propriétés et matériaux.
+Authentification, utilisateurs, rôles, permissions, audit, catégories, propriétés, marques et matériels.
 
 ## API Sprint 4
 
 - `GET|POST /api/categories`, `GET|PUT /api/categories/:uuid`, `PATCH /api/categories/:uuid/status`
 - `GET|POST /api/properties`, `GET|PUT /api/properties/:uuid`, `PATCH /api/properties/:uuid/status`
 - `GET|POST /api/materials`, `GET|PUT /api/materials/:uuid`, `PATCH /api/materials/:uuid/status`
+- `GET|POST /api/brands`, `GET|PUT /api/brands/:uuid`, `PATCH /api/brands/:uuid/status`
+- `POST /api/v1/materials/:uuid/photos`, `POST /api/v1/materials/:uuid/documents`, `GET /api/v1/materials/:uuid/history`
+- `PATCH|DELETE /api/v1/materials/files/:fileUuid`, `GET /api/v1/materials/files/:fileUuid/download`
 
 Les permissions ajoutées sont `categories.*`, `properties.*` et `materials.*` avec les actions `read`, `create`, `update`, `disable`.
 
-Le dashboard est disponible via `GET /api/dashboard/summary`, protégé par `dashboard.read`. Il compte les matériaux (total, actifs, inactifs), les catégories et les propriétés sans charger les listes complètes. La documentation OpenAPI est servie sur `/docs`.
+Le dashboard est disponible via `GET /api/dashboard/summary`, protégé par `dashboard.read`. Il compte les matériaux, les catégories, les propriétés et les marques, et calcule la valeur, le coût moyen et l’âge moyen du parc par agrégats SQL. La documentation OpenAPI est servie sur `/docs`.
+
+## Parc matériel
+
+Une fiche matériel utilise uniquement les UUID publics de marque, catégorie et propriété. La liste supporte recherche, filtres, tri et pagination. Les photos (JPEG, PNG, WebP) et documents PDF sont stockés sous `uploads/materials`, sans exposition statique du dossier : leur téléchargement exige une session et la permission `materials.read`. Chaque fichier est limité à 10 Mo et un matériel à 10 photos. Les permissions de marques sont `brand.read`, `brand.create`, `brand.update` et `brand.delete`.
 
 ## Configuration
 

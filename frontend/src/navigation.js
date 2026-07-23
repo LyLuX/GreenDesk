@@ -4,4 +4,5 @@ export const navigationItems = [
   { label: 'Matériels', path: '/materials', permission: 'materials.read' },
   { label: 'Catégories', path: '/categories', permission: 'categories.read' },
   { label: 'Propriétés', path: '/properties', permission: 'properties.read' },
+  { label: 'Marques', path: '/brands', permission: 'brand.read' },
 ];

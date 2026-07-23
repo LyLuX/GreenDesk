@@ -16,6 +16,13 @@ router.get(
   asyncHandler(controller.getAll.bind(controller)),
 );
 router.get(
+  '/:uuid/history',
+  authorize('materials.read'),
+  validator.uuidValidator,
+  validateRequest,
+  asyncHandler(controller.history.bind(controller)),
+);
+router.get(
   '/:uuid',
   authorize('materials.read'),
   validator.uuidValidator,

@@ -3,6 +3,7 @@ export default function DataTable({
   rows = [],
   onEdit,
   onStatus,
+  onView,
   emptyMessage = 'Aucun élément trouvé.',
   actionLoadingId,
 }) {
@@ -37,6 +38,14 @@ export default function DataTable({
                   </td>
                 ))}
                 <td className="space-x-2 px-4 py-3">
+                  {onView && (
+                    <button
+                      aria-label={`Voir ${row.name ?? 'l’élément'}`}
+                      onClick={() => onView(row)}
+                    >
+                      Voir
+                    </button>
+                  )}
                   {onEdit && (
                     <button
                       aria-label={`Modifier ${row.name ?? 'l’élément'}`}

@@ -17,4 +17,8 @@ export default class AuditService {
       newValues: event.newValues ?? null,
     });
   }
+
+  async findByEntity(entity, entityUuid) {
+    return this.auditRepository.findByEntity(entity, entityUuid);
+  }
 }

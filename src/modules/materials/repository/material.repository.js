@@ -67,6 +67,10 @@ export default class MaterialRepository {
     return reference ? Material.findOne({ where: { reference } }) : null;
   }
 
+  async findBySerialNumber(serialNumber) {
+    return serialNumber ? Material.findOne({ where: { serialNumber } }) : null;
+  }
+
   async create(values) {
     return Material.create(values);
   }

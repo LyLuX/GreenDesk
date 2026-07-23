@@ -34,4 +34,8 @@ export default class MaterialController {
       ),
     );
   }
+
+  async history(request, response) {
+    response.json(successResponse(await this.service.getHistory(request.params.uuid)));
+  }
 }

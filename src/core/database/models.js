@@ -45,9 +45,9 @@ export function initializeModels() {
     as: 'roles',
   });
   AuditLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-  Material.belongsTo(Brand, { foreignKey: 'brand_id', as: 'brand' });
-  Material.belongsTo(Category, { foreignKey: 'category_id', as: 'category' });
-  Material.belongsTo(Property, { foreignKey: 'property_id', as: 'property' });
+  Material.belongsTo(Brand, { foreignKey: 'brand_id', as: 'brand', onDelete: 'SET NULL' });
+  Material.belongsTo(Category, { foreignKey: 'category_id', as: 'category', onDelete: 'SET NULL' });
+  Material.belongsTo(Property, { foreignKey: 'property_id', as: 'property', onDelete: 'SET NULL' });
   Material.hasMany(MaterialFile, { foreignKey: 'material_id', as: 'files' });
   MaterialFile.belongsTo(Material, { foreignKey: 'material_id', as: 'material' });
 
