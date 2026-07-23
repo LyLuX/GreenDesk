@@ -29,7 +29,7 @@ export default function LoginPage() {
     }
   };
   return (
-    <main className="auth-page d-grid place-items-center">
+    <main className="auth-page d-flex align-items-center justify-content-center">
       <form className="auth-card card d-grid gap-3 p-4 p-sm-5" onSubmit={submit}>
         <div className="mb-2 text-center">
           <img className="auth-logo mb-3" src="/brand-logo.jpg" alt="El Bournazel Paul" />
@@ -68,7 +68,7 @@ export default function LoginPage() {
             autoComplete="current-password"
           />
         </label>
-        <button className="btn btn-brand w-100 py-2" disabled={loading}>
+        <button className="btn btn-brand align-self-center px-4" disabled={loading}>
           {loading ? 'Connexion…' : 'Se connecter'}
         </button>
         <p className="mb-0 text-center small text-body-secondary">
