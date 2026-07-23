@@ -21,6 +21,10 @@ const env = {
     logging: process.env.DATABASE_LOGGING === 'true',
   },
   corsOrigin: process.env.CORS_ORIGIN ?? '*',
+  jwt: {
+    secret: process.env.JWT_SECRET ?? 'development-only-secret-change-me',
+    accessTokenTtl: process.env.JWT_ACCESS_TOKEN_TTL ?? '15m',
+  },
 };
 
 export default env;

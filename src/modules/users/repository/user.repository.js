@@ -1,0 +1,45 @@
+import User from '../model/user.model.js';
+import Role from '../../roles/model/role.model.js';
+
+const roleInclude = [
+  {
+    model: Role,
+    as: 'roles',
+    attributes: ['uuid', 'name', 'description'],
+    through: { attributes: [] },
+  },
+];
+
+/** Database access for users. */
+export default class UserRepository {
+  async findAll() {
+    return User.findAll({
+      include: roleInclude,
+      order: [
+        ['lastName', 'ASC'],
+        ['firstName', 'ASC'],
+      ],
+    });
+  }
+  async findByUuid(uuid) {
+    return User.findOne({ where: { uuid }, include: roleInclude });
+  }
+  async findByEmail(email) {
+    return User.findOne({ where: { email }, include: roleInclude });
+  }
+  async findByEmailWithPassword(email) {
+    return User.scope('withPassword').findOne({ where: { email }, include: roleInclude });
+  }
+  async create(values) {
+    return User.create(values);
+  }
+  async update(user, values) {
+    return user.update(values);
+  }
+  async delete(user) {
+    return user.destroy();
+  }
+  async setRoles(user, roles) {
+    return user.setRoles(roles);
+  }
+}

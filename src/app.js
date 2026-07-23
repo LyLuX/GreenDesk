@@ -11,6 +11,10 @@ import { errorHandler, notFoundHandler } from './core/middlewares/error-handler.
 import { requestId } from './core/utils/request-id.js';
 import healthRoutes from './routes/health.routes.js';
 import apiRoutes from './routes/index.js';
+import authRoutes from './modules/auth/routes/auth.routes.js';
+import permissionRoutes from './modules/permissions/routes/permission.routes.js';
+import roleRoutes from './modules/roles/routes/role.routes.js';
+import userRoutes from './modules/users/routes/user.routes.js';
 
 const app = express();
 
@@ -30,6 +34,10 @@ app.use(
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 app.use('/health', healthRoutes);
 app.use('/api/v1', apiRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/roles', roleRoutes);
+app.use('/api/v1/permissions', permissionRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
