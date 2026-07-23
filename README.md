@@ -41,6 +41,8 @@ Les photos (JPEG, PNG, WebP) et documents PDF sont stockés sous `uploads/materi
 
 Chaque matériel peut recevoir plusieurs plans de maintenance : préventif, inspection, remplacement, lubrification, nettoyage ou personnalisé. Un plan possède un intervalle en jours et/ou en heures moteur, une priorité et ses dernières valeurs d’entretien. Les prochaines échéances sont recalculées à la création, à la modification et lors de l’exécution d’un entretien. L’API expose `GET|POST /api/v1/maintenance`, `GET|PUT /api/v1/maintenance/:uuid`, `POST /api/v1/maintenance/:uuid/execute` et `GET /api/v1/maintenance/:uuid/history`.
 
+Une tâche est en retard dès que sa première échéance est atteinte : date du jour supérieure ou égale à la prochaine date, ou compteur matériel supérieur ou égal au prochain compteur. Elle est à prévoir dans les 30 jours ou lorsque les heures restantes sont inférieures ou égales à `max(10 h, 20 % de l’intervalle horaire)`. Les dates métier sont des valeurs UTC `YYYY-MM-DD`, sans heure. L’exécution est transactionnelle : tâche, historique et compteur matériel sont mis à jour ensemble.
+
 Les permissions sont `maintenance.read`, `maintenance.create`, `maintenance.update`, `maintenance.delete` et `maintenance.execute`. Le tableau de bord compte les entretiens prévus aujourd’hui, en retard, réalisés ce mois et prévus dans les 30 jours.
 
 ## Configuration

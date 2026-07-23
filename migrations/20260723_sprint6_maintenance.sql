@@ -20,8 +20,14 @@ CREATE TABLE maintenance_tasks (
   updated_at DATETIME NOT NULL,
   deleted_at DATETIME NULL,
   INDEX idx_maintenance_material (material_id),
+  INDEX idx_maintenance_active (active),
+  INDEX idx_maintenance_priority (priority),
+  INDEX idx_maintenance_type (maintenance_type),
   INDEX idx_maintenance_date (next_maintenance_date),
-  CONSTRAINT fk_maintenance_material FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE CASCADE
+  INDEX idx_maintenance_hours (next_engine_hours),
+  CONSTRAINT fk_maintenance_material FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE CASCADE,
+  CONSTRAINT fk_maintenance_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+  CONSTRAINT fk_maintenance_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 );
 CREATE TABLE maintenance_history (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -33,6 +39,7 @@ CREATE TABLE maintenance_history (
   performed_by BIGINT UNSIGNED NULL,
   created_at DATETIME NOT NULL,
   INDEX idx_maintenance_history_task (maintenance_task_id),
+  INDEX idx_maintenance_history_performed_at (performed_at),
   CONSTRAINT fk_maintenance_history_task FOREIGN KEY (maintenance_task_id) REFERENCES maintenance_tasks(id) ON DELETE CASCADE,
   CONSTRAINT fk_maintenance_history_user FOREIGN KEY (performed_by) REFERENCES users(id) ON DELETE SET NULL
 );

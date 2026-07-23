@@ -53,9 +53,16 @@ router.put(
 );
 router.patch(
   '/:uuid/status',
-  authorize('maintenance.delete'),
+  authorize('maintenance.update'),
   validator.statusValidator,
   validateRequest,
   asyncHandler(controller.status.bind(controller)),
+);
+router.delete(
+  '/:uuid',
+  authorize('maintenance.delete'),
+  validator.uuidValidator,
+  validateRequest,
+  asyncHandler(controller.remove.bind(controller)),
 );
 export default router;

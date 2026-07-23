@@ -35,6 +35,10 @@ export default class MaintenanceController {
       ),
     );
   }
+  async remove(request, response) {
+    await this.service.remove(request.params.uuid, request.user.userId);
+    response.status(HTTP_STATUS.NO_CONTENT).send();
+  }
   async execute(request, response) {
     response.json(
       successResponse(

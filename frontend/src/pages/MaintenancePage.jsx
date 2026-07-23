@@ -8,6 +8,11 @@ import FormField from '../components/FormField.jsx';
 import Modal from '../components/Modal.jsx';
 import useNotification from '../notifications/useNotification.js';
 import normalizeFormValues from '../utils/normalize-form-values.js';
+import {
+  maintenancePriorityLabels,
+  maintenanceStatusLabels,
+  maintenanceTypeLabels,
+} from '../maintenance/maintenance.labels.js';
 
 const types = ['preventive', 'inspection', 'replacement', 'lubrication', 'cleaning', 'custom'];
 const priorities = ['low', 'normal', 'high', 'critical'];
@@ -53,6 +58,7 @@ export default function MaintenancePage() {
   const [filters, setFilters] = useState({});
   const [modal, setModal] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [pagination, setPagination] = useState(null);
   const load = useCallback(
     async (signal) => {
       try {
@@ -61,6 +67,7 @@ export default function MaintenancePage() {
           createReferenceApi('materials').list({}, signal),
         ]);
         setItems(tasks.data.data?.items ?? []);
+        setPagination(tasks.data.data?.pagination ?? null);
         setMaterials(materialList.data.data?.items ?? materialList.data.data ?? []);
         setError('');
       } catch (requestError) {
@@ -111,7 +118,6 @@ export default function MaintenancePage() {
       setSaving(false);
     }
   };
-  const statusLabel = { upToDate: 'À jour', upcoming: 'À prévoir', overdue: 'En retard' };
   return (
     <main className="mx-auto max-w-6xl p-6">
       <div className="mb-6 flex justify-between">
@@ -138,6 +144,29 @@ export default function MaintenancePage() {
           ))}
         </select>
         <select
+          aria-label="Filtrer par statut"
+          onChange={(event) =>
+            setFilters((current) => ({ ...current, status: event.target.value, page: 1 }))
+          }
+        >
+          <option value="">Tous statuts</option>
+          {Object.entries(maintenanceStatusLabels).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Filtrer par activité"
+          onChange={(event) =>
+            setFilters((current) => ({ ...current, active: event.target.value, page: 1 }))
+          }
+        >
+          <option value="">Actifs et inactifs</option>
+          <option value="true">Actifs</option>
+          <option value="false">Inactifs</option>
+        </select>
+        <select
           aria-label="Filtrer par type"
           onChange={(event) =>
             setFilters((current) => ({ ...current, maintenanceType: event.target.value }))
@@ -150,16 +179,6 @@ export default function MaintenancePage() {
             </option>
           ))}
         </select>
-        <Button
-          onClick={() => setFilters((current) => ({ ...current, overdue: !current.overdue }))}
-        >
-          En retard
-        </Button>
-        <Button
-          onClick={() => setFilters((current) => ({ ...current, upcoming: !current.upcoming }))}
-        >
-          30 jours
-        </Button>
       </div>
       {error && <p role="alert">{error}</p>}
       <div className="overflow-x-auto border">
@@ -185,8 +204,8 @@ export default function MaintenancePage() {
                   <td>{item.material?.name}</td>
                   <td>{item.title}</td>
                   <td>{item.nextMaintenanceDate ?? item.nextEngineHours ?? '—'}</td>
-                  <td>{item.priority}</td>
-                  <td>{statusLabel[item.status]}</td>
+                  <td>{maintenancePriorityLabels[item.priority]}</td>
+                  <td>{maintenanceStatusLabels[item.status]}</td>
                   <td>
                     {hasPermission('maintenance.execute') && (
                       <Button onClick={() => setModal(item)}>Effectuer</Button>
@@ -198,6 +217,27 @@ export default function MaintenancePage() {
           </tbody>
         </table>
       </div>
+      {pagination && (
+        <div className="mt-4 flex items-center justify-between">
+          <span>
+            {pagination.total} plan(s), page {pagination.page} sur {pagination.totalPages}
+          </span>
+          <div className="space-x-2">
+            <Button
+              disabled={pagination.page <= 1}
+              onClick={() => setFilters((current) => ({ ...current, page: pagination.page - 1 }))}
+            >
+              Précédent
+            </Button>
+            <Button
+              disabled={pagination.page >= pagination.totalPages}
+              onClick={() => setFilters((current) => ({ ...current, page: pagination.page + 1 }))}
+            >
+              Suivant
+            </Button>
+          </div>
+        </div>
+      )}
       <Modal
         open={modal === 'create'}
         title="Créer un plan d’entretien"
@@ -213,9 +253,12 @@ export default function MaintenancePage() {
                 field.name === 'materialUuid'
                   ? materials.map((item) => ({ value: item.uuid, label: item.name }))
                   : field.name === 'maintenanceType'
-                    ? types.map((value) => ({ value, label: value }))
+                    ? types.map((value) => ({ value, label: maintenanceTypeLabels[value] }))
                     : field.name === 'priority'
-                      ? priorities.map((value) => ({ value, label: value }))
+                      ? priorities.map((value) => ({
+                          value,
+                          label: maintenancePriorityLabels[value],
+                        }))
                       : undefined
               }
             />

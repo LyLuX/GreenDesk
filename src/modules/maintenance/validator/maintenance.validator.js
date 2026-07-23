@@ -19,6 +19,7 @@ export const listValidator = [
   query('materialUuid').optional().isUUID(),
   query('priority').optional().isIn(MAINTENANCE_PRIORITIES),
   query('maintenanceType').optional().isIn(MAINTENANCE_TYPES),
+  query('status').optional().isIn(['upToDate', 'upcoming', 'overdue']),
   query('active').optional().isBoolean().toBoolean(),
   query('overdue').optional().isBoolean().toBoolean(),
   query('upcoming').optional().isBoolean().toBoolean(),
