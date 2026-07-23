@@ -10,6 +10,7 @@ dotenv.config();
  */
 const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
+  appVersion: process.env.npm_package_version ?? '1.0.0',
   port: Number(process.env.PORT ?? 3000),
   database: {
     host: process.env.DATABASE_HOST ?? '127.0.0.1',

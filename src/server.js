@@ -12,7 +12,7 @@ async function startServer() {
     });
   } catch (error) {
     logger.error('Unable to start GreenDesk API', { stack: error.stack });
-    process.exitCode = 1;
+    process.exit(1);
   }
 }
 

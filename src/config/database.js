@@ -13,10 +13,15 @@ const sequelize = new Sequelize(env.database.name, env.database.user, env.databa
   host: env.database.host,
   port: env.database.port,
   dialect: 'mysql',
+  dialectOptions: {
+    charset: 'utf8mb4'
+  },
+  timezone: '+00:00',
   logging: env.database.logging ? (message) => logger.debug(message) : false,
   define: {
     underscored: true,
     timestamps: true,
+    freezeTableName: true,
     paranoid: true
   },
   pool: {
