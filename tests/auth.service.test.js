@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 import { jest } from '@jest/globals';
 
 import AuthService from '../src/modules/auth/service/auth.service.js';
@@ -47,6 +48,7 @@ describe('AuthService', () => {
     );
     const result = await service.login(user.email, 'SecurePass123!');
     expect(result.accessToken).toEqual(expect.any(String));
+    expect(jwt.decode(result.accessToken).jti).toEqual(expect.any(String));
     expect(result.user).toMatchObject({ uuid, roles: ['USER'] });
     expect(authRepository.update).toHaveBeenCalledWith(
       user,
@@ -63,5 +65,19 @@ describe('AuthService', () => {
     await expect(service.login('ada@greendesk.local', 'wrong')).rejects.toMatchObject({
       statusCode: 401,
     });
+  });
+
+  it('revokes the current token on logout', async () => {
+    const authRepository = { revokeAccessToken: jest.fn() };
+    const auditService = { record: jest.fn() };
+    const service = new AuthService(authRepository, {}, auditService);
+    const expiresAt = 1_800_000_000;
+
+    await service.logout({ jti: uuid, exp: expiresAt, userId: 1, sub: uuid });
+
+    expect(authRepository.revokeAccessToken).toHaveBeenCalledWith(uuid, new Date(expiresAt * 1000));
+    expect(auditService.record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'LOGOUT_SUCCESS', userId: 1 }),
+    );
   });
 });

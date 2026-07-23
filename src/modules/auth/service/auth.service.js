@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 
 import env from '../../../config/env.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
@@ -43,6 +44,7 @@ export default class AuthService {
       env.jwt.secret,
       {
         expiresIn: env.jwt.accessTokenTtl,
+        jwtid: uuidv4(),
       },
     );
     const safeUser = this.userService.publicUser(user);
@@ -63,5 +65,19 @@ export default class AuthService {
         permissions,
       },
     };
+  }
+
+  /** Revokes the current JWT so it cannot be reused before its expiration. */
+  async logout(claims) {
+    if (!claims?.jti || !claims?.exp) {
+      throw new AppError('Invalid or expired access token', HTTP_STATUS.UNAUTHORIZED);
+    }
+    await this.authRepository.revokeAccessToken(claims.jti, new Date(claims.exp * 1000));
+    await this.auditService.record({
+      userId: claims.userId,
+      action: 'LOGOUT_SUCCESS',
+      entity: 'USER',
+      entityUuid: claims.sub,
+    });
   }
 }

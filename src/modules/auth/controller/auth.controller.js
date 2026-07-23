@@ -17,4 +17,8 @@ export default class AuthController {
       successResponse(await this.authService.login(request.body.email, request.body.password)),
     );
   }
+  async logout(request, response) {
+    await this.authService.logout(request.user);
+    response.json(successResponse({ message: 'Logged out successfully' }));
+  }
 }

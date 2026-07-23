@@ -1,9 +1,19 @@
+import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import useAuth from '../auth/useAuth.js';
 import { navigationItems } from '../navigation.js';
 export default function AppLayout() {
   const { user, logout, hasPermission } = useAuth();
   const navigate = useNavigate();
+  const [isLoggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setLoggingOut(true);
+    await logout();
+    navigate('/login', { replace: true });
+  };
+
   return (
     <div className="min-h-screen bg-slate-100">
       <header className="flex items-center justify-between bg-slate-900 px-5 py-4 text-white">
@@ -12,13 +22,8 @@ export default function AppLayout() {
           <span>
             {user?.firstName} {user?.lastName}
           </span>
-          <button
-            onClick={() => {
-              logout();
-              navigate('/login');
-            }}
-          >
-            Déconnexion
+          <button type="button" onClick={handleLogout} disabled={isLoggingOut}>
+            {isLoggingOut ? 'Déconnexion…' : 'Déconnexion'}
           </button>
         </div>
       </header>

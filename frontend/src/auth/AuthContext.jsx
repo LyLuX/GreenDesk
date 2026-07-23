@@ -25,10 +25,16 @@ export function AuthProvider({ children }) {
     setSession(next);
     return next;
   }, []);
-  const logout = useCallback(() => {
-    clearSession();
-    setSession(null);
-  }, []);
+  const logout = useCallback(async () => {
+    try {
+      if (session?.accessToken) await client.post('/v1/auth/logout');
+    } catch {
+      // Local cleanup is still required if the server cannot be reached.
+    } finally {
+      clearSession();
+      setSession(null);
+    }
+  }, [session]);
   const hasPermission = useCallback(
     (permission) =>
       session?.user?.roles?.includes('ADMIN') || session?.user?.permissions?.includes(permission),

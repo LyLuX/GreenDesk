@@ -9,6 +9,7 @@ import MaterialFile from '../../modules/materials/model/material-file.model.js';
 import Brand from '../../modules/brands/model/brand.model.js';
 import MaintenanceTask from '../../modules/maintenance/model/maintenance-task.model.js';
 import MaintenanceHistory from '../../modules/maintenance/model/maintenance-history.model.js';
+import RevokedAccessToken from '../../modules/auth/model/revoked-access-token.model.js';
 
 let initialized = false;
 
@@ -73,4 +74,5 @@ export {
   MaterialFile,
   MaintenanceTask,
   MaintenanceHistory,
+  RevokedAccessToken,
 };
