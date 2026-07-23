@@ -17,6 +17,7 @@ const sequelize = new Sequelize(env.database.name, env.database.user, env.databa
   define: {
     underscored: true,
     timestamps: true,
+    paranoid: true
   },
   pool: {
     max: 10,
