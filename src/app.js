@@ -46,6 +46,10 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use('/api/materials', materialRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/v1/categories', categoryRoutes);
+app.use('/api/v1/properties', propertyRoutes);
+app.use('/api/v1/materials', materialRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

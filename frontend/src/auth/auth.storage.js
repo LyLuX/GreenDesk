@@ -2,8 +2,18 @@ const KEY = 'greendesk.session';
 export const readSession = () => {
   try {
     const value = JSON.parse(localStorage.getItem(KEY));
-    return value?.accessToken && value?.user ? value : null;
+    if (
+      !value?.accessToken ||
+      !value?.user ||
+      !Array.isArray(value.user.roles) ||
+      !Array.isArray(value.user.permissions)
+    ) {
+      clearSession();
+      return null;
+    }
+    return value;
   } catch {
+    clearSession();
     return null;
   }
 };

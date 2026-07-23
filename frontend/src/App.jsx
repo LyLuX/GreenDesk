@@ -35,7 +35,7 @@ export default function App() {
             'categories.read',
             <ReferencePage
               title="Catégories"
-              path="/categories"
+              resource="categories"
               createPermission="categories.create"
               updatePermission="categories.update"
               disablePermission="categories.disable"
@@ -56,7 +56,7 @@ export default function App() {
             'properties.read',
             <ReferencePage
               title="Propriétés"
-              path="/properties"
+              resource="properties"
               createPermission="properties.create"
               updatePermission="properties.update"
               disablePermission="properties.disable"
@@ -79,7 +79,7 @@ export default function App() {
             'materials.read',
             <ReferencePage
               title="Matériaux"
-              path="/materials"
+              resource="materials"
               createPermission="materials.create"
               updatePermission="materials.update"
               disablePermission="materials.disable"

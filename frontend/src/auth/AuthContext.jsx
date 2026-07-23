@@ -1,12 +1,15 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import client from '../api/client.js';
 import { clearSession, readSession, saveSession } from './auth.storage.js';
+import { isJwtExpired } from './jwt.js';
 export const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [isInitializing, setInitializing] = useState(true);
   useEffect(() => {
-    setSession(readSession());
+    const restored = readSession();
+    if (restored && !isJwtExpired(restored.accessToken)) setSession(restored);
+    else clearSession();
     setInitializing(false);
     const expired = () => {
       clearSession();

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import client from '../api/client.js';
+import { getDashboardSummary } from '../api/dashboard.api.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 export default function DashboardPage() {
   const [data, setData] = useState(null);
@@ -7,7 +7,7 @@ export default function DashboardPage() {
   const load = useCallback(async () => {
     setError('');
     try {
-      const response = await client.get('/dashboard/summary');
+      const response = await getDashboardSummary();
       setData(response.data.data);
     } catch (err) {
       setError(getApiErrorMessage(err));
