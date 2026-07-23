@@ -1,6 +1,8 @@
 import { jest } from '@jest/globals';
 
-import MaterialService from '../src/modules/materials/service/material.service.js';
+import MaterialService, {
+  parseDateOnly,
+} from '../src/modules/materials/service/material.service.js';
 
 const model = (values) => ({ ...values, toJSON: () => ({ ...values }) });
 
@@ -81,5 +83,9 @@ describe('MaterialService', () => {
         1,
       ),
     ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it('rejects an invalid calendar date', () => {
+    expect(() => parseDateOnly('2026-02-30')).toThrow('La date fournie est invalide.');
   });
 });

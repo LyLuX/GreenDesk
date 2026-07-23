@@ -1,4 +1,5 @@
 import MaterialFile from '../model/material-file.model.js';
+import sequelize from '../../../config/database.js';
 export default class MaterialFileRepository {
   async create(values) {
     return MaterialFile.create(values);
@@ -13,10 +14,12 @@ export default class MaterialFileRepository {
     return file.destroy();
   }
   async setPrimary(file) {
-    await MaterialFile.update(
-      { isPrimary: false },
-      { where: { materialId: file.materialId, kind: 'photo' } },
-    );
-    return file.update({ isPrimary: true });
+    return sequelize.transaction(async (transaction) => {
+      await MaterialFile.update(
+        { isPrimary: false },
+        { where: { materialId: file.materialId, kind: 'photo' }, transaction },
+      );
+      return file.update({ isPrimary: true }, { transaction });
+    });
   }
 }

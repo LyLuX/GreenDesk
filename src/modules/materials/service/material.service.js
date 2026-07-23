@@ -6,6 +6,18 @@ import BrandRepository from '../../brands/repository/brand.repository.js';
 import CategoryRepository from '../../../core/database/repositories/category.repository.js';
 import PropertyRepository from '../../../core/database/repositories/property.repository.js';
 
+/** Parses a DATEONLY value as UTC and rejects invalid calendar values. */
+export function parseDateOnly(value) {
+  if (!value) return null;
+  const text = String(value);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text))
+    throw new AppError('La date fournie est invalide.', HTTP_STATUS.BAD_REQUEST);
+  const parsed = new Date(`${text}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== text)
+    throw new AppError('La date fournie est invalide.', HTTP_STATUS.BAD_REQUEST);
+  return parsed;
+}
+
 /** Business lifecycle for materials. */
 export default class MaterialService {
   constructor(
@@ -119,17 +131,17 @@ export default class MaterialService {
       throw new AppError('Material serial number is already in use', HTTP_STATUS.CONFLICT);
   }
   ensureDatesAreCoherent(values, item) {
-    const purchaseDate = values.purchaseDate ?? item?.purchaseDate;
-    const commissionedAt = values.commissionedAt ?? item?.commissionedAt;
-    const retiredAt = values.retiredAt ?? item?.retiredAt;
-    if (purchaseDate && commissionedAt && commissionedAt < purchaseDate)
+    const purchaseDate = parseDateOnly(values.purchaseDate ?? item?.purchaseDate);
+    const commissionedAt = parseDateOnly(values.commissionedAt ?? item?.commissionedAt);
+    const retiredAt = parseDateOnly(values.retiredAt ?? item?.retiredAt);
+    if (purchaseDate && commissionedAt && purchaseDate.getTime() > commissionedAt.getTime())
       throw new AppError(
-        'Commissioning date cannot be before purchase date',
+        'La mise en service ne peut pas précéder la date d’achat.',
         HTTP_STATUS.BAD_REQUEST,
       );
-    if (commissionedAt && retiredAt && retiredAt < commissionedAt)
+    if (commissionedAt && retiredAt && commissionedAt.getTime() > retiredAt.getTime())
       throw new AppError(
-        'Retirement date cannot be before commissioning date',
+        'La sortie de service ne peut pas précéder la mise en service.',
         HTTP_STATUS.BAD_REQUEST,
       );
   }

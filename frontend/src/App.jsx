@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 import ReferencePage from './pages/ReferencePage.jsx';
 import MaterialDetailPage from './pages/MaterialDetailPage.jsx';
+import MaterialEditPage from './pages/MaterialEditPage.jsx';
 import BrandsPage from './pages/BrandsPage.jsx';
 import { formatCurrency } from './utils/formatters.js';
 const secure = (permission, page) => (
@@ -177,6 +178,10 @@ export default function App() {
           )}
         />
         <Route path="/materials/:uuid" element={secure('materials.read', <MaterialDetailPage />)} />
+        <Route
+          path="/materials/:uuid/edit"
+          element={secure('materials.update', <MaterialEditPage />)}
+        />
         <Route path="/brands" element={secure('brand.read', <BrandsPage />)} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />

@@ -9,12 +9,17 @@ import { asyncHandler } from '../../../core/utils/async-handler.js';
 import AppError from '../../../core/errors/app-error.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import MaterialFileService from '../service/material-file.service.js';
+import {
+  DOCUMENT_MIME_TYPES,
+  MIME_EXTENSION_MAP,
+  PHOTO_MIME_TYPES,
+} from '../material-file.constants.js';
 const uploadDirectory = path.join(process.cwd(), 'uploads', 'materials');
 fs.mkdirSync(uploadDirectory, { recursive: true });
 const storage = multer.diskStorage({
   destination: uploadDirectory,
   filename: (_request, file, callback) =>
-    callback(null, `${crypto.randomUUID()}${path.extname(file.originalname).toLowerCase()}`),
+    callback(null, `${crypto.randomUUID()}${MIME_EXTENSION_MAP[file.mimetype]}`),
 });
 const makeUpload = (types) =>
   multer({
@@ -26,8 +31,8 @@ const makeUpload = (types) =>
         types.includes(file.mimetype),
       ),
   });
-const photoUpload = makeUpload(['image/jpeg', 'image/png', 'image/webp']);
-const documentUpload = makeUpload(['application/pdf']);
+const photoUpload = makeUpload(PHOTO_MIME_TYPES);
+const documentUpload = makeUpload(DOCUMENT_MIME_TYPES);
 const router = Router();
 const service = new MaterialFileService();
 const upload = (middleware) => (request, response, next) =>
@@ -74,12 +79,23 @@ router.patch(
   ),
 );
 router.get(
+  '/files/:fileUuid/content',
+  authenticate,
+  authorize('materials.read'),
+  asyncHandler(async (request, response) => {
+    const file = await service.getForContent(request.params.fileUuid);
+    response.type(file.mimeType);
+    response.setHeader('Content-Disposition', 'inline');
+    response.sendFile(path.resolve(uploadDirectory, file.fileName));
+  }),
+);
+router.get(
   '/files/:fileUuid/download',
   authenticate,
   authorize('materials.read'),
   asyncHandler(async (request, response) => {
     const file = await service.getForDownload(request.params.fileUuid);
-    response.download(path.join(uploadDirectory, file.fileName), file.originalName);
+    response.download(path.resolve(uploadDirectory, file.fileName), file.originalName);
   }),
 );
 router.delete(

@@ -20,3 +20,5 @@ export const setPrimaryMaterialPhoto = (uuid) =>
   client.patch(`/v1/materials/files/${uuid}/primary`);
 export const downloadMaterialFile = (uuid) =>
   client.get(`/v1/materials/files/${uuid}/download`, { responseType: 'blob' });
+export const getMaterialFileContent = (uuid) =>
+  client.get(`/v1/materials/files/${uuid}/content`, { responseType: 'blob' });

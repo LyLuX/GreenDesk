@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import {
@@ -10,6 +10,7 @@ import {
 } from '../api/material-files.api.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
+import AuthenticatedImage from '../components/AuthenticatedImage.jsx';
 import Button from '../components/Button.jsx';
 import { formatCurrency } from '../utils/formatters.js';
 
@@ -34,10 +35,10 @@ export default function MaterialDetailPage() {
   const [history, setHistory] = useState([]);
   const [activeTab, setActiveTab] = useState('details');
   const [error, setError] = useState('');
-  const [uploadProgress, setUploadProgress] = useState({});
   const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [documentFile, setDocumentFile] = useState(null);
   const [documentType, setDocumentType] = useState('other');
+  const previewsRef = useRef([]);
 
   const load = useCallback(async () => {
     try {
@@ -55,48 +56,85 @@ export default function MaterialDetailPage() {
   useEffect(() => {
     load();
   }, [load]);
-  useEffect(
-    () => () => selectedPhotos.forEach((item) => URL.revokeObjectURL(item.preview)),
-    [selectedPhotos],
-  );
+  useEffect(() => () => previewsRef.current.forEach((url) => URL.revokeObjectURL(url)), []);
 
   const photos = useMemo(
-    () => material?.files?.filter((file) => file.kind === 'photo') ?? [],
+    () =>
+      (material?.files?.filter((file) => file.kind === 'photo') ?? []).sort(
+        (a, b) => Number(b.isPrimary) - Number(a.isPrimary),
+      ),
     [material],
   );
   const documents = useMemo(
     () => material?.files?.filter((file) => file.kind === 'document') ?? [],
     [material],
   );
-  const upload = async (file, document = false) => {
+  const upload = async (file, document = false, onUploadProgress) => {
     if (file.size > 10 * 1024 * 1024) throw new Error('Le fichier dépasse la limite de 10 Mo.');
     const response = document
-      ? await uploadMaterialDocument(uuid, file, documentType, (event) =>
-          setUploadProgress((current) => ({
-            ...current,
-            [file.name]: Math.round((event.loaded * 100) / (event.total || 1)),
-          })),
-        )
-      : await uploadMaterialPhoto(uuid, file, (event) =>
-          setUploadProgress((current) => ({
-            ...current,
-            [file.name]: Math.round((event.loaded * 100) / (event.total || 1)),
-          })),
-        );
+      ? await uploadMaterialDocument(uuid, file, documentType, onUploadProgress)
+      : await uploadMaterialPhoto(uuid, file, onUploadProgress);
     return response.data.data;
   };
+  const setQueuedPhoto = (localId, update) =>
+    setSelectedPhotos((items) =>
+      items.map((item) => (item.localId === localId ? { ...item, ...update } : item)),
+    );
+  const queuePhotos = (event) => {
+    const files = [...event.target.files];
+    const invalid = files.find(
+      (file) => !imageTypes.includes(file.type) || file.size > 10 * 1024 * 1024,
+    );
+    if (invalid) {
+      setError('Les photos doivent être au format JPEG, PNG ou WebP et ne pas dépasser 10 Mo.');
+      return;
+    }
+    const items = files.map((file) => ({
+      localId: crypto.randomUUID(),
+      file,
+      previewUrl: URL.createObjectURL(file),
+      progress: 0,
+      status: 'pending',
+      error: '',
+    }));
+    selectedPhotos.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+    previewsRef.current = items.map((item) => item.previewUrl);
+    setSelectedPhotos(items);
+  };
+  const removeQueuedPhoto = (localId) =>
+    setSelectedPhotos((items) => {
+      const item = items.find((current) => current.localId === localId);
+      if (item) URL.revokeObjectURL(item.previewUrl);
+      previewsRef.current = previewsRef.current.filter((url) => url !== item?.previewUrl);
+      return items.filter((current) => current.localId !== localId);
+    });
   const uploadPhotos = async () => {
     if (photos.length + selectedPhotos.length > 10) {
       setError('Un matériel est limité à 10 photos.');
       return;
     }
-    try {
-      await Promise.all(selectedPhotos.map((item) => upload(item.file)));
-      setSelectedPhotos([]);
-      await load();
-    } catch (err) {
-      setError(getApiErrorMessage(err));
+    for (const item of selectedPhotos.filter((photo) => photo.status !== 'success')) {
+      setQueuedPhoto(item.localId, { status: 'uploading', error: '', progress: 0 });
+      try {
+        await upload(item.file, false, (event) =>
+          setQueuedPhoto(item.localId, {
+            progress: Math.round((event.loaded * 100) / (event.total || 1)),
+          }),
+        );
+        setQueuedPhoto(item.localId, { status: 'success', progress: 100 });
+      } catch (err) {
+        setQueuedPhoto(item.localId, { status: 'error', error: getApiErrorMessage(err) });
+      }
     }
+    await load();
+    setSelectedPhotos((items) => {
+      items
+        .filter((item) => item.status === 'success')
+        .forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      const remaining = items.filter((item) => item.status !== 'success');
+      previewsRef.current = remaining.map((item) => item.previewUrl);
+      return remaining;
+    });
   };
   const uploadDocument = async () => {
     if (!documentFile) return;
@@ -158,7 +196,7 @@ export default function MaterialDetailPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link to="/materials">Retour aux matériels</Link>
         {hasPermission('materials.update') && (
-          <Button onClick={() => navigate('/materials')}>Modifier</Button>
+          <Button onClick={() => navigate(`/materials/${uuid}/edit`)}>Modifier</Button>
         )}
       </div>
       <h1 className="mt-4 text-2xl font-semibold">{material.name}</h1>
@@ -212,23 +250,27 @@ export default function MaterialDetailPage() {
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   multiple
-                  onChange={(event) =>
-                    setSelectedPhotos(
-                      [...event.target.files].map((file) => ({
-                        file,
-                        preview: URL.createObjectURL(file),
-                      })),
-                    )
-                  }
+                  onChange={queuePhotos}
                 />
                 <div className="mt-3 flex flex-wrap gap-3">
                   {selectedPhotos.map((item) => (
-                    <img
-                      className="h-24 w-24 object-cover"
-                      key={item.preview}
-                      src={item.preview}
-                      alt={`Aperçu ${item.file.name}`}
-                    />
+                    <article className="w-32 border p-2" key={item.localId}>
+                      <img
+                        className="h-24 w-full object-cover"
+                        src={item.previewUrl}
+                        alt={`Aperçu ${item.file.name}`}
+                      />
+                      <p className="truncate text-xs">{item.file.name}</p>
+                      {item.status === 'uploading' && (
+                        <progress className="w-full" value={item.progress} max="100" />
+                      )}
+                      {item.error && (
+                        <p role="alert" className="text-xs text-red-700">
+                          {item.error}
+                        </p>
+                      )}
+                      <Button onClick={() => removeQueuedPhoto(item.localId)}>Retirer</Button>
+                    </article>
                   ))}
                 </div>
                 <Button disabled={!selectedPhotos.length} onClick={uploadPhotos}>
@@ -239,13 +281,15 @@ export default function MaterialDetailPage() {
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {photos.map((file) => (
                 <article className="border p-3" key={file.uuid}>
+                  <AuthenticatedImage
+                    className="h-40 w-full object-cover"
+                    fileUuid={file.uuid}
+                    alt={file.originalName}
+                  />
                   <p>
                     {file.originalName}
                     {file.isPrimary ? ' (principale)' : ''}
                   </p>
-                  {uploadProgress[file.originalName] && (
-                    <progress value={uploadProgress[file.originalName]} max="100" />
-                  )}
                   {hasPermission('materials.update') && (
                     <div className="mt-2 space-x-2">
                       <Button

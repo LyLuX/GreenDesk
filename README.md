@@ -6,22 +6,36 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 Authentification, utilisateurs, rôles, permissions, audit, catégories, propriétés, marques et matériels.
 
-## API Sprint 4
+## API
 
 - `GET|POST /api/categories`, `GET|PUT /api/categories/:uuid`, `PATCH /api/categories/:uuid/status`
 - `GET|POST /api/properties`, `GET|PUT /api/properties/:uuid`, `PATCH /api/properties/:uuid/status`
-- `GET|POST /api/materials`, `GET|PUT /api/materials/:uuid`, `PATCH /api/materials/:uuid/status`
+- `GET|POST /api/v1/materials`, `GET|PUT /api/v1/materials/:uuid`, `PATCH /api/v1/materials/:uuid/status`
 - `GET|POST /api/brands`, `GET|PUT /api/brands/:uuid`, `PATCH /api/brands/:uuid/status`
 - `POST /api/v1/materials/:uuid/photos`, `POST /api/v1/materials/:uuid/documents`, `GET /api/v1/materials/:uuid/history`
-- `PATCH|DELETE /api/v1/materials/files/:fileUuid`, `GET /api/v1/materials/files/:fileUuid/download`
+- `GET /api/v1/materials/files/:fileUuid/content`, `GET /api/v1/materials/files/:fileUuid/download`
+- `PATCH|DELETE /api/v1/materials/files/:fileUuid`
 
 Les permissions ajoutées sont `categories.*`, `properties.*` et `materials.*` avec les actions `read`, `create`, `update`, `disable`.
 
 Le dashboard est disponible via `GET /api/dashboard/summary`, protégé par `dashboard.read`. Il compte les matériaux, les catégories, les propriétés et les marques, et calcule la valeur, le coût moyen et l’âge moyen du parc par agrégats SQL. La documentation OpenAPI est servie sur `/docs`.
 
-## Parc matériel
+## Sprint 5 : parc matériel
 
-Une fiche matériel utilise uniquement les UUID publics de marque, catégorie et propriété. La liste supporte recherche, filtres, tri et pagination. Les photos (JPEG, PNG, WebP) et documents PDF sont stockés sous `uploads/materials`, sans exposition statique du dossier : leur téléchargement exige une session et la permission `materials.read`. Chaque fichier est limité à 10 Mo et un matériel à 10 photos. Les permissions de marques sont `brand.read`, `brand.create`, `brand.update` et `brand.delete`.
+Un matériel contient son UUID public, nom, référence, marque, modèle, catégorie, propriété, numéro de série, année, dates, prix, valeur actuelle, heures moteur et notes. Les relations sont exclusivement transmises et renvoyées avec des UUID publics. La liste supporte la recherche, les filtres par statut/marque/catégorie/propriété, le tri et la pagination.
+
+Les photos (JPEG, PNG, WebP) et documents PDF sont stockés sous `uploads/materials`, sans exposition statique du dossier. Les photos sont consultées via une route authentifiée inline ; les documents sont téléchargés en pièce jointe via une route authentifiée. Chaque fichier est limité à 10 Mo et chaque matériel à 10 photos. Les fichiers reçoivent un nom UUID dérivé de leur MIME autorisé, jamais de leur nom client. L’historique de chaque modification est disponible sur la fiche matériel.
+
+### Permissions
+
+| Domaine    | Permissions                                                                       |
+| ---------- | --------------------------------------------------------------------------------- |
+| Matériels  | `materials.read`, `materials.create`, `materials.update`, `materials.disable`     |
+| Marques    | `brand.read`, `brand.create`, `brand.update`, `brand.delete`                      |
+| Catégories | `categories.read`, `categories.create`, `categories.update`, `categories.disable` |
+| Propriétés | `properties.read`, `properties.create`, `properties.update`, `properties.disable` |
+
+`/api/v1` est le préfixe à utiliser pour les nouveaux appels. Les chemins historiques `/api/categories`, `/api/properties`, `/api/materials`, `/api/brands` et `/api/dashboard` restent des alias de compatibilité.
 
 ## Configuration
 
