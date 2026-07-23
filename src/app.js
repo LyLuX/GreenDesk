@@ -15,6 +15,9 @@ import authRoutes from './modules/auth/routes/auth.routes.js';
 import permissionRoutes from './modules/permissions/routes/permission.routes.js';
 import roleRoutes from './modules/roles/routes/role.routes.js';
 import userRoutes from './modules/users/routes/user.routes.js';
+import categoryRoutes from './modules/categories/routes/category.routes.js';
+import propertyRoutes from './modules/properties/routes/property.routes.js';
+import materialRoutes from './modules/materials/routes/material.routes.js';
 
 const app = express();
 
@@ -38,6 +41,9 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/roles', roleRoutes);
 app.use('/api/v1/permissions', permissionRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/properties', propertyRoutes);
+app.use('/api/materials', materialRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

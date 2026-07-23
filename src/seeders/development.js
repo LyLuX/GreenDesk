@@ -16,6 +16,18 @@ const permissionNames = [
   'MATERIAL_CREATE',
   'MATERIAL_UPDATE',
   'MATERIAL_DELETE',
+  'categories.read',
+  'categories.create',
+  'categories.update',
+  'categories.disable',
+  'properties.read',
+  'properties.create',
+  'properties.update',
+  'properties.disable',
+  'materials.read',
+  'materials.create',
+  'materials.update',
+  'materials.disable',
 ];
 
 /** Seeds required authorization data and the local development administrator. */

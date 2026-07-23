@@ -2,6 +2,9 @@ import AuditLog from '../../modules/audit/model/audit-log.model.js';
 import Permission from '../../modules/permissions/model/permission.model.js';
 import Role from '../../modules/roles/model/role.model.js';
 import User from '../../modules/users/model/user.model.js';
+import Category from '../../modules/categories/model/category.model.js';
+import Property from '../../modules/properties/model/property.model.js';
+import Material from '../../modules/materials/model/material.model.js';
 
 let initialized = false;
 
@@ -44,4 +47,4 @@ export function initializeModels() {
   initialized = true;
 }
 
-export { AuditLog, Permission, Role, User };
+export { AuditLog, Permission, Role, User, Category, Property, Material };
