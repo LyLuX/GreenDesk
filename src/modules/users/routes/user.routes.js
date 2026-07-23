@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../../../core/middlewares/auth.middleware.js';
+import { authorizeRole } from '../../../core/middlewares/authorization.middleware.js';
 import { validateRequest } from '../../../core/middlewares/validate-request.js';
 import { asyncHandler } from '../../../core/utils/async-handler.js';
 import UserController from '../controller/user.controller.js';
@@ -12,6 +13,7 @@ import {
 const router = Router();
 const controller = new UserController();
 router.use(authenticate);
+router.use(authorizeRole('ADMIN'));
 router.get('/', asyncHandler(controller.getAll.bind(controller)));
 router.get(
   '/:uuid',

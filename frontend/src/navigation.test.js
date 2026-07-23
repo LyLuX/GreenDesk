@@ -11,6 +11,7 @@ describe('frontend reference navigation', () => {
       '/categories',
       '/properties',
       '/brands',
+      '/users',
     ]);
   });
 

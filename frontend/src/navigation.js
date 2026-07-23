@@ -6,4 +6,5 @@ export const navigationItems = [
   { label: 'Catégories', path: '/categories', permission: 'categories.read' },
   { label: 'Propriétés', path: '/properties', permission: 'properties.read' },
   { label: 'Marques', path: '/brands', permission: 'brand.read' },
+  { label: 'Utilisateurs', path: '/users', permission: 'ADMIN' },
 ];

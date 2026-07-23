@@ -16,7 +16,9 @@ export default class UserController {
   async create(request, response) {
     response
       .status(HTTP_STATUS.CREATED)
-      .json(successResponse(await this.userService.create(request.body, request.user?.userId)));
+      .json(
+        successResponse(await this.userService.create(request.body, request.user?.userId, 'USER')),
+      );
   }
   async update(request, response) {
     response.json(

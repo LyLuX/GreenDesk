@@ -24,7 +24,12 @@ describe('UserService', () => {
       update: jest.fn(),
       delete: jest.fn(),
     };
-    const roleRepository = { findByName: jest.fn().mockResolvedValue({ id: 3, name: 'USER' }) };
+    const roleRepository = {
+      findByName: jest.fn().mockResolvedValue({ id: 3, name: 'USER' }),
+      findByUuid: jest
+        .fn()
+        .mockResolvedValue({ id: 3, uuid: 'a5eaf09e-49b1-4fa3-a022-1a20854b06bd' }),
+    };
     const auditService = { record: jest.fn() };
     return {
       service: new UserService(userRepository, roleRepository, auditService),
@@ -58,5 +63,13 @@ describe('UserService', () => {
   it('retrieves a user by UUID', async () => {
     const { service } = createService();
     await expect(service.getByUuid(user.uuid)).resolves.toBe(user);
+  });
+
+  it('updates user role assignments', async () => {
+    const { service, userRepository } = createService();
+    await service.update(user.uuid, { roleUuids: ['a5eaf09e-49b1-4fa3-a022-1a20854b06bd'] });
+    expect(userRepository.setRoles).toHaveBeenCalledWith(user, [
+      expect.objectContaining({ id: 3 }),
+    ]);
   });
 });

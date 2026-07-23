@@ -22,6 +22,13 @@ describe('reference routes authorization and validation', () => {
       .expect(403);
   });
 
+  it('restricts user management to administrators', async () => {
+    await request(app)
+      .get('/api/v1/users')
+      .set('Authorization', `Bearer ${tokenFor(['USER_READ'])}`)
+      .expect(403);
+  });
+
   it('validates category creation before accessing persistence', async () => {
     const response = await request(app)
       .post('/api/categories')

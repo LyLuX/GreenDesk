@@ -34,13 +34,17 @@ export default class UserService {
     const existingUser = await this.userRepository.findByEmail(values.email);
     if (existingUser) throw new AppError('Email is already in use', HTTP_STATUS.CONFLICT);
 
+    const { roleUuids, ...userValues } = values;
+    const assignedRoles = roleUuids?.length ? await this.findRoles(roleUuids) : null;
     const passwordHash = await bcrypt.hash(values.password, PASSWORD_ROUNDS);
     const user = await this.userRepository.create({
-      ...values,
+      ...userValues,
       email: values.email.toLowerCase(),
       passwordHash,
     });
-    if (defaultRoleName) {
+    if (assignedRoles) {
+      await this.userRepository.setRoles(user, assignedRoles);
+    } else if (defaultRoleName) {
       const role = await this.roleRepository.findByName(defaultRoleName);
       if (!role)
         throw new AppError(
@@ -62,7 +66,8 @@ export default class UserService {
   async update(uuid, values, actorUserId = null) {
     const user = await this.getByUuid(uuid);
     const oldValues = this.publicUser(user);
-    const updateValues = { ...values };
+    const { roleUuids, ...updateValues } = values;
+    const assignedRoles = roleUuids !== undefined ? await this.findRoles(roleUuids) : null;
     if (values.email && values.email.toLowerCase() !== user.email) {
       const existingUser = await this.userRepository.findByEmail(values.email.toLowerCase());
       if (existingUser) throw new AppError('Email is already in use', HTTP_STATUS.CONFLICT);
@@ -72,6 +77,7 @@ export default class UserService {
       updateValues.passwordHash = await bcrypt.hash(values.password, PASSWORD_ROUNDS);
     delete updateValues.password;
     await this.userRepository.update(user, updateValues);
+    if (assignedRoles) await this.userRepository.setRoles(user, assignedRoles);
     await this.auditService.record({
       userId: actorUserId,
       action: 'USER_UPDATED',
@@ -80,7 +86,7 @@ export default class UserService {
       oldValues,
       newValues: this.publicUser(user),
     });
-    return user;
+    return this.getByUuid(uuid);
   }
 
   async remove(uuid, actorUserId = null) {
@@ -101,5 +107,15 @@ export default class UserService {
     const safeUser = { ...value };
     delete safeUser.passwordHash;
     return safeUser;
+  }
+
+  /** Resolves role UUIDs and rejects assignments that reference deleted roles. */
+  async findRoles(roleUuids) {
+    const roles = await Promise.all(
+      roleUuids.map((roleUuid) => this.roleRepository.findByUuid(roleUuid)),
+    );
+    if (roles.some((role) => !role))
+      throw new AppError('One or more roles were not found', HTTP_STATUS.BAD_REQUEST);
+    return roles;
   }
 }

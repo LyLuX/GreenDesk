@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom';
 import PermissionRoute from './auth/PermissionRoute.jsx';
 import ProtectedRoute from './auth/ProtectedRoute.jsx';
+import AdminRoute from './auth/AdminRoute.jsx';
 import AppLayout from './layouts/AppLayout.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import ForbiddenPage from './pages/ForbiddenPage.jsx';
@@ -12,10 +13,16 @@ import MaterialDetailPage from './pages/MaterialDetailPage.jsx';
 import MaterialEditPage from './pages/MaterialEditPage.jsx';
 import MaintenancePage from './pages/MaintenancePage.jsx';
 import BrandsPage from './pages/BrandsPage.jsx';
+import UsersPage from './pages/UsersPage.jsx';
 import { formatCurrency } from './utils/formatters.js';
 const secure = (permission, page) => (
   <ProtectedRoute>
     <PermissionRoute permission={permission}>{page}</PermissionRoute>
+  </ProtectedRoute>
+);
+const adminOnly = (page) => (
+  <ProtectedRoute>
+    <AdminRoute>{page}</AdminRoute>
   </ProtectedRoute>
 );
 const table = (keys) => [
@@ -195,6 +202,7 @@ export default function App() {
         />
         <Route path="/maintenance" element={secure('maintenance.read', <MaintenancePage />)} />
         <Route path="/brands" element={secure('brand.read', <BrandsPage />)} />
+        <Route path="/users" element={adminOnly(<UsersPage />)} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
