@@ -5,9 +5,10 @@ import client from './api/client.js';
 describe('frontend reference navigation', () => {
   it('declares the three business reference routes', () => {
     expect(navigationItems.map((item) => item.path)).toEqual([
+      '/dashboard',
+      '/materials',
       '/categories',
       '/properties',
-      '/materials',
     ]);
   });
 

@@ -1,11 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import useAuth from '../auth/useAuth.js';
-const links = [
-  { path: '/dashboard', label: 'Tableau de bord', permission: 'dashboard.read' },
-  { path: '/materials', label: 'Matériels', permission: 'materials.read' },
-  { path: '/categories', label: 'Catégories', permission: 'categories.read' },
-  { path: '/properties', label: 'Propriétés', permission: 'properties.read' },
-];
+import { navigationItems } from '../navigation.js';
 export default function AppLayout() {
   const { user, logout, hasPermission } = useAuth();
   const navigate = useNavigate();
@@ -29,7 +24,7 @@ export default function AppLayout() {
       </header>
       <div className="md:flex">
         <nav className="flex gap-4 border-b bg-white p-4 md:block md:min-h-screen md:w-52">
-          {links
+          {navigationItems
             .filter((link) => hasPermission(link.permission))
             .map((link) => (
               <NavLink className="block py-2" key={link.path} to={link.path}>

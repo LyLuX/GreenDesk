@@ -8,7 +8,10 @@ export default function DashboardPage() {
     setError('');
     try {
       const response = await getDashboardSummary();
-      setData(response.data.data);
+      const next = response.data?.data;
+      if (!next || typeof next !== 'object')
+        throw new Error('Réponse du tableau de bord invalide.');
+      setData(next);
     } catch (err) {
       setError(getApiErrorMessage(err));
     }
@@ -24,12 +27,15 @@ export default function DashboardPage() {
       </main>
     );
   if (!data) return <main className="p-6">Chargement du tableau de bord…</main>;
+  const materials = data.materials ?? {};
+  const categories = data.categories ?? {};
+  const properties = data.properties ?? {};
   const cards = [
-    ['Matériaux', data.materials.total],
-    ['Matériaux actifs', data.materials.active],
-    ['Matériaux inactifs', data.materials.inactive],
-    ['Catégories', data.categories.total],
-    ['Propriétés', data.properties.total],
+    ['Matériaux', materials.total ?? 0],
+    ['Matériaux actifs', materials.active ?? 0],
+    ['Matériaux inactifs', materials.inactive ?? 0],
+    ['Catégories', categories.total ?? 0],
+    ['Propriétés', properties.total ?? 0],
   ];
   return (
     <main className="p-6">

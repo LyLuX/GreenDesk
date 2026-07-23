@@ -7,14 +7,15 @@ import ForbiddenPage from './pages/ForbiddenPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 import ReferencePage from './pages/ReferencePage.jsx';
+import { formatCurrency } from './utils/formatters.js';
 const secure = (permission, page) => (
   <ProtectedRoute>
     <PermissionRoute permission={permission}>{page}</PermissionRoute>
   </ProtectedRoute>
 );
 const table = (keys) => [
-  ...keys.map(([key, label]) => ({ key, label })),
-  { key: 'active', label: 'Statut', render: (row) => (row.active ? 'Actif' : 'Inactif') },
+  ...keys.map(([key, label, render]) => ({ key, label, ...(render ? { render } : {}) })),
+  { key: 'active', label: 'Statut', render: (value) => (value ? 'Actif' : 'Inactif') },
 ];
 export default function App() {
   return (
@@ -87,15 +88,31 @@ export default function App() {
                 { name: 'name', label: 'Nom', required: true },
                 { name: 'reference', label: 'Référence' },
                 { name: 'unit', label: 'Unité', required: true },
-                { name: 'purchasePrice', label: 'Prix achat', type: 'number', required: true },
-                { name: 'salePrice', label: 'Prix vente', type: 'number', required: true },
+                {
+                  name: 'purchasePrice',
+                  label: 'Prix achat',
+                  type: 'number',
+                  valueType: 'number',
+                  step: '0.01',
+                  min: '0',
+                  required: true,
+                },
+                {
+                  name: 'salePrice',
+                  label: 'Prix vente',
+                  type: 'number',
+                  valueType: 'number',
+                  step: '0.01',
+                  min: '0',
+                  required: true,
+                },
               ]}
               columns={table([
                 ['name', 'Nom'],
                 ['reference', 'Référence'],
                 ['unit', 'Unité'],
-                ['purchasePrice', 'Achat'],
-                ['salePrice', 'Vente'],
+                ['purchasePrice', 'Achat', formatCurrency],
+                ['salePrice', 'Vente', formatCurrency],
               ])}
             />,
           )}
