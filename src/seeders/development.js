@@ -29,6 +29,10 @@ const permissionNames = [
   'materials.update',
   'materials.disable',
   'dashboard.read',
+  'brand.read',
+  'brand.create',
+  'brand.update',
+  'brand.delete',
 ];
 
 /** Seeds required authorization data and the local development administrator. */

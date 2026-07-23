@@ -5,6 +5,8 @@ import User from '../../modules/users/model/user.model.js';
 import Category from '../../modules/categories/model/category.model.js';
 import Property from '../../modules/properties/model/property.model.js';
 import Material from '../../modules/materials/model/material.model.js';
+import MaterialFile from '../../modules/materials/model/material-file.model.js';
+import Brand from '../../modules/brands/model/brand.model.js';
 
 let initialized = false;
 
@@ -43,8 +45,13 @@ export function initializeModels() {
     as: 'roles',
   });
   AuditLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+  Material.belongsTo(Brand, { foreignKey: 'brand_id', as: 'brand' });
+  Material.belongsTo(Category, { foreignKey: 'category_id', as: 'category' });
+  Material.belongsTo(Property, { foreignKey: 'property_id', as: 'property' });
+  Material.hasMany(MaterialFile, { foreignKey: 'material_id', as: 'files' });
+  MaterialFile.belongsTo(Material, { foreignKey: 'material_id', as: 'material' });
 
   initialized = true;
 }
 
-export { AuditLog, Permission, Role, User, Category, Property, Material };
+export { AuditLog, Permission, Role, User, Category, Property, Material, Brand, MaterialFile };

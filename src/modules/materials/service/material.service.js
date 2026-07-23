@@ -9,8 +9,8 @@ export default class MaterialService {
     this.materialRepository = materialRepository;
     this.auditService = auditService;
   }
-  async getAll(search) {
-    return this.materialRepository.findAll(search);
+  async getAll(query) {
+    return this.materialRepository.findAll(query);
   }
   async getByUuid(uuid) {
     const item = await this.materialRepository.findByUuid(uuid);

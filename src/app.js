@@ -19,6 +19,8 @@ import categoryRoutes from './modules/categories/routes/category.routes.js';
 import propertyRoutes from './modules/properties/routes/property.routes.js';
 import materialRoutes from './modules/materials/routes/material.routes.js';
 import dashboardRoutes from './modules/dashboard/routes/dashboard.routes.js';
+import brandRoutes from './modules/brands/routes/brand.routes.js';
+import materialFileRoutes from './modules/materials/routes/material-file.routes.js';
 
 const app = express();
 
@@ -49,7 +51,10 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/v1/categories', categoryRoutes);
 app.use('/api/v1/properties', propertyRoutes);
 app.use('/api/v1/materials', materialRoutes);
+app.use('/api/v1/materials', materialFileRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/brands', brandRoutes);
+app.use('/api/brands', brandRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

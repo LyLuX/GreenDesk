@@ -7,6 +7,7 @@ import ForbiddenPage from './pages/ForbiddenPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import NotFoundPage from './pages/NotFoundPage.jsx';
 import ReferencePage from './pages/ReferencePage.jsx';
+import MaterialDetailPage from './pages/MaterialDetailPage.jsx';
 import { formatCurrency } from './utils/formatters.js';
 const secure = (permission, page) => (
   <ProtectedRoute>
@@ -117,6 +118,7 @@ export default function App() {
             />,
           )}
         />
+        <Route path="/materials/:uuid" element={secure('materials.read', <MaterialDetailPage />)} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

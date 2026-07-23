@@ -1,15 +1,12 @@
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import { successResponse } from '../../../core/responses/api-response.js';
-import MaterialService from '../service/material.service.js';
-export default class MaterialController {
-  constructor(service = new MaterialService()) {
+import BrandService from '../service/brand.service.js';
+export default class BrandController {
+  constructor(service = new BrandService()) {
     this.service = service;
   }
   async getAll(request, response) {
-    response.json(successResponse(await this.service.getAll(request.query)));
-  }
-  async getByUuid(request, response) {
-    response.json(successResponse(await this.service.getByUuid(request.params.uuid)));
+    response.json(successResponse(await this.service.getAll(request.query.search)));
   }
   async create(request, response) {
     response
