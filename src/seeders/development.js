@@ -33,6 +33,11 @@ const permissionNames = [
   'brand.create',
   'brand.update',
   'brand.delete',
+  'maintenance.read',
+  'maintenance.create',
+  'maintenance.update',
+  'maintenance.delete',
+  'maintenance.execute',
 ];
 
 /** Seeds required authorization data and the local development administrator. */

@@ -33,6 +33,7 @@ export default function DashboardPage() {
   const properties = data.properties ?? {};
   const brands = data.brands ?? {};
   const fleet = data.fleet ?? {};
+  const maintenance = data.maintenance ?? {};
   const cards = [
     ['Matériaux', materials.total ?? 0],
     ['Matériaux actifs', materials.active ?? 0],
@@ -43,6 +44,10 @@ export default function DashboardPage() {
     ['Valeur du parc', formatCurrency(fleet.totalValue)],
     ['Coût moyen', formatCurrency(fleet.averageCost)],
     ['Âge moyen', `${Number(fleet.averageAge ?? 0).toFixed(1)} ans`],
+    ['Entretiens aujourd’hui', maintenance.today ?? 0],
+    ['Entretiens en retard', maintenance.overdue ?? 0],
+    ['Entretiens réalisés ce mois', maintenance.completedThisMonth ?? 0],
+    ['Entretiens prévus sous 30 jours', maintenance.upcoming ?? 0],
   ];
   return (
     <main className="p-6">

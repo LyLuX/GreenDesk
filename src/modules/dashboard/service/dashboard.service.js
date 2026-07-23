@@ -23,6 +23,13 @@ export default class DashboardService {
         averageCost: counts.averageCost,
         averageAge: counts.averageAge,
       };
+    if (counts.maintenanceToday !== undefined)
+      summary.maintenance = {
+        today: counts.maintenanceToday,
+        overdue: counts.maintenanceOverdue,
+        completedThisMonth: counts.maintenanceDoneThisMonth,
+        upcoming: counts.maintenanceUpcoming,
+      };
     return summary;
   }
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import getApiErrorMessage from '../api/get-api-error-message.js';
+import { listMaintenance } from '../api/maintenance.api.js';
 import {
   deleteMaterialFile,
   downloadMaterialFile,
@@ -33,6 +34,7 @@ export default function MaterialDetailPage() {
   const { hasPermission } = useAuth();
   const [material, setMaterial] = useState(null);
   const [history, setHistory] = useState([]);
+  const [maintenance, setMaintenance] = useState([]);
   const [activeTab, setActiveTab] = useState('details');
   const [error, setError] = useState('');
   const [selectedPhotos, setSelectedPhotos] = useState([]);
@@ -56,6 +58,14 @@ export default function MaterialDetailPage() {
   useEffect(() => {
     load();
   }, [load]);
+  useEffect(() => {
+    if (!hasPermission('maintenance.read')) return undefined;
+    const controller = new AbortController();
+    listMaintenance({ materialUuid: uuid }, controller.signal)
+      .then((response) => setMaintenance(response.data.data?.items ?? []))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [hasPermission, uuid]);
   useEffect(() => () => previewsRef.current.forEach((url) => URL.revokeObjectURL(url)), []);
 
   const photos = useMemo(
@@ -221,6 +231,15 @@ export default function MaterialDetailPage() {
         >
           Historique
         </button>
+        {hasPermission('maintenance.read') && (
+          <button
+            className="ml-4 p-2"
+            aria-pressed={activeTab === 'maintenance'}
+            onClick={() => setActiveTab('maintenance')}
+          >
+            Maintenance
+          </button>
+        )}
       </div>
       {activeTab === 'details' ? (
         <>
@@ -347,6 +366,32 @@ export default function MaterialDetailPage() {
             </ul>
           </section>
         </>
+      ) : activeTab === 'maintenance' ? (
+        <section className="mt-6">
+          <h2 className="text-xl font-semibold">Maintenance</h2>
+          {maintenance.length === 0 ? (
+            <p>Aucun plan d’entretien actif.</p>
+          ) : (
+            <ul className="divide-y border">
+              {maintenance.map((task) => (
+                <li className="p-3" key={task.uuid}>
+                  <strong>{task.title}</strong> ·{' '}
+                  {task.status === 'overdue'
+                    ? 'En retard'
+                    : task.status === 'upcoming'
+                      ? 'À prévoir'
+                      : 'À jour'}
+                  <span className="ml-3">
+                    Échéance : {task.nextMaintenanceDate ?? task.nextEngineHours ?? '—'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link className="mt-3 inline-block" to="/maintenance">
+            Voir la maintenance
+          </Link>
+        </section>
       ) : (
         <section className="mt-6">
           <h2 className="text-xl font-semibold">Historique</h2>

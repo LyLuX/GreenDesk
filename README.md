@@ -37,6 +37,12 @@ Les photos (JPEG, PNG, WebP) et documents PDF sont stockés sous `uploads/materi
 
 `/api/v1` est le préfixe à utiliser pour les nouveaux appels. Les chemins historiques `/api/categories`, `/api/properties`, `/api/materials`, `/api/brands` et `/api/dashboard` restent des alias de compatibilité.
 
+## Sprint 6 : maintenance préventive
+
+Chaque matériel peut recevoir plusieurs plans de maintenance : préventif, inspection, remplacement, lubrification, nettoyage ou personnalisé. Un plan possède un intervalle en jours et/ou en heures moteur, une priorité et ses dernières valeurs d’entretien. Les prochaines échéances sont recalculées à la création, à la modification et lors de l’exécution d’un entretien. L’API expose `GET|POST /api/v1/maintenance`, `GET|PUT /api/v1/maintenance/:uuid`, `POST /api/v1/maintenance/:uuid/execute` et `GET /api/v1/maintenance/:uuid/history`.
+
+Les permissions sont `maintenance.read`, `maintenance.create`, `maintenance.update`, `maintenance.delete` et `maintenance.execute`. Le tableau de bord compte les entretiens prévus aujourd’hui, en retard, réalisés ce mois et prévus dans les 30 jours.
+
 ## Configuration
 
 Créez `.env` depuis `.env.example` pour le backend et `frontend/.env` depuis `frontend/.env.example` pour l'interface. `VITE_API_URL=/api` est la valeur de développement par défaut. Aucun secret réel ne doit être committé.

@@ -3,9 +3,13 @@ import Material from '../../materials/model/material.model.js';
 import Property from '../../properties/model/property.model.js';
 import Brand from '../../brands/model/brand.model.js';
 import sequelize from '../../../config/database.js';
+import MaintenanceRepository from '../../maintenance/repository/maintenance.repository.js';
 
 /** Efficient aggregate queries used by the dashboard. */
 export default class DashboardRepository {
+  constructor(maintenanceRepository = new MaintenanceRepository()) {
+    this.maintenanceRepository = maintenanceRepository;
+  }
   async getCounts() {
     const [
       materialsTotal,
@@ -15,6 +19,7 @@ export default class DashboardRepository {
       propertiesTotal,
       brandsTotal,
       materialMetrics,
+      maintenance,
     ] = await Promise.all([
       Material.count(),
       Material.count({ where: { active: true } }),
@@ -46,6 +51,7 @@ export default class DashboardRepository {
         ],
         raw: true,
       }),
+      this.maintenanceRepository.countDashboard(),
     ]);
     return {
       materialsTotal,
@@ -57,6 +63,10 @@ export default class DashboardRepository {
       totalValue: Number(materialMetrics.value),
       averageCost: Number(materialMetrics.averageCost),
       averageAge: Number(materialMetrics.averageAge),
+      maintenanceToday: maintenance[0],
+      maintenanceOverdue: maintenance[1],
+      maintenanceDoneThisMonth: maintenance[2],
+      maintenanceUpcoming: maintenance[3],
     };
   }
 }

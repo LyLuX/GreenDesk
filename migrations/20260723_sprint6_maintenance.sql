@@ -1,0 +1,38 @@
+CREATE TABLE maintenance_tasks (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  uuid CHAR(36) NOT NULL UNIQUE,
+  material_id BIGINT UNSIGNED NOT NULL,
+  title VARCHAR(150) NOT NULL,
+  description TEXT NULL,
+  maintenance_type ENUM('preventive','inspection','replacement','lubrication','cleaning','custom') NOT NULL,
+  interval_hours DECIMAL(10,2) NULL,
+  interval_days INT UNSIGNED NULL,
+  last_maintenance_date DATE NULL,
+  last_engine_hours DECIMAL(10,2) NULL,
+  next_maintenance_date DATE NULL,
+  next_engine_hours DECIMAL(10,2) NULL,
+  priority ENUM('low','normal','high','critical') NOT NULL DEFAULT 'normal',
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  notes TEXT NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  deleted_at DATETIME NULL,
+  INDEX idx_maintenance_material (material_id),
+  INDEX idx_maintenance_date (next_maintenance_date),
+  CONSTRAINT fk_maintenance_material FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE CASCADE
+);
+CREATE TABLE maintenance_history (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  uuid CHAR(36) NOT NULL UNIQUE,
+  maintenance_task_id BIGINT UNSIGNED NOT NULL,
+  performed_at DATE NOT NULL,
+  engine_hours DECIMAL(10,2) NULL,
+  comment TEXT NULL,
+  performed_by BIGINT UNSIGNED NULL,
+  created_at DATETIME NOT NULL,
+  INDEX idx_maintenance_history_task (maintenance_task_id),
+  CONSTRAINT fk_maintenance_history_task FOREIGN KEY (maintenance_task_id) REFERENCES maintenance_tasks(id) ON DELETE CASCADE,
+  CONSTRAINT fk_maintenance_history_user FOREIGN KEY (performed_by) REFERENCES users(id) ON DELETE SET NULL
+);

@@ -7,6 +7,8 @@ import Property from '../../modules/properties/model/property.model.js';
 import Material from '../../modules/materials/model/material.model.js';
 import MaterialFile from '../../modules/materials/model/material-file.model.js';
 import Brand from '../../modules/brands/model/brand.model.js';
+import MaintenanceTask from '../../modules/maintenance/model/maintenance-task.model.js';
+import MaintenanceHistory from '../../modules/maintenance/model/maintenance-history.model.js';
 
 let initialized = false;
 
@@ -50,8 +52,25 @@ export function initializeModels() {
   Material.belongsTo(Property, { foreignKey: 'property_id', as: 'property', onDelete: 'SET NULL' });
   Material.hasMany(MaterialFile, { foreignKey: 'material_id', as: 'files' });
   MaterialFile.belongsTo(Material, { foreignKey: 'material_id', as: 'material' });
+  Material.hasMany(MaintenanceTask, { foreignKey: 'material_id', as: 'maintenanceTasks' });
+  MaintenanceTask.belongsTo(Material, { foreignKey: 'material_id', as: 'material' });
+  MaintenanceTask.hasMany(MaintenanceHistory, { foreignKey: 'maintenance_task_id', as: 'history' });
+  MaintenanceHistory.belongsTo(MaintenanceTask, { foreignKey: 'maintenance_task_id', as: 'task' });
+  MaintenanceHistory.belongsTo(User, { foreignKey: 'performed_by', as: 'performedByUser' });
 
   initialized = true;
 }
 
-export { AuditLog, Permission, Role, User, Category, Property, Material, Brand, MaterialFile };
+export {
+  AuditLog,
+  Permission,
+  Role,
+  User,
+  Category,
+  Property,
+  Material,
+  Brand,
+  MaterialFile,
+  MaintenanceTask,
+  MaintenanceHistory,
+};

@@ -7,6 +7,7 @@ describe('frontend reference navigation', () => {
     expect(navigationItems.map((item) => item.path)).toEqual([
       '/dashboard',
       '/materials',
+      '/maintenance',
       '/categories',
       '/properties',
       '/brands',
