@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../auth/useAuth.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 export default function LoginPage() {
@@ -35,6 +35,11 @@ export default function LoginPage() {
           <h1 className="text-2xl font-semibold">GreenDesk</h1>
           <p className="text-sm text-slate-600">Connexion à votre espace de travail</p>
         </div>
+        {location.state?.message && (
+          <p role="status" className="text-emerald-700">
+            {location.state.message}
+          </p>
+        )}
         {error && (
           <p role="alert" className="text-red-700">
             {error}
@@ -63,6 +68,12 @@ export default function LoginPage() {
         <button className="bg-emerald-700 p-2 text-white disabled:opacity-50" disabled={loading}>
           {loading ? 'Connexion…' : 'Se connecter'}
         </button>
+        <p className="text-sm text-slate-600">
+          Pas encore de compte ?{' '}
+          <Link className="text-emerald-700 underline" to="/register">
+            Créer un compte
+          </Link>
+        </p>
       </form>
     </main>
   );
