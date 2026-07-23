@@ -22,12 +22,25 @@ export default function DashboardPage() {
   }, [load]);
   if (error)
     return (
-      <main className="p-6">
-        <p role="alert">{error}</p>
-        <button onClick={load}>Réessayer</button>
+      <main className="loading-page d-grid place-items-center">
+        <div className="status-panel surface p-4 text-center">
+          <p role="alert" className="text-danger mb-3">
+            {error}
+          </p>
+          <button className="btn btn-brand" type="button" onClick={load}>
+            Réessayer
+          </button>
+        </div>
       </main>
     );
-  if (!data) return <main className="p-6">Chargement du tableau de bord…</main>;
+  if (!data)
+    return (
+      <main className="loading-page d-grid place-items-center">
+        <p className="text-body-secondary" role="status">
+          Chargement du tableau de bord…
+        </p>
+      </main>
+    );
   const materials = data.materials ?? {};
   const categories = data.categories ?? {};
   const properties = data.properties ?? {};
@@ -50,14 +63,19 @@ export default function DashboardPage() {
     ['Entretiens prévus sous 30 jours', maintenance.upcoming ?? 0],
   ];
   return (
-    <main className="p-6">
-      <h1 className="mb-5 text-2xl font-semibold">Tableau de bord</h1>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <main className="app-page">
+      <div className="page-header">
+        <h1 className="page-title">Tableau de bord</h1>
+        <p className="page-subtitle">Vue d’ensemble du parc matériel et des opérations à suivre.</p>
+      </div>
+      <div className="row g-3">
         {cards.map(([label, value]) => (
-          <section className="rounded border bg-white p-4" key={label}>
-            <p className="text-sm text-slate-600">{label}</p>
-            <strong className="text-3xl">{value}</strong>
-          </section>
+          <div className="col-sm-6 col-xl-4" key={label}>
+            <section className="metric-card h-100 p-4">
+              <p className="metric-label mb-2">{label}</p>
+              <strong className="metric-value">{value}</strong>
+            </section>
+          </div>
         ))}
       </div>
     </main>

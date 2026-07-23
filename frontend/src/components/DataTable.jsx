@@ -8,9 +8,9 @@ export default function DataTable({
   actionLoadingId,
 }) {
   return (
-    <div className="overflow-x-auto border border-slate-200">
-      <table className="w-full text-left text-sm">
-        <thead className="bg-slate-50">
+    <div className="table-shell table-responsive">
+      <table className="table table-hover align-middle">
+        <thead>
           <tr>
             {columns.map((column) => (
               <th className="px-4 py-3" scope="col" key={column.key}>
@@ -25,22 +25,27 @@ export default function DataTable({
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td className="px-4 py-6 text-center text-slate-500" colSpan={columns.length + 1}>
+              <td
+                className="px-4 py-5 text-center text-body-secondary"
+                colSpan={columns.length + 1}
+              >
                 {emptyMessage}
               </td>
             </tr>
           ) : (
             rows.map((row) => (
-              <tr className="border-t" key={row.uuid}>
+              <tr key={row.uuid}>
                 {columns.map((column) => (
                   <td className="px-4 py-3" key={column.key}>
                     {column.render ? column.render(row[column.key], row) : (row[column.key] ?? '—')}
                   </td>
                 ))}
-                <td className="space-x-2 px-4 py-3">
+                <td className="px-4 py-3 text-nowrap">
                   {onView && (
                     <button
                       aria-label={`Voir ${row.name ?? 'l’élément'}`}
+                      className="btn btn-sm btn-outline-brand me-2"
+                      type="button"
                       onClick={() => onView(row)}
                     >
                       Voir
@@ -49,6 +54,8 @@ export default function DataTable({
                   {onEdit && (
                     <button
                       aria-label={`Modifier ${row.name ?? 'l’élément'}`}
+                      className="btn btn-sm btn-outline-brand me-2"
+                      type="button"
                       onClick={() => onEdit(row)}
                       disabled={actionLoadingId === row.uuid}
                     >
@@ -58,6 +65,8 @@ export default function DataTable({
                   {onStatus && (
                     <button
                       aria-label={`${row.active ? 'Désactiver' : 'Activer'} ${row.name ?? 'l’élément'}`}
+                      className="btn btn-sm btn-outline-secondary"
+                      type="button"
                       onClick={() => onStatus(row)}
                       disabled={actionLoadingId === row.uuid}
                     >

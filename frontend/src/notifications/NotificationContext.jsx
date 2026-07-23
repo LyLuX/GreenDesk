@@ -28,21 +28,26 @@ export function NotificationProvider({ children }) {
   return (
     <NotificationContext.Provider value={{ notify }}>
       {children}
-      <div className="fixed right-4 top-4 z-50 grid gap-2">
+      <div className="toast-stack position-fixed top-0 end-0 z-3 m-3 d-grid gap-2">
         {items.map((item) => (
           <div
             key={item.id}
             role={item.type === 'error' ? 'alert' : 'status'}
-            className="rounded bg-slate-900 px-4 py-3 text-white"
+            className={`alert mb-0 d-flex align-items-start justify-content-between ${
+              item.type === 'error'
+                ? 'alert-danger'
+                : item.type === 'success'
+                  ? 'alert-success'
+                  : 'alert-secondary'
+            }`}
           >
             {item.message}
             <button
               aria-label="Fermer la notification"
-              className="ml-3"
+              className="btn-close ms-3"
+              type="button"
               onClick={() => dismiss(item.id)}
-            >
-              x
-            </button>
+            />
           </div>
         ))}
       </div>

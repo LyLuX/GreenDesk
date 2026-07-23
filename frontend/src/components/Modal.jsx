@@ -18,7 +18,7 @@ export default function Modal({ open, title, children, onClose, busy = false }) 
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 grid place-items-center bg-slate-900/40 p-4"
+      className="modal-backdrop-custom fixed inset-0 z-50 grid place-items-center p-4"
       onMouseDown={() => !busy && onClose()}
     >
       <section
@@ -26,16 +26,20 @@ export default function Modal({ open, title, children, onClose, busy = false }) 
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="w-full max-w-lg rounded bg-white p-5 shadow-xl"
+        className="modal-surface w-full max-w-lg bg-white p-5"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <div className="mb-4 flex justify-between">
-          <h2 id={titleId} className="font-semibold">
+        <div className="mb-4 d-flex align-items-center justify-content-between">
+          <h2 id={titleId} className="h5 mb-0 fw-semibold">
             {title}
           </h2>
-          <button aria-label="Fermer" disabled={busy} onClick={onClose}>
-            x
-          </button>
+          <button
+            aria-label="Fermer"
+            className="btn-close"
+            disabled={busy}
+            type="button"
+            onClick={onClose}
+          />
         </div>
         {children}
       </section>

@@ -18,7 +18,7 @@ import { formatCurrency } from '../utils/formatters.js';
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const Field = ({ label, value }) => (
   <div>
-    <dt className="text-sm text-slate-500">{label}</dt>
+    <dt>{label}</dt>
     <dd>{value ?? '—'}</dd>
   </div>
 );
@@ -195,28 +195,41 @@ export default function MaterialDetailPage() {
   };
   if (error && !material)
     return (
-      <main className="p-6">
-        <p role="alert">{error}</p>
+      <main className="app-page">
+        <p role="alert" className="alert alert-danger">
+          {error}
+        </p>
         <Button onClick={load}>Réessayer</Button>
       </main>
     );
-  if (!material) return <main className="p-6">Chargement du matériel…</main>;
+  if (!material)
+    return (
+      <main className="app-page text-body-secondary" role="status">
+        Chargement du matériel…
+      </main>
+    );
   return (
-    <main className="mx-auto max-w-5xl p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link to="/materials">Retour aux matériels</Link>
+    <main className="app-page">
+      <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <Link className="btn btn-outline-brand" to="/materials">
+          Retour aux matériels
+        </Link>
         {hasPermission('materials.update') && (
           <Button onClick={() => navigate(`/materials/${uuid}/edit`)}>Modifier</Button>
         )}
       </div>
-      <h1 className="mt-4 text-2xl font-semibold">{material.name}</h1>
-      <p>{material.active ? 'Actif' : 'Inactif'}</p>
+      <h1 className="page-title mt-4">{material.name}</h1>
+      <p className="mt-2">
+        <span className={`status-badge ${material.active ? '' : 'inactive'}`}>
+          {material.active ? 'Actif' : 'Inactif'}
+        </span>
+      </p>
       {error && (
-        <p role="alert" className="mt-3 text-red-700">
+        <p role="alert" className="alert alert-danger mt-3">
           {error}
         </p>
       )}
-      <div className="mt-6 border-b">
+      <div className="detail-tabs mt-5 d-flex flex-wrap gap-2">
         <button
           className="mr-4 p-2"
           aria-pressed={activeTab === 'details'}
@@ -243,7 +256,7 @@ export default function MaterialDetailPage() {
       </div>
       {activeTab === 'details' ? (
         <>
-          <section className="mt-6 grid gap-5 rounded border bg-white p-5 sm:grid-cols-2">
+          <section className="detail-grid mt-5 grid gap-5 p-5 sm:grid-cols-2">
             <Field label="Référence" value={material.reference} />
             <Field label="Marque" value={material.brand?.name} />
             <Field label="Modèle" value={material.model} />
@@ -259,12 +272,12 @@ export default function MaterialDetailPage() {
             <Field label="Sortie de service" value={formatDate(material.retiredAt)} />
             <Field label="Notes" value={material.notes} />
           </section>
-          <section className="mt-6">
-            <h2 className="text-xl font-semibold">Photos</h2>
+          <section className="surface mt-5 p-4">
+            <h2 className="h4 mb-3">Photos</h2>
             {hasPermission('materials.update') && (
               <>
                 <input
-                  className="mt-3"
+                  className="form-control mt-3"
                   aria-label="Ajouter des photos"
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -273,7 +286,7 @@ export default function MaterialDetailPage() {
                 />
                 <div className="mt-3 flex flex-wrap gap-3">
                   {selectedPhotos.map((item) => (
-                    <article className="w-32 border p-2" key={item.localId}>
+                    <article className="surface w-32 p-2" key={item.localId}>
                       <img
                         className="h-24 w-full object-cover"
                         src={item.previewUrl}
@@ -299,7 +312,7 @@ export default function MaterialDetailPage() {
             )}
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {photos.map((file) => (
-                <article className="border p-3" key={file.uuid}>
+                <article className="surface p-3" key={file.uuid}>
                   <AuthenticatedImage
                     className="h-40 w-full object-cover"
                     fileUuid={file.uuid}
@@ -327,17 +340,19 @@ export default function MaterialDetailPage() {
               ))}
             </div>
           </section>
-          <section className="mt-6">
-            <h2 className="text-xl font-semibold">Documents</h2>
+          <section className="surface mt-5 p-4">
+            <h2 className="h4 mb-3">Documents</h2>
             {hasPermission('materials.update') && (
               <div className="mt-3 flex flex-wrap gap-3">
                 <input
                   aria-label="Ajouter un document"
+                  className="form-control"
                   type="file"
                   accept="application/pdf"
                   onChange={(event) => setDocumentFile(event.target.files?.[0] ?? null)}
                 />
                 <select
+                  className="form-select"
                   value={documentType}
                   onChange={(event) => setDocumentType(event.target.value)}
                 >
@@ -367,14 +382,14 @@ export default function MaterialDetailPage() {
           </section>
         </>
       ) : activeTab === 'maintenance' ? (
-        <section className="mt-6">
-          <h2 className="text-xl font-semibold">Maintenance</h2>
+        <section className="surface mt-5 p-4">
+          <h2 className="h4 mb-3">Maintenance</h2>
           {maintenance.length === 0 ? (
             <p>Aucun plan d’entretien actif.</p>
           ) : (
-            <ul className="divide-y border">
+            <ul className="list-group">
               {maintenance.map((task) => (
-                <li className="p-3" key={task.uuid}>
+                <li className="list-group-item" key={task.uuid}>
                   <strong>{task.title}</strong> ·{' '}
                   {task.status === 'overdue'
                     ? 'En retard'
@@ -388,19 +403,19 @@ export default function MaterialDetailPage() {
               ))}
             </ul>
           )}
-          <Link className="mt-3 inline-block" to="/maintenance">
+          <Link className="btn btn-outline-brand mt-3" to="/maintenance">
             Voir la maintenance
           </Link>
         </section>
       ) : (
-        <section className="mt-6">
-          <h2 className="text-xl font-semibold">Historique</h2>
+        <section className="surface mt-5 p-4">
+          <h2 className="h4 mb-3">Historique</h2>
           {history.length === 0 ? (
             <p>Aucune modification enregistrée.</p>
           ) : (
-            <ul className="divide-y border">
+            <ul className="list-group">
               {history.map((event) => (
-                <li className="p-3" key={event.uuid}>
+                <li className="list-group-item" key={event.uuid}>
                   <p>
                     <strong>{event.action}</strong> · {formatDate(event.createdAt?.slice(0, 10))} ·{' '}
                     {event.user ? `${event.user.firstName} ${event.user.lastName}` : 'Système'}

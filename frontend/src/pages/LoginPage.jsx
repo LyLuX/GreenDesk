@@ -29,48 +29,51 @@ export default function LoginPage() {
     }
   };
   return (
-    <main className="grid min-h-screen place-items-center bg-slate-100 p-4">
-      <form className="grid w-full max-w-sm gap-4 rounded bg-white p-6 shadow" onSubmit={submit}>
-        <div>
-          <h1 className="text-2xl font-semibold">GreenDesk</h1>
-          <p className="text-sm text-slate-600">Connexion à votre espace de travail</p>
+    <main className="auth-page d-grid place-items-center">
+      <form className="auth-card card d-grid gap-3 p-4 p-sm-5" onSubmit={submit}>
+        <div className="mb-2 text-center">
+          <img className="auth-logo mb-3" src="/brand-logo.jpg" alt="El Bournazel Paul" />
+          <h1 className="auth-heading mb-1">GreenDesk</h1>
+          <p className="mb-0 text-body-secondary">Connexion à votre espace de travail</p>
         </div>
         {location.state?.message && (
-          <p role="status" className="text-emerald-700">
+          <p role="status" className="alert alert-success py-2">
             {location.state.message}
           </p>
         )}
         {error && (
-          <p role="alert" className="text-red-700">
+          <p role="alert" className="alert alert-danger py-2">
             {error}
           </p>
         )}
-        <label>
+        <label className="form-label" htmlFor="login-email">
           Email
           <input
-            className="mt-1 w-full border p-2"
+            id="login-email"
+            className="form-control mt-1"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             autoComplete="email"
           />
         </label>
-        <label>
+        <label className="form-label" htmlFor="login-password">
           Mot de passe
           <input
-            className="mt-1 w-full border p-2"
+            id="login-password"
+            className="form-control mt-1"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="current-password"
           />
         </label>
-        <button className="bg-emerald-700 p-2 text-white disabled:opacity-50" disabled={loading}>
+        <button className="btn btn-brand w-100 py-2" disabled={loading}>
           {loading ? 'Connexion…' : 'Se connecter'}
         </button>
-        <p className="text-sm text-slate-600">
+        <p className="mb-0 text-center small text-body-secondary">
           Pas encore de compte ?{' '}
-          <Link className="text-emerald-700 underline" to="/register">
+          <Link className="fw-semibold" to="/register">
             Créer un compte
           </Link>
         </p>

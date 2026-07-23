@@ -66,22 +66,23 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="grid min-h-screen place-items-center bg-slate-100 p-4">
-      <form className="grid w-full max-w-sm gap-4 rounded bg-white p-6 shadow" onSubmit={submit}>
-        <div>
-          <h1 className="text-2xl font-semibold">Créer un compte</h1>
-          <p className="text-sm text-slate-600">GreenDesk</p>
+    <main className="auth-page d-grid place-items-center">
+      <form className="auth-card card d-grid gap-3 p-4 p-sm-5" onSubmit={submit}>
+        <div className="mb-2 text-center">
+          <img className="auth-logo mb-3" src="/brand-logo.jpg" alt="El Bournazel Paul" />
+          <h1 className="auth-heading mb-1">Créer un compte</h1>
+          <p className="mb-0 text-body-secondary">GreenDesk</p>
         </div>
         {error && (
-          <p role="alert" className="text-red-700">
+          <p role="alert" className="alert alert-danger py-2">
             {error}
           </p>
         )}
-        <label htmlFor="firstName">
+        <label className="form-label" htmlFor="firstName">
           Prénom
           <input
             id="firstName"
-            className="mt-1 w-full border p-2"
+            className="form-control mt-1"
             name="firstName"
             value={values.firstName}
             onChange={updateValue}
@@ -90,11 +91,11 @@ export default function RegisterPage() {
             autoFocus
           />
         </label>
-        <label htmlFor="lastName">
+        <label className="form-label" htmlFor="lastName">
           Nom
           <input
             id="lastName"
-            className="mt-1 w-full border p-2"
+            className="form-control mt-1"
             name="lastName"
             value={values.lastName}
             onChange={updateValue}
@@ -102,11 +103,11 @@ export default function RegisterPage() {
             required
           />
         </label>
-        <label htmlFor="email">
+        <label className="form-label" htmlFor="email">
           Email
           <input
             id="email"
-            className="mt-1 w-full border p-2"
+            className="form-control mt-1"
             name="email"
             type="email"
             value={values.email}
@@ -115,11 +116,11 @@ export default function RegisterPage() {
             required
           />
         </label>
-        <label htmlFor="password">
+        <label className="form-label" htmlFor="password">
           Mot de passe
           <input
             id="password"
-            className="mt-1 w-full border p-2"
+            className="form-control mt-1"
             name="password"
             type="password"
             value={values.password}
@@ -129,11 +130,11 @@ export default function RegisterPage() {
             required
           />
         </label>
-        <label htmlFor="passwordConfirmation">
+        <label className="form-label" htmlFor="passwordConfirmation">
           Confirmer le mot de passe
           <input
             id="passwordConfirmation"
-            className="mt-1 w-full border p-2"
+            className="form-control mt-1"
             name="passwordConfirmation"
             type="password"
             value={values.passwordConfirmation}
@@ -143,12 +144,12 @@ export default function RegisterPage() {
             required
           />
         </label>
-        <button className="bg-emerald-700 p-2 text-white disabled:opacity-50" disabled={loading}>
+        <button className="btn btn-brand w-100 py-2" disabled={loading}>
           {loading ? 'Création…' : 'Créer mon compte'}
         </button>
-        <p className="text-sm text-slate-600">
+        <p className="mb-0 text-center small text-body-secondary">
           Déjà un compte ?{' '}
-          <Link className="text-emerald-700 underline" to="/login">
+          <Link className="fw-semibold" to="/login">
             Se connecter
           </Link>
         </p>

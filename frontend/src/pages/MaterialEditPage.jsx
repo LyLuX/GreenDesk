@@ -120,14 +120,25 @@ export default function MaterialEditPage() {
       setSaving(false);
     }
   };
-  if (!material) return <main className="p-6">Chargement du formulaire…</main>;
+  if (!material)
+    return (
+      <main className="app-page text-body-secondary" role="status">
+        Chargement du formulaire…
+      </main>
+    );
   const relationOptions = (items) => items.map((item) => ({ value: item.uuid, label: item.name }));
   return (
-    <main className="mx-auto max-w-3xl p-6">
-      <Link to={`/materials/${uuid}`}>Retour à la fiche</Link>
-      <h1 className="mt-4 text-2xl font-semibold">Modifier {material.name}</h1>
-      <form className="mt-6 grid gap-4" onSubmit={submit}>
-        {error && <p role="alert">{error}</p>}
+    <main className="app-page">
+      <Link className="btn btn-outline-brand" to={`/materials/${uuid}`}>
+        Retour à la fiche
+      </Link>
+      <h1 className="page-title mt-4">Modifier {material.name}</h1>
+      <form className="surface mt-4 d-grid gap-4 p-4" onSubmit={submit}>
+        {error && (
+          <p role="alert" className="alert alert-danger mb-0">
+            {error}
+          </p>
+        )}
         {fields.map((field) => (
           <FormField
             key={field.name}

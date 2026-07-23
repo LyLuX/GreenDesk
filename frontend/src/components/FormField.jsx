@@ -7,11 +7,11 @@ export default function FormField({ label, error, ...props }) {
     id,
     'aria-describedby': error ? errorId : undefined,
     'aria-invalid': Boolean(error),
-    className: 'rounded border border-slate-300 px-3 py-2',
+    className: options ? 'form-select' : 'form-control',
     ...inputProps,
   };
   return (
-    <label className="grid gap-1 text-sm font-medium text-slate-700">
+    <label className="form-label mb-0 text-body-secondary" htmlFor={id}>
       {label}
       {multiline ? (
         <textarea {...controlProps} />
@@ -28,7 +28,7 @@ export default function FormField({ label, error, ...props }) {
         <input {...controlProps} />
       )}
       {error && (
-        <span id={errorId} role="alert" className="text-red-700">
+        <span id={errorId} role="alert" className="d-block mt-1 text-danger small">
           {error}
         </span>
       )}

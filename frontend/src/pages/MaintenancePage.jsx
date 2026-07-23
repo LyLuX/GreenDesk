@@ -206,19 +206,20 @@ export default function MaintenancePage() {
   };
   const activeItem = dialog?.item;
   return (
-    <main className="mx-auto max-w-7xl p-6">
-      <div className="mb-6 flex flex-wrap justify-between gap-3">
+    <main className="app-page">
+      <div className="page-header d-flex flex-wrap align-items-start justify-content-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Maintenance</h1>
-          <p className="text-sm text-slate-500">Plans d’entretien préventif</p>
+          <h1 className="page-title">Maintenance</h1>
+          <p className="page-subtitle">Plans d’entretien préventif</p>
         </div>
         {hasPermission('maintenance.create') && (
           <Button onClick={() => setDialog({ type: 'create' })}>Créer</Button>
         )}
       </div>
-      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="surface mb-4 grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-5">
         <select
           aria-label="Filtrer par matériel"
+          className="form-select"
           value={filters.materialUuid ?? ''}
           onChange={(event) => setFilter('materialUuid', event.target.value)}
         >
@@ -231,6 +232,7 @@ export default function MaintenancePage() {
         </select>
         <select
           aria-label="Filtrer par priorité"
+          className="form-select"
           value={filters.priority ?? ''}
           onChange={(event) => setFilter('priority', event.target.value)}
         >
@@ -243,6 +245,7 @@ export default function MaintenancePage() {
         </select>
         <select
           aria-label="Filtrer par type"
+          className="form-select"
           value={filters.maintenanceType ?? ''}
           onChange={(event) => setFilter('maintenanceType', event.target.value)}
         >
@@ -255,6 +258,7 @@ export default function MaintenancePage() {
         </select>
         <select
           aria-label="Filtrer par statut"
+          className="form-select"
           value={filters.status ?? ''}
           onChange={(event) => setFilter('status', event.target.value)}
         >
@@ -267,6 +271,7 @@ export default function MaintenancePage() {
         </select>
         <select
           aria-label="Filtrer par activité"
+          className="form-select"
           value={filters.active ?? ''}
           onChange={(event) => setFilter('active', event.target.value)}
         >
@@ -276,16 +281,21 @@ export default function MaintenancePage() {
         </select>
       </div>
       {error && (
-        <div role="alert">
-          <p>{error}</p>
+        <div
+          role="alert"
+          className="alert alert-danger d-flex align-items-center justify-content-between"
+        >
+          <p className="mb-0">{error}</p>
           <Button onClick={() => load()}>Réessayer</Button>
         </div>
       )}
       {isLoading ? (
-        <p role="status">Chargement des plans…</p>
+        <p role="status" className="text-body-secondary">
+          Chargement des plans…
+        </p>
       ) : (
-        <div className="overflow-x-auto border">
-          <table className="w-full text-left text-sm">
+        <div className="table-shell table-responsive">
+          <table className="table table-hover align-middle">
             <thead>
               <tr>
                 <th>Matériel</th>
@@ -306,7 +316,7 @@ export default function MaintenancePage() {
                 </tr>
               ) : (
                 items.map((item) => (
-                  <tr className="border-t" key={item.uuid}>
+                  <tr key={item.uuid}>
                     <td>{item.material?.name}</td>
                     <td>
                       <strong>{item.title}</strong>
@@ -323,12 +333,18 @@ export default function MaintenancePage() {
                       <br />
                       {number(item.remainingEngineHours, ' h')}
                     </td>
-                    <td>{maintenancePriorityLabels[item.priority]}</td>
                     <td>
-                      {maintenanceStatusLabels[item.status]}
-                      {!item.active && ' (inactif)'}
+                      <span className="status-badge">
+                        {maintenancePriorityLabels[item.priority]}
+                      </span>
                     </td>
-                    <td className="space-x-1">
+                    <td>
+                      <span className={`status-badge ${item.active ? '' : 'inactive'}`}>
+                        {maintenanceStatusLabels[item.status]}
+                        {!item.active && ' (inactif)'}
+                      </span>
+                    </td>
+                    <td className="d-flex flex-wrap gap-1">
                       {hasPermission('maintenance.update') && (
                         <Button disabled={busy} onClick={() => setDialog({ type: 'edit', item })}>
                           Modifier
@@ -364,13 +380,14 @@ export default function MaintenancePage() {
         </div>
       )}
       {pagination && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="mt-4 d-flex flex-wrap align-items-center justify-content-between gap-3 text-body-secondary small">
           <span>
             {pagination.total} plan(s), page {pagination.page} sur {pagination.totalPages}
           </span>
           <label>
             Par page{' '}
             <select
+              className="form-select d-inline-block ms-1 w-auto"
               value={filters.limit}
               onChange={(event) => setFilter('limit', Number(event.target.value))}
             >
@@ -379,7 +396,7 @@ export default function MaintenancePage() {
               <option value="50">50</option>
             </select>
           </label>
-          <div className="space-x-2">
+          <div className="d-flex gap-2">
             <Button
               disabled={isLoading || pagination.page <= 1}
               onClick={() => setFilters((current) => ({ ...current, page: current.page - 1 }))}
@@ -401,8 +418,12 @@ export default function MaintenancePage() {
         onClose={close}
         busy={busy}
       >
-        <form key={activeItem?.uuid ?? 'create'} className="grid gap-3" onSubmit={savePlan}>
-          {formError && <p role="alert">{formError}</p>}
+        <form key={activeItem?.uuid ?? 'create'} className="d-grid gap-3" onSubmit={savePlan}>
+          {formError && (
+            <p role="alert" className="alert alert-danger mb-0">
+              {formError}
+            </p>
+          )}
           {baseFields.map((field) => (
             <FormField
               key={field.name}
@@ -422,8 +443,12 @@ export default function MaintenancePage() {
         onClose={close}
         busy={busy}
       >
-        <form className="grid gap-3" onSubmit={executePlan}>
-          {formError && <p role="alert">{formError}</p>}
+        <form className="d-grid gap-3" onSubmit={executePlan}>
+          {formError && (
+            <p role="alert" className="alert alert-danger mb-0">
+              {formError}
+            </p>
+          )}
           <FormField
             label="Date réalisée"
             name="performedAt"

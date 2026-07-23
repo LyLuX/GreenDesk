@@ -10,7 +10,15 @@ export default function BrandsPage() {
       fields={[{ name: 'name', label: 'Nom', required: true }]}
       columns={[
         { key: 'name', label: 'Nom' },
-        { key: 'active', label: 'Statut', render: (value) => (value ? 'Actif' : 'Inactif') },
+        {
+          key: 'active',
+          label: 'Statut',
+          render: (value) => (
+            <span className={`status-badge ${value ? '' : 'inactive'}`}>
+              {value ? 'Actif' : 'Inactif'}
+            </span>
+          ),
+        },
       ]}
     />
   );

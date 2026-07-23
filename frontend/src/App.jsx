@@ -20,7 +20,15 @@ const secure = (permission, page) => (
 );
 const table = (keys) => [
   ...keys.map(([key, label, render]) => ({ key, label, ...(render ? { render } : {}) })),
-  { key: 'active', label: 'Statut', render: (value) => (value ? 'Actif' : 'Inactif') },
+  {
+    key: 'active',
+    label: 'Statut',
+    render: (value) => (
+      <span className={`status-badge ${value ? '' : 'inactive'}`}>
+        {value ? 'Actif' : 'Inactif'}
+      </span>
+    ),
+  },
 ];
 export default function App() {
   return (

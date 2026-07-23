@@ -144,11 +144,11 @@ export default function ReferencePage({
     : 'Aucun élément trouvé.';
 
   return (
-    <main className="mx-auto max-w-6xl p-6">
-      <div className="mb-6 flex items-center justify-between">
+    <main className="app-page">
+      <div className="page-header d-flex flex-wrap align-items-start justify-content-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">{title}</h1>
-          <p className="text-sm text-slate-500">Référentiel métier</p>
+          <h1 className="page-title">{title}</h1>
+          <p className="page-subtitle">Référentiel métier</p>
         </div>
         {hasPermission(createPermission) && (
           <Button
@@ -163,7 +163,7 @@ export default function ReferencePage({
       </div>
       <input
         aria-label="Rechercher"
-        className="mb-4 w-full max-w-sm rounded border px-3 py-2"
+        className="form-control mb-4"
         placeholder="Rechercher"
         value={search}
         onChange={(event) => {
@@ -172,7 +172,7 @@ export default function ReferencePage({
         }}
       />
       {filters.length > 0 && (
-        <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="surface mb-4 grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-4">
           {filters.map((filter) => (
             <FormField
               key={filter.name}
@@ -189,10 +189,11 @@ export default function ReferencePage({
         </div>
       )}
       {pagination && (
-        <div className="mb-4 flex flex-wrap gap-3 text-sm">
+        <div className="surface mb-4 flex flex-wrap gap-3 p-3 text-sm">
           <label>
             Trier par{' '}
             <select
+              className="form-select d-inline-block ms-1 w-auto"
               value={sort}
               onChange={(event) => {
                 setSort(event.target.value);
@@ -209,6 +210,7 @@ export default function ReferencePage({
           <label>
             Ordre{' '}
             <select
+              className="form-select d-inline-block ms-1 w-auto"
               value={direction}
               onChange={(event) => {
                 setDirection(event.target.value);
@@ -222,6 +224,7 @@ export default function ReferencePage({
           <label>
             Par page{' '}
             <select
+              className="form-select d-inline-block ms-1 w-auto"
               value={limit}
               onChange={(event) => {
                 setLimit(Number(event.target.value));
@@ -235,14 +238,25 @@ export default function ReferencePage({
           </label>
         </div>
       )}
-      {isLoading && <p role="status">Chargement…</p>}
+      {isLoading && (
+        <p role="status" className="text-body-secondary">
+          Chargement…
+        </p>
+      )}
       {loadError && (
-        <div role="alert">
-          <p>{loadError}</p>
+        <div
+          role="alert"
+          className="alert alert-danger d-flex align-items-center justify-content-between"
+        >
+          <p className="mb-0">{loadError}</p>
           <Button onClick={() => load()}>Réessayer</Button>
         </div>
       )}
-      {statusError && <p role="alert">{statusError}</p>}
+      {statusError && (
+        <p role="alert" className="alert alert-danger">
+          {statusError}
+        </p>
+      )}
       <DataTable
         columns={columns}
         rows={rows}
@@ -253,16 +267,21 @@ export default function ReferencePage({
         onView={detailPath ? (row) => navigate(detailPath(row)) : undefined}
       />
       {paginationData && (
-        <div className="mt-4 flex items-center justify-between text-sm">
+        <div className="mt-4 d-flex flex-wrap align-items-center justify-content-between gap-3 text-body-secondary small">
           <span>
             {paginationData.total} résultat(s), page {paginationData.page} sur{' '}
             {paginationData.totalPages}
           </span>
-          <div className="space-x-2">
-            <Button disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>
+          <div className="d-flex gap-2">
+            <Button
+              className="btn-sm"
+              disabled={page <= 1}
+              onClick={() => setPage((current) => current - 1)}
+            >
               Précédent
             </Button>
             <Button
+              className="btn-sm"
               disabled={page >= paginationData.totalPages}
               onClick={() => setPage((current) => current + 1)}
             >
@@ -277,8 +296,12 @@ export default function ReferencePage({
         onClose={() => setEditing(null)}
         busy={isSaving}
       >
-        <form className="grid gap-3" onSubmit={save}>
-          {formError && <p role="alert">{formError}</p>}
+        <form className="d-grid gap-3" onSubmit={save}>
+          {formError && (
+            <p role="alert" className="alert alert-danger mb-0">
+              {formError}
+            </p>
+          )}
           {fields.map((field) => (
             <FormField
               key={field.name}

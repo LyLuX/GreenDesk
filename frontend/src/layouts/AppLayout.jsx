@@ -15,29 +15,49 @@ export default function AppLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <header className="flex items-center justify-between bg-slate-900 px-5 py-4 text-white">
-        <strong>GreenDesk</strong>
-        <div className="flex items-center gap-3">
-          <span>
-            {user?.firstName} {user?.lastName}
-          </span>
-          <button type="button" onClick={handleLogout} disabled={isLoggingOut}>
-            {isLoggingOut ? 'Déconnexion…' : 'Déconnexion'}
-          </button>
+    <div className="app-shell">
+      <header className="app-header">
+        <div className="container-fluid d-flex h-100 align-items-center justify-content-between gap-3 px-4">
+          <NavLink className="brand-lockup d-flex align-items-center gap-3" to="/dashboard">
+            <img className="brand-logo" src="/brand-logo.jpg" alt="El Bournazel Paul" />
+            <span>
+              <span className="brand-name d-block">GreenDesk</span>
+              <span className="brand-company d-block">El Bournazel Paul</span>
+            </span>
+          </NavLink>
+          <div className="d-flex align-items-center gap-3 text-white">
+            <span className="d-none d-sm-inline small">
+              {user?.firstName} {user?.lastName}
+            </span>
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="btn btn-sm btn-outline-light"
+            >
+              {isLoggingOut ? 'Déconnexion…' : 'Déconnexion'}
+            </button>
+          </div>
         </div>
       </header>
-      <div className="md:flex">
-        <nav className="flex gap-4 border-b bg-white p-4 md:block md:min-h-screen md:w-52">
-          {navigationItems
-            .filter((link) => hasPermission(link.permission))
-            .map((link) => (
-              <NavLink className="block py-2" key={link.path} to={link.path}>
-                {link.label}
-              </NavLink>
-            ))}
+      <div className="d-md-flex">
+        <nav className="sidebar p-3">
+          <p className="sidebar-label mb-2 px-2">Navigation</p>
+          <div className="sidebar-nav">
+            {navigationItems
+              .filter((link) => hasPermission(link.permission))
+              .map((link) => (
+                <NavLink
+                  className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                  key={link.path}
+                  to={link.path}
+                >
+                  {link.label}
+                </NavLink>
+              ))}
+          </div>
         </nav>
-        <div className="flex-1">
+        <div className="app-content flex-grow-1">
           <Outlet />
         </div>
       </div>
