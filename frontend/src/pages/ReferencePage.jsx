@@ -9,9 +9,11 @@ import DataTable from '../components/DataTable.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
+import PaginationControls from '../components/PaginationControls.jsx';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import useNotification from '../notifications/useNotification.js';
 import normalizeFormValues from '../utils/normalize-form-values.js';
+import { paginateItems } from '../utils/pagination.js';
 
 /** Reusable CRUD screen for reference data and the material catalogue. */
 export default function ReferencePage({
@@ -24,7 +26,7 @@ export default function ReferencePage({
   disablePermission,
   deletePermission,
   filters = [],
-  pagination = false,
+  pagination = true,
   detailPath,
   fileField,
 }) {
@@ -37,7 +39,7 @@ export default function ReferencePage({
   const debouncedSearch = useDebouncedValue(search, 300);
   const [filterValues, setFilterValues] = useState({});
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(25);
+  const [limit, setLimit] = useState(5);
   const [sort, setSort] = useState('name');
   const [direction, setDirection] = useState('ASC');
   const [paginationData, setPaginationData] = useState(null);
@@ -64,8 +66,19 @@ export default function ReferencePage({
           signal,
         );
         const payload = response.data.data ?? [];
-        setRows(Array.isArray(payload) ? payload : (payload.items ?? []));
-        setPaginationData(Array.isArray(payload) ? null : (payload.pagination ?? null));
+        if (Array.isArray(payload)) {
+          if (pagination) {
+            const localPage = paginateItems(payload, page, limit);
+            setRows(localPage.items);
+            setPaginationData(localPage.pagination);
+          } else {
+            setRows(payload);
+            setPaginationData(null);
+          }
+        } else {
+          setRows(payload.items ?? []);
+          setPaginationData(payload.pagination ?? null);
+        }
         setLoadError('');
       } catch (error) {
         if (error.code !== 'ERR_CANCELED') setLoadError(getApiErrorMessage(error));
@@ -90,7 +103,10 @@ export default function ReferencePage({
     const controller = new AbortController();
     Promise.all(
       resources.map(async (resourceName) => {
-        const response = await createReferenceApi(resourceName).list({}, controller.signal);
+        const response = await createReferenceApi(resourceName).list(
+          { limit: 'all' },
+          controller.signal,
+        );
         const payload = response.data.data ?? [];
         return [resourceName, Array.isArray(payload) ? payload : (payload.items ?? [])];
       }),
@@ -243,7 +259,7 @@ export default function ReferencePage({
           ))}
         </div>
       )}
-      {pagination && (
+      {pagination && resource === 'materials' && (
         <div className="surface mb-4 flex flex-wrap gap-3 p-3 text-sm">
           <label>
             Trier par{' '}
@@ -273,21 +289,6 @@ export default function ReferencePage({
             >
               <option value="ASC">Croissant</option>
               <option value="DESC">Décroissant</option>
-            </select>
-          </label>
-          <label>
-            Par page{' '}
-            <select
-              className="form-select d-inline-block ms-1 w-auto"
-              value={limit}
-              onChange={(event) => {
-                setLimit(Number(event.target.value));
-                resetPage();
-              }}
-            >
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
             </select>
           </label>
         </div>
@@ -323,30 +324,16 @@ export default function ReferencePage({
         }
         onView={detailPath ? (row) => navigate(detailPath(row)) : undefined}
       />
-      {paginationData && (
-        <div className="mt-4 d-flex flex-wrap align-items-center justify-content-between gap-3 text-body-secondary small">
-          <span>
-            {paginationData.total} résultat(s), page {paginationData.page} sur{' '}
-            {paginationData.totalPages}
-          </span>
-          <div className="d-flex gap-2">
-            <Button
-              className="btn-sm"
-              disabled={page <= 1}
-              onClick={() => setPage((current) => current - 1)}
-            >
-              Précédent
-            </Button>
-            <Button
-              className="btn-sm"
-              disabled={page >= paginationData.totalPages}
-              onClick={() => setPage((current) => current + 1)}
-            >
-              Suivant
-            </Button>
-          </div>
-        </div>
-      )}
+      <PaginationControls
+        pagination={paginationData}
+        limit={limit}
+        disabled={isLoading}
+        onLimitChange={(value) => {
+          setLimit(value);
+          resetPage();
+        }}
+        onPageChange={setPage}
+      />
       <Modal
         open={editing !== null}
         title={editing?.uuid ? `Modifier ${title}` : `Créer ${title}`}

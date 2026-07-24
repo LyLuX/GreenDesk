@@ -19,7 +19,7 @@ export default class MaintenanceRepository {
     active,
     status,
     page = 1,
-    limit = 25,
+    limit = 5,
   } = {}) {
     const where = {};
     if (priority) where.priority = priority;
@@ -50,13 +50,17 @@ export default class MaintenanceRepository {
         ...(materialUuid ? { where: { uuid: materialUuid }, required: true } : {}),
       },
     ];
-    const normalizedLimit = Math.min(Number(limit) || 25, 100);
+    const normalizedLimit = limit === 'all' ? null : Math.min(Number(limit) || 5, 100);
     return MaintenanceTask.findAndCountAll({
       where,
       include,
       order: [['next_maintenance_date', 'ASC']],
-      limit: normalizedLimit,
-      offset: (Math.max(Number(page), 1) - 1) * normalizedLimit,
+      ...(normalizedLimit
+        ? {
+            limit: normalizedLimit,
+            offset: (Math.max(Number(page), 1) - 1) * normalizedLimit,
+          }
+        : {}),
       distinct: true,
     });
   }

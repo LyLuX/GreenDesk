@@ -16,6 +16,7 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
+import PaginationControls from '../components/PaginationControls.jsx';
 import useNotification from '../notifications/useNotification.js';
 import normalizeFormValues from '../utils/normalize-form-values.js';
 import {
@@ -73,7 +74,7 @@ export default function MaintenancePage() {
   const { notify } = useNotification();
   const [items, setItems] = useState([]);
   const [materials, setMaterials] = useState([]);
-  const [filters, setFilters] = useState({ page: 1, limit: 25 });
+  const [filters, setFilters] = useState({ page: 1, limit: 5 });
   const [pagination, setPagination] = useState(null);
   const [dialog, setDialog] = useState(null);
   const [history, setHistory] = useState([]);
@@ -89,7 +90,7 @@ export default function MaintenancePage() {
       try {
         const [tasks, materialList] = await Promise.all([
           listMaintenance(filters, signal),
-          createReferenceApi('materials').list({}, signal),
+          createReferenceApi('materials').list({ limit: 'all' }, signal),
         ]);
         setItems(tasks.data.data?.items ?? []);
         setPagination(tasks.data.data?.pagination ?? null);
@@ -417,41 +418,14 @@ export default function MaintenancePage() {
           </table>
         </div>
       )}
-      {pagination && (
-        <div className="mt-4 d-flex flex-wrap align-items-center justify-content-between gap-3 text-body-secondary small">
-          <span>
-            {pagination.total} plan(s), page {pagination.page} sur {pagination.totalPages}
-          </span>
-          <label>
-            Par page{' '}
-            <select
-              className="form-select d-inline-block ms-1 w-auto"
-              value={filters.limit}
-              onChange={(event) => setFilter('limit', Number(event.target.value))}
-            >
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-            </select>
-          </label>
-          <div className="d-flex gap-2">
-            <Button
-              className="btn-sm"
-              disabled={isLoading || pagination.page <= 1}
-              onClick={() => setFilters((current) => ({ ...current, page: current.page - 1 }))}
-            >
-              Précédent
-            </Button>
-            <Button
-              className="btn-sm"
-              disabled={isLoading || pagination.page >= pagination.totalPages}
-              onClick={() => setFilters((current) => ({ ...current, page: current.page + 1 }))}
-            >
-              Suivant
-            </Button>
-          </div>
-        </div>
-      )}
+      <PaginationControls
+        pagination={pagination}
+        limit={filters.limit}
+        itemLabel="plan(s)"
+        disabled={isLoading}
+        onLimitChange={(value) => setFilter('limit', value)}
+        onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
+      />
       <Modal
         open={dialog?.type === 'create' || dialog?.type === 'edit'}
         title={dialog?.type === 'edit' ? 'Modifier le plan' : 'Créer un plan'}

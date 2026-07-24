@@ -61,6 +61,17 @@ describe('MaterialService', () => {
     expect(repository.findAll).toHaveBeenCalledWith({ page: 1, limit: 10 });
   });
 
+  it('returns every material without pagination when requested', async () => {
+    const { service } = createService({
+      findAll: jest.fn().mockResolvedValue({ count: 125, rows: [] }),
+    });
+
+    await expect(service.getAll({ limit: 'all' })).resolves.toEqual({
+      items: [],
+      pagination: { page: 1, limit: 125, total: 125, totalPages: 1 },
+    });
+  });
+
   it('rejects a duplicate serial number before persistence', async () => {
     const { repository, service } = createService({
       findBySerialNumber: jest

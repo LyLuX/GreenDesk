@@ -1,6 +1,6 @@
 /** @openapi
  * /maintenance:
- *   get: { tags: [Maintenance], summary: List maintenance tasks with materialUuid, priority, maintenanceType, active, overdue and upcoming filters, security: [{ bearerAuth: [] }], responses: { 200: { description: Paginated tasks }, 403: { description: maintenance.read required } } }
+ *   get: { tags: [Maintenance], summary: List maintenance tasks with filters and pagination (5 by default, or limit=all)., security: [{ bearerAuth: [] }], responses: { 200: { description: Paginated tasks }, 403: { description: maintenance.read required } } }
  *   post: { tags: [Maintenance], summary: Create a preventive maintenance task and calculate deadlines, security: [{ bearerAuth: [] }], responses: { 201: { description: Created }, 400: { description: Invalid interval or date } } }
  * /maintenance/{uuid}:
  *   get: { tags: [Maintenance], summary: Get a task, security: [{ bearerAuth: [] }], responses: { 200: { description: Task }, 404: { description: Missing task } } }

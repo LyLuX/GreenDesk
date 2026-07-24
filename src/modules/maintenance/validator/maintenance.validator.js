@@ -2,6 +2,14 @@ import { body, param, query } from 'express-validator';
 import { MAINTENANCE_PRIORITIES, MAINTENANCE_TYPES } from '../maintenance.constants.js';
 
 const uuid = param('uuid').isUUID();
+const listLimit = query('limit')
+  .optional()
+  .custom(
+    (value) =>
+      value === 'all' ||
+      (Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 100),
+  )
+  .customSanitizer((value) => (value === 'all' ? value : Number(value)));
 const intervals = [
   body('intervalDays').optional({ nullable: true }).isInt({ min: 1 }).toInt(),
   body('intervalHours').optional({ nullable: true }).isFloat({ gt: 0 }).toFloat(),
@@ -24,7 +32,7 @@ export const listValidator = [
   query('overdue').optional({ values: 'falsy' }).isBoolean().toBoolean(),
   query('upcoming').optional({ values: 'falsy' }).isBoolean().toBoolean(),
   query('page').optional().isInt({ min: 1 }).toInt(),
-  query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
+  listLimit,
 ];
 export const createValidator = [body('materialUuid').isUUID(), ...fields];
 export const updateValidator = [

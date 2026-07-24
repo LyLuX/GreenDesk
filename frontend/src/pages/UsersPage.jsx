@@ -7,7 +7,9 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
+import PaginationControls from '../components/PaginationControls.jsx';
 import useNotification from '../notifications/useNotification.js';
+import { paginateItems } from '../utils/pagination.js';
 
 const emptyUser = () => ({
   firstName: '',
@@ -38,13 +40,15 @@ export default function UsersPage() {
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(5);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const [usersResponse, rolesResponse] = await Promise.all([
         listUsers(),
-        createReferenceApi('roles').list(),
+        createReferenceApi('roles').list({ limit: 'all' }),
       ]);
       setUsers(usersResponse.data.data ?? []);
       setRoles(rolesResponse.data.data ?? []);
@@ -147,6 +151,7 @@ export default function UsersPage() {
       setRemoving(null);
     }
   };
+  const userPage = paginateItems(users, page, limit);
 
   return (
     <main className="app-page">
@@ -179,14 +184,14 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {users.length === 0 ? (
+              {userPage.pagination.total === 0 ? (
                 <tr>
                   <td className="py-5 text-center text-body-secondary" colSpan="5">
                     Aucun utilisateur.
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
+                userPage.items.map((user) => (
                   <tr key={user.uuid}>
                     <td>
                       <strong>
@@ -224,6 +229,18 @@ export default function UsersPage() {
             </tbody>
           </table>
         </div>
+      )}
+      {!loading && (
+        <PaginationControls
+          pagination={userPage.pagination}
+          limit={limit}
+          itemLabel="utilisateur(s)"
+          onLimitChange={(value) => {
+            setLimit(value);
+            setPage(1);
+          }}
+          onPageChange={setPage}
+        />
       )}
       <Modal
         open={editing !== null}

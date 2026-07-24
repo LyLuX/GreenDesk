@@ -61,6 +61,11 @@ describe('MaintenancePage', () => {
     render(<MaintenancePage />);
 
     expect(await screen.findByText('12 jours')).toBeInTheDocument();
+    expect(mocks.listMaintenance).toHaveBeenCalledWith(
+      { page: 1, limit: 5 },
+      expect.any(AbortSignal),
+    );
+    expect(mocks.listMaterials).toHaveBeenCalledWith({ limit: 'all' }, expect.any(AbortSignal));
     expect(screen.getByText('05/08/2026')).toBeInTheDocument();
     expect(screen.queryByText(/Compteur/)).not.toBeInTheDocument();
     expect(screen.queryByText('400 h')).not.toBeInTheDocument();

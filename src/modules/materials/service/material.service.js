@@ -32,15 +32,16 @@ export default class MaterialService {
   }
   async getAll(query) {
     const result = await this.materialRepository.findAll(query);
-    const limit = Math.min(Number(query.limit) || 25, 100);
-    const page = Math.max(Number(query.page) || 1, 1);
+    const showAll = query.limit === 'all';
+    const limit = showAll ? Math.max(result.count, 1) : Math.min(Number(query.limit) || 5, 100);
+    const page = showAll ? 1 : Math.max(Number(query.page) || 1, 1);
     return {
       items: result.rows.map((item) => this.toPublic(item)),
       pagination: {
         page,
         limit,
         total: result.count,
-        totalPages: Math.max(Math.ceil(result.count / limit), 1),
+        totalPages: showAll ? 1 : Math.max(Math.ceil(result.count / limit), 1),
       },
     };
   }

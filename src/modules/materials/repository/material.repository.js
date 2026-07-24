@@ -17,7 +17,7 @@ export default class MaterialRepository {
     brandUuid,
     categoryUuid,
     page = 1,
-    limit = 25,
+    limit = 5,
     sort = 'name',
     direction = 'ASC',
   } = {}) {
@@ -32,7 +32,7 @@ export default class MaterialRepository {
       { ...include[0], ...(brandUuid ? { where: { uuid: brandUuid }, required: true } : {}) },
       { ...include[1], ...(categoryUuid ? { where: { uuid: categoryUuid }, required: true } : {}) },
     ];
-    const normalizedLimit = Math.min(Number(limit) || 25, 100);
+    const normalizedLimit = limit === 'all' ? null : Math.min(Number(limit) || 5, 100);
     return Material.findAndCountAll({
       where,
       include: filteredInclude,
@@ -42,8 +42,12 @@ export default class MaterialRepository {
           direction === 'DESC' ? 'DESC' : 'ASC',
         ],
       ],
-      limit: normalizedLimit,
-      offset: (Math.max(Number(page), 1) - 1) * normalizedLimit,
+      ...(normalizedLimit
+        ? {
+            limit: normalizedLimit,
+            offset: (Math.max(Number(page), 1) - 1) * normalizedLimit,
+          }
+        : {}),
       distinct: true,
     });
   }

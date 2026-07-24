@@ -4,6 +4,19 @@ import MaintenanceService from '../src/modules/maintenance/service/maintenance.s
 describe('MaintenanceService', () => {
   const createService = () => new MaintenanceService({ findAll: jest.fn() }, {}, {});
 
+  it('returns every maintenance plan without pagination when requested', async () => {
+    const service = new MaintenanceService(
+      { findAll: jest.fn().mockResolvedValue({ count: 120, rows: [] }) },
+      {},
+      {},
+    );
+
+    await expect(service.getAll({ limit: 'all' })).resolves.toEqual({
+      items: [],
+      pagination: { page: 1, limit: 120, total: 120, totalPages: 1 },
+    });
+  });
+
   it('calculates both date and engine-hour deadlines', () => {
     expect(
       createService().calculateDeadlines({

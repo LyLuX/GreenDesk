@@ -34,4 +34,9 @@ describe('list filter validation', () => {
       }),
     ).resolves.toEqual([]);
   });
+
+  it('accepts the complete-list pagination value', async () => {
+    await expect(validate(materialListValidator, { limit: 'all' })).resolves.toEqual([]);
+    await expect(validate(maintenanceListValidator, { limit: 'all' })).resolves.toEqual([]);
+  });
 });

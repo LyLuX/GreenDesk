@@ -1,9 +1,17 @@
 import { body, param, query } from 'express-validator';
 const uuid = param('uuid').isUUID();
+const listLimit = query('limit')
+  .optional()
+  .custom(
+    (value) =>
+      value === 'all' ||
+      (Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 100),
+  )
+  .customSanitizer((value) => (value === 'all' ? value : Number(value)));
 export const listValidator = [
   query('search').optional({ values: 'falsy' }).trim().isLength({ max: 150 }),
   query('page').optional().isInt({ min: 1 }).toInt(),
-  query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
+  listLimit,
   query('active').optional({ values: 'falsy' }).isBoolean().toBoolean(),
   query('brandUuid').optional({ values: 'falsy' }).isUUID(),
   query('categoryUuid').optional({ values: 'falsy' }).isUUID(),

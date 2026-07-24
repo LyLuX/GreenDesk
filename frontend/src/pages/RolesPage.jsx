@@ -6,7 +6,9 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
+import PaginationControls from '../components/PaginationControls.jsx';
 import useNotification from '../notifications/useNotification.js';
+import { paginateItems } from '../utils/pagination.js';
 
 const emptyRole = () => ({ name: '', description: '', permissionUuids: [] });
 const rolesApi = createReferenceApi('roles');
@@ -25,13 +27,15 @@ export default function RolesPage() {
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(null);
   const [roleToDelete, setRoleToDelete] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(5);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const [rolesResponse, permissionsResponse] = await Promise.all([
-        rolesApi.list(),
-        permissionsApi.list(),
+        rolesApi.list({ limit: 'all' }),
+        permissionsApi.list({ limit: 'all' }),
       ]);
       setRoles(rolesResponse.data.data ?? []);
       setPermissions(permissionsResponse.data.data ?? []);
@@ -114,6 +118,7 @@ export default function RolesPage() {
       setRemoving(null);
     }
   };
+  const rolePage = paginateItems(roles, page, limit);
 
   return (
     <main className="app-page">
@@ -144,14 +149,14 @@ export default function RolesPage() {
               </tr>
             </thead>
             <tbody>
-              {roles.length === 0 ? (
+              {rolePage.pagination.total === 0 ? (
                 <tr>
                   <td className="py-5 text-center text-body-secondary" colSpan="3">
                     Aucun rôle.
                   </td>
                 </tr>
               ) : (
-                roles.map((role) => (
+                rolePage.items.map((role) => (
                   <tr key={role.uuid}>
                     <td className="text-nowrap">
                       <strong>{role.name}</strong>
@@ -187,6 +192,18 @@ export default function RolesPage() {
             </tbody>
           </table>
         </div>
+      )}
+      {!loading && (
+        <PaginationControls
+          pagination={rolePage.pagination}
+          limit={limit}
+          itemLabel="rôle(s)"
+          onLimitChange={(value) => {
+            setLimit(value);
+            setPage(1);
+          }}
+          onPageChange={setPage}
+        />
       )}
       <Modal
         open={editing !== null}
