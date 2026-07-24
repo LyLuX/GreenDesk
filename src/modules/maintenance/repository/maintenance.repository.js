@@ -24,7 +24,7 @@ export default class MaintenanceRepository {
     const where = {};
     if (priority) where.priority = priority;
     if (maintenanceType) where.maintenanceType = maintenanceType;
-    if (active !== undefined) where.active = active;
+    if (active !== undefined && active !== '') where.active = active;
     const today = new Date().toISOString().slice(0, 10);
     const next = new Date();
     next.setUTCDate(next.getUTCDate() + 30);

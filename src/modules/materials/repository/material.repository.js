@@ -27,7 +27,7 @@ export default class MaterialRepository {
         { name: { [Op.like]: `%${search}%` } },
         { serialNumber: { [Op.like]: `%${search}%` } },
       ];
-    if (active !== undefined) where.active = active;
+    if (active !== undefined && active !== '') where.active = active;
     const filteredInclude = [
       { ...include[0], ...(brandUuid ? { where: { uuid: brandUuid }, required: true } : {}) },
       { ...include[1], ...(categoryUuid ? { where: { uuid: categoryUuid }, required: true } : {}) },

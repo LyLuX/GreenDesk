@@ -16,13 +16,13 @@ const fields = [
   body('notes').optional().trim(),
 ];
 export const listValidator = [
-  query('materialUuid').optional().isUUID(),
-  query('priority').optional().isIn(MAINTENANCE_PRIORITIES),
-  query('maintenanceType').optional().isIn(MAINTENANCE_TYPES),
-  query('status').optional().isIn(['upToDate', 'upcoming', 'overdue']),
-  query('active').optional().isBoolean().toBoolean(),
-  query('overdue').optional().isBoolean().toBoolean(),
-  query('upcoming').optional().isBoolean().toBoolean(),
+  query('materialUuid').optional({ values: 'falsy' }).isUUID(),
+  query('priority').optional({ values: 'falsy' }).isIn(MAINTENANCE_PRIORITIES),
+  query('maintenanceType').optional({ values: 'falsy' }).isIn(MAINTENANCE_TYPES),
+  query('status').optional({ values: 'falsy' }).isIn(['upToDate', 'upcoming', 'overdue']),
+  query('active').optional({ values: 'falsy' }).isBoolean().toBoolean(),
+  query('overdue').optional({ values: 'falsy' }).isBoolean().toBoolean(),
+  query('upcoming').optional({ values: 'falsy' }).isBoolean().toBoolean(),
   query('page').optional().isInt({ min: 1 }).toInt(),
   query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
 ];

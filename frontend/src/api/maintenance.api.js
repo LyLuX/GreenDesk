@@ -1,7 +1,8 @@
 import client from './client.js';
+import compactQueryParams from './query-params.js';
 
 export const listMaintenance = (params, signal) =>
-  client.get('/v1/maintenance', { params, signal });
+  client.get('/v1/maintenance', { params: compactQueryParams(params), signal });
 export const createMaintenance = (payload) => client.post('/v1/maintenance', payload);
 export const updateMaintenance = (uuid, payload) => client.put(`/v1/maintenance/${uuid}`, payload);
 export const setMaintenanceStatus = (uuid, active) =>
