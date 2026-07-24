@@ -14,6 +14,9 @@ describe('DashboardService', () => {
         totalPurchaseValue: 1600,
         averageCost: 200,
         averageAge: 3.5,
+        maintenanceToday: 1,
+        maintenanceOverdue: 2,
+        maintenanceUpcoming: 3,
       }),
     };
     await expect(new DashboardService(repository).getSummary()).resolves.toEqual({
@@ -21,6 +24,7 @@ describe('DashboardService', () => {
       categories: { total: 3 },
       brands: { total: 2 },
       fleet: { totalPurchaseValue: 1600, averageCost: 200, averageAge: 3.5 },
+      maintenance: { today: 1, overdue: 2, upcoming: 3 },
     });
   });
 });

@@ -245,6 +245,18 @@ a:hover {
   box-shadow: 0 0.18rem 0.7rem rgba(21, 54, 37, 0.04);
 }
 
+.dashboard-card-groups {
+  display: grid;
+  gap: 1rem;
+}
+
+.dashboard-card-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
 .metric-card:nth-child(3n + 2) {
   border-left-color: var(--brand-sun);
 }

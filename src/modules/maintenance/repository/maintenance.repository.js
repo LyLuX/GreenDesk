@@ -96,28 +96,23 @@ export default class MaintenanceRepository {
     const today = new Date().toISOString().slice(0, 10);
     const withinThirtyDays = new Date();
     withinThirtyDays.setUTCDate(withinThirtyDays.getUTCDate() + 30);
-    const monthStart = `${today.slice(0, 7)}-01`;
-    const [metrics, completed] = await Promise.all([
-      sequelize.query(
-        `SELECT
+    const metrics = await sequelize.query(
+      `SELECT
           SUM(next_maintenance_date = :today) AS todayCount,
           SUM((next_maintenance_date IS NOT NULL AND next_maintenance_date <= :today) OR (next_engine_hours IS NOT NULL AND m.engine_hours >= next_engine_hours)) AS overdueCount,
           SUM(NOT ((next_maintenance_date IS NOT NULL AND next_maintenance_date <= :today) OR (next_engine_hours IS NOT NULL AND m.engine_hours >= next_engine_hours)) AND ((next_maintenance_date IS NOT NULL AND next_maintenance_date <= :upcoming) OR (next_engine_hours IS NOT NULL AND m.engine_hours >= next_engine_hours - GREATEST(10, interval_hours * 0.2)))) AS upcomingCount
          FROM maintenance_tasks mt JOIN materials m ON m.id = mt.material_id
          WHERE mt.active = 1 AND mt.deleted_at IS NULL`,
-        {
-          replacements: { today, upcoming: withinThirtyDays.toISOString().slice(0, 10) },
-          type: QueryTypes.SELECT,
-        },
-      ),
-      MaintenanceHistory.count({ where: { performedAt: { [Op.gte]: monthStart } } }),
-    ]);
+      {
+        replacements: { today, upcoming: withinThirtyDays.toISOString().slice(0, 10) },
+        type: QueryTypes.SELECT,
+      },
+    );
     const row = metrics[0] ?? {};
-    return [
-      Number(row.todayCount ?? 0),
-      Number(row.overdueCount ?? 0),
-      completed,
-      Number(row.upcomingCount ?? 0),
-    ];
+    return {
+      today: Number(row.todayCount ?? 0),
+      overdue: Number(row.overdueCount ?? 0),
+      upcoming: Number(row.upcomingCount ?? 0),
+    };
   }
 }

@@ -59,10 +59,9 @@ export default class DashboardRepository {
       totalPurchaseValue: Number(materialMetrics.totalPurchaseValue),
       averageCost: Number(materialMetrics.averageCost),
       averageAge: Number(materialMetrics.averageAge),
-      maintenanceToday: maintenance[0],
-      maintenanceOverdue: maintenance[1],
-      maintenanceDoneThisMonth: maintenance[2],
-      maintenanceUpcoming: maintenance[3],
+      maintenanceToday: maintenance.today,
+      maintenanceOverdue: maintenance.overdue,
+      maintenanceUpcoming: maintenance.upcoming,
     };
   }
 }

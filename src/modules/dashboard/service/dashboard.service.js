@@ -26,7 +26,6 @@ export default class DashboardService {
       summary.maintenance = {
         today: counts.maintenanceToday,
         overdue: counts.maintenanceOverdue,
-        completedThisMonth: counts.maintenanceDoneThisMonth,
         upcoming: counts.maintenanceUpcoming,
       };
     return summary;

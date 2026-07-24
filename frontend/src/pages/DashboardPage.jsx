@@ -46,19 +46,33 @@ export default function DashboardPage() {
   const brands = data.brands ?? {};
   const fleet = data.fleet ?? {};
   const maintenance = data.maintenance ?? {};
-  const cards = [
-    ['Matériels', materials.total ?? 0],
-    ['Matériels actifs', materials.active ?? 0],
-    ['Matériels inactifs', materials.inactive ?? 0],
-    ['Catégories', categories.total ?? 0],
-    ['Marques', brands.total ?? 0],
-    ['Valeur du parc', formatCurrency(fleet.totalPurchaseValue)],
-    ['Coût moyen', formatCurrency(fleet.averageCost)],
-    ['Âge moyen', `${Number(fleet.averageAge ?? 0).toFixed(1)} ans`],
-    ['Entretiens aujourd’hui', maintenance.today ?? 0],
-    ['Entretiens en retard', maintenance.overdue ?? 0],
-    ['Entretiens réalisés ce mois', maintenance.completedThisMonth ?? 0],
-    ['Entretiens prévus sous 30 jours', maintenance.upcoming ?? 0],
+  const cardGroups = [
+    {
+      label: 'Matériels et catégories',
+      cards: [
+        ['Matériels', materials.total ?? 0],
+        ['Matériels actifs', materials.active ?? 0],
+        ['Matériels inactifs', materials.inactive ?? 0],
+        ['Catégories', categories.total ?? 0],
+        ['Marques', brands.total ?? 0],
+      ],
+    },
+    {
+      label: 'Valeur du parc',
+      cards: [
+        ['Valeur du parc', formatCurrency(fleet.totalPurchaseValue)],
+        ['Coût moyen', formatCurrency(fleet.averageCost)],
+        ['Âge moyen', `${Number(fleet.averageAge ?? 0).toFixed(1)} ans`],
+      ],
+    },
+    {
+      label: 'Entretien',
+      cards: [
+        ['Entretiens aujourd’hui', maintenance.today ?? 0],
+        ['Entretiens en retard', maintenance.overdue ?? 0],
+        ['Entretiens prévus sous 30 jours', maintenance.upcoming ?? 0],
+      ],
+    },
   ];
   return (
     <main className="app-page">
@@ -66,14 +80,16 @@ export default function DashboardPage() {
         <h1 className="page-title">Tableau de bord</h1>
         <p className="page-subtitle">Vue d’ensemble du parc matériel et des opérations à suivre.</p>
       </div>
-      <div className="row justify-content-evenly g-3">
-        {cards.map(([label, value]) => (
-          <div className="col-sm-6 col-xl-4" key={label}>
-            <section className="metric-card h-100 p-4">
-              <p className="metric-label mb-2">{label}</p>
-              <strong className="metric-value">{value}</strong>
-            </section>
-          </div>
+      <div className="dashboard-card-groups">
+        {cardGroups.map((group) => (
+          <section aria-label={group.label} className="dashboard-card-row" key={group.label}>
+            {group.cards.map(([label, value]) => (
+              <article className="metric-card h-100 p-4" key={label}>
+                <p className="metric-label mb-2">{label}</p>
+                <strong className="metric-value">{value}</strong>
+              </article>
+            ))}
+          </section>
         ))}
       </div>
     </main>
