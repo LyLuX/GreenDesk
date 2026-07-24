@@ -28,8 +28,8 @@ export default class UserRepository {
   async findByUuid(uuid) {
     return User.findOne({ where: { uuid }, include: roleInclude });
   }
-  async findByEmail(email) {
-    return User.findOne({ where: { email }, include: roleInclude });
+  async findByEmail(email, { withDeleted = false } = {}) {
+    return User.findOne({ where: { email }, include: roleInclude, paranoid: !withDeleted });
   }
   async findByEmailWithPassword(email) {
     return User.scope('withPassword').findOne({ where: { email }, include: roleInclude });
@@ -42,6 +42,9 @@ export default class UserRepository {
   }
   async delete(user) {
     return user.destroy();
+  }
+  async restore(user) {
+    return user.restore();
   }
   async setRoles(user, roles) {
     return user.setRoles(roles);

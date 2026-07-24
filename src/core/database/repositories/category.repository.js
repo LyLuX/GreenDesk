@@ -12,8 +12,8 @@ export default class CategoryRepository {
   async findByUuid(uuid) {
     return Category.findOne({ where: { uuid } });
   }
-  async findByName(name) {
-    return Category.findOne({ where: { name } });
+  async findByName(name, { withDeleted = false } = {}) {
+    return Category.findOne({ where: { name }, paranoid: !withDeleted });
   }
   async create(values) {
     return Category.create(values);
@@ -23,5 +23,8 @@ export default class CategoryRepository {
   }
   async delete(category) {
     return category.destroy();
+  }
+  async restore(category) {
+    return category.restore();
   }
 }

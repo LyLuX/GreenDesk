@@ -18,17 +18,32 @@ export default class CategoryService {
     return item;
   }
   async create(values, userId) {
-    await this.ensureName(values.name);
-    const item = await this.categoryRepository.create({
-      ...values,
-      createdBy: userId,
-      updatedBy: userId,
+    const existingCategory = await this.categoryRepository.findByName(values.name, {
+      withDeleted: true,
     });
+    if (existingCategory && !existingCategory.deletedAt) await this.ensureName(values.name);
+    const oldValues = existingCategory?.toJSON();
+    if (existingCategory) {
+      await this.categoryRepository.restore(existingCategory);
+      await this.categoryRepository.update(existingCategory, {
+        ...values,
+        active: true,
+        updatedBy: userId,
+      });
+    }
+    const item =
+      existingCategory ??
+      (await this.categoryRepository.create({
+        ...values,
+        createdBy: userId,
+        updatedBy: userId,
+      }));
     await this.auditService.record({
       userId,
-      action: 'CREATE',
+      action: existingCategory ? 'RESTORE' : 'CREATE',
       entity: 'CATEGORY',
       entityUuid: item.uuid,
+      ...(oldValues ? { oldValues } : {}),
       newValues: item.toJSON(),
     });
     return item;

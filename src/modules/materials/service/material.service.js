@@ -58,17 +58,30 @@ export default class MaterialService {
   async create(values, userId) {
     await this.ensureAvailable(values);
     this.ensureDatesAreCoherent(values);
+    const deletedMaterial = await this.findDeletedMaterial(values);
     values = await this.resolveRelations(values);
-    const item = await this.materialRepository.create({
-      ...values,
-      createdBy: userId,
-      updatedBy: userId,
-    });
+    const oldValues = deletedMaterial?.toJSON();
+    if (deletedMaterial) {
+      await this.materialRepository.restore(deletedMaterial);
+      await this.materialRepository.update(deletedMaterial, {
+        ...values,
+        active: true,
+        updatedBy: userId,
+      });
+    }
+    const item =
+      deletedMaterial ??
+      (await this.materialRepository.create({
+        ...values,
+        createdBy: userId,
+        updatedBy: userId,
+      }));
     await this.auditService.record({
       userId,
-      action: 'CREATE',
+      action: deletedMaterial ? 'RESTORE' : 'CREATE',
       entity: 'MATERIAL',
       entityUuid: item.uuid,
+      ...(oldValues ? { oldValues } : {}),
       newValues: item.toJSON(),
     });
     return this.toPublic(item);
@@ -127,6 +140,27 @@ export default class MaterialService {
       isAnother(await this.materialRepository.findBySerialNumber(values.serialNumber))
     )
       throw new AppError('Material serial number is already in use', HTTP_STATUS.CONFLICT);
+  }
+  async findDeletedMaterial(values) {
+    const matches = await Promise.all([
+      this.materialRepository.findByName(values.name, { withDeleted: true }),
+      values.reference
+        ? this.materialRepository.findByReference(values.reference, { withDeleted: true })
+        : null,
+      values.serialNumber
+        ? this.materialRepository.findBySerialNumber(values.serialNumber, { withDeleted: true })
+        : null,
+    ]);
+    const deletedMaterials = [
+      ...new Map(
+        matches
+          .filter((material) => material?.deletedAt)
+          .map((material) => [material.uuid, material]),
+      ).values(),
+    ];
+    if (deletedMaterials.length > 1)
+      throw new AppError('The material matches multiple deleted records', HTTP_STATUS.CONFLICT);
+    return deletedMaterials[0] ?? null;
   }
   ensureDatesAreCoherent(values, item) {
     const purchaseDate = parseDateOnly(values.purchaseDate ?? item?.purchaseDate);

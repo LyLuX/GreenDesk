@@ -59,16 +59,18 @@ export default class MaterialRepository {
     return Material.findOne({ where: { uuid }, include: [...include, { association: 'files' }] });
   }
 
-  async findByName(name) {
-    return Material.findOne({ where: { name } });
+  async findByName(name, { withDeleted = false } = {}) {
+    return Material.findOne({ where: { name }, paranoid: !withDeleted });
   }
 
-  async findByReference(reference) {
-    return reference ? Material.findOne({ where: { reference } }) : null;
+  async findByReference(reference, { withDeleted = false } = {}) {
+    return reference ? Material.findOne({ where: { reference }, paranoid: !withDeleted }) : null;
   }
 
-  async findBySerialNumber(serialNumber) {
-    return serialNumber ? Material.findOne({ where: { serialNumber } }) : null;
+  async findBySerialNumber(serialNumber, { withDeleted = false } = {}) {
+    return serialNumber
+      ? Material.findOne({ where: { serialNumber }, paranoid: !withDeleted })
+      : null;
   }
 
   async create(values) {
@@ -81,5 +83,9 @@ export default class MaterialRepository {
 
   async delete(material) {
     return material.destroy();
+  }
+
+  async restore(material) {
+    return material.restore();
   }
 }

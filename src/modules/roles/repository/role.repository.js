@@ -18,8 +18,8 @@ export default class RoleRepository {
   async findByUuid(uuid) {
     return Role.findOne({ where: { uuid }, include: permissionInclude });
   }
-  async findByName(name) {
-    return Role.findOne({ where: { name } });
+  async findByName(name, { withDeleted = false } = {}) {
+    return Role.findOne({ where: { name }, paranoid: !withDeleted });
   }
   async create(values) {
     return Role.create(values);
@@ -29,6 +29,9 @@ export default class RoleRepository {
   }
   async delete(role) {
     return role.destroy();
+  }
+  async restore(role) {
+    return role.restore();
   }
   async setPermissions(role, permissions) {
     return role.setPermissions(permissions);

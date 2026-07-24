@@ -23,6 +23,7 @@ describe('UserService', () => {
       findAll: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      restore: jest.fn(),
     };
     const roleRepository = {
       findByName: jest.fn().mockResolvedValue({ id: 3, name: 'USER' }),
@@ -71,5 +72,36 @@ describe('UserService', () => {
     expect(userRepository.setRoles).toHaveBeenCalledWith(user, [
       expect.objectContaining({ id: 3 }),
     ]);
+  });
+
+  it('restores a soft-deleted user with a new password', async () => {
+    const deletedUser = { ...user, deletedAt: new Date() };
+    const { service, userRepository, auditService } = createService();
+    userRepository.findByEmail.mockResolvedValue(deletedUser);
+    userRepository.findByUuid.mockResolvedValue(deletedUser);
+
+    await service.create(
+      {
+        firstName: 'Ada',
+        lastName: 'Lovelace',
+        email: 'ADA@GREENDESK.LOCAL',
+        password: 'NewSecurePass123!',
+      },
+      2,
+      'USER',
+    );
+
+    expect(userRepository.restore).toHaveBeenCalledWith(deletedUser);
+    expect(userRepository.update).toHaveBeenCalledWith(
+      deletedUser,
+      expect.objectContaining({
+        email: 'ada@greendesk.local',
+        passwordHash: expect.any(String),
+        isActive: true,
+      }),
+    );
+    expect(auditService.record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'USER_RESTORED' }),
+    );
   });
 });

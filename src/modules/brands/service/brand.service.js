@@ -20,8 +20,22 @@ export default class BrandService {
     if (existingBrand && !existingBrand.deletedAt)
       throw new AppError('Brand name is already in use', HTTP_STATUS.CONFLICT);
     if (existingBrand) {
+      const oldValues = existingBrand.toJSON();
       await this.repository.restore(existingBrand);
-      return this.repository.update(existingBrand, { ...values, active: true, updatedBy: userId });
+      const brand = await this.repository.update(existingBrand, {
+        ...values,
+        active: true,
+        updatedBy: userId,
+      });
+      await this.auditService.record({
+        userId,
+        action: 'RESTORE',
+        entity: 'BRAND',
+        entityUuid: brand.uuid,
+        oldValues,
+        newValues: brand.toJSON(),
+      });
+      return brand;
     }
     return this.repository.create({ ...values, createdBy: userId, updatedBy: userId });
   }

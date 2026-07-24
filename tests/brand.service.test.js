@@ -4,7 +4,14 @@ import BrandService from '../src/modules/brands/service/brand.service.js';
 
 describe('BrandService', () => {
   it('restores a soft-deleted brand when its name is created again', async () => {
-    const deletedBrand = { uuid: 'brand-uuid', deletedAt: new Date() };
+    const deletedBrand = {
+      uuid: 'brand-uuid',
+      name: 'ECHO',
+      deletedAt: new Date(),
+      toJSON() {
+        return { uuid: this.uuid, name: this.name, deletedAt: this.deletedAt };
+      },
+    };
     const repository = {
       findByName: jest.fn().mockResolvedValue(deletedBrand),
       restore: jest.fn(),

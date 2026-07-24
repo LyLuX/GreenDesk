@@ -16,8 +16,15 @@ export default class PermissionService {
     return permission;
   }
   async create(values) {
-    if (await this.permissionRepository.findByName(values.name))
+    const existingPermission = await this.permissionRepository.findByName(values.name, {
+      withDeleted: true,
+    });
+    if (existingPermission && !existingPermission.deletedAt)
       throw new AppError('Permission name is already in use', HTTP_STATUS.CONFLICT);
+    if (existingPermission) {
+      await this.permissionRepository.restore(existingPermission);
+      return this.permissionRepository.update(existingPermission, values);
+    }
     return this.permissionRepository.create(values);
   }
   async update(uuid, values) {

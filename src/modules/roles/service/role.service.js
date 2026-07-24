@@ -21,12 +21,19 @@ export default class RoleService {
     return role;
   }
   async create(values) {
-    if (await this.roleRepository.findByName(values.name))
+    const existingRole = await this.roleRepository.findByName(values.name, { withDeleted: true });
+    if (existingRole && !existingRole.deletedAt)
       throw new AppError('Role name is already in use', HTTP_STATUS.CONFLICT);
     const { permissionUuids, ...roleValues } = values;
     const permissions = permissionUuids?.length
       ? await this.findPermissions(permissionUuids)
       : null;
+    if (existingRole) {
+      await this.roleRepository.restore(existingRole);
+      await this.roleRepository.update(existingRole, roleValues);
+      if (permissions) await this.roleRepository.setPermissions(existingRole, permissions);
+      return this.getByUuid(existingRole.uuid);
+    }
     const role = await this.roleRepository.create(roleValues);
     if (permissions) await this.roleRepository.setPermissions(role, permissions);
     return this.getByUuid(role.uuid);

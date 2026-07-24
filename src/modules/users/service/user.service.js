@@ -31,17 +31,31 @@ export default class UserService {
   }
 
   async create(values, actorUserId = null, defaultRoleName = null) {
-    const existingUser = await this.userRepository.findByEmail(values.email);
-    if (existingUser) throw new AppError('Email is already in use', HTTP_STATUS.CONFLICT);
-
+    const email = values.email.toLowerCase();
+    const existingUser = await this.userRepository.findByEmail(email, { withDeleted: true });
+    if (existingUser && !existingUser.deletedAt)
+      throw new AppError('Email is already in use', HTTP_STATUS.CONFLICT);
     const { roleUuids, ...userValues } = values;
     const assignedRoles = roleUuids?.length ? await this.findRoles(roleUuids) : null;
     const passwordHash = await bcrypt.hash(values.password, PASSWORD_ROUNDS);
-    const user = await this.userRepository.create({
-      ...userValues,
-      email: values.email.toLowerCase(),
-      passwordHash,
-    });
+    const oldValues = existingUser ? this.publicUser(existingUser) : null;
+    if (existingUser) {
+      await this.userRepository.restore(existingUser);
+      await this.userRepository.update(existingUser, {
+        ...userValues,
+        email,
+        passwordHash,
+        isActive: true,
+        lastLoginAt: null,
+      });
+    }
+    const user =
+      existingUser ??
+      (await this.userRepository.create({
+        ...userValues,
+        email,
+        passwordHash,
+      }));
     if (assignedRoles) {
       await this.userRepository.setRoles(user, assignedRoles);
     } else if (defaultRoleName) {
@@ -55,9 +69,10 @@ export default class UserService {
     }
     await this.auditService.record({
       userId: actorUserId,
-      action: 'USER_CREATED',
+      action: existingUser ? 'USER_RESTORED' : 'USER_CREATED',
       entity: 'USER',
       entityUuid: user.uuid,
+      ...(oldValues ? { oldValues } : {}),
       newValues: this.publicUser(user),
     });
     return this.getByUuid(user.uuid);

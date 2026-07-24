@@ -8,8 +8,8 @@ export default class PermissionRepository {
   async findByUuid(uuid) {
     return Permission.findOne({ where: { uuid } });
   }
-  async findByName(name) {
-    return Permission.findOne({ where: { name } });
+  async findByName(name, { withDeleted = false } = {}) {
+    return Permission.findOne({ where: { name }, paranoid: !withDeleted });
   }
   async create(values) {
     return Permission.create(values);
@@ -19,5 +19,8 @@ export default class PermissionRepository {
   }
   async delete(permission) {
     return permission.destroy();
+  }
+  async restore(permission) {
+    return permission.restore();
   }
 }

@@ -17,6 +17,7 @@ describe('MaterialService', () => {
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      restore: jest.fn(),
       ...overrides,
     };
     const audit = { record: jest.fn(), findByEntity: jest.fn().mockResolvedValue([]) };
@@ -101,6 +102,28 @@ describe('MaterialService', () => {
         entity: 'MATERIAL',
         entityUuid: material.uuid,
       }),
+    );
+  });
+
+  it('restores a soft-deleted material with the same name', async () => {
+    const deletedMaterial = model({
+      uuid: '11111111-1111-4111-8111-111111111111',
+      name: 'Tondeuse',
+      deletedAt: new Date(),
+    });
+    const { repository, audit, service } = createService({
+      findByName: jest.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(deletedMaterial),
+    });
+
+    await service.create({ name: 'Tondeuse', unit: 'u', purchasePrice: 0 }, 7);
+
+    expect(repository.restore).toHaveBeenCalledWith(deletedMaterial);
+    expect(repository.update).toHaveBeenCalledWith(
+      deletedMaterial,
+      expect.objectContaining({ active: true, updatedBy: 7 }),
+    );
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'RESTORE', entity: 'MATERIAL' }),
     );
   });
 

@@ -12,8 +12,8 @@ export default class PropertyRepository {
   async findByUuid(uuid) {
     return Property.findOne({ where: { uuid } });
   }
-  async findByName(name) {
-    return Property.findOne({ where: { name } });
+  async findByName(name, { withDeleted = false } = {}) {
+    return Property.findOne({ where: { name }, paranoid: !withDeleted });
   }
   async create(values) {
     return Property.create(values);
@@ -23,5 +23,8 @@ export default class PropertyRepository {
   }
   async delete(property) {
     return property.destroy();
+  }
+  async restore(property) {
+    return property.restore();
   }
 }

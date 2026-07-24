@@ -22,4 +22,21 @@ describe('RoleService', () => {
 
     expect(roleRepository.setPermissions).toHaveBeenCalledWith(role, [permission]);
   });
+
+  it('restores a soft-deleted role instead of creating a duplicate', async () => {
+    const role = { uuid: roleUuid, name: 'SUPERVISOR', deletedAt: new Date() };
+    const roleRepository = {
+      findByName: jest.fn().mockResolvedValue(role),
+      restore: jest.fn(),
+      update: jest.fn(),
+      setPermissions: jest.fn(),
+      findByUuid: jest.fn().mockResolvedValue(role),
+    };
+    const service = new RoleService(roleRepository, { findByUuid: jest.fn() });
+
+    await service.create({ name: 'SUPERVISOR' });
+
+    expect(roleRepository.restore).toHaveBeenCalledWith(role);
+    expect(roleRepository.update).toHaveBeenCalledWith(role, { name: 'SUPERVISOR' });
+  });
 });

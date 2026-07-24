@@ -18,17 +18,32 @@ export default class PropertyService {
     return item;
   }
   async create(values, userId) {
-    await this.ensureName(values.name);
-    const item = await this.propertyRepository.create({
-      ...values,
-      createdBy: userId,
-      updatedBy: userId,
+    const existingProperty = await this.propertyRepository.findByName(values.name, {
+      withDeleted: true,
     });
+    if (existingProperty && !existingProperty.deletedAt) await this.ensureName(values.name);
+    const oldValues = existingProperty?.toJSON();
+    if (existingProperty) {
+      await this.propertyRepository.restore(existingProperty);
+      await this.propertyRepository.update(existingProperty, {
+        ...values,
+        active: true,
+        updatedBy: userId,
+      });
+    }
+    const item =
+      existingProperty ??
+      (await this.propertyRepository.create({
+        ...values,
+        createdBy: userId,
+        updatedBy: userId,
+      }));
     await this.auditService.record({
       userId,
-      action: 'CREATE',
+      action: existingProperty ? 'RESTORE' : 'CREATE',
       entity: 'PROPERTY',
       entityUuid: item.uuid,
+      ...(oldValues ? { oldValues } : {}),
       newValues: item.toJSON(),
     });
     return item;
