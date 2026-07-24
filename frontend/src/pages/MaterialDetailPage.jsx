@@ -266,14 +266,11 @@ export default function MaterialDetailPage() {
       {activeTab === 'details' ? (
         <>
           <section className="detail-grid mt-5 grid gap-5 p-5 sm:grid-cols-2">
-            <Field label="Référence" value={material.reference} />
             <Field label="Marque" value={material.brand?.name} />
             <Field label="Modèle" value={material.model} />
             <Field label="Numéro de série" value={material.serialNumber} />
-            <Field label="Année" value={material.year} />
             <Field label="Catégorie" value={material.category?.name} />
             <Field label="Prix d’achat" value={formatCurrency(material.purchasePrice)} />
-            <Field label="Valeur actuelle" value={formatCurrency(material.currentValue)} />
             <Field label="Date d’achat" value={formatDate(material.purchaseDate)} />
             <Field label="Heures moteur" value={material.engineHours} />
             <Field label="Mise en service" value={formatDate(material.commissionedAt)} />

@@ -18,11 +18,11 @@ Authentification, utilisateurs, rôles, permissions, audit, catégories, marques
 
 Les permissions ajoutées sont `categories.*` et `materials.*` avec les actions `read`, `create`, `update`, `delete`.
 
-Le dashboard est disponible via `GET /api/dashboard/summary`, protégé par `dashboard.read`. Il compte les matériels, les catégories et les marques, et calcule la valeur, le coût moyen et l’âge moyen du parc par agrégats SQL. La documentation OpenAPI est servie sur `/docs`.
+Le dashboard est disponible via `GET /api/dashboard/summary`, protégé par `dashboard.read`. Il compte les matériels, les catégories et les marques, et calcule le coût moyen et l’âge moyen du parc par agrégats SQL. La documentation OpenAPI est servie sur `/docs`.
 
 ## Sprint 5 : parc matériel
 
-Un matériel contient son UUID public, nom, référence, marque, modèle, catégorie, numéro de série, année, dates, prix, valeur actuelle, heures moteur et notes. Les relations sont exclusivement transmises et renvoyées avec des UUID publics. La liste supporte la recherche, les filtres par statut, marque et catégorie, le tri et la pagination.
+Un matériel contient son UUID public, nom, marque, modèle, catégorie, numéro de série, dates, prix d’achat, heures moteur et notes. Les relations sont exclusivement transmises et renvoyées avec des UUID publics. La liste supporte la recherche, les filtres par statut, marque et catégorie, le tri et la pagination.
 
 Les photos (JPEG, PNG, WebP) et documents PDF sont stockés sous `uploads/materials`, sans exposition statique du dossier. Les photos sont consultées via une route authentifiée inline ; les documents sont téléchargés en pièce jointe via une route authentifiée. Chaque fichier est limité à 10 Mo et chaque matériel à 10 photos. Les fichiers reçoivent un nom UUID dérivé de leur MIME autorisé, jamais de leur nom client. L’historique de chaque modification est disponible sur la fiche matériel.
 

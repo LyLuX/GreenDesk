@@ -24,14 +24,14 @@
  *       - { in: query, name: categoryUuid, schema: { type: string, format: uuid } }
  *       - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
  *       - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
- *       - { in: query, name: sort, schema: { type: string, enum: [name, reference, purchasePrice, purchaseDate, engineHours] } }
+ *       - { in: query, name: sort, schema: { type: string, enum: [name, purchasePrice, purchaseDate, engineHours] } }
  *       - { in: query, name: direction, schema: { type: string, enum: [ASC, DESC] } }
  *     responses: { 200: { description: Paginated material records }, 401: { description: Authentication required }, 403: { description: materials.read is required } }
  *   post:
  *     tags: [Materials]
  *     summary: Create a material.
  *     security: [{ bearerAuth: [] }]
- *     responses: { 201: { description: Created }, 400: { description: Invalid payload }, 409: { description: Duplicate name, reference or serial number } }
+ *     responses: { 201: { description: Created }, 400: { description: Invalid payload }, 409: { description: Duplicate name or serial number } }
  * /materials/{uuid}:
  *   get: { tags: [Materials], summary: Get a material and its files, security: [{ bearerAuth: [] }], responses: { 200: { description: Material detail }, 404: { description: Not found } } }
  *   put: { tags: [Materials], summary: Update all editable material fields, security: [{ bearerAuth: [] }], responses: { 200: { description: Updated }, 400: { description: Invalid dates or UUID relation }, 409: { description: Duplicate record } } }

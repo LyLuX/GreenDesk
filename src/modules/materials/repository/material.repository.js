@@ -25,7 +25,6 @@ export default class MaterialRepository {
     if (search)
       where[Op.or] = [
         { name: { [Op.like]: `%${search}%` } },
-        { reference: { [Op.like]: `%${search}%` } },
         { serialNumber: { [Op.like]: `%${search}%` } },
       ];
     if (active !== undefined) where.active = active;
@@ -39,9 +38,7 @@ export default class MaterialRepository {
       include: filteredInclude,
       order: [
         [
-          ['name', 'reference', 'purchasePrice', 'purchaseDate', 'engineHours'].includes(sort)
-            ? sort
-            : 'name',
+          ['name', 'purchasePrice', 'purchaseDate', 'engineHours'].includes(sort) ? sort : 'name',
           direction === 'DESC' ? 'DESC' : 'ASC',
         ],
       ],
@@ -57,10 +54,6 @@ export default class MaterialRepository {
 
   async findByName(name, { withDeleted = false } = {}) {
     return Material.findOne({ where: { name }, paranoid: !withDeleted });
-  }
-
-  async findByReference(reference, { withDeleted = false } = {}) {
-    return reference ? Material.findOne({ where: { reference }, paranoid: !withDeleted }) : null;
   }
 
   async findBySerialNumber(serialNumber, { withDeleted = false } = {}) {

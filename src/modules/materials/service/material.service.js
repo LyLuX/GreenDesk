@@ -128,11 +128,6 @@ export default class MaterialService {
     if (values.name && isAnother(await this.materialRepository.findByName(values.name)))
       throw new AppError('Material name is already in use', HTTP_STATUS.CONFLICT);
     if (
-      values.reference &&
-      isAnother(await this.materialRepository.findByReference(values.reference))
-    )
-      throw new AppError('Material reference is already in use', HTTP_STATUS.CONFLICT);
-    if (
       values.serialNumber &&
       isAnother(await this.materialRepository.findBySerialNumber(values.serialNumber))
     )
@@ -141,9 +136,6 @@ export default class MaterialService {
   async findDeletedMaterial(values) {
     const matches = await Promise.all([
       this.materialRepository.findByName(values.name, { withDeleted: true }),
-      values.reference
-        ? this.materialRepository.findByReference(values.reference, { withDeleted: true })
-        : null,
       values.serialNumber
         ? this.materialRepository.findBySerialNumber(values.serialNumber, { withDeleted: true })
         : null,

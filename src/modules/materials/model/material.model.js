@@ -11,7 +11,6 @@ Material.init(
     id: { type: DataTypes.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
     uuid: { type: DataTypes.UUID, defaultValue: uuidv4, allowNull: false, unique: true },
     name: { type: DataTypes.STRING(150), allowNull: false, unique: true },
-    reference: { type: DataTypes.STRING(100), allowNull: true, unique: true },
     description: { type: DataTypes.TEXT, allowNull: true },
     unit: { type: DataTypes.STRING(50), allowNull: false },
     purchasePrice: {
@@ -29,9 +28,7 @@ Material.init(
       unique: true,
       field: 'serial_number',
     },
-    year: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
     purchaseDate: { type: DataTypes.DATEONLY, allowNull: true, field: 'purchase_date' },
-    currentValue: { type: DataTypes.DECIMAL(12, 2), allowNull: true, field: 'current_value' },
     engineHours: { type: DataTypes.DECIMAL(10, 2), allowNull: true, field: 'engine_hours' },
     commissionedAt: { type: DataTypes.DATEONLY, allowNull: true, field: 'commissioned_at' },
     retiredAt: { type: DataTypes.DATEONLY, allowNull: true, field: 'retired_at' },

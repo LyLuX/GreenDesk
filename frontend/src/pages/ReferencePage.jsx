@@ -238,7 +238,6 @@ export default function ReferencePage({
               }}
             >
               <option value="name">Nom</option>
-              <option value="reference">Référence</option>
               <option value="purchasePrice">Prix d’achat</option>
               <option value="purchaseDate">Date d’achat</option>
               <option value="engineHours">Heures moteur</option>

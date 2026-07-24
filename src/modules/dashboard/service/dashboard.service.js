@@ -16,9 +16,8 @@ export default class DashboardService {
       categories: { total: counts.categoriesTotal },
     };
     if (counts.brandsTotal !== undefined) summary.brands = { total: counts.brandsTotal };
-    if (counts.totalValue !== undefined)
+    if (counts.averageCost !== undefined)
       summary.fleet = {
-        totalValue: counts.totalValue,
         averageCost: counts.averageCost,
         averageAge: counts.averageAge,
       };

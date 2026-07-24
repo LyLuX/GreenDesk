@@ -9,12 +9,10 @@ import normalizeFormValues from '../utils/normalize-form-values.js';
 
 const fields = [
   { name: 'name', label: 'Nom', required: true },
-  { name: 'reference', label: 'Référence' },
   { name: 'brandUuid', label: 'Marque' },
   { name: 'categoryUuid', label: 'Catégorie' },
   { name: 'model', label: 'Modèle' },
   { name: 'serialNumber', label: 'Numéro de série' },
-  { name: 'year', label: 'Année', type: 'number', valueType: 'number', min: '1900' },
   { name: 'purchaseDate', label: 'Date d’achat', type: 'date' },
   { name: 'commissionedAt', label: 'Mise en service', type: 'date' },
   { name: 'retiredAt', label: 'Sortie de service', type: 'date' },
@@ -27,14 +25,6 @@ const fields = [
     step: '0.01',
     min: '0',
     required: true,
-  },
-  {
-    name: 'currentValue',
-    label: 'Valeur actuelle',
-    type: 'number',
-    valueType: 'number',
-    step: '0.01',
-    min: '0',
   },
   {
     name: 'engineHours',

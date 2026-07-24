@@ -12,7 +12,6 @@ describe('MaterialService', () => {
       findAll: jest.fn(),
       findByUuid: jest.fn(),
       findByName: jest.fn().mockResolvedValue(null),
-      findByReference: jest.fn().mockResolvedValue(null),
       findBySerialNumber: jest.fn().mockResolvedValue(null),
       create: jest.fn(),
       update: jest.fn(),
