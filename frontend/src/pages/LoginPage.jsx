@@ -32,7 +32,7 @@ export default function LoginPage() {
     <main className="auth-page d-flex align-items-center justify-content-center">
       <form className="auth-card card d-grid gap-3 p-4 p-sm-5" onSubmit={submit}>
         <div className="mb-2 text-center">
-          <img className="auth-logo mb-3" src="/brand-logo.jpg" alt="El Bournazel Paul" />
+          <img className="auth-logo mb-3" src="/auth-logo.jpg" alt="EI BOURNAZEL Paul" />
           <h1 className="auth-heading mb-1">GreenDesk</h1>
           <p className="mb-0 text-body-secondary">Connexion à votre espace de travail</p>
         </div>

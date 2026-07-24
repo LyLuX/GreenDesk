@@ -69,7 +69,7 @@ export default function RegisterPage() {
     <main className="auth-page d-grid place-items-center">
       <form className="auth-card card d-grid gap-3 p-4 p-sm-5" onSubmit={submit}>
         <div className="mb-2 text-center">
-          <img className="auth-logo mb-3" src="/brand-logo.jpg" alt="El Bournazel Paul" />
+          <img className="auth-logo mb-3" src="/auth-logo.jpg" alt="EI BOURNAZEL Paul" />
           <h1 className="auth-heading mb-1">Créer un compte</h1>
           <p className="mb-0 text-body-secondary">GreenDesk</p>
         </div>
