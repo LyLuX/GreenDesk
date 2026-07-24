@@ -5,7 +5,7 @@ import Brand from '../../brands/model/brand.model.js';
 import Category from '../../categories/model/category.model.js';
 
 const include = [
-  { model: Brand, as: 'brand', attributes: ['uuid', 'name'] },
+  { model: Brand, as: 'brand', attributes: ['uuid', 'name', 'logoFileName'] },
   { model: Category, as: 'category', attributes: ['uuid', 'name'] },
 ];
 

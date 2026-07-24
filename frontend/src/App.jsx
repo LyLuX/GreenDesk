@@ -3,6 +3,7 @@ import { Route, Routes, useLocation } from 'react-router-dom';
 import PermissionRoute from './auth/PermissionRoute.jsx';
 import ProtectedRoute from './auth/ProtectedRoute.jsx';
 import AdminRoute from './auth/AdminRoute.jsx';
+import MaterialBrandCell from './components/MaterialBrandCell.jsx';
 import AppLayout from './layouts/AppLayout.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import ForbiddenPage from './pages/ForbiddenPage.jsx';
@@ -142,7 +143,7 @@ export default function App() {
                 ]}
                 columns={table([
                   ['name', 'Nom'],
-                  ['brand', 'Marque', (value) => value?.name ?? '—'],
+                  ['brand', 'Marque', (value) => <MaterialBrandCell brand={value} />],
                   ['unit', 'Unité'],
                   ['purchasePrice', 'Achat', formatCurrency],
                 ])}

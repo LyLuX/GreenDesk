@@ -178,7 +178,13 @@ export default class MaterialService {
     delete publicValue.files;
     return {
       ...publicValue,
-      brand: value.brand ? { uuid: value.brand.uuid, name: value.brand.name } : null,
+      brand: value.brand
+        ? {
+            uuid: value.brand.uuid,
+            name: value.brand.name,
+            hasLogo: Boolean(value.brand.logoFileName),
+          }
+        : null,
       category: value.category ? { uuid: value.category.uuid, name: value.category.name } : null,
       ...(files
         ? {

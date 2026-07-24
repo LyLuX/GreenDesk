@@ -33,7 +33,11 @@ describe('MaterialService', () => {
             uuid: '11111111-1111-4111-8111-111111111111',
             name: 'Tondeuse',
             brandId: 2,
-            brand: { uuid: '22222222-2222-4222-8222-222222222222', name: 'Green' },
+            brand: {
+              uuid: '22222222-2222-4222-8222-222222222222',
+              name: 'Green',
+              logoFileName: 'green.png',
+            },
           }),
         ],
       }),
@@ -44,7 +48,11 @@ describe('MaterialService', () => {
         {
           uuid: '11111111-1111-4111-8111-111111111111',
           name: 'Tondeuse',
-          brand: { uuid: '22222222-2222-4222-8222-222222222222', name: 'Green' },
+          brand: {
+            uuid: '22222222-2222-4222-8222-222222222222',
+            name: 'Green',
+            hasLogo: true,
+          },
           category: null,
         },
       ],

@@ -59,7 +59,7 @@ router.post(
 );
 router.get(
   '/:uuid/logo',
-  authorize('brands.read'),
+  authorize('brands.read', 'materials.read'),
   validator.uuidValidator,
   validateRequest,
   asyncHandler(controller.logoContent.bind(controller)),
