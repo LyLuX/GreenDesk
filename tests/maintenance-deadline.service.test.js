@@ -12,11 +12,16 @@ describe('maintenance deadline rules', () => {
     expect(differenceInDays('2026-07-24', '2026-08-01')).toBe(8);
     expect(todayDateOnly(new Date('2026-07-24T23:59:00.000Z'))).toBe(today);
   });
-  it('marks a task overdue when the date deadline is reached', () => {
+  it('distinguishes a task due today from an overdue task', () => {
     expect(getDeadlineDetails({ nextMaintenanceDate: today, today })).toMatchObject({
+      status: 'dueToday',
+      dateStatus: 'dueToday',
+      remainingDays: 0,
+    });
+    expect(getDeadlineDetails({ nextMaintenanceDate: '2026-07-23', today })).toMatchObject({
       status: 'overdue',
       dateStatus: 'overdue',
-      remainingDays: 0,
+      remainingDays: -1,
     });
   });
   it('marks a task upcoming with an approaching engine-hour threshold', () => {

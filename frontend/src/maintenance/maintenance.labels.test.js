@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { maintenancePriorityBadgeClasses } from './maintenance.labels.js';
+import { maintenancePriorityBadgeClasses, maintenanceStatusClasses } from './maintenance.labels.js';
 
 describe('maintenance priority badge classes', () => {
   it('associates every priority level with its visual variant', () => {
@@ -8,6 +8,15 @@ describe('maintenance priority badge classes', () => {
       normal: 'priority-normal',
       high: 'priority-high',
       critical: 'priority-critical',
+    });
+  });
+
+  it('associates every deadline status with its visual variant', () => {
+    expect(maintenanceStatusClasses).toEqual({
+      upToDate: 'maintenance-up-to-date',
+      upcoming: 'maintenance-upcoming',
+      dueToday: 'maintenance-due-today',
+      overdue: 'maintenance-overdue',
     });
   });
 });

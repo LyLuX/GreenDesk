@@ -326,6 +326,38 @@ a:hover {
   color: #8a2525;
 }
 
+.metric-card.maintenance-upcoming {
+  border-left-color: var(--brand-leaf);
+}
+
+.metric-card.maintenance-due-today {
+  border-left-color: var(--brand-sun);
+}
+
+.metric-card.maintenance-overdue {
+  border-left-color: #b64141;
+}
+
+.status-badge.maintenance-up-to-date {
+  background: #eef0ee;
+  color: #59635d;
+}
+
+.status-badge.maintenance-upcoming {
+  background: #e3eddc;
+  color: #365d16;
+}
+
+.status-badge.maintenance-due-today {
+  background: #f7edbd;
+  color: #6b5700;
+}
+
+.status-badge.maintenance-overdue {
+  background: #f5d8d8;
+  color: #8a2525;
+}
+
 .modal-backdrop-custom {
   position: fixed;
   inset: 0;

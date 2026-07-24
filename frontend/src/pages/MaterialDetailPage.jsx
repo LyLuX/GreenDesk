@@ -15,6 +15,10 @@ import AuthenticatedImage from '../components/AuthenticatedImage.jsx';
 import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Loader from '../components/Loader.jsx';
+import {
+  maintenanceStatusClasses,
+  maintenanceStatusLabels,
+} from '../maintenance/maintenance.labels.js';
 import { formatCurrency } from '../utils/formatters.js';
 
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -405,12 +409,14 @@ export default function MaterialDetailPage() {
             <ul className="list-group">
               {maintenance.map((task) => (
                 <li className="list-group-item" key={task.uuid}>
-                  <strong>{task.title}</strong> ·{' '}
-                  {task.status === 'overdue'
-                    ? 'En retard'
-                    : task.status === 'upcoming'
-                      ? 'À prévoir'
-                      : 'À jour'}
+                  <strong>{task.title}</strong>{' '}
+                  <span
+                    className={`status-badge ${
+                      maintenanceStatusClasses[task.status] ?? 'maintenance-up-to-date'
+                    }`}
+                  >
+                    {maintenanceStatusLabels[task.status] ?? maintenanceStatusLabels.upToDate}
+                  </span>
                   <span className="ml-3">
                     Échéance : {task.nextMaintenanceDate ?? task.nextEngineHours ?? '—'}
                   </span>

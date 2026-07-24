@@ -29,20 +29,29 @@ export default class MaintenanceRepository {
     const next = new Date();
     next.setUTCDate(next.getUTCDate() + 30);
     const overdueCondition =
-      "(MaintenanceTask.next_maintenance_date IS NOT NULL AND MaintenanceTask.next_maintenance_date <= '" +
+      "(MaintenanceTask.next_maintenance_date IS NOT NULL AND MaintenanceTask.next_maintenance_date < '" +
       today +
       "') OR (MaintenanceTask.next_engine_hours IS NOT NULL AND material.engine_hours >= MaintenanceTask.next_engine_hours)";
+    const dueTodayCondition =
+      `NOT (${overdueCondition}) AND ` + `MaintenanceTask.next_maintenance_date = '${today}'`;
     const upcomingCondition =
       'NOT (' +
       overdueCondition +
-      ") AND ((MaintenanceTask.next_maintenance_date IS NOT NULL AND MaintenanceTask.next_maintenance_date <= '" +
+      ') AND NOT (' +
+      dueTodayCondition +
+      ") AND ((MaintenanceTask.next_maintenance_date IS NOT NULL AND MaintenanceTask.next_maintenance_date > '" +
+      today +
+      "' AND MaintenanceTask.next_maintenance_date <= '" +
       next.toISOString().slice(0, 10) +
       "') OR (MaintenanceTask.next_engine_hours IS NOT NULL AND material.engine_hours >= MaintenanceTask.next_engine_hours - GREATEST(10, MaintenanceTask.interval_hours * 0.2)))";
     if (status === 'overdue') where[Op.and] = [Sequelize.literal(`(${overdueCondition})`)];
+    if (status === 'dueToday') where[Op.and] = [Sequelize.literal(`(${dueTodayCondition})`)];
     if (status === 'upcoming') where[Op.and] = [Sequelize.literal(`(${upcomingCondition})`)];
     if (status === 'upToDate')
       where[Op.and] = [
-        Sequelize.literal(`NOT (${overdueCondition}) AND NOT (${upcomingCondition})`),
+        Sequelize.literal(
+          `NOT (${overdueCondition}) AND NOT (${dueTodayCondition}) AND NOT (${upcomingCondition})`,
+        ),
       ];
     const include = [
       {
@@ -100,11 +109,21 @@ export default class MaintenanceRepository {
     const today = new Date().toISOString().slice(0, 10);
     const withinThirtyDays = new Date();
     withinThirtyDays.setUTCDate(withinThirtyDays.getUTCDate() + 30);
+    const overdueCondition =
+      '(mt.next_maintenance_date IS NOT NULL AND mt.next_maintenance_date < :today) ' +
+      'OR (mt.next_engine_hours IS NOT NULL AND m.engine_hours >= mt.next_engine_hours)';
+    const dueTodayCondition = `NOT (${overdueCondition}) AND mt.next_maintenance_date = :today`;
+    const upcomingCondition =
+      `NOT (${overdueCondition}) AND NOT (${dueTodayCondition}) AND (` +
+      '(mt.next_maintenance_date IS NOT NULL AND mt.next_maintenance_date > :today ' +
+      'AND mt.next_maintenance_date <= :upcoming) ' +
+      'OR (mt.next_engine_hours IS NOT NULL AND ' +
+      'm.engine_hours >= mt.next_engine_hours - GREATEST(10, mt.interval_hours * 0.2)))';
     const metrics = await sequelize.query(
       `SELECT
-          SUM(next_maintenance_date = :today) AS todayCount,
-          SUM((next_maintenance_date IS NOT NULL AND next_maintenance_date <= :today) OR (next_engine_hours IS NOT NULL AND m.engine_hours >= next_engine_hours)) AS overdueCount,
-          SUM(NOT ((next_maintenance_date IS NOT NULL AND next_maintenance_date <= :today) OR (next_engine_hours IS NOT NULL AND m.engine_hours >= next_engine_hours)) AND ((next_maintenance_date IS NOT NULL AND next_maintenance_date <= :upcoming) OR (next_engine_hours IS NOT NULL AND m.engine_hours >= next_engine_hours - GREATEST(10, interval_hours * 0.2)))) AS upcomingCount
+          SUM(${dueTodayCondition}) AS todayCount,
+          SUM(${overdueCondition}) AS overdueCount,
+          SUM(${upcomingCondition}) AS upcomingCount
          FROM maintenance_tasks mt JOIN materials m ON m.id = mt.material_id
          WHERE mt.active = 1 AND mt.deleted_at IS NULL`,
       {

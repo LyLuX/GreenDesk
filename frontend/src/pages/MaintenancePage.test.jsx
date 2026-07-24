@@ -74,6 +74,10 @@ describe('MaintenancePage', () => {
       'status-badge',
       'priority-normal',
     );
+    expect(screen.getByText('Sous 30 jours', { selector: 'span' })).toHaveClass(
+      'status-badge',
+      'maintenance-upcoming',
+    );
   });
 
   it('uses compact outline buttons for table actions', async () => {

@@ -20,6 +20,13 @@ export const maintenancePriorityBadgeClasses = Object.freeze({
 });
 export const maintenanceStatusLabels = Object.freeze({
   upToDate: 'À jour',
-  upcoming: 'À prévoir',
+  upcoming: 'Sous 30 jours',
+  dueToday: 'À faire aujourd’hui',
   overdue: 'En retard',
+});
+export const maintenanceStatusClasses = Object.freeze({
+  upToDate: 'maintenance-up-to-date',
+  upcoming: 'maintenance-upcoming',
+  dueToday: 'maintenance-due-today',
+  overdue: 'maintenance-overdue',
 });

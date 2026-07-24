@@ -43,11 +43,13 @@ export function getDeadlineDetails({
   const dateStatus =
     remainingDays === null
       ? 'upToDate'
-      : remainingDays <= 0
+      : remainingDays < 0
         ? 'overdue'
-        : remainingDays <= 30
-          ? 'upcoming'
-          : 'upToDate';
+        : remainingDays === 0
+          ? 'dueToday'
+          : remainingDays <= 30
+            ? 'upcoming'
+            : 'upToDate';
   const hourThreshold = intervalHours ? Math.max(10, Number(intervalHours) * 0.2) : null;
   const engineHoursStatus =
     remainingEngineHours === null
@@ -60,9 +62,11 @@ export function getDeadlineDetails({
   const status =
     dateStatus === 'overdue' || engineHoursStatus === 'overdue'
       ? 'overdue'
-      : dateStatus === 'upcoming' || engineHoursStatus === 'upcoming'
-        ? 'upcoming'
-        : 'upToDate';
+      : dateStatus === 'dueToday'
+        ? 'dueToday'
+        : dateStatus === 'upcoming' || engineHoursStatus === 'upcoming'
+          ? 'upcoming'
+          : 'upToDate';
   return {
     status,
     dateStatus,

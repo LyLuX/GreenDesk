@@ -34,6 +34,15 @@ describe('DashboardPage', () => {
     expect(within(inventory).getAllByRole('article')).toHaveLength(5);
     expect(within(fleet).getAllByRole('article')).toHaveLength(3);
     expect(within(maintenance).getAllByRole('article')).toHaveLength(3);
+    expect(within(maintenance).getByText('Entretiens aujourd’hui').parentElement).toHaveClass(
+      'maintenance-due-today',
+    );
+    expect(
+      within(maintenance).getByText('Entretiens prévus sous 30 jours').parentElement,
+    ).toHaveClass('maintenance-upcoming');
+    expect(within(maintenance).getByText('Entretiens en retard').parentElement).toHaveClass(
+      'maintenance-overdue',
+    );
     expect(screen.queryByText('Entretiens réalisés ce mois')).not.toBeInTheDocument();
   });
 });

@@ -68,9 +68,9 @@ export default function DashboardPage() {
     {
       label: 'Entretien',
       cards: [
-        ['Entretiens aujourd’hui', maintenance.today ?? 0],
-        ['Entretiens prévus sous 30 jours', maintenance.upcoming ?? 0],
-        ['Entretiens en retard', maintenance.overdue ?? 0],
+        ['Entretiens aujourd’hui', maintenance.today ?? 0, 'maintenance-due-today'],
+        ['Entretiens prévus sous 30 jours', maintenance.upcoming ?? 0, 'maintenance-upcoming'],
+        ['Entretiens en retard', maintenance.overdue ?? 0, 'maintenance-overdue'],
       ],
     },
   ];
@@ -83,8 +83,8 @@ export default function DashboardPage() {
       <div className="dashboard-card-groups">
         {cardGroups.map((group) => (
           <section aria-label={group.label} className="dashboard-card-row" key={group.label}>
-            {group.cards.map(([label, value]) => (
-              <article className="metric-card h-100 p-4" key={label}>
+            {group.cards.map(([label, value, statusClass = '']) => (
+              <article className={`metric-card h-100 p-4 ${statusClass}`} key={label}>
                 <p className="metric-label mb-2">{label}</p>
                 <strong className="metric-value">{value}</strong>
               </article>

@@ -22,6 +22,7 @@ import normalizeFormValues from '../utils/normalize-form-values.js';
 import {
   maintenancePriorityBadgeClasses,
   maintenancePriorityLabels,
+  maintenanceStatusClasses,
   maintenanceStatusLabels,
   maintenanceTypeLabels,
 } from '../maintenance/maintenance.labels.js';
@@ -354,7 +355,13 @@ export default function MaintenancePage() {
                       </span>
                     </td>
                     <td>
-                      <span className={`status-badge ${item.active ? '' : 'inactive'}`}>
+                      <span
+                        className={`status-badge ${
+                          item.active
+                            ? (maintenanceStatusClasses[item.status] ?? 'maintenance-up-to-date')
+                            : 'inactive'
+                        }`}
+                      >
                         {maintenanceStatusLabels[item.status]}
                         {!item.active && ' (inactif)'}
                       </span>
