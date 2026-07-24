@@ -67,6 +67,31 @@ describe('AuthService', () => {
     });
   });
 
+  it('renews an active session and revokes the previous token', async () => {
+    const user = await makeUser();
+    const authRepository = { revokeAccessToken: jest.fn() };
+    const service = new AuthService(
+      authRepository,
+      {
+        getByUuid: jest.fn().mockResolvedValue(user),
+        publicUser: (value) => value.toJSON(),
+      },
+      { record: jest.fn() },
+    );
+    const expiresAt = 1_800_000_000;
+
+    const result = await service.refresh({
+      jti: uuid,
+      exp: expiresAt,
+      sub: user.uuid,
+      userId: user.id,
+    });
+
+    expect(authRepository.revokeAccessToken).toHaveBeenCalledWith(uuid, new Date(expiresAt * 1000));
+    expect(jwt.decode(result.accessToken).jti).not.toBe(uuid);
+    expect(result.user).toMatchObject({ uuid, roles: ['USER'] });
+  });
+
   it('revokes the current token on logout', async () => {
     const authRepository = { revokeAccessToken: jest.fn() };
     const auditService = { record: jest.fn() };

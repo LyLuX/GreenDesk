@@ -19,5 +19,6 @@ router.post(
   validateRequest,
   asyncHandler(controller.login.bind(controller)),
 );
+router.post('/refresh', authenticate, asyncHandler(controller.refresh.bind(controller)));
 router.post('/logout', authenticate, asyncHandler(controller.logout.bind(controller)));
 export default router;

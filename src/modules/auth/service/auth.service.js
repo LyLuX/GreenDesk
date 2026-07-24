@@ -31,6 +31,31 @@ export default class AuthService {
       throw new AppError('Invalid email or password', HTTP_STATUS.UNAUTHORIZED);
     }
     await this.authRepository.update(user, { lastLoginAt: new Date() });
+    const session = this.createSession(user);
+    await this.auditService.record({
+      userId: user.id,
+      action: 'LOGIN_SUCCESS',
+      entity: 'USER',
+      entityUuid: user.uuid,
+    });
+    return session;
+  }
+
+  /** Renews an active user's access token and revokes the token it replaces. */
+  async refresh(claims) {
+    if (!claims?.jti || !claims?.exp || !claims?.sub) {
+      throw new AppError('Invalid or expired access token', HTTP_STATUS.UNAUTHORIZED);
+    }
+    const user = await this.userService.getByUuid(claims.sub);
+    if (!user?.isActive) {
+      throw new AppError('Invalid or expired access token', HTTP_STATUS.UNAUTHORIZED);
+    }
+    await this.authRepository.revokeAccessToken(claims.jti, new Date(claims.exp * 1000));
+    return this.createSession(user);
+  }
+
+  /** Creates the public session payload shared by login and active-session renewal. */
+  createSession(user) {
     const roles = (user.roles ?? []).map((role) => role.name);
     const permissions = [
       ...new Set(
@@ -48,12 +73,6 @@ export default class AuthService {
       },
     );
     const safeUser = this.userService.publicUser(user);
-    await this.auditService.record({
-      userId: user.id,
-      action: 'LOGIN_SUCCESS',
-      entity: 'USER',
-      entityUuid: user.uuid,
-    });
     return {
       accessToken,
       user: {
