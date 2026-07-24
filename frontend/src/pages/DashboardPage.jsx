@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getDashboardSummary } from '../api/dashboard.api.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
+import Loader from '../components/Loader.jsx';
 import { formatCurrency } from '../utils/formatters.js';
 export default function DashboardPage() {
   const [data, setData] = useState(null);
@@ -36,9 +37,7 @@ export default function DashboardPage() {
   if (!data)
     return (
       <main className="loading-page d-grid place-items-center">
-        <p className="text-body-secondary" role="status">
-          Chargement du tableau de bord…
-        </p>
+        <Loader label="Chargement du tableau de bord" />
       </main>
     );
   const materials = data.materials ?? {};

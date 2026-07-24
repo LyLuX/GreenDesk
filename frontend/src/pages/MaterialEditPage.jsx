@@ -4,6 +4,7 @@ import getApiErrorMessage from '../api/get-api-error-message.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import Button from '../components/Button.jsx';
 import FormField from '../components/FormField.jsx';
+import Loader from '../components/Loader.jsx';
 import normalizeFormValues from '../utils/normalize-form-values.js';
 
 const fields = [
@@ -122,8 +123,8 @@ export default function MaterialEditPage() {
   };
   if (!material)
     return (
-      <main className="app-page text-body-secondary" role="status">
-        Chargement du formulaire…
+      <main className="app-page">
+        <Loader label="Chargement du formulaire" />
       </main>
     );
   const relationOptions = (items) => items.map((item) => ({ value: item.uuid, label: item.name }));

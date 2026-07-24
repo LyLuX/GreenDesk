@@ -15,7 +15,7 @@ describe('AuthenticatedImage', () => {
   it('shows loading then a protected image and revokes its object URL', async () => {
     getMaterialFileContent.mockResolvedValue({ data: new Blob(['image']) });
     const { unmount } = render(<AuthenticatedImage fileUuid="file-uuid" alt="Photo matériel" />);
-    expect(screen.getByRole('status')).toHaveTextContent('Chargement…');
+    expect(screen.getByRole('status')).toHaveAccessibleName('Chargement de l’image');
     expect(await screen.findByRole('img', { name: 'Photo matériel' })).toHaveAttribute(
       'src',
       'blob:photo',

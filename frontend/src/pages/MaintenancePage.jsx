@@ -12,6 +12,7 @@ import {
 import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
 import Button from '../components/Button.jsx';
+import Loader from '../components/Loader.jsx';
 import FormField from '../components/FormField.jsx';
 import Modal from '../components/Modal.jsx';
 import useNotification from '../notifications/useNotification.js';
@@ -290,9 +291,7 @@ export default function MaintenancePage() {
         </div>
       )}
       {isLoading ? (
-        <p role="status" className="text-body-secondary">
-          Chargement des plans…
-        </p>
+        <Loader label="Chargement des plans de maintenance" />
       ) : (
         <div className="table-shell table-responsive">
           <table className="table table-hover align-middle">

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getMaterialFileContent } from '../api/material-files.api.js';
+import Loader from './Loader.jsx';
 
 /** Displays a protected image through an authenticated blob request. */
 export default function AuthenticatedImage({ fileUuid, alt, className }) {
@@ -27,11 +28,6 @@ export default function AuthenticatedImage({ fileUuid, alt, className }) {
 
   if (error)
     return <div className={className} role="img" aria-label={`Image indisponible : ${alt}`} />;
-  if (!url)
-    return (
-      <div className={className} role="status">
-        Chargement…
-      </div>
-    );
+  if (!url) return <Loader className={className} label="Chargement de l’image" size="sm" />;
   return <img className={className} src={url} alt={alt} />;
 }

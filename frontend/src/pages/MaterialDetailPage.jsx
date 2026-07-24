@@ -13,6 +13,7 @@ import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
 import AuthenticatedImage from '../components/AuthenticatedImage.jsx';
 import Button from '../components/Button.jsx';
+import Loader from '../components/Loader.jsx';
 import { formatCurrency } from '../utils/formatters.js';
 
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -204,8 +205,8 @@ export default function MaterialDetailPage() {
     );
   if (!material)
     return (
-      <main className="app-page text-body-secondary" role="status">
-        Chargement du matériel…
+      <main className="app-page">
+        <Loader label="Chargement du matériel" />
       </main>
     );
   return (

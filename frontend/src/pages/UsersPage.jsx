@@ -4,6 +4,7 @@ import { createReferenceApi } from '../api/reference.api.js';
 import { createUser, deleteUser, listUsers, updateUser } from '../api/users.api.js';
 import Button from '../components/Button.jsx';
 import FormField from '../components/FormField.jsx';
+import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
 import useNotification from '../notifications/useNotification.js';
 
@@ -163,9 +164,7 @@ export default function UsersPage() {
         </p>
       )}
       {loading ? (
-        <p className="text-body-secondary" role="status">
-          Chargement des utilisateurs…
-        </p>
+        <Loader label="Chargement des utilisateurs" />
       ) : (
         <div className="table-shell table-responsive">
           <table className="table table-hover align-middle">

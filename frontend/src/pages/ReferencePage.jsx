@@ -6,6 +6,7 @@ import useAuth from '../auth/useAuth.js';
 import Button from '../components/Button.jsx';
 import DataTable from '../components/DataTable.jsx';
 import FormField from '../components/FormField.jsx';
+import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import useNotification from '../notifications/useNotification.js';
@@ -253,11 +254,7 @@ export default function ReferencePage({
           </label>
         </div>
       )}
-      {isLoading && (
-        <p role="status" className="text-body-secondary">
-          Chargement…
-        </p>
-      )}
+      {isLoading && <Loader label={`Chargement des ${title.toLowerCase()}`} />}
       {loadError && (
         <div
           role="alert"
