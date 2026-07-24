@@ -12,8 +12,9 @@ import {
 import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
 import Button from '../components/Button.jsx';
-import Loader from '../components/Loader.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import FormField from '../components/FormField.jsx';
+import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
 import useNotification from '../notifications/useNotification.js';
 import normalizeFormValues from '../utils/normalize-form-values.js';
@@ -76,6 +77,7 @@ export default function MaintenancePage() {
   const [error, setError] = useState('');
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [confirmation, setConfirmation] = useState(null);
 
   const load = useCallback(
     async (signal) => {
@@ -169,30 +171,42 @@ export default function MaintenancePage() {
     }
   };
   const toggle = async (item) => {
-    if (!window.confirm(`${item.active ? 'Désactiver' : 'Activer'} « ${item.title} » ?`)) return;
+    if (busy) return false;
     setBusy(true);
     try {
       await setMaintenanceStatus(item.uuid, !item.active);
       notify('success', 'Statut du plan mis à jour.');
       await load();
+      return true;
     } catch (requestError) {
       setError(getApiErrorMessage(requestError));
+      return false;
     } finally {
       setBusy(false);
     }
   };
   const remove = async (item) => {
-    if (!window.confirm(`Supprimer définitivement le plan « ${item.title} » ?`)) return;
+    if (busy) return false;
     setBusy(true);
     try {
       await deleteMaintenance(item.uuid);
       notify('success', 'Plan d’entretien supprimé.');
       await load();
+      return true;
     } catch (requestError) {
       setError(getApiErrorMessage(requestError));
+      return false;
     } finally {
       setBusy(false);
     }
+  };
+  const confirmAction = async () => {
+    if (!confirmation) return;
+    const completed =
+      confirmation.action === 'delete'
+        ? await remove(confirmation.item)
+        : await toggle(confirmation.item);
+    if (completed) setConfirmation(null);
   };
   const showHistory = async (item) => {
     setDialog({ type: 'history', item });
@@ -350,7 +364,10 @@ export default function MaintenancePage() {
                         </Button>
                       )}
                       {hasPermission('maintenance.update') && (
-                        <Button disabled={busy} onClick={() => toggle(item)}>
+                        <Button
+                          disabled={busy}
+                          onClick={() => setConfirmation({ action: 'status', item })}
+                        >
                           {item.active ? 'Désactiver' : 'Activer'}
                         </Button>
                       )}
@@ -366,7 +383,10 @@ export default function MaintenancePage() {
                         Historique
                       </Button>
                       {hasPermission('maintenance.delete') && (
-                        <Button disabled={busy} onClick={() => remove(item)}>
+                        <Button
+                          disabled={busy}
+                          onClick={() => setConfirmation({ action: 'delete', item })}
+                        >
                           Supprimer
                         </Button>
                       )}
@@ -494,6 +514,32 @@ export default function MaintenancePage() {
           </ul>
         )}
       </Modal>
+      <ConfirmDialog
+        open={Boolean(confirmation)}
+        title={
+          confirmation?.action === 'delete'
+            ? 'Supprimer le plan d’entretien'
+            : `${confirmation?.item.active ? 'Désactiver' : 'Activer'} le plan d’entretien`
+        }
+        description={
+          confirmation?.action === 'delete'
+            ? `Le plan « ${confirmation?.item.title ?? ''} » sera supprimé de la liste.`
+            : confirmation?.item.active
+              ? `Le plan « ${confirmation?.item.title ?? ''} » ne générera plus d’échéances.`
+              : `Le plan « ${confirmation?.item.title ?? ''} » recommencera à générer des échéances.`
+        }
+        confirmLabel={
+          confirmation?.action === 'delete'
+            ? 'Supprimer'
+            : confirmation?.item.active
+              ? 'Désactiver'
+              : 'Activer'
+        }
+        onClose={() => !busy && setConfirmation(null)}
+        onConfirm={confirmAction}
+        busy={busy}
+        destructive={confirmation?.action === 'delete' || confirmation?.item.active}
+      />
     </main>
   );
 }

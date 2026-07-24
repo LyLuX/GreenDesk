@@ -3,6 +3,7 @@ import getApiErrorMessage from '../api/get-api-error-message.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import { createUser, deleteUser, listUsers, updateUser } from '../api/users.api.js';
 import Button from '../components/Button.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
@@ -36,6 +37,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(null);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -131,14 +133,16 @@ export default function UsersPage() {
   };
 
   const remove = async (user) => {
-    if (!window.confirm(`Supprimer l’utilisateur « ${user.firstName} ${user.lastName} » ?`)) return;
+    if (removing) return false;
     setRemoving(user.uuid);
     try {
       await deleteUser(user.uuid);
       notify('success', 'Utilisateur supprimé.');
       await load();
+      return true;
     } catch (requestError) {
       setError(getApiErrorMessage(requestError));
+      return false;
     } finally {
       setRemoving(null);
     }
@@ -209,7 +213,7 @@ export default function UsersPage() {
                         className="btn btn-sm btn-outline-danger"
                         type="button"
                         disabled={removing === user.uuid}
-                        onClick={() => remove(user)}
+                        onClick={() => setUserToDelete(user)}
                       >
                         {removing === user.uuid ? 'Suppression…' : 'Supprimer'}
                       </button>
@@ -306,6 +310,17 @@ export default function UsersPage() {
           </Button>
         </form>
       </Modal>
+      <ConfirmDialog
+        open={Boolean(userToDelete)}
+        title="Supprimer l’utilisateur"
+        description={`Le compte de « ${userToDelete?.firstName ?? ''} ${userToDelete?.lastName ?? ''} » sera supprimé de la liste.`}
+        confirmLabel="Supprimer"
+        onClose={() => !removing && setUserToDelete(null)}
+        onConfirm={async () => {
+          if (userToDelete && (await remove(userToDelete))) setUserToDelete(null);
+        }}
+        busy={Boolean(removing)}
+      />
     </main>
   );
 }

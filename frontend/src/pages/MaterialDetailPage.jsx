@@ -13,6 +13,7 @@ import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
 import AuthenticatedImage from '../components/AuthenticatedImage.jsx';
 import Button from '../components/Button.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Loader from '../components/Loader.jsx';
 import { formatCurrency } from '../utils/formatters.js';
 
@@ -41,6 +42,8 @@ export default function MaterialDetailPage() {
   const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [documentFile, setDocumentFile] = useState(null);
   const [documentType, setDocumentType] = useState('other');
+  const [fileToDelete, setFileToDelete] = useState(null);
+  const [removingFileUuid, setRemovingFileUuid] = useState(null);
   const previewsRef = useRef([]);
 
   const load = useCallback(async () => {
@@ -158,12 +161,17 @@ export default function MaterialDetailPage() {
     }
   };
   const removeFile = async (file) => {
-    if (!window.confirm(`Supprimer « ${file.originalName} » ?`)) return;
+    if (removingFileUuid) return false;
+    setRemovingFileUuid(file.uuid);
     try {
       await deleteMaterialFile(file.uuid);
       await load();
+      return true;
     } catch (err) {
       setError(getApiErrorMessage(err));
+      return false;
+    } finally {
+      setRemovingFileUuid(null);
     }
   };
   const download = async (file) => {
@@ -334,7 +342,12 @@ export default function MaterialDetailPage() {
                       >
                         Principale
                       </Button>
-                      <Button onClick={() => removeFile(file)}>Supprimer</Button>
+                      <Button
+                        disabled={removingFileUuid === file.uuid}
+                        onClick={() => setFileToDelete(file)}
+                      >
+                        Supprimer
+                      </Button>
                     </div>
                   )}
                 </article>
@@ -375,7 +388,12 @@ export default function MaterialDetailPage() {
                   </span>
                   <Button onClick={() => download(file)}>Télécharger</Button>
                   {hasPermission('materials.update') && (
-                    <Button onClick={() => removeFile(file)}>Supprimer</Button>
+                    <Button
+                      disabled={removingFileUuid === file.uuid}
+                      onClick={() => setFileToDelete(file)}
+                    >
+                      Supprimer
+                    </Button>
                   )}
                 </li>
               ))}
@@ -428,6 +446,17 @@ export default function MaterialDetailPage() {
           )}
         </section>
       )}
+      <ConfirmDialog
+        open={Boolean(fileToDelete)}
+        title={fileToDelete?.kind === 'photo' ? 'Supprimer la photo' : 'Supprimer le document'}
+        description={`« ${fileToDelete?.originalName ?? ''} » sera supprimé de ce matériel.`}
+        confirmLabel="Supprimer"
+        onClose={() => !removingFileUuid && setFileToDelete(null)}
+        onConfirm={async () => {
+          if (fileToDelete && (await removeFile(fileToDelete))) setFileToDelete(null);
+        }}
+        busy={Boolean(removingFileUuid)}
+      />
     </main>
   );
 }

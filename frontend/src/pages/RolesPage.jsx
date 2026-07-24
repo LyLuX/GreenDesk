@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import Button from '../components/Button.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
@@ -23,6 +24,7 @@ export default function RolesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(null);
+  const [roleToDelete, setRoleToDelete] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,14 +100,16 @@ export default function RolesPage() {
   };
 
   const remove = async (role) => {
-    if (!window.confirm(`Supprimer le rôle « ${role.name} » ?`)) return;
+    if (removing) return false;
     setRemoving(role.uuid);
     try {
       await rolesApi.remove(role.uuid);
       notify('success', 'Rôle supprimé.');
       await load();
+      return true;
     } catch (requestError) {
       setError(getApiErrorMessage(requestError));
+      return false;
     } finally {
       setRemoving(null);
     }
@@ -172,7 +176,7 @@ export default function RolesPage() {
                         className="btn btn-sm btn-outline-danger"
                         type="button"
                         disabled={removing === role.uuid}
-                        onClick={() => remove(role)}
+                        onClick={() => setRoleToDelete(role)}
                       >
                         {removing === role.uuid ? 'Suppression…' : 'Supprimer'}
                       </button>
@@ -236,6 +240,17 @@ export default function RolesPage() {
           </Button>
         </form>
       </Modal>
+      <ConfirmDialog
+        open={Boolean(roleToDelete)}
+        title="Supprimer le rôle"
+        description={`Le rôle « ${roleToDelete?.name ?? ''} » sera supprimé de la liste.`}
+        confirmLabel="Supprimer"
+        onClose={() => !removing && setRoleToDelete(null)}
+        onConfirm={async () => {
+          if (roleToDelete && (await remove(roleToDelete))) setRoleToDelete(null);
+        }}
+        busy={Boolean(removing)}
+      />
     </main>
   );
 }

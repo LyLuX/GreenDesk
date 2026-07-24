@@ -4,6 +4,7 @@ import getApiErrorMessage from '../api/get-api-error-message.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
 import Button from '../components/Button.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import DataTable from '../components/DataTable.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
@@ -44,6 +45,7 @@ export default function ReferencePage({
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [statusActionId, setStatusActionId] = useState(null);
+  const [confirmation, setConfirmation] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [formError, setFormError] = useState('');
   const [statusError, setStatusError] = useState('');
@@ -128,32 +130,51 @@ export default function ReferencePage({
     }
   };
   const toggle = async (row) => {
-    if (row.active && !window.confirm(`Désactiver « ${row.name} » ?`)) return;
+    if (statusActionId) return false;
     setStatusActionId(row.uuid);
     setStatusError('');
     try {
       await api.setStatus(row.uuid, !row.active);
       notify('success', `${title.slice(0, -1)} ${row.active ? 'désactivée' : 'réactivée'}.`);
       await load();
+      return true;
     } catch (error) {
       setStatusError(getApiErrorMessage(error));
+      return false;
     } finally {
       setStatusActionId(null);
     }
   };
   const remove = async (row) => {
-    if (!window.confirm(`Supprimer « ${row.name} » ?`)) return;
+    if (statusActionId) return false;
     setStatusActionId(row.uuid);
     setStatusError('');
     try {
       await api.remove(row.uuid);
       notify('success', `${title.slice(0, -1)} supprimée.`);
       await load();
+      return true;
     } catch (error) {
       setStatusError(getApiErrorMessage(error));
+      return false;
     } finally {
       setStatusActionId(null);
     }
+  };
+  const requestStatusChange = (row) => {
+    if (!row.active) {
+      toggle(row);
+      return;
+    }
+    setConfirmation({ action: 'disable', row });
+  };
+  const confirmAction = async () => {
+    if (!confirmation) return;
+    const completed =
+      confirmation.action === 'delete'
+        ? await remove(confirmation.row)
+        : await toggle(confirmation.row);
+    if (completed) setConfirmation(null);
   };
   const emptyMessage = debouncedSearch
     ? `Aucun résultat pour « ${debouncedSearch} ».`
@@ -275,8 +296,14 @@ export default function ReferencePage({
         emptyMessage={emptyMessage}
         actionLoadingId={statusActionId}
         onEdit={hasPermission(updatePermission) ? setEditing : undefined}
-        onStatus={disablePermission && hasPermission(disablePermission) ? toggle : undefined}
-        onDelete={deletePermission && hasPermission(deletePermission) ? remove : undefined}
+        onStatus={
+          disablePermission && hasPermission(disablePermission) ? requestStatusChange : undefined
+        }
+        onDelete={
+          deletePermission && hasPermission(deletePermission)
+            ? (row) => setConfirmation({ action: 'delete', row })
+            : undefined
+        }
         onView={detailPath ? (row) => navigate(detailPath(row)) : undefined}
       />
       {paginationData && (
@@ -334,6 +361,23 @@ export default function ReferencePage({
           </Button>
         </form>
       </Modal>
+      <ConfirmDialog
+        open={Boolean(confirmation)}
+        title={
+          confirmation?.action === 'delete'
+            ? `Supprimer ${title.slice(0, -1).toLowerCase()}`
+            : `Désactiver ${title.slice(0, -1).toLowerCase()}`
+        }
+        description={
+          confirmation?.action === 'delete'
+            ? `« ${confirmation?.row.name ?? ''} » sera supprimé de la liste.`
+            : `« ${confirmation?.row.name ?? ''} » ne sera plus disponible dans les sélections.`
+        }
+        confirmLabel={confirmation?.action === 'delete' ? 'Supprimer' : 'Désactiver'}
+        onClose={() => !statusActionId && setConfirmation(null)}
+        onConfirm={confirmAction}
+        busy={Boolean(statusActionId)}
+      />
     </main>
   );
 }
