@@ -353,60 +353,62 @@ export default function MaintenancePage() {
                         {!item.active && ' (inactif)'}
                       </span>
                     </td>
-                    <td className="d-flex flex-wrap gap-1">
-                      {hasPermission('maintenance.update') && (
+                    <td>
+                      <div className="d-flex h-100 w-100 flex-wrap align-items-center justify-content-center gap-1">
+                        {hasPermission('maintenance.update') && (
+                          <button
+                            aria-label={`Modifier ${item.title}`}
+                            className="btn btn-sm btn-outline-brand flex-fill"
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setDialog({ type: 'edit', item })}
+                          >
+                            Modifier
+                          </button>
+                        )}
+                        {hasPermission('maintenance.update') && (
+                          <button
+                            aria-label={`${item.active ? 'Désactiver' : 'Activer'} ${item.title}`}
+                            className="btn btn-sm btn-outline-secondary flex-fill"
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setConfirmation({ action: 'status', item })}
+                          >
+                            {item.active ? 'Désactiver' : 'Activer'}
+                          </button>
+                        )}
+                        {hasPermission('maintenance.execute') && item.active && (
+                          <button
+                            aria-label={`Effectuer ${item.title}`}
+                            className="btn btn-sm btn-outline-brand flex-fill"
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setDialog({ type: 'execute', item })}
+                          >
+                            Effectuer
+                          </button>
+                        )}
                         <button
-                          aria-label={`Modifier ${item.title}`}
-                          className="btn btn-sm btn-outline-brand"
+                          aria-label={`Voir l’historique de ${item.title}`}
+                          className="btn btn-sm btn-outline-brand flex-fill"
                           type="button"
                           disabled={busy}
-                          onClick={() => setDialog({ type: 'edit', item })}
+                          onClick={() => showHistory(item)}
                         >
-                          Modifier
+                          Historique
                         </button>
-                      )}
-                      {hasPermission('maintenance.update') && (
-                        <button
-                          aria-label={`${item.active ? 'Désactiver' : 'Activer'} ${item.title}`}
-                          className="btn btn-sm btn-outline-secondary"
-                          type="button"
-                          disabled={busy}
-                          onClick={() => setConfirmation({ action: 'status', item })}
-                        >
-                          {item.active ? 'Désactiver' : 'Activer'}
-                        </button>
-                      )}
-                      {hasPermission('maintenance.execute') && item.active && (
-                        <button
-                          aria-label={`Effectuer ${item.title}`}
-                          className="btn btn-sm btn-outline-brand"
-                          type="button"
-                          disabled={busy}
-                          onClick={() => setDialog({ type: 'execute', item })}
-                        >
-                          Effectuer
-                        </button>
-                      )}
-                      <button
-                        aria-label={`Voir l’historique de ${item.title}`}
-                        className="btn btn-sm btn-outline-brand"
-                        type="button"
-                        disabled={busy}
-                        onClick={() => showHistory(item)}
-                      >
-                        Historique
-                      </button>
-                      {hasPermission('maintenance.delete') && (
-                        <button
-                          aria-label={`Supprimer ${item.title}`}
-                          className="btn btn-sm btn-outline-danger"
-                          type="button"
-                          disabled={busy}
-                          onClick={() => setConfirmation({ action: 'delete', item })}
-                        >
-                          Supprimer
-                        </button>
-                      )}
+                        {hasPermission('maintenance.delete') && (
+                          <button
+                            aria-label={`Supprimer ${item.title}`}
+                            className="btn btn-sm btn-outline-danger flex-fill"
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setConfirmation({ action: 'delete', item })}
+                          >
+                            Supprimer
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

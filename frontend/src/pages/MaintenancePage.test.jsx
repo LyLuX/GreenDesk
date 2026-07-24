@@ -78,7 +78,16 @@ describe('MaintenancePage', () => {
     });
 
     expect(editButton).toHaveClass('btn-sm', 'btn-outline-brand');
+    expect(editButton).toHaveClass('flex-fill');
     expect(editButton).not.toHaveClass('btn-brand');
     expect(deleteButton).toHaveClass('btn-sm', 'btn-outline-danger');
+    expect(editButton.parentElement).toHaveClass(
+      'd-flex',
+      'h-100',
+      'w-100',
+      'flex-wrap',
+      'align-items-center',
+      'justify-content-center',
+    );
   });
 });
