@@ -139,7 +139,7 @@ export default function App() {
             element={secure(
               'materials.read',
               <ReferencePage
-                title="Matériaux"
+                title="Matériels"
                 resource="materials"
                 createPermission="materials.create"
                 updatePermission="materials.update"
@@ -204,15 +204,6 @@ export default function App() {
                     min: '0',
                     required: true,
                   },
-                  {
-                    name: 'salePrice',
-                    label: 'Prix vente',
-                    type: 'number',
-                    valueType: 'number',
-                    step: '0.01',
-                    min: '0',
-                    required: true,
-                  },
                 ]}
                 columns={table([
                   ['name', 'Nom'],
@@ -220,7 +211,6 @@ export default function App() {
                   ['brand', 'Marque', (value) => value?.name ?? '—'],
                   ['unit', 'Unité'],
                   ['purchasePrice', 'Achat', formatCurrency],
-                  ['salePrice', 'Vente', formatCurrency],
                 ])}
                 filters={[
                   {

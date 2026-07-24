@@ -7,11 +7,9 @@ describe('frontend value utilities', () => {
   it('normalizes price fields to numbers', () => {
     const fields = [
       { name: 'purchasePrice', label: 'Prix achat', required: true, valueType: 'number' },
-      { name: 'salePrice', label: 'Prix vente', required: true, valueType: 'number' },
     ];
-    expect(normalizeFormValues({ purchasePrice: '25.50', salePrice: '0' }, fields)).toEqual({
+    expect(normalizeFormValues({ purchasePrice: '25.50' }, fields)).toEqual({
       purchasePrice: 25.5,
-      salePrice: 0,
     });
   });
   it('formats monetary and missing values safely', () => {

@@ -61,10 +61,7 @@ describe('MaterialService', () => {
         .mockResolvedValue(model({ uuid: 'existing', serialNumber: 'SN-1' })),
     });
     await expect(
-      service.create(
-        { name: 'Taille-haie', unit: 'u', purchasePrice: 0, salePrice: 0, serialNumber: 'SN-1' },
-        1,
-      ),
+      service.create({ name: 'Taille-haie', unit: 'u', purchasePrice: 0, serialNumber: 'SN-1' }, 1),
     ).rejects.toMatchObject({ statusCode: 409 });
     expect(repository.create).not.toHaveBeenCalled();
   });
@@ -77,7 +74,6 @@ describe('MaterialService', () => {
           name: 'Brouette',
           unit: 'u',
           purchasePrice: 0,
-          salePrice: 0,
           purchaseDate: '2026-04-02',
           commissionedAt: '2026-04-01',
         },

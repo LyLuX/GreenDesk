@@ -47,9 +47,9 @@ export default function DashboardPage() {
   const fleet = data.fleet ?? {};
   const maintenance = data.maintenance ?? {};
   const cards = [
-    ['Matériaux', materials.total ?? 0],
-    ['Matériaux actifs', materials.active ?? 0],
-    ['Matériaux inactifs', materials.inactive ?? 0],
+    ['Matériels', materials.total ?? 0],
+    ['Matériels actifs', materials.active ?? 0],
+    ['Matériels inactifs', materials.inactive ?? 0],
     ['Catégories', categories.total ?? 0],
     ['Propriétés', properties.total ?? 0],
     ['Marques', brands.total ?? 0],

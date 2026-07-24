@@ -19,7 +19,7 @@ Authentification, utilisateurs, rôles, permissions, audit, catégories, propri�
 
 Les permissions ajoutées sont `categories.*`, `properties.*` et `materials.*` avec les actions `read`, `create`, `update`, `delete`.
 
-Le dashboard est disponible via `GET /api/dashboard/summary`, protégé par `dashboard.read`. Il compte les matériaux, les catégories, les propriétés et les marques, et calcule la valeur, le coût moyen et l’âge moyen du parc par agrégats SQL. La documentation OpenAPI est servie sur `/docs`.
+Le dashboard est disponible via `GET /api/dashboard/summary`, protégé par `dashboard.read`. Il compte les matériels, les catégories, les propriétés et les marques, et calcule la valeur, le coût moyen et l’âge moyen du parc par agrégats SQL. La documentation OpenAPI est servie sur `/docs`.
 
 ## Sprint 5 : parc matériel
 

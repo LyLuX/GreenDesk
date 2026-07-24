@@ -20,12 +20,6 @@ Material.init(
       defaultValue: 0,
       field: 'purchase_price',
     },
-    salePrice: {
-      type: DataTypes.DECIMAL(12, 2),
-      allowNull: false,
-      defaultValue: 0,
-      field: 'sale_price',
-    },
     brandId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true, field: 'brand_id' },
     categoryId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true, field: 'category_id' },
     propertyId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true, field: 'property_id' },

@@ -30,15 +30,6 @@ const fields = [
     required: true,
   },
   {
-    name: 'salePrice',
-    label: 'Prix de vente',
-    type: 'number',
-    valueType: 'number',
-    step: '0.01',
-    min: '0',
-    required: true,
-  },
-  {
     name: 'currentValue',
     label: 'Valeur actuelle',
     type: 'number',
