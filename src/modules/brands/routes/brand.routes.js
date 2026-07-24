@@ -10,28 +10,28 @@ const controller = new BrandController();
 router.use(authenticate);
 router.get(
   '/',
-  authorize('brand.read'),
+  authorize('brands.read'),
   validator.listValidator,
   validateRequest,
   asyncHandler(controller.getAll.bind(controller)),
 );
 router.post(
   '/',
-  authorize('brand.create'),
+  authorize('brands.create'),
   validator.createValidator,
   validateRequest,
   asyncHandler(controller.create.bind(controller)),
 );
 router.put(
   '/:uuid',
-  authorize('brand.update'),
+  authorize('brands.update'),
   validator.updateValidator,
   validateRequest,
   asyncHandler(controller.update.bind(controller)),
 );
 router.delete(
   '/:uuid',
-  authorize('brand.delete'),
+  authorize('brands.delete'),
   validator.uuidValidator,
   validateRequest,
   asyncHandler(controller.remove.bind(controller)),

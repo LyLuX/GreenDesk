@@ -32,7 +32,7 @@ Les photos (JPEG, PNG, WebP) et documents PDF sont stockés sous `uploads/materi
 | Domaine    | Permissions                                                                      |
 | ---------- | -------------------------------------------------------------------------------- |
 | Matériels  | `materials.read`, `materials.create`, `materials.update`, `materials.delete`     |
-| Marques    | `brand.read`, `brand.create`, `brand.update`, `brand.delete`                     |
+| Marques    | `brands.read`, `brands.create`, `brands.update`, `brands.delete`                 |
 | Catégories | `categories.read`, `categories.create`, `categories.update`, `categories.delete` |
 | Propriétés | `properties.read`, `properties.create`, `properties.update`, `properties.delete` |
 

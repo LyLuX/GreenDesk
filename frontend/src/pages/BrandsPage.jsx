@@ -4,9 +4,9 @@ export default function BrandsPage() {
     <ReferencePage
       title="Marques"
       resource="brands"
-      createPermission="brand.create"
-      updatePermission="brand.update"
-      deletePermission="brand.delete"
+      createPermission="brands.create"
+      updatePermission="brands.update"
+      deletePermission="brands.delete"
       fields={[{ name: 'name', label: 'Nom', required: true }]}
       columns={[
         { key: 'name', label: 'Nom' },

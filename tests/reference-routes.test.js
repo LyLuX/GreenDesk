@@ -22,6 +22,13 @@ describe('reference routes authorization and validation', () => {
       .expect(403);
   });
 
+  it('requires the brand read permission to list brands', async () => {
+    await request(app)
+      .get('/api/v1/brands')
+      .set('Authorization', `Bearer ${tokenFor(['materials.read'])}`)
+      .expect(403);
+  });
+
   it('restricts user management to administrators', async () => {
     await request(app)
       .get('/api/v1/users')

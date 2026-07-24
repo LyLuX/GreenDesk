@@ -249,7 +249,7 @@ export default function App() {
             element={secure('materials.update', <MaterialEditPage />)}
           />
           <Route path="/maintenance" element={secure('maintenance.read', <MaintenancePage />)} />
-          <Route path="/brands" element={secure('brand.read', <BrandsPage />)} />
+          <Route path="/brands" element={secure('brands.read', <BrandsPage />)} />
           <Route path="/users" element={adminOnly(<UsersPage />)} />
           <Route path="/roles" element={adminOnly(<RolesPage />)} />
           <Route path="/permissions" element={adminOnly(<PermissionsPage />)} />
