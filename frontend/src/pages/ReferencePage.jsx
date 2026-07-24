@@ -327,7 +327,7 @@ export default function ReferencePage({
       <PaginationControls
         pagination={paginationData}
         limit={limit}
-        itemLabel={title.toLowerCase()}
+        itemLabel={`${title.toLowerCase().replace(/s$/, '')}(s)`}
         disabled={isLoading}
         onLimitChange={(value) => {
           setLimit(value);

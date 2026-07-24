@@ -53,7 +53,7 @@ describe('ReferencePage pagination', () => {
     expect(await screen.findByText('Élément 5')).toBeInTheDocument();
     expect(screen.queryByText('Élément 6')).not.toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Tous (6)' })).toBeInTheDocument();
-    expect(screen.getByText('6 éléments, page 1 sur 2')).toBeInTheDocument();
+    expect(screen.getByText('6 élément(s), page 1 sur 2')).toBeInTheDocument();
     expect(screen.queryByText(/résultat/)).not.toBeInTheDocument();
 
     await user.selectOptions(screen.getByLabelText('Nombre d’éléments par page'), 'all');
