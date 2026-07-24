@@ -7,5 +7,5 @@
  * @returns {JSX.Element} The status panel.
  */
 export default function StatusPanel({ as: Element = 'section', children }) {
-  return <Element className="status-panel surface p-4 text-center">{children}</Element>;
+  return <Element className="status-panel surface p-4 text-center m-auto">{children}</Element>;
 }

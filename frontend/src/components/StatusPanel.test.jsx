@@ -15,6 +15,7 @@ describe('StatusPanel', () => {
       'surface',
       'p-4',
       'text-center',
+      'm-auto',
     );
   });
 });
