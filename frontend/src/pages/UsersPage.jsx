@@ -131,12 +131,7 @@ export default function UsersPage() {
   };
 
   const remove = async (user) => {
-    if (
-      !window.confirm(
-        `Supprimer définitivement l’utilisateur « ${user.firstName} ${user.lastName} » ?`,
-      )
-    )
-      return;
+    if (!window.confirm(`Supprimer l’utilisateur « ${user.firstName} ${user.lastName} » ?`)) return;
     setRemoving(user.uuid);
     try {
       await deleteUser(user.uuid);
@@ -211,7 +206,7 @@ export default function UsersPage() {
                         Modifier
                       </button>
                       <button
-                        className="btn btn-sm btn-outline-secondary"
+                        className="btn btn-sm btn-outline-danger"
                         type="button"
                         disabled={removing === user.uuid}
                         onClick={() => remove(user)}
