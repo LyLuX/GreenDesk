@@ -68,7 +68,7 @@ export default function DashboardPage() {
         <h1 className="page-title">Tableau de bord</h1>
         <p className="page-subtitle">Vue d’ensemble du parc matériel et des opérations à suivre.</p>
       </div>
-      <div className="row g-3">
+      <div className="row justify-content-evenly g-3">
         {cards.map(([label, value]) => (
           <div className="col-sm-6 col-xl-4" key={label}>
             <section className="metric-card h-100 p-4">

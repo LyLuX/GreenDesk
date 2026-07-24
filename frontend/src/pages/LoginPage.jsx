@@ -31,7 +31,7 @@ export default function LoginPage() {
   return (
     <main className="auth-page d-flex align-items-center justify-content-center">
       <form className="auth-card card d-grid gap-3 p-4 p-sm-5" onSubmit={submit}>
-        <div className="mb-2 text-center">
+        <div className="mb-4 text-center">
           <img className="auth-logo mb-3" src="/auth-logo.jpg" alt="EI BOURNAZEL Paul" />
           <h1 className="auth-heading mb-1">GreenDesk</h1>
           <p className="mb-0 text-body-secondary">Connexion à votre espace de travail</p>
@@ -68,7 +68,7 @@ export default function LoginPage() {
             autoComplete="current-password"
           />
         </label>
-        <button className="btn btn-brand align-self-center px-4" disabled={loading}>
+        <button className="btn btn-brand align-self-center px-4 mt-5" disabled={loading}>
           {loading ? 'Connexion…' : 'Se connecter'}
         </button>
         <p className="mb-0 text-center small text-body-secondary">

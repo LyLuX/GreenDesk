@@ -17,12 +17,12 @@ export default function AppLayout() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <div className="container-fluid d-flex h-100 align-items-center justify-content-between gap-3 px-4">
+        <div className="container-fluid d-flex align-items-center justify-content-between gap-3 px-4 pt-2">
           <NavLink className="brand-lockup d-flex align-items-center gap-3" to="/dashboard">
-            <img className="brand-logo" src="/brand-logo.jpg" alt="El Bournazel Paul" />
+            <img className="brand-logo" src="/brand-logo.jpg" alt="EI BOURNAZEL Paul" />
             <span>
               <span className="brand-name d-block">GreenDesk</span>
-              <span className="brand-company d-block">El Bournazel Paul</span>
+              <span className="brand-company d-block">EI BOURNAZEL Paul</span>
             </span>
           </NavLink>
           <div className="d-flex align-items-center gap-3 text-white">
