@@ -10,8 +10,8 @@ export default class BrandRepository {
   async findByUuid(uuid) {
     return Brand.findOne({ where: { uuid } });
   }
-  async findByName(name) {
-    return Brand.findOne({ where: { name } });
+  async findByName(name, { withDeleted = false } = {}) {
+    return Brand.findOne({ where: { name }, paranoid: !withDeleted });
   }
   async create(values) {
     return Brand.create(values);
@@ -21,5 +21,8 @@ export default class BrandRepository {
   }
   async delete(item) {
     return item.destroy();
+  }
+  async restore(item) {
+    return item.restore();
   }
 }

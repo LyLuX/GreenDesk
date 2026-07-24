@@ -16,8 +16,13 @@ export default class BrandService {
     return item;
   }
   async create(values, userId) {
-    if (await this.repository.findByName(values.name))
+    const existingBrand = await this.repository.findByName(values.name, { withDeleted: true });
+    if (existingBrand && !existingBrand.deletedAt)
       throw new AppError('Brand name is already in use', HTTP_STATUS.CONFLICT);
+    if (existingBrand) {
+      await this.repository.restore(existingBrand);
+      return this.repository.update(existingBrand, { ...values, active: true, updatedBy: userId });
+    }
     return this.repository.create({ ...values, createdBy: userId, updatedBy: userId });
   }
   async update(uuid, values, userId) {
