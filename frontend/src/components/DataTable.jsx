@@ -55,7 +55,7 @@ export default function DataTable({
                   {onEdit && (
                     <button
                       aria-label={`Modifier ${row.name ?? 'l’élément'}`}
-                      className="btn btn-sm btn-outline-brand me-2"
+                      className="btn btn-sm btn-outline-brand"
                       type="button"
                       onClick={() => onEdit(row)}
                       disabled={actionLoadingId === row.uuid}

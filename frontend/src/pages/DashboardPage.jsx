@@ -69,8 +69,8 @@ export default function DashboardPage() {
       label: 'Entretien',
       cards: [
         ['Entretiens aujourd’hui', maintenance.today ?? 0],
-        ['Entretiens en retard', maintenance.overdue ?? 0],
         ['Entretiens prévus sous 30 jours', maintenance.upcoming ?? 0],
+        ['Entretiens en retard', maintenance.overdue ?? 0],
       ],
     },
   ];
