@@ -3,10 +3,26 @@
 const { randomUUID } = require('node:crypto');
 
 const permissionMappings = [
-  { from: 'brand.read', to: 'brands.read', description: 'Read brands' },
-  { from: 'brand.create', to: 'brands.create', description: 'Create brands' },
-  { from: 'brand.update', to: 'brands.update', description: 'Update brands' },
-  { from: 'brand.delete', to: 'brands.delete', description: 'Delete brands' },
+  {
+    from: 'brand.read',
+    to: 'brands.read',
+    description: 'Consulter la liste et le détail des marques.',
+  },
+  {
+    from: 'brand.create',
+    to: 'brands.create',
+    description: 'Ajouter de nouvelles marques au référentiel.',
+  },
+  {
+    from: 'brand.update',
+    to: 'brands.update',
+    description: 'Modifier les informations des marques.',
+  },
+  {
+    from: 'brand.delete',
+    to: 'brands.delete',
+    description: 'Supprimer des marques du référentiel.',
+  },
 ];
 
 const names = (key) => permissionMappings.map((permission) => permission[key]);

@@ -5,7 +5,7 @@ const { randomUUID } = require('node:crypto');
 const dashboardPermissions = [
   {
     name: 'dashboard.read',
-    description: 'View the dashboard',
+    description: 'Consulter les indicateurs du tableau de bord.',
   },
 ];
 

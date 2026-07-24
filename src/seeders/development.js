@@ -1,5 +1,6 @@
 import sequelize, { connectDatabase } from '../config/database.js';
 import { initializeModels } from '../core/database/models.js';
+import permissionDefinitions from '../core/constants/permission-definitions.js';
 import PermissionService from '../modules/permissions/service/permission.service.js';
 import RoleRepository from '../modules/roles/repository/role.repository.js';
 import RoleService from '../modules/roles/service/role.service.js';
@@ -7,31 +8,6 @@ import UserRepository from '../modules/users/repository/user.repository.js';
 import UserService from '../modules/users/service/user.service.js';
 
 const roleNames = ['ADMIN', 'MANAGER', 'USER'];
-const permissionNames = [
-  'USER_READ',
-  'USER_CREATE',
-  'USER_UPDATE',
-  'USER_DELETE',
-  'categories.read',
-  'categories.create',
-  'categories.update',
-  'categories.delete',
-  'materials.read',
-  'materials.create',
-  'materials.update',
-  'materials.delete',
-  'dashboard.read',
-  'brands.read',
-  'brands.create',
-  'brands.update',
-  'brands.delete',
-  'maintenance.read',
-  'maintenance.create',
-  'maintenance.update',
-  'maintenance.delete',
-  'maintenance.execute',
-];
-
 /** Seeds required authorization data and the local development administrator. */
 async function seed() {
   await connectDatabase();
@@ -43,9 +19,17 @@ async function seed() {
   for (const name of roleNames)
     if (!(await roleRepository.findByName(name)))
       await roleService.create({ name, description: `${name} role` });
-  for (const name of permissionNames)
-    if (!(await permissionService.permissionRepository.findByName(name)))
-      await permissionService.create({ name, description: `${name} permission` });
+  for (const definition of permissionDefinitions) {
+    const permission = await permissionService.permissionRepository.findByName(definition.name);
+    if (permission) {
+      if (permission.description !== definition.description)
+        await permissionService.update(permission.uuid, {
+          description: definition.description,
+        });
+    } else {
+      await permissionService.create(definition);
+    }
+  }
   const adminRole = await roleRepository.findByName('ADMIN');
   const permissions = await permissionService.getAll();
   await roleRepository.setPermissions(adminRole, permissions);
