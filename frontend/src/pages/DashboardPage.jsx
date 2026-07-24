@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { getDashboardSummary } from '../api/dashboard.api.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import Loader from '../components/Loader.jsx';
+import StatusPanel from '../components/StatusPanel.jsx';
 import { formatCurrency } from '../utils/formatters.js';
 export default function DashboardPage() {
   const [data, setData] = useState(null);
@@ -24,14 +25,14 @@ export default function DashboardPage() {
   if (error)
     return (
       <main className="loading-page d-grid place-items-center">
-        <div className="status-panel surface p-4 text-center">
+        <StatusPanel as="div">
           <p role="alert" className="text-danger mb-3">
             {error}
           </p>
           <button className="btn btn-brand" type="button" onClick={load}>
             Réessayer
           </button>
-        </div>
+        </StatusPanel>
       </main>
     );
   if (!data)
