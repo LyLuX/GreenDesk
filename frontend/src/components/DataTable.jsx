@@ -18,7 +18,7 @@ export default function DataTable({
                 {column.label}
               </th>
             ))}
-            <th scope="col">
+            <th className="px-4 py-3" scope="col">
               <span className="sr-only">Actions</span>
             </th>
           </tr>
