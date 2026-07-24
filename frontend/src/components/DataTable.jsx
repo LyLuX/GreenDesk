@@ -3,6 +3,7 @@ export default function DataTable({
   rows = [],
   onEdit,
   onStatus,
+  onDelete,
   onView,
   emptyMessage = 'Aucun élément trouvé.',
   actionLoadingId,
@@ -75,6 +76,17 @@ export default function DataTable({
                         : row.active
                           ? 'Désactiver'
                           : 'Activer'}
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      aria-label={`Supprimer ${row.name ?? 'l’élément'}`}
+                      className="btn btn-sm btn-outline-danger ms-2"
+                      type="button"
+                      onClick={() => onDelete(row)}
+                      disabled={actionLoadingId === row.uuid}
+                    >
+                      {actionLoadingId === row.uuid ? 'Suppression…' : 'Supprimer'}
                     </button>
                   )}
                 </td>

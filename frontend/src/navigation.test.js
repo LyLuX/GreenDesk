@@ -12,6 +12,8 @@ describe('frontend reference navigation', () => {
       '/properties',
       '/brands',
       '/users',
+      '/roles',
+      '/permissions',
     ]);
   });
 

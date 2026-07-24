@@ -4,5 +4,6 @@ export const createReferenceApi = (resource) => ({
   get: (uuid) => client.get(`/v1/${resource}/${uuid}`),
   create: (payload) => client.post(`/v1/${resource}`, payload),
   update: (uuid, payload) => client.put(`/v1/${resource}/${uuid}`, payload),
+  remove: (uuid) => client.delete(`/v1/${resource}/${uuid}`),
   setStatus: (uuid, active) => client.patch(`/v1/${resource}/${uuid}/status`, { active }),
 });

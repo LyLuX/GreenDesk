@@ -20,6 +20,7 @@ export default function ReferencePage({
   createPermission,
   updatePermission,
   disablePermission,
+  deletePermission,
   filters = [],
   pagination = false,
   detailPath,
@@ -132,6 +133,20 @@ export default function ReferencePage({
     try {
       await api.setStatus(row.uuid, !row.active);
       notify('success', `${title.slice(0, -1)} ${row.active ? 'désactivée' : 'réactivée'}.`);
+      await load();
+    } catch (error) {
+      setStatusError(getApiErrorMessage(error));
+    } finally {
+      setStatusActionId(null);
+    }
+  };
+  const remove = async (row) => {
+    if (!window.confirm(`Supprimer « ${row.name} » ?`)) return;
+    setStatusActionId(row.uuid);
+    setStatusError('');
+    try {
+      await api.remove(row.uuid);
+      notify('success', `${title.slice(0, -1)} supprimée.`);
       await load();
     } catch (error) {
       setStatusError(getApiErrorMessage(error));
@@ -263,7 +278,8 @@ export default function ReferencePage({
         emptyMessage={emptyMessage}
         actionLoadingId={statusActionId}
         onEdit={hasPermission(updatePermission) ? setEditing : undefined}
-        onStatus={hasPermission(disablePermission) ? toggle : undefined}
+        onStatus={disablePermission && hasPermission(disablePermission) ? toggle : undefined}
+        onDelete={deletePermission && hasPermission(deletePermission) ? remove : undefined}
         onView={detailPath ? (row) => navigate(detailPath(row)) : undefined}
       />
       {paginationData && (

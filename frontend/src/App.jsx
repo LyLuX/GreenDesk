@@ -14,6 +14,8 @@ import MaterialEditPage from './pages/MaterialEditPage.jsx';
 import MaintenancePage from './pages/MaintenancePage.jsx';
 import BrandsPage from './pages/BrandsPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
+import RolesPage from './pages/RolesPage.jsx';
+import PermissionsPage from './pages/PermissionsPage.jsx';
 import { formatCurrency } from './utils/formatters.js';
 const secure = (permission, page) => (
   <ProtectedRoute>
@@ -203,6 +205,8 @@ export default function App() {
         <Route path="/maintenance" element={secure('maintenance.read', <MaintenancePage />)} />
         <Route path="/brands" element={secure('brand.read', <BrandsPage />)} />
         <Route path="/users" element={adminOnly(<UsersPage />)} />
+        <Route path="/roles" element={adminOnly(<RolesPage />)} />
+        <Route path="/permissions" element={adminOnly(<PermissionsPage />)} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

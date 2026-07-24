@@ -1,11 +1,16 @@
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
+import PermissionRepository from '../../permissions/repository/permission.repository.js';
 import RoleRepository from '../repository/role.repository.js';
 
 /** Business operations for roles. */
 export default class RoleService {
-  constructor(roleRepository = new RoleRepository()) {
+  constructor(
+    roleRepository = new RoleRepository(),
+    permissionRepository = new PermissionRepository(),
+  ) {
     this.roleRepository = roleRepository;
+    this.permissionRepository = permissionRepository;
   }
   async getAll() {
     return this.roleRepository.findAll();
@@ -18,15 +23,35 @@ export default class RoleService {
   async create(values) {
     if (await this.roleRepository.findByName(values.name))
       throw new AppError('Role name is already in use', HTTP_STATUS.CONFLICT);
-    return this.roleRepository.create(values);
+    const { permissionUuids, ...roleValues } = values;
+    const permissions = permissionUuids?.length
+      ? await this.findPermissions(permissionUuids)
+      : null;
+    const role = await this.roleRepository.create(roleValues);
+    if (permissions) await this.roleRepository.setPermissions(role, permissions);
+    return this.getByUuid(role.uuid);
   }
   async update(uuid, values) {
     const role = await this.getByUuid(uuid);
-    await this.roleRepository.update(role, values);
-    return role;
+    const { permissionUuids, ...roleValues } = values;
+    const permissions =
+      permissionUuids !== undefined ? await this.findPermissions(permissionUuids) : null;
+    await this.roleRepository.update(role, roleValues);
+    if (permissions) await this.roleRepository.setPermissions(role, permissions);
+    return this.getByUuid(uuid);
   }
   async remove(uuid) {
     const role = await this.getByUuid(uuid);
     await this.roleRepository.delete(role);
+  }
+
+  /** Resolves permission UUIDs before a role write is performed. */
+  async findPermissions(permissionUuids) {
+    const permissions = await Promise.all(
+      permissionUuids.map((permissionUuid) => this.permissionRepository.findByUuid(permissionUuid)),
+    );
+    if (permissions.some((permission) => !permission))
+      throw new AppError('One or more permissions were not found', HTTP_STATUS.BAD_REQUEST);
+    return permissions;
   }
 }
