@@ -51,7 +51,10 @@ describe('reference routes authorization and validation', () => {
       .set('Authorization', `Bearer ${tokenFor(['categories.create'])}`)
       .send({ description: 'Missing name' });
     expect(response.status).toBe(400);
-    expect(response.body.error.message).toBe('Validation failed');
+    expect(response.body.error.message).toBe('Le champ « name » contient une valeur invalide.');
+    expect(response.body.error.details).toEqual([
+      expect.objectContaining({ path: 'name', location: 'body' }),
+    ]);
   });
 
   it('requires the material delete permission before deleting a material', async () => {

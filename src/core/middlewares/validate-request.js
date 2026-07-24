@@ -15,7 +15,17 @@ export function validateRequest(request, _response, next) {
   const errors = validationResult(request);
 
   if (!errors.isEmpty()) {
-    return next(new AppError('Validation failed', HTTP_STATUS.BAD_REQUEST, errors.array()));
+    const details = errors.array({ onlyFirstError: true });
+    const messages = [
+      ...new Set(
+        details.map((error) =>
+          error.msg === 'Invalid value'
+            ? `Le champ « ${error.path} » contient une valeur invalide.`
+            : error.msg,
+        ),
+      ),
+    ];
+    return next(new AppError(messages.join(' '), HTTP_STATUS.BAD_REQUEST, details));
   }
 
   return next();
