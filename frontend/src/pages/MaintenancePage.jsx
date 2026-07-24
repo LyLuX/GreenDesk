@@ -62,6 +62,10 @@ const date = (value) =>
   value ? new Intl.DateTimeFormat('fr-FR').format(new Date(`${value}T00:00:00Z`)) : '—';
 const number = (value, suffix = '') =>
   value === null || value === undefined ? '—' : `${Number(value).toLocaleString('fr-FR')}${suffix}`;
+const remainingDays = (value) => {
+  if (value === null || value === undefined) return '—';
+  return `${Number(value).toLocaleString('fr-FR')} ${Math.abs(Number(value)) === 1 ? 'jour' : 'jours'}`;
+};
 
 /** Complete maintenance worklist backed by the existing maintenance API. */
 export default function MaintenancePage() {
@@ -313,7 +317,7 @@ export default function MaintenancePage() {
               <tr>
                 <th>Matériel</th>
                 <th>Plan</th>
-                <th>Échéances</th>
+                <th>Échéance</th>
                 <th>Restant</th>
                 <th>Priorité</th>
                 <th>État</th>
@@ -336,16 +340,8 @@ export default function MaintenancePage() {
                       <br />
                       {maintenanceTypeLabels[item.maintenanceType]}
                     </td>
-                    <td>
-                      Date : {date(item.nextMaintenanceDate)}
-                      <br />
-                      Compteur : {number(item.nextEngineHours, ' h')}
-                    </td>
-                    <td>
-                      {number(item.remainingDays, ' jours')}
-                      <br />
-                      {number(item.remainingEngineHours, ' h')}
-                    </td>
+                    <td>{date(item.nextMaintenanceDate)}</td>
+                    <td>{remainingDays(item.remainingDays)}</td>
                     <td>
                       <span className="status-badge">
                         {maintenancePriorityLabels[item.priority]}
@@ -359,36 +355,57 @@ export default function MaintenancePage() {
                     </td>
                     <td className="d-flex flex-wrap gap-1">
                       {hasPermission('maintenance.update') && (
-                        <Button disabled={busy} onClick={() => setDialog({ type: 'edit', item })}>
+                        <button
+                          aria-label={`Modifier ${item.title}`}
+                          className="btn btn-sm btn-outline-brand"
+                          type="button"
+                          disabled={busy}
+                          onClick={() => setDialog({ type: 'edit', item })}
+                        >
                           Modifier
-                        </Button>
+                        </button>
                       )}
                       {hasPermission('maintenance.update') && (
-                        <Button
+                        <button
+                          aria-label={`${item.active ? 'Désactiver' : 'Activer'} ${item.title}`}
+                          className="btn btn-sm btn-outline-secondary"
+                          type="button"
                           disabled={busy}
                           onClick={() => setConfirmation({ action: 'status', item })}
                         >
                           {item.active ? 'Désactiver' : 'Activer'}
-                        </Button>
+                        </button>
                       )}
                       {hasPermission('maintenance.execute') && item.active && (
-                        <Button
+                        <button
+                          aria-label={`Effectuer ${item.title}`}
+                          className="btn btn-sm btn-outline-brand"
+                          type="button"
                           disabled={busy}
                           onClick={() => setDialog({ type: 'execute', item })}
                         >
                           Effectuer
-                        </Button>
+                        </button>
                       )}
-                      <Button disabled={busy} onClick={() => showHistory(item)}>
+                      <button
+                        aria-label={`Voir l’historique de ${item.title}`}
+                        className="btn btn-sm btn-outline-brand"
+                        type="button"
+                        disabled={busy}
+                        onClick={() => showHistory(item)}
+                      >
                         Historique
-                      </Button>
+                      </button>
                       {hasPermission('maintenance.delete') && (
-                        <Button
+                        <button
+                          aria-label={`Supprimer ${item.title}`}
+                          className="btn btn-sm btn-outline-danger"
+                          type="button"
                           disabled={busy}
                           onClick={() => setConfirmation({ action: 'delete', item })}
                         >
                           Supprimer
-                        </Button>
+                        </button>
                       )}
                     </td>
                   </tr>
@@ -417,12 +434,14 @@ export default function MaintenancePage() {
           </label>
           <div className="d-flex gap-2">
             <Button
+              className="btn-sm"
               disabled={isLoading || pagination.page <= 1}
               onClick={() => setFilters((current) => ({ ...current, page: current.page - 1 }))}
             >
               Précédent
             </Button>
             <Button
+              className="btn-sm"
               disabled={isLoading || pagination.page >= pagination.totalPages}
               onClick={() => setFilters((current) => ({ ...current, page: current.page + 1 }))}
             >
