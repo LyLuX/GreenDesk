@@ -113,6 +113,30 @@ a:hover {
   color: #dbe8d7;
 }
 
+.brand-thumbnail,
+.brand-logo-preview {
+  display: inline-grid;
+  place-items: center;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: #fff;
+}
+
+.brand-thumbnail {
+  width: 42px;
+  height: 42px;
+}
+
+.brand-logo-preview {
+  width: 96px;
+  height: 96px;
+}
+
+.brand-thumbnail-placeholder {
+  color: var(--muted);
+}
+
 .sidebar {
   width: 245px;
   min-height: calc(100vh - 76px);

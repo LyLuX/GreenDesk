@@ -11,6 +11,7 @@ Authentification, utilisateurs, rôles, permissions, audit, catégories, marques
 - `GET|POST /api/categories`, `GET|PUT|DELETE /api/categories/:uuid`
 - `GET|POST /api/v1/materials`, `GET|PUT|DELETE /api/v1/materials/:uuid`
 - `GET|POST /api/brands`, `GET|PUT|DELETE /api/brands/:uuid`
+- `GET|POST|DELETE /api/v1/brands/:uuid/logo`
 - `POST /api/v1/materials/:uuid/photos`, `POST /api/v1/materials/:uuid/documents`, `GET /api/v1/materials/:uuid/history`
 - `POST /api/v1/auth/logout` révoque le JWT courant avant son expiration
 - `GET /api/v1/materials/files/:fileUuid/content`, `GET /api/v1/materials/files/:fileUuid/download`
@@ -25,6 +26,8 @@ Le dashboard est disponible via `GET /api/dashboard/summary`, protégé par `das
 Un matériel contient son UUID public, nom, marque, modèle, catégorie, numéro de série, dates, prix d’achat, heures moteur et notes. Les relations sont exclusivement transmises et renvoyées avec des UUID publics. La liste supporte la recherche, les filtres par statut, marque et catégorie, le tri et la pagination.
 
 Les photos (JPEG, PNG, WebP) et documents PDF sont stockés sous `uploads/materials`, sans exposition statique du dossier. Les photos sont consultées via une route authentifiée inline ; les documents sont téléchargés en pièce jointe via une route authentifiée. Chaque fichier est limité à 10 Mo et chaque matériel à 10 photos. Les fichiers reçoivent un nom UUID dérivé de leur MIME autorisé, jamais de leur nom client. L’historique de chaque modification est disponible sur la fiche matériel.
+
+Chaque marque peut recevoir un logo JPEG, PNG ou WebP de 2 Mo maximum. Les logos sont stockés sous `uploads/brands` avec un nom serveur UUID et sont affichés via une route authentifiée.
 
 ### Permissions
 

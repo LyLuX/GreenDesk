@@ -26,6 +26,7 @@ export default function ReferencePage({
   filters = [],
   pagination = false,
   detailPath,
+  fileField,
 }) {
   const { hasPermission } = useAuth();
   const { notify } = useNotification();
@@ -107,16 +108,33 @@ export default function ReferencePage({
     event.preventDefault();
     setFormError('');
     let values;
+    let selectedFile;
+    let removeFile = false;
     try {
-      values = normalizeFormValues(Object.fromEntries(new FormData(event.currentTarget)), fields);
+      const formValues = Object.fromEntries(new FormData(event.currentTarget));
+      if (fileField) {
+        selectedFile = event.currentTarget.elements.namedItem(fileField.name)?.files?.[0];
+        removeFile = formValues[`${fileField.name}Remove`] === 'on';
+        delete formValues[fileField.name];
+        delete formValues[`${fileField.name}Remove`];
+      }
+      values = normalizeFormValues(formValues, fields);
     } catch (error) {
       setFormError(error.message);
       return;
     }
     setIsSaving(true);
     try {
-      if (editing?.uuid) await api.update(editing.uuid, values);
-      else await api.create(values);
+      const response = editing?.uuid
+        ? await api.update(editing.uuid, values)
+        : await api.create(values);
+      const savedItem = response.data.data;
+      if (!editing?.uuid) setEditing(savedItem);
+      if (fileField && selectedFile?.size > 0) {
+        await fileField.upload(savedItem.uuid, selectedFile);
+      } else if (fileField && removeFile) {
+        await fileField.remove(savedItem.uuid);
+      }
       setEditing(null);
       notify(
         'success',
@@ -355,6 +373,28 @@ export default function ReferencePage({
               options={selectOptions(field)}
             />
           ))}
+          {fileField && (
+            <>
+              {editing?.uuid && fileField.hasFile(editing) && fileField.renderPreview?.(editing)}
+              <FormField
+                label={fileField.label}
+                name={fileField.name}
+                type="file"
+                accept={fileField.accept}
+              />
+              {editing?.uuid && fileField.hasFile(editing) && (
+                <label className="form-check text-body-secondary">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    name={`${fileField.name}Remove`}
+                  />
+                  {fileField.removeLabel}
+                </label>
+              )}
+              {fileField.help && <small className="text-body-secondary">{fileField.help}</small>}
+            </>
+          )}
           <Button type="submit" disabled={isSaving}>
             {isSaving ? 'Enregistrement…' : 'Enregistrer'}
           </Button>

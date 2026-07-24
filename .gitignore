@@ -3,5 +3,6 @@ node_modules/
 coverage/
 frontend/dist/
 uploads/materials/
+uploads/brands/
 logs/
 *.log

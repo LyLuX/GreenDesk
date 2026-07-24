@@ -8,9 +8,12 @@ export default class BrandService {
     this.auditService = auditService;
   }
   async getAll(search) {
-    return this.repository.findAll(search);
+    return (await this.repository.findAll(search)).map((item) => this.toPublic(item));
   }
   async getByUuid(uuid) {
+    return this.toPublic(await this.getEntityByUuid(uuid));
+  }
+  async getEntityByUuid(uuid) {
     const item = await this.repository.findByUuid(uuid);
     if (!item) throw new AppError('Brand not found', HTTP_STATUS.NOT_FOUND);
     return item;
@@ -35,17 +38,19 @@ export default class BrandService {
         oldValues,
         newValues: brand.toJSON(),
       });
-      return brand;
+      return this.toPublic(brand);
     }
-    return this.repository.create({ ...values, createdBy: userId, updatedBy: userId });
+    return this.toPublic(
+      await this.repository.create({ ...values, createdBy: userId, updatedBy: userId }),
+    );
   }
   async update(uuid, values, userId) {
-    const item = await this.getByUuid(uuid);
+    const item = await this.getEntityByUuid(uuid);
     await this.repository.update(item, { ...values, updatedBy: userId });
-    return item;
+    return this.toPublic(item);
   }
   async remove(uuid, userId) {
-    const item = await this.getByUuid(uuid);
+    const item = await this.getEntityByUuid(uuid);
     await this.repository.delete(item);
     await this.auditService.record({
       userId,
@@ -54,5 +59,16 @@ export default class BrandService {
       entityUuid: item.uuid,
       oldValues: item.toJSON(),
     });
+  }
+  toPublic(item) {
+    const value = typeof item.toJSON === 'function' ? item.toJSON() : item;
+    const publicValue = { ...value, hasLogo: Boolean(value.logoFileName) };
+    delete publicValue.id;
+    delete publicValue.logoFileName;
+    delete publicValue.logoOriginalName;
+    delete publicValue.logoMimeType;
+    delete publicValue.createdBy;
+    delete publicValue.updatedBy;
+    return publicValue;
   }
 }

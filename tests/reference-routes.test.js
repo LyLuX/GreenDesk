@@ -29,6 +29,18 @@ describe('reference routes authorization and validation', () => {
       .expect(403);
   });
 
+  it('protects brand logos with the brand permissions', async () => {
+    const uuid = 'f75ce638-18d2-4e29-9958-2afaa4ae5151';
+    await request(app)
+      .get(`/api/v1/brands/${uuid}/logo`)
+      .set('Authorization', `Bearer ${tokenFor([])}`)
+      .expect(403);
+    await request(app)
+      .post(`/api/v1/brands/${uuid}/logo`)
+      .set('Authorization', `Bearer ${tokenFor(['brands.read'])}`)
+      .expect(403);
+  });
+
   it('restricts user management to administrators', async () => {
     await request(app)
       .get('/api/v1/users')

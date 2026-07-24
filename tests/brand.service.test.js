@@ -19,7 +19,12 @@ describe('BrandService', () => {
     };
     const service = new BrandService(repository, { record: jest.fn() });
 
-    await expect(service.create({ name: 'ECHO' }, 7)).resolves.toBe(deletedBrand);
+    await expect(service.create({ name: 'ECHO' }, 7)).resolves.toEqual({
+      uuid: 'brand-uuid',
+      name: 'ECHO',
+      deletedAt: deletedBrand.deletedAt,
+      hasLogo: false,
+    });
 
     expect(repository.findByName).toHaveBeenCalledWith('ECHO', { withDeleted: true });
     expect(repository.restore).toHaveBeenCalledWith(deletedBrand);
