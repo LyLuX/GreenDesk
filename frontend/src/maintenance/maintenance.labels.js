@@ -12,6 +12,12 @@ export const maintenancePriorityLabels = Object.freeze({
   high: 'Élevée',
   critical: 'Critique',
 });
+export const maintenancePriorityBadgeClasses = Object.freeze({
+  low: 'priority-low',
+  normal: 'priority-normal',
+  high: 'priority-high',
+  critical: 'priority-critical',
+});
 export const maintenanceStatusLabels = Object.freeze({
   upToDate: 'À jour',
   upcoming: 'À prévoir',

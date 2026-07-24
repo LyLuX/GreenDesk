@@ -70,6 +70,10 @@ describe('MaintenancePage', () => {
     expect(screen.queryByText(/Compteur/)).not.toBeInTheDocument();
     expect(screen.queryByText('400 h')).not.toBeInTheDocument();
     expect(screen.queryByText('25 h')).not.toBeInTheDocument();
+    expect(screen.getByText('Normale', { selector: 'span' })).toHaveClass(
+      'status-badge',
+      'priority-normal',
+    );
   });
 
   it('uses compact outline buttons for table actions', async () => {

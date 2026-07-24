@@ -306,6 +306,26 @@ a:hover {
   color: #59635d;
 }
 
+.status-badge.priority-low {
+  background: #eef0ee;
+  color: #59635d;
+}
+
+.status-badge.priority-normal {
+  background: #e3eddc;
+  color: #365d16;
+}
+
+.status-badge.priority-high {
+  background: #f7edbd;
+  color: #6b5700;
+}
+
+.status-badge.priority-critical {
+  background: #f5d8d8;
+  color: #8a2525;
+}
+
 .modal-backdrop-custom {
   position: fixed;
   inset: 0;

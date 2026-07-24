@@ -20,6 +20,7 @@ import PaginationControls from '../components/PaginationControls.jsx';
 import useNotification from '../notifications/useNotification.js';
 import normalizeFormValues from '../utils/normalize-form-values.js';
 import {
+  maintenancePriorityBadgeClasses,
   maintenancePriorityLabels,
   maintenanceStatusLabels,
   maintenanceTypeLabels,
@@ -344,7 +345,11 @@ export default function MaintenancePage() {
                     <td>{date(item.nextMaintenanceDate)}</td>
                     <td>{remainingDays(item.remainingDays)}</td>
                     <td>
-                      <span className="status-badge">
+                      <span
+                        className={`status-badge ${
+                          maintenancePriorityBadgeClasses[item.priority] ?? 'priority-normal'
+                        }`}
+                      >
                         {maintenancePriorityLabels[item.priority]}
                       </span>
                     </td>
