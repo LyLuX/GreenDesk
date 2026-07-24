@@ -150,7 +150,7 @@ export default function RolesPage() {
               ) : (
                 roles.map((role) => (
                   <tr key={role.uuid}>
-                    <td>
+                    <td className="text-nowrap">
                       <strong>{role.name}</strong>
                       <span className="d-block small text-body-secondary">
                         {role.description || 'Sans description'}
@@ -170,7 +170,7 @@ export default function RolesPage() {
                         Modifier
                       </button>
                       <button
-                        className="btn btn-sm btn-outline-secondary"
+                        className="btn btn-sm btn-outline-danger"
                         type="button"
                         disabled={removing === role.uuid}
                         onClick={() => remove(role)}

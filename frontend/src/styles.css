@@ -334,6 +334,7 @@ a:hover {
 
 .status-panel {
   width: min(100%, 520px);
+  height: min(100%, 360px);
   border-top: 4px solid var(--brand-sun);
 }
 
