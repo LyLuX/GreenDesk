@@ -14,6 +14,7 @@ import MaterialDetailPage from './pages/MaterialDetailPage.jsx';
 import MaterialEditPage from './pages/MaterialEditPage.jsx';
 import MaintenancePage from './pages/MaintenancePage.jsx';
 import BrandsPage from './pages/BrandsPage.jsx';
+import CategoriesPage from './pages/CategoriesPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
 import RolesPage from './pages/RolesPage.jsx';
 import PermissionsPage from './pages/PermissionsPage.jsx';
@@ -89,27 +90,7 @@ export default function App() {
           }
         >
           <Route path="/dashboard" element={secure('dashboard.read', <DashboardPage />)} />
-          <Route
-            path="/categories"
-            element={secure(
-              'categories.read',
-              <ReferencePage
-                title="Catégories"
-                resource="categories"
-                createPermission="categories.create"
-                updatePermission="categories.update"
-                deletePermission="categories.delete"
-                fields={[
-                  { name: 'name', label: 'Nom', required: true },
-                  { name: 'description', label: 'Description' },
-                ]}
-                columns={table([
-                  ['name', 'Nom'],
-                  ['description', 'Description'],
-                ])}
-              />,
-            )}
-          />
+          <Route path="/categories" element={secure('categories.read', <CategoriesPage />)} />
           <Route
             path="/materials"
             element={secure(
