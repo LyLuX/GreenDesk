@@ -57,4 +57,3 @@ export const updateValidator = [
   body('retiredAt').optional().isISO8601(),
   body('notes').optional().trim(),
 ];
-export const statusValidator = [uuid, body('active').isBoolean().toBoolean()];

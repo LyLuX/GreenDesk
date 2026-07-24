@@ -6,7 +6,7 @@ export default function BrandsPage() {
       resource="brands"
       createPermission="brand.create"
       updatePermission="brand.update"
-      disablePermission="brand.delete"
+      deletePermission="brand.delete"
       fields={[{ name: 'name', label: 'Nom', required: true }]}
       columns={[
         { key: 'name', label: 'Nom' },

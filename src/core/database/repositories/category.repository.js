@@ -21,4 +21,7 @@ export default class CategoryRepository {
   async update(category, values) {
     return category.update(values);
   }
+  async delete(category) {
+    return category.destroy();
+  }
 }

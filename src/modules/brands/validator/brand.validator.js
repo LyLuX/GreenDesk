@@ -6,4 +6,3 @@ export const updateValidator = [
   param('uuid').isUUID(),
   body('name').optional().trim().notEmpty().isLength({ max: 150 }),
 ];
-export const statusValidator = [param('uuid').isUUID(), body('active').isBoolean().toBoolean()];

@@ -62,7 +62,7 @@ export default function App() {
               resource="categories"
               createPermission="categories.create"
               updatePermission="categories.update"
-              disablePermission="categories.disable"
+              deletePermission="categories.delete"
               fields={[
                 { name: 'name', label: 'Nom', required: true },
                 { name: 'description', label: 'Description' },
@@ -83,7 +83,7 @@ export default function App() {
               resource="properties"
               createPermission="properties.create"
               updatePermission="properties.update"
-              disablePermission="properties.disable"
+              deletePermission="properties.delete"
               fields={[
                 { name: 'name', label: 'Nom', required: true },
                 { name: 'type', label: 'Type', required: true },
@@ -106,7 +106,7 @@ export default function App() {
               resource="materials"
               createPermission="materials.create"
               updatePermission="materials.update"
-              disablePermission="materials.disable"
+              deletePermission="materials.delete"
               fields={[
                 { name: 'name', label: 'Nom', required: true },
                 { name: 'reference', label: 'Référence' },

@@ -1,9 +1,11 @@
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
+import AuditService from '../../audit/service/audit.service.js';
 import BrandRepository from '../repository/brand.repository.js';
 export default class BrandService {
-  constructor(repository = new BrandRepository()) {
+  constructor(repository = new BrandRepository(), auditService = new AuditService()) {
     this.repository = repository;
+    this.auditService = auditService;
   }
   async getAll(search) {
     return this.repository.findAll(search);
@@ -23,9 +25,15 @@ export default class BrandService {
     await this.repository.update(item, { ...values, updatedBy: userId });
     return item;
   }
-  async changeStatus(uuid, active, userId) {
+  async remove(uuid, userId) {
     const item = await this.getByUuid(uuid);
-    await this.repository.update(item, { active, updatedBy: userId });
-    return item;
+    await this.repository.delete(item);
+    await this.auditService.record({
+      userId,
+      action: 'DELETE',
+      entity: 'BRAND',
+      entityUuid: item.uuid,
+      oldValues: item.toJSON(),
+    });
   }
 }

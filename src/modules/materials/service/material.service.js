@@ -90,19 +90,17 @@ export default class MaterialService {
     });
     return this.toPublic(item);
   }
-  async changeStatus(uuid, active, userId) {
+  async remove(uuid, userId) {
     const item = await this.getEntityByUuid(uuid);
     const oldValues = item.toJSON();
-    await this.materialRepository.update(item, { active, updatedBy: userId });
+    await this.materialRepository.delete(item);
     await this.auditService.record({
       userId,
-      action: 'STATUS_CHANGE',
+      action: 'DELETE',
       entity: 'MATERIAL',
       entityUuid: item.uuid,
       oldValues,
-      newValues: item.toJSON(),
     });
-    return this.toPublic(item);
   }
   async getHistory(uuid) {
     await this.getEntityByUuid(uuid);

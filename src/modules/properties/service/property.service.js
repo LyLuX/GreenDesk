@@ -48,19 +48,17 @@ export default class PropertyService {
     });
     return item;
   }
-  async changeStatus(uuid, active, userId) {
+  async remove(uuid, userId) {
     const item = await this.getByUuid(uuid);
     const oldValues = item.toJSON();
-    await this.propertyRepository.update(item, { active, updatedBy: userId });
+    await this.propertyRepository.delete(item);
     await this.auditService.record({
       userId,
-      action: 'STATUS_CHANGE',
+      action: 'DELETE',
       entity: 'PROPERTY',
       entityUuid: item.uuid,
       oldValues,
-      newValues: item.toJSON(),
     });
-    return item;
   }
   async ensureName(name) {
     if (await this.propertyRepository.findByName(name))

@@ -21,4 +21,7 @@ export default class PropertyRepository {
   async update(property, values) {
     return property.update(values);
   }
+  async delete(property) {
+    return property.destroy();
+  }
 }

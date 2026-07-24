@@ -20,15 +20,8 @@ export default class BrandController {
       ),
     );
   }
-  async status(request, response) {
-    response.json(
-      successResponse(
-        await this.service.changeStatus(
-          request.params.uuid,
-          request.body.active,
-          request.user.userId,
-        ),
-      ),
-    );
+  async remove(request, response) {
+    await this.service.remove(request.params.uuid, request.user.userId);
+    response.status(HTTP_STATUS.NO_CONTENT).send();
   }
 }

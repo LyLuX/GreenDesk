@@ -36,11 +36,11 @@ router.put(
   validateRequest,
   asyncHandler(controller.update.bind(controller)),
 );
-router.patch(
-  '/:uuid/status',
-  authorize('properties.disable'),
-  validator.statusValidator,
+router.delete(
+  '/:uuid',
+  authorize('properties.delete'),
+  validator.uuidValidator,
   validateRequest,
-  asyncHandler(controller.status.bind(controller)),
+  asyncHandler(controller.remove.bind(controller)),
 );
 export default router;

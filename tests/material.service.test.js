@@ -16,10 +16,11 @@ describe('MaterialService', () => {
       findBySerialNumber: jest.fn().mockResolvedValue(null),
       create: jest.fn(),
       update: jest.fn(),
+      delete: jest.fn(),
       ...overrides,
     };
     const audit = { record: jest.fn(), findByEntity: jest.fn().mockResolvedValue([]) };
-    return { repository, service: new MaterialService(repository, audit, {}, {}, {}) };
+    return { repository, audit, service: new MaterialService(repository, audit, {}, {}, {}) };
   };
 
   it('returns only public fields when listing materials', async () => {
@@ -83,6 +84,28 @@ describe('MaterialService', () => {
         1,
       ),
     ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it('soft-deletes a material and records the operation', async () => {
+    const material = model({
+      uuid: '11111111-1111-4111-8111-111111111111',
+      name: 'Tondeuse',
+    });
+    const { repository, audit, service } = createService({
+      findByUuid: jest.fn().mockResolvedValue(material),
+    });
+
+    await service.remove(material.uuid, 7);
+
+    expect(repository.delete).toHaveBeenCalledWith(material);
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 7,
+        action: 'DELETE',
+        entity: 'MATERIAL',
+        entityUuid: material.uuid,
+      }),
+    );
   });
 
   it('rejects an invalid calendar date', () => {

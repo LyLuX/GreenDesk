@@ -36,8 +36,7 @@
  * /materials/{uuid}:
  *   get: { tags: [Materials], summary: Get a material and its files, security: [{ bearerAuth: [] }], responses: { 200: { description: Material detail }, 404: { description: Not found } } }
  *   put: { tags: [Materials], summary: Update all editable material fields, security: [{ bearerAuth: [] }], responses: { 200: { description: Updated }, 400: { description: Invalid dates or UUID relation }, 409: { description: Duplicate record } } }
- * /materials/{uuid}/status:
- *   patch: { tags: [Materials], summary: Activate or deactivate a material, security: [{ bearerAuth: [] }], responses: { 200: { description: Updated } } }
+ *   delete: { tags: [Materials], summary: Soft-delete a material, security: [{ bearerAuth: [] }], responses: { 204: { description: Deleted }, 403: { description: materials.delete is required }, 404: { description: Not found } } }
  * /materials/{uuid}/history:
  *   get: { tags: [Materials], summary: Get the material audit trail, security: [{ bearerAuth: [] }], responses: { 200: { description: Audit events } } }
  * /materials/{uuid}/photos:

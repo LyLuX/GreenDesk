@@ -48,19 +48,17 @@ export default class CategoryService {
     });
     return item;
   }
-  async changeStatus(uuid, active, userId) {
+  async remove(uuid, userId) {
     const item = await this.getByUuid(uuid);
     const oldValues = item.toJSON();
-    await this.categoryRepository.update(item, { active, updatedBy: userId });
+    await this.categoryRepository.delete(item);
     await this.auditService.record({
       userId,
-      action: 'STATUS_CHANGE',
+      action: 'DELETE',
       entity: 'CATEGORY',
       entityUuid: item.uuid,
       oldValues,
-      newValues: item.toJSON(),
     });
-    return item;
   }
   async ensureName(name) {
     if (await this.categoryRepository.findByName(name))

@@ -11,4 +11,3 @@ export const updateValidator = [
   body('name').optional().trim().notEmpty().isLength({ max: 150 }),
   body('description').optional().trim(),
 ];
-export const statusValidator = [uuid, body('active').isBoolean().toBoolean()];

@@ -46,4 +46,11 @@ describe('reference routes authorization and validation', () => {
     expect(response.status).toBe(400);
     expect(response.body.error.message).toBe('Validation failed');
   });
+
+  it('requires the material delete permission before deleting a material', async () => {
+    await request(app)
+      .delete('/api/v1/materials/f75ce638-18d2-4e29-9958-2afaa4ae5151')
+      .set('Authorization', `Bearer ${tokenFor(['materials.update'])}`)
+      .expect(403);
+  });
 });

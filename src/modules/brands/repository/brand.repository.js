@@ -19,4 +19,7 @@ export default class BrandRepository {
   async update(item, values) {
     return item.update(values);
   }
+  async delete(item) {
+    return item.destroy();
+  }
 }

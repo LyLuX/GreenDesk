@@ -78,4 +78,8 @@ export default class MaterialRepository {
   async update(material, values) {
     return material.update(values);
   }
+
+  async delete(material) {
+    return material.destroy();
+  }
 }
