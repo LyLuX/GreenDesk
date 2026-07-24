@@ -7,7 +7,6 @@ export const listValidator = [
   query('active').optional().isBoolean().toBoolean(),
   query('brandUuid').optional().isUUID(),
   query('categoryUuid').optional().isUUID(),
-  query('propertyUuid').optional().isUUID(),
   query('sort')
     .optional()
     .isIn(['name', 'reference', 'purchasePrice', 'purchaseDate', 'engineHours']),
@@ -21,7 +20,6 @@ export const createValidator = [
   body('purchasePrice').isFloat({ min: 0 }).toFloat(),
   body('brandUuid').optional({ nullable: true }).isUUID(),
   body('categoryUuid').optional({ nullable: true }).isUUID(),
-  body('propertyUuid').optional({ nullable: true }).isUUID(),
   body('serialNumber').optional().trim().isLength({ max: 150 }),
   body('year')
     .optional()
@@ -42,7 +40,6 @@ export const updateValidator = [
   body('purchasePrice').optional().isFloat({ min: 0 }).toFloat(),
   body('brandUuid').optional({ nullable: true }).isUUID(),
   body('categoryUuid').optional({ nullable: true }).isUUID(),
-  body('propertyUuid').optional({ nullable: true }).isUUID(),
   body('serialNumber').optional().trim().isLength({ max: 150 }),
   body('year')
     .optional()

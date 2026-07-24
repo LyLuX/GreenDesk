@@ -22,7 +22,6 @@
  *       - { in: query, name: active, schema: { type: boolean } }
  *       - { in: query, name: brandUuid, schema: { type: string, format: uuid } }
  *       - { in: query, name: categoryUuid, schema: { type: string, format: uuid } }
- *       - { in: query, name: propertyUuid, schema: { type: string, format: uuid } }
  *       - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
  *       - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
  *       - { in: query, name: sort, schema: { type: string, enum: [name, reference, purchasePrice, purchaseDate, engineHours] } }

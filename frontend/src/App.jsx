@@ -52,7 +52,6 @@ export const getModuleTitle = (pathname) => {
       '/403': 'Accès refusé',
       '/dashboard': 'Tableau de bord',
       '/categories': 'Catégories',
-      '/properties': 'Propriétés',
       '/materials': 'Matériels',
       '/maintenance': 'Maintenance',
       '/brands': 'Marques',
@@ -112,29 +111,6 @@ export default function App() {
             )}
           />
           <Route
-            path="/properties"
-            element={secure(
-              'properties.read',
-              <ReferencePage
-                title="Propriétés"
-                resource="properties"
-                createPermission="properties.create"
-                updatePermission="properties.update"
-                deletePermission="properties.delete"
-                fields={[
-                  { name: 'name', label: 'Nom', required: true },
-                  { name: 'type', label: 'Type', required: true },
-                  { name: 'unit', label: 'Unité' },
-                ]}
-                columns={table([
-                  ['name', 'Nom'],
-                  ['type', 'Type'],
-                  ['unit', 'Unité'],
-                ])}
-              />,
-            )}
-          />
-          <Route
             path="/materials"
             element={secure(
               'materials.read',
@@ -158,12 +134,6 @@ export default function App() {
                     label: 'Catégorie',
                     relation: 'category',
                     optionsResource: 'categories',
-                  },
-                  {
-                    name: 'propertyUuid',
-                    label: 'Propriété',
-                    relation: 'property',
-                    optionsResource: 'properties',
                   },
                   { name: 'model', label: 'Modèle' },
                   { name: 'serialNumber', label: 'Numéro de série' },
@@ -223,7 +193,6 @@ export default function App() {
                   },
                   { name: 'brandUuid', label: 'Marque', optionsResource: 'brands' },
                   { name: 'categoryUuid', label: 'Catégorie', optionsResource: 'categories' },
-                  { name: 'propertyUuid', label: 'Propriété', optionsResource: 'properties' },
                 ]}
                 pagination
                 detailPath={(row) => `/materials/${row.uuid}`}

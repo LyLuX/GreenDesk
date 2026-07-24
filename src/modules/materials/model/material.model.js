@@ -22,7 +22,6 @@ Material.init(
     },
     brandId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true, field: 'brand_id' },
     categoryId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true, field: 'category_id' },
-    propertyId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true, field: 'property_id' },
     model: { type: DataTypes.STRING(150), allowNull: true },
     serialNumber: {
       type: DataTypes.STRING(150),

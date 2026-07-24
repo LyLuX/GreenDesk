@@ -1,7 +1,6 @@
 import { jest } from '@jest/globals';
 
 import CategoryService from '../src/modules/categories/service/category.service.js';
-import PropertyService from '../src/modules/properties/service/property.service.js';
 
 const restoredItem = (name) => ({
   uuid: `${name}-uuid`,
@@ -14,7 +13,6 @@ const restoredItem = (name) => ({
 
 const restorationCases = [
   { Service: CategoryService, entity: 'CATEGORY', values: { name: 'Arbres' } },
-  { Service: PropertyService, entity: 'PROPERTY', values: { name: 'Surface', type: 'number' } },
 ];
 
 describe.each(restorationCases)('$entity restoration', ({ Service, entity, values }) => {

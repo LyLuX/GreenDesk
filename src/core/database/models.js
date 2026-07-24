@@ -3,7 +3,6 @@ import Permission from '../../modules/permissions/model/permission.model.js';
 import Role from '../../modules/roles/model/role.model.js';
 import User from '../../modules/users/model/user.model.js';
 import Category from '../../modules/categories/model/category.model.js';
-import Property from '../../modules/properties/model/property.model.js';
 import Material from '../../modules/materials/model/material.model.js';
 import MaterialFile from '../../modules/materials/model/material-file.model.js';
 import Brand from '../../modules/brands/model/brand.model.js';
@@ -50,7 +49,6 @@ export function initializeModels() {
   AuditLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
   Material.belongsTo(Brand, { foreignKey: 'brand_id', as: 'brand', onDelete: 'SET NULL' });
   Material.belongsTo(Category, { foreignKey: 'category_id', as: 'category', onDelete: 'SET NULL' });
-  Material.belongsTo(Property, { foreignKey: 'property_id', as: 'property', onDelete: 'SET NULL' });
   Material.hasMany(MaterialFile, { foreignKey: 'material_id', as: 'files' });
   MaterialFile.belongsTo(Material, { foreignKey: 'material_id', as: 'material' });
   Material.hasMany(MaintenanceTask, { foreignKey: 'material_id', as: 'maintenanceTasks' });
@@ -68,7 +66,6 @@ export {
   Role,
   User,
   Category,
-  Property,
   Material,
   Brand,
   MaterialFile,

@@ -4,7 +4,6 @@ import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';
 import BrandRepository from '../../brands/repository/brand.repository.js';
 import CategoryRepository from '../../../core/database/repositories/category.repository.js';
-import PropertyRepository from '../../../core/database/repositories/property.repository.js';
 
 /** Parses a DATEONLY value as UTC and rejects invalid calendar values. */
 export function parseDateOnly(value) {
@@ -25,13 +24,11 @@ export default class MaterialService {
     auditService = new AuditService(),
     brandRepository = new BrandRepository(),
     categoryRepository = new CategoryRepository(),
-    propertyRepository = new PropertyRepository(),
   ) {
     this.materialRepository = materialRepository;
     this.auditService = auditService;
     this.brandRepository = brandRepository;
     this.categoryRepository = categoryRepository;
-    this.propertyRepository = propertyRepository;
   }
   async getAll(query) {
     const result = await this.materialRepository.findAll(query);
@@ -184,7 +181,6 @@ export default class MaterialService {
     delete publicValue.id;
     delete publicValue.brandId;
     delete publicValue.categoryId;
-    delete publicValue.propertyId;
     delete publicValue.createdBy;
     delete publicValue.updatedBy;
     delete publicValue.files;
@@ -192,7 +188,6 @@ export default class MaterialService {
       ...publicValue,
       brand: value.brand ? { uuid: value.brand.uuid, name: value.brand.name } : null,
       category: value.category ? { uuid: value.category.uuid, name: value.category.name } : null,
-      property: value.property ? { uuid: value.property.uuid, name: value.property.name } : null,
       ...(files
         ? {
             files: files.map((file) => {
@@ -224,15 +219,6 @@ export default class MaterialService {
         throw new AppError('Category not found', HTTP_STATUS.BAD_REQUEST);
       resolved.categoryId = category?.id ?? null;
       delete resolved.categoryUuid;
-    }
-    if ('propertyUuid' in resolved) {
-      const property = resolved.propertyUuid
-        ? await this.propertyRepository.findByUuid(resolved.propertyUuid)
-        : null;
-      if (resolved.propertyUuid && !property)
-        throw new AppError('Property not found', HTTP_STATUS.BAD_REQUEST);
-      resolved.propertyId = property?.id ?? null;
-      delete resolved.propertyUuid;
     }
     return resolved;
   }

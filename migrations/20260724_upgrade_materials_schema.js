@@ -7,7 +7,6 @@ module.exports = {
     const additions = {
       brand_id: { type: Sequelize.BIGINT.UNSIGNED, allowNull: true },
       category_id: { type: Sequelize.BIGINT.UNSIGNED, allowNull: true },
-      property_id: { type: Sequelize.BIGINT.UNSIGNED, allowNull: true },
       model: { type: Sequelize.STRING(150), allowNull: true },
       serial_number: { type: Sequelize.STRING(150), allowNull: true, unique: true },
       year: { type: Sequelize.INTEGER.UNSIGNED, allowNull: true },
@@ -29,7 +28,6 @@ module.exports = {
     const additions = [
       'brand_id',
       'category_id',
-      'property_id',
       'model',
       'serial_number',
       'year',

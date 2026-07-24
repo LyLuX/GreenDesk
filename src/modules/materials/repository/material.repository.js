@@ -3,12 +3,10 @@ import { Op } from 'sequelize';
 import Material from '../model/material.model.js';
 import Brand from '../../brands/model/brand.model.js';
 import Category from '../../categories/model/category.model.js';
-import Property from '../../properties/model/property.model.js';
 
 const include = [
   { model: Brand, as: 'brand', attributes: ['uuid', 'name'] },
   { model: Category, as: 'category', attributes: ['uuid', 'name'] },
-  { model: Property, as: 'property', attributes: ['uuid', 'name'] },
 ];
 
 /** Sequelize persistence operations for material catalogue records. */
@@ -18,7 +16,6 @@ export default class MaterialRepository {
     active,
     brandUuid,
     categoryUuid,
-    propertyUuid,
     page = 1,
     limit = 25,
     sort = 'name',
@@ -35,7 +32,6 @@ export default class MaterialRepository {
     const filteredInclude = [
       { ...include[0], ...(brandUuid ? { where: { uuid: brandUuid }, required: true } : {}) },
       { ...include[1], ...(categoryUuid ? { where: { uuid: categoryUuid }, required: true } : {}) },
-      { ...include[2], ...(propertyUuid ? { where: { uuid: propertyUuid }, required: true } : {}) },
     ];
     const normalizedLimit = Math.min(Number(limit) || 25, 100);
     return Material.findAndCountAll({

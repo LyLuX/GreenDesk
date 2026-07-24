@@ -4,7 +4,6 @@ const { randomUUID } = require('node:crypto');
 
 const permissionMappings = [
   { from: 'categories.disable', to: 'categories.delete', description: 'Delete categories' },
-  { from: 'properties.disable', to: 'properties.delete', description: 'Delete properties' },
   { from: 'materials.disable', to: 'materials.delete', description: 'Delete materials' },
 ];
 

@@ -14,7 +14,6 @@ export default class DashboardService {
         inactive: counts.materialsInactive,
       },
       categories: { total: counts.categoriesTotal },
-      properties: { total: counts.propertiesTotal },
     };
     if (counts.brandsTotal !== undefined) summary.brands = { total: counts.brandsTotal };
     if (counts.totalValue !== undefined)

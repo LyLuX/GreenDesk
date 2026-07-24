@@ -43,7 +43,6 @@ export default function DashboardPage() {
     );
   const materials = data.materials ?? {};
   const categories = data.categories ?? {};
-  const properties = data.properties ?? {};
   const brands = data.brands ?? {};
   const fleet = data.fleet ?? {};
   const maintenance = data.maintenance ?? {};
@@ -52,7 +51,6 @@ export default function DashboardPage() {
     ['Matériels actifs', materials.active ?? 0],
     ['Matériels inactifs', materials.inactive ?? 0],
     ['Catégories', categories.total ?? 0],
-    ['Propriétés', properties.total ?? 0],
     ['Marques', brands.total ?? 0],
     ['Valeur du parc', formatCurrency(fleet.totalValue)],
     ['Coût moyen', formatCurrency(fleet.averageCost)],

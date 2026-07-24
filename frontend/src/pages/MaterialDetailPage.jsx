@@ -272,7 +272,6 @@ export default function MaterialDetailPage() {
             <Field label="Numéro de série" value={material.serialNumber} />
             <Field label="Année" value={material.year} />
             <Field label="Catégorie" value={material.category?.name} />
-            <Field label="Propriété" value={material.property?.name} />
             <Field label="Prix d’achat" value={formatCurrency(material.purchasePrice)} />
             <Field label="Valeur actuelle" value={formatCurrency(material.currentValue)} />
             <Field label="Date d’achat" value={formatDate(material.purchaseDate)} />

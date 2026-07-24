@@ -12,7 +12,6 @@ const fields = [
   { name: 'reference', label: 'Référence' },
   { name: 'brandUuid', label: 'Marque' },
   { name: 'categoryUuid', label: 'Catégorie' },
-  { name: 'propertyUuid', label: 'Propriété' },
   { name: 'model', label: 'Modèle' },
   { name: 'serialNumber', label: 'Numéro de série' },
   { name: 'year', label: 'Année', type: 'number', valueType: 'number', min: '1900' },
@@ -64,22 +63,20 @@ export default function MaterialEditPage() {
   const { uuid } = useParams();
   const navigate = useNavigate();
   const [material, setMaterial] = useState(null);
-  const [options, setOptions] = useState({ brands: [], categories: [], properties: [] });
+  const [options, setOptions] = useState({ brands: [], categories: [] });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const load = useCallback(async () => {
     try {
-      const [item, brands, categories, properties] = await Promise.all([
+      const [item, brands, categories] = await Promise.all([
         createReferenceApi('materials').get(uuid),
         createReferenceApi('brands').list(),
         createReferenceApi('categories').list(),
-        createReferenceApi('properties').list(),
       ]);
       setMaterial(item.data.data);
       setOptions({
         brands: brands.data.data ?? [],
         categories: categories.data.data ?? [],
-        properties: properties.data.data ?? [],
       });
       setError('');
     } catch (requestError) {
@@ -143,9 +140,7 @@ export default function MaterialEditPage() {
                 ? relationOptions(options.brands)
                 : field.name === 'categoryUuid'
                   ? relationOptions(options.categories)
-                  : field.name === 'propertyUuid'
-                    ? relationOptions(options.properties)
-                    : undefined
+                  : undefined
             }
           />
         ))}

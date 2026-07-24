@@ -9,7 +9,6 @@ describe('frontend reference navigation', () => {
       '/materials',
       '/maintenance',
       '/categories',
-      '/properties',
       '/brands',
       '/users',
       '/roles',

@@ -10,7 +10,7 @@
  *         description: Summary returned successfully.
  *         content:
  *           application/json:
- *             example: { success: true, data: { materials: { total: 12, active: 10, inactive: 2 }, categories: { total: 4 }, properties: { total: 6 } } }
+ *             example: { success: true, data: { materials: { total: 12, active: 10, inactive: 2 }, categories: { total: 4 } } }
  *       401: { description: Authentication is required. }
  *       403: { description: dashboard.read permission is required. }
  *       500: { description: Unexpected server error. }

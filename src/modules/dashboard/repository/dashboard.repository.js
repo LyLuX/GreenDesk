@@ -1,6 +1,5 @@
 import Category from '../../categories/model/category.model.js';
 import Material from '../../materials/model/material.model.js';
-import Property from '../../properties/model/property.model.js';
 import Brand from '../../brands/model/brand.model.js';
 import sequelize from '../../../config/database.js';
 import MaintenanceRepository from '../../maintenance/repository/maintenance.repository.js';
@@ -16,7 +15,6 @@ export default class DashboardRepository {
       materialsActive,
       materialsInactive,
       categoriesTotal,
-      propertiesTotal,
       brandsTotal,
       materialMetrics,
       maintenance,
@@ -25,7 +23,6 @@ export default class DashboardRepository {
       Material.count({ where: { active: true } }),
       Material.count({ where: { active: false } }),
       Category.count(),
-      Property.count(),
       Brand.count(),
       Material.findOne({
         attributes: [
@@ -58,7 +55,6 @@ export default class DashboardRepository {
       materialsActive,
       materialsInactive,
       categoriesTotal,
-      propertiesTotal,
       brandsTotal,
       totalValue: Number(materialMetrics.value),
       averageCost: Number(materialMetrics.averageCost),

@@ -21,7 +21,7 @@ describe('MaterialService', () => {
       ...overrides,
     };
     const audit = { record: jest.fn(), findByEntity: jest.fn().mockResolvedValue([]) };
-    return { repository, audit, service: new MaterialService(repository, audit, {}, {}, {}) };
+    return { repository, audit, service: new MaterialService(repository, audit, {}, {}) };
   };
 
   it('returns only public fields when listing materials', async () => {
@@ -47,7 +47,6 @@ describe('MaterialService', () => {
           name: 'Tondeuse',
           brand: { uuid: '22222222-2222-4222-8222-222222222222', name: 'Green' },
           category: null,
-          property: null,
         },
       ],
       pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
