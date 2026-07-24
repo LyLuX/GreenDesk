@@ -18,6 +18,7 @@ export default class DashboardService {
     if (counts.brandsTotal !== undefined) summary.brands = { total: counts.brandsTotal };
     if (counts.averageCost !== undefined)
       summary.fleet = {
+        totalPurchaseValue: counts.totalPurchaseValue,
         averageCost: counts.averageCost,
         averageAge: counts.averageAge,
       };

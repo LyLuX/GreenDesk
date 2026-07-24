@@ -27,6 +27,10 @@ export default class DashboardRepository {
       Material.findOne({
         attributes: [
           [
+            sequelize.fn('COALESCE', sequelize.fn('SUM', sequelize.col('purchase_price')), 0),
+            'totalPurchaseValue',
+          ],
+          [
             sequelize.fn('COALESCE', sequelize.fn('AVG', sequelize.col('purchase_price')), 0),
             'averageCost',
           ],
@@ -52,6 +56,7 @@ export default class DashboardRepository {
       materialsInactive,
       categoriesTotal,
       brandsTotal,
+      totalPurchaseValue: Number(materialMetrics.totalPurchaseValue),
       averageCost: Number(materialMetrics.averageCost),
       averageAge: Number(materialMetrics.averageAge),
       maintenanceToday: maintenance[0],

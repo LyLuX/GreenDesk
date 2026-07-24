@@ -52,6 +52,7 @@ export default function DashboardPage() {
     ['Matériels inactifs', materials.inactive ?? 0],
     ['Catégories', categories.total ?? 0],
     ['Marques', brands.total ?? 0],
+    ['Valeur du parc', formatCurrency(fleet.totalPurchaseValue)],
     ['Coût moyen', formatCurrency(fleet.averageCost)],
     ['Âge moyen', `${Number(fleet.averageAge ?? 0).toFixed(1)} ans`],
     ['Entretiens aujourd’hui', maintenance.today ?? 0],

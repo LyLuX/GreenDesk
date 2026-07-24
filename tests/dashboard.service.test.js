@@ -11,6 +11,7 @@ describe('DashboardService', () => {
         materialsInactive: 2,
         categoriesTotal: 3,
         brandsTotal: 2,
+        totalPurchaseValue: 1600,
         averageCost: 200,
         averageAge: 3.5,
       }),
@@ -19,7 +20,7 @@ describe('DashboardService', () => {
       materials: { total: 8, active: 6, inactive: 2 },
       categories: { total: 3 },
       brands: { total: 2 },
-      fleet: { averageCost: 200, averageAge: 3.5 },
+      fleet: { totalPurchaseValue: 1600, averageCost: 200, averageAge: 3.5 },
     });
   });
 });
