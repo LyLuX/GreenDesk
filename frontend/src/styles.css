@@ -257,14 +257,6 @@ a:hover {
   width: 100%;
 }
 
-.metric-card:nth-child(3n + 2) {
-  border-left-color: var(--brand-sun);
-}
-
-.metric-card:nth-child(3n) {
-  border-left-color: #7f9b8a;
-}
-
 .metric-label {
   color: var(--muted);
   font-size: 0.83rem;
