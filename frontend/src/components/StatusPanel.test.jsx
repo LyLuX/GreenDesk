@@ -16,6 +16,10 @@ describe('StatusPanel', () => {
       'p-4',
       'text-center',
       'm-auto',
+      'd-flex',
+      'flex-column',
+      'align-items-center',
+      'justify-content-center',
     );
   });
 });
