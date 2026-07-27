@@ -2,6 +2,7 @@ import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';
 import MaterialService from '../../materials/service/material.service.js';
+import MaintenanceCatalogRepository from '../repository/maintenance-catalog.repository.js';
 import MaintenanceRepository from '../repository/maintenance.repository.js';
 import {
   addDaysDateOnly,
@@ -18,10 +19,12 @@ export default class MaintenanceService {
     repository = new MaintenanceRepository(),
     materialService = new MaterialService(),
     auditService = new AuditService(),
+    catalogRepository = new MaintenanceCatalogRepository(),
   ) {
     this.repository = repository;
     this.materialService = materialService;
     this.auditService = auditService;
+    this.catalogRepository = catalogRepository;
   }
   async getAll(query) {
     const result = await this.repository.findAll(query);
@@ -65,12 +68,38 @@ export default class MaintenanceService {
   async create(values, userId) {
     const material = await this.materialService.getEntityByUuid(values.materialUuid);
     const deadlines = this.calculateDeadlines(values);
-    const task = await this.repository.create({
-      ...values,
-      ...deadlines,
-      materialId: material.id,
-      createdBy: userId,
-      updatedBy: userId,
+    const { operationUuid, parts = [] } = values;
+    const planValues = { ...values };
+    delete planValues.materialUuid;
+    delete planValues.operationUuid;
+    delete planValues.parts;
+    const task = await this.repository.withTransaction(async (transaction) => {
+      const operation = operationUuid
+        ? await this.resolveOperation(operationUuid, transaction)
+        : null;
+      const resolvedParts = await this.resolveParts(parts, transaction);
+      const created = await this.repository.create(
+        {
+          ...planValues,
+          ...(operation
+            ? {
+                title: operation.name,
+                maintenanceType: operation.maintenanceType,
+                operationId: operation.id,
+                ...(Object.hasOwn(planValues, 'description')
+                  ? {}
+                  : { description: operation.description }),
+              }
+            : {}),
+          ...deadlines,
+          materialId: material.id,
+          createdBy: userId,
+          updatedBy: userId,
+        },
+        { transaction },
+      );
+      await this.repository.replaceParts(created.id, resolvedParts, { transaction });
+      return created;
     });
     await this.auditService.record({
       userId,
@@ -79,13 +108,42 @@ export default class MaintenanceService {
       entityUuid: task.uuid,
       newValues: task.toJSON(),
     });
-    return this.toPublic(task);
+    return this.toPublic(await this.repository.findByUuid(task.uuid));
   }
   async update(uuid, values, userId) {
     const task = await this.getEntityByUuid(uuid);
     const oldValues = task.toJSON();
     const deadlines = this.calculateDeadlines(values, task);
-    await this.repository.update(task, { ...values, ...deadlines, updatedBy: userId });
+    const { operationUuid, parts } = values;
+    const planValues = { ...values };
+    delete planValues.operationUuid;
+    delete planValues.parts;
+    await this.repository.withTransaction(async (transaction) => {
+      const operation = operationUuid
+        ? await this.resolveOperation(operationUuid, transaction)
+        : task.operation;
+      await this.repository.update(
+        task,
+        {
+          ...planValues,
+          ...(operation
+            ? {
+                title: operation.name,
+                maintenanceType: operation.maintenanceType,
+                operationId: operation.id,
+              }
+            : {}),
+          ...deadlines,
+          updatedBy: userId,
+        },
+        { transaction },
+      );
+      if (parts !== undefined) {
+        await this.repository.replaceParts(task.id, await this.resolveParts(parts, transaction), {
+          transaction,
+        });
+      }
+    });
     await this.auditService.record({
       userId,
       action: 'UPDATE',
@@ -94,7 +152,7 @@ export default class MaintenanceService {
       oldValues,
       newValues: task.toJSON(),
     });
-    return this.toPublic(task);
+    return this.toPublic(await this.repository.findByUuid(task.uuid));
   }
   async changeStatus(uuid, active, userId) {
     const task = await this.getEntityByUuid(uuid);
@@ -170,11 +228,87 @@ export default class MaintenanceService {
     const task = await this.getEntityByUuid(uuid);
     return (await this.repository.findHistory(task.id)).map((history) => this.toHistory(history));
   }
+  async getOrderList({ horizonDays = 30, includeOverdue = true } = {}) {
+    const normalizedHorizon = Math.min(Math.max(Number(horizonDays) || 0, 0), 365);
+    const today = todayDateOnly();
+    const through = addDaysDateOnly(today, normalizedHorizon);
+    const tasks = await this.repository.findForOrderList({
+      from: includeOverdue === false ? today : undefined,
+      through,
+    });
+    const grouped = new Map();
+    for (const task of tasks.map((item) => this.toPublic(item))) {
+      for (const part of task.parts ?? []) {
+        const current = grouped.get(part.uuid) ?? {
+          uuid: part.uuid,
+          name: part.name,
+          manufacturer: part.manufacturer,
+          reference: part.reference,
+          supplierReference: part.supplierReference,
+          unit: part.unit,
+          quantity: 0,
+          plans: [],
+        };
+        current.quantity += Number(part.quantity);
+        current.plans.push({
+          maintenanceUuid: task.uuid,
+          title: task.title,
+          material: task.material,
+          nextMaintenanceDate: task.nextMaintenanceDate,
+          quantity: Number(part.quantity),
+        });
+        grouped.set(part.uuid, current);
+      }
+    }
+    return {
+      horizonDays: normalizedHorizon,
+      includeOverdue: includeOverdue !== false,
+      from: today,
+      through,
+      items: [...grouped.values()].sort((left, right) => left.name.localeCompare(right.name, 'fr')),
+    };
+  }
+  async resolveOperation(uuid, transaction) {
+    const operation = await this.catalogRepository.findOperationByUuid(uuid, { transaction });
+    if (!operation || !operation.active) {
+      throw new AppError(
+        'L’opération de maintenance sélectionnée est introuvable ou inactive.',
+        HTTP_STATUS.BAD_REQUEST,
+      );
+    }
+    return operation;
+  }
+  async resolveParts(parts, transaction) {
+    if (!Array.isArray(parts)) {
+      throw new AppError('La liste des pièces est invalide.', HTTP_STATUS.BAD_REQUEST);
+    }
+    const uniqueUuids = [...new Set(parts.map(({ partUuid }) => partUuid))];
+    if (uniqueUuids.length !== parts.length) {
+      throw new AppError('Une pièce ne peut apparaître qu’une fois.', HTTP_STATUS.BAD_REQUEST);
+    }
+    if (!parts.length) return [];
+    if (parts.some(({ quantity }) => !Number.isInteger(Number(quantity)) || Number(quantity) < 1)) {
+      throw new AppError('Les quantités de pièces sont invalides.', HTTP_STATUS.BAD_REQUEST);
+    }
+    const entities = await this.catalogRepository.findPartsByUuids(uniqueUuids, { transaction });
+    if (entities.length !== uniqueUuids.length) {
+      throw new AppError(
+        'Une ou plusieurs pièces sont introuvables ou inactives.',
+        HTTP_STATUS.BAD_REQUEST,
+      );
+    }
+    const byUuid = new Map(entities.map((part) => [part.uuid, part]));
+    return parts.map(({ partUuid, quantity }) => ({
+      partId: byUuid.get(partUuid).id,
+      quantity: Number(quantity),
+    }));
+  }
   toPublic(task) {
     const value = typeof task.toJSON === 'function' ? task.toJSON() : task;
     const publicValue = { ...value };
     delete publicValue.id;
     delete publicValue.materialId;
+    delete publicValue.operationId;
     delete publicValue.createdBy;
     delete publicValue.updatedBy;
     return {
@@ -185,6 +319,24 @@ export default class MaintenanceService {
             name: value.material.name,
           }
         : null,
+      operation: value.operation
+        ? {
+            uuid: value.operation.uuid,
+            name: value.operation.name,
+            description: value.operation.description,
+            maintenanceType: value.operation.maintenanceType,
+          }
+        : null,
+      parts: (value.parts ?? []).map((part) => ({
+        uuid: part.uuid,
+        name: part.name,
+        manufacturer: part.manufacturer,
+        reference: part.reference,
+        supplierReference: part.supplierReference,
+        unit: part.unit,
+        active: part.active,
+        quantity: Number(part.MaintenanceTaskPart?.quantity ?? part.quantity ?? 1),
+      })),
       ...getDeadlineDetails(publicValue),
     };
   }

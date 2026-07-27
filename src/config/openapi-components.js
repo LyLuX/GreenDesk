@@ -151,6 +151,34 @@ const material = {
   },
 };
 
+const maintenanceOperation = {
+  type: 'object',
+  required: ['uuid', 'name', 'maintenanceType', 'active'],
+  properties: {
+    uuid,
+    name: writeText(150),
+    description: nullableString,
+    maintenanceType: { type: 'string', enum: MAINTENANCE_TYPES },
+    active: { type: 'boolean' },
+    ...timestamps,
+  },
+};
+
+const maintenancePart = {
+  type: 'object',
+  required: ['uuid', 'name', 'reference', 'unit', 'active'],
+  properties: {
+    uuid,
+    name: writeText(150),
+    manufacturer: { ...nullableString, maxLength: 150 },
+    reference: writeText(150),
+    supplierReference: { ...nullableString, maxLength: 150 },
+    unit: writeText(50),
+    active: { type: 'boolean' },
+    ...timestamps,
+  },
+};
+
 const maintenanceTask = {
   type: 'object',
   required: [
@@ -180,6 +208,20 @@ const maintenanceTask = {
       type: 'object',
       nullable: true,
       properties: { uuid, name: writeText(150) },
+    },
+    operation: { allOf: [reference('MaintenanceOperation')], nullable: true },
+    parts: {
+      type: 'array',
+      items: {
+        allOf: [
+          reference('MaintenancePart'),
+          {
+            type: 'object',
+            required: ['quantity'],
+            properties: { quantity: { type: 'integer', minimum: 1 } },
+          },
+        ],
+      },
     },
     status: {
       type: 'string',
@@ -250,13 +292,35 @@ const materialWriteProperties = {
 };
 
 const maintenanceWriteProperties = {
-  title: writeText(150),
+  operationUuid: uuid,
+  title: {
+    ...writeText(150),
+    deprecated: true,
+    description: 'Compatibilité avec les anciens clients sans catalogue.',
+  },
   description: nullableString,
-  maintenanceType: { type: 'string', enum: MAINTENANCE_TYPES },
+  maintenanceType: {
+    type: 'string',
+    enum: MAINTENANCE_TYPES,
+    deprecated: true,
+    description: 'Déduit automatiquement de l’opération sélectionnée.',
+  },
   intervalDays: { type: 'integer', minimum: 1 },
   lastMaintenanceDate: date,
   priority: { type: 'string', enum: MAINTENANCE_PRIORITIES, default: 'normal' },
   notes: nullableString,
+  parts: {
+    type: 'array',
+    maxItems: 50,
+    items: {
+      type: 'object',
+      required: ['partUuid', 'quantity'],
+      properties: {
+        partUuid: uuid,
+        quantity: { type: 'integer', minimum: 1, maximum: 100000 },
+      },
+    },
+  },
 };
 
 export const openApiSchemas = {
@@ -311,6 +375,8 @@ export const openApiSchemas = {
   MaterialFile: materialFile,
   Material: material,
   AuditLog: auditLog,
+  MaintenanceOperation: maintenanceOperation,
+  MaintenancePart: maintenancePart,
   MaintenanceTask: maintenanceTask,
   MaintenanceHistory: maintenanceHistory,
   RegisterRequest: {
@@ -412,7 +478,14 @@ export const openApiSchemas = {
   },
   MaintenanceCreateRequest: {
     type: 'object',
-    required: ['materialUuid', 'title', 'maintenanceType', 'intervalDays', 'lastMaintenanceDate'],
+    required: ['materialUuid', 'intervalDays', 'lastMaintenanceDate'],
+    oneOf: [
+      { required: ['operationUuid'] },
+      {
+        required: ['title', 'maintenanceType'],
+        description: 'Payload historique conservé pour compatibilité.',
+      },
+    ],
     properties: { materialUuid: uuid, ...maintenanceWriteProperties },
   },
   MaintenanceUpdateRequest: {
@@ -429,6 +502,46 @@ export const openApiSchemas = {
     properties: {
       performedAt: date,
       comment: { type: 'string' },
+    },
+  },
+  MaintenanceOperationCreateRequest: {
+    type: 'object',
+    required: ['name', 'maintenanceType'],
+    properties: {
+      name: writeText(150),
+      description: nullableString,
+      maintenanceType: { type: 'string', enum: MAINTENANCE_TYPES },
+    },
+  },
+  MaintenanceOperationUpdateRequest: {
+    type: 'object',
+    properties: {
+      name: writeText(150),
+      description: nullableString,
+      maintenanceType: { type: 'string', enum: MAINTENANCE_TYPES },
+      active: { type: 'boolean' },
+    },
+  },
+  MaintenancePartCreateRequest: {
+    type: 'object',
+    required: ['name', 'reference'],
+    properties: {
+      name: writeText(150),
+      manufacturer: { ...nullableString, maxLength: 150 },
+      reference: writeText(150),
+      supplierReference: { ...nullableString, maxLength: 150 },
+      unit: { ...writeText(50), default: 'pièce' },
+    },
+  },
+  MaintenancePartUpdateRequest: {
+    type: 'object',
+    properties: {
+      name: writeText(150),
+      manufacturer: { ...nullableString, maxLength: 150 },
+      reference: writeText(150),
+      supplierReference: { ...nullableString, maxLength: 150 },
+      unit: writeText(50),
+      active: { type: 'boolean' },
     },
   },
   AuthSession: {
@@ -472,6 +585,49 @@ export const openApiSchemas = {
     properties: {
       task: reference('MaintenanceTask'),
       history: reference('MaintenanceHistory'),
+    },
+  },
+  MaintenanceOrderList: {
+    type: 'object',
+    required: ['horizonDays', 'includeOverdue', 'from', 'through', 'items'],
+    properties: {
+      horizonDays: { type: 'integer', minimum: 0, maximum: 365 },
+      includeOverdue: { type: 'boolean' },
+      from: date,
+      through: date,
+      items: {
+        type: 'array',
+        items: {
+          allOf: [
+            reference('MaintenancePart'),
+            {
+              type: 'object',
+              required: ['quantity', 'plans'],
+              properties: {
+                quantity: { type: 'integer', minimum: 1 },
+                plans: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    required: ['maintenanceUuid', 'title', 'nextMaintenanceDate', 'quantity'],
+                    properties: {
+                      maintenanceUuid: uuid,
+                      title: writeText(150),
+                      material: {
+                        type: 'object',
+                        nullable: true,
+                        properties: { uuid, name: writeText(150) },
+                      },
+                      nextMaintenanceDate: date,
+                      quantity: { type: 'integer', minimum: 1 },
+                    },
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
     },
   },
   DashboardSummary: {
@@ -558,6 +714,11 @@ export const openApiSchemas = {
   AuditLogListResponse: success(arrayOf(reference('AuditLog'))),
   MaintenanceResponse: success(reference('MaintenanceTask')),
   MaintenanceListResponse: success(reference('MaintenancePage')),
+  MaintenanceOperationResponse: success(reference('MaintenanceOperation')),
+  MaintenanceOperationListResponse: success(arrayOf(reference('MaintenanceOperation'))),
+  MaintenancePartResponse: success(reference('MaintenancePart')),
+  MaintenancePartListResponse: success(arrayOf(reference('MaintenancePart'))),
+  MaintenanceOrderListResponse: success(reference('MaintenanceOrderList')),
   MaintenanceHistoryResponse: success(arrayOf(reference('MaintenanceHistory'))),
   MaintenanceExecutionResponse: success(reference('MaintenanceExecution')),
   DashboardResponse: success(reference('DashboardSummary')),

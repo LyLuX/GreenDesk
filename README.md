@@ -50,6 +50,10 @@ Une tâche est à faire aujourd’hui lorsque sa prochaine date correspond à la
 
 Les permissions sont `maintenance.read`, `maintenance.create`, `maintenance.update`, `maintenance.delete` et `maintenance.execute`. Le tableau de bord compte les entretiens prévus aujourd’hui, en retard et dans les 30 prochains jours. Chaque compteur non nul donne accès à la liste exacte des entretiens concernés.
 
+Les intitulés répétitifs sont centralisés dans un catalogue d’opérations accessible via `/api/v1/maintenance/operations`. Les références réellement commandables sont enregistrées dans `/api/v1/maintenance/parts`, puis associées aux plans avec une quantité. Une même opération, par exemple le remplacement d’une bougie, peut ainsi utiliser des références différentes selon le matériel. `GET /api/v1/maintenance/order-list` regroupe les quantités nécessaires aux plans arrivant à échéance sur un horizon configurable.
+
+La migration `20260727_zz_add_maintenance_catalogs.js` est additive : elle conserve les intitulés et toutes les données historiques des plans. Son annulation supprime uniquement les catalogues, leurs associations et la colonne de liaison, ce qui permet de revenir au fonctionnement précédent sans perdre un plan.
+
 ## Configuration
 
 Créez `.env` depuis `.env.example` pour le backend et `frontend/.env` depuis `frontend/.env.example` pour l'interface. `VITE_API_URL=/api` est la valeur de développement par défaut. Aucun secret réel ne doit être committé.

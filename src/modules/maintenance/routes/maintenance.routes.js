@@ -3,12 +3,73 @@ import { authenticate } from '../../../core/middlewares/auth.middleware.js';
 import { authorize } from '../../../core/middlewares/authorization.middleware.js';
 import { validateRequest } from '../../../core/middlewares/validate-request.js';
 import { asyncHandler } from '../../../core/utils/async-handler.js';
+import MaintenanceCatalogController from '../controller/maintenance-catalog.controller.js';
 import MaintenanceController from '../controller/maintenance.controller.js';
 import * as validator from '../validator/maintenance.validator.js';
 
 const router = Router();
 const controller = new MaintenanceController();
+const catalogController = new MaintenanceCatalogController();
 router.use(authenticate);
+router.get(
+  '/operations',
+  authorize('maintenance.read'),
+  asyncHandler(catalogController.operations.bind(catalogController)),
+);
+router.post(
+  '/operations',
+  authorize('maintenance.create'),
+  validator.createOperationValidator,
+  validateRequest,
+  asyncHandler(catalogController.createOperation.bind(catalogController)),
+);
+router.put(
+  '/operations/:uuid',
+  authorize('maintenance.update'),
+  validator.updateOperationValidator,
+  validateRequest,
+  asyncHandler(catalogController.updateOperation.bind(catalogController)),
+);
+router.delete(
+  '/operations/:uuid',
+  authorize('maintenance.delete'),
+  validator.uuidValidator,
+  validateRequest,
+  asyncHandler(catalogController.removeOperation.bind(catalogController)),
+);
+router.get(
+  '/parts',
+  authorize('maintenance.read'),
+  asyncHandler(catalogController.parts.bind(catalogController)),
+);
+router.post(
+  '/parts',
+  authorize('maintenance.create'),
+  validator.createPartValidator,
+  validateRequest,
+  asyncHandler(catalogController.createPart.bind(catalogController)),
+);
+router.put(
+  '/parts/:uuid',
+  authorize('maintenance.update'),
+  validator.updatePartValidator,
+  validateRequest,
+  asyncHandler(catalogController.updatePart.bind(catalogController)),
+);
+router.delete(
+  '/parts/:uuid',
+  authorize('maintenance.delete'),
+  validator.uuidValidator,
+  validateRequest,
+  asyncHandler(catalogController.removePart.bind(catalogController)),
+);
+router.get(
+  '/order-list',
+  authorize('maintenance.read'),
+  validator.orderListValidator,
+  validateRequest,
+  asyncHandler(controller.orderList.bind(controller)),
+);
 router.get(
   '/',
   authorize('maintenance.read'),

@@ -665,6 +665,130 @@ export const openApiPaths = {
       responses: { 204: noContent, ...resourceErrors },
     },
   },
+  '/maintenance/operations': {
+    get: {
+      operationId: 'listMaintenanceOperations',
+      tags: ['Maintenance'],
+      summary: 'Liste les opérations réutilisables.',
+      description: 'Nécessite `maintenance.read`.',
+      security: secure,
+      responses: {
+        200: jsonResponse(
+          'MaintenanceOperationListResponse',
+          'Opérations de maintenance retournées.',
+        ),
+        ...standardErrors,
+      },
+    },
+    post: {
+      operationId: 'createMaintenanceOperation',
+      tags: ['Maintenance'],
+      summary: 'Crée ou restaure une opération réutilisable.',
+      description: 'Nécessite `maintenance.create`.',
+      security: secure,
+      requestBody: jsonBody('MaintenanceOperationCreateRequest'),
+      responses: {
+        201: jsonResponse('MaintenanceOperationResponse', 'Opération créée.'),
+        ...writeErrors,
+      },
+    },
+  },
+  '/maintenance/operations/{uuid}': {
+    parameters: [uuidParameter],
+    put: {
+      operationId: 'updateMaintenanceOperation',
+      tags: ['Maintenance'],
+      summary: 'Met à jour une opération et les intitulés des plans associés.',
+      description: 'Nécessite `maintenance.update`.',
+      security: secure,
+      requestBody: jsonBody('MaintenanceOperationUpdateRequest'),
+      responses: {
+        200: jsonResponse('MaintenanceOperationResponse', 'Opération mise à jour.'),
+        ...writeErrors,
+      },
+    },
+    delete: {
+      operationId: 'deleteMaintenanceOperation',
+      tags: ['Maintenance'],
+      summary: 'Supprime une opération inutilisée.',
+      description: 'Nécessite `maintenance.delete`. Une opération liée à un plan est conservée.',
+      security: secure,
+      responses: { 204: noContent, ...writeErrors },
+    },
+  },
+  '/maintenance/parts': {
+    get: {
+      operationId: 'listMaintenanceParts',
+      tags: ['Maintenance'],
+      summary: 'Liste les références de pièces commandables.',
+      description: 'Nécessite `maintenance.read`.',
+      security: secure,
+      responses: {
+        200: jsonResponse('MaintenancePartListResponse', 'Pièces retournées.'),
+        ...standardErrors,
+      },
+    },
+    post: {
+      operationId: 'createMaintenancePart',
+      tags: ['Maintenance'],
+      summary: 'Crée ou restaure une référence de pièce.',
+      description: 'Nécessite `maintenance.create`.',
+      security: secure,
+      requestBody: jsonBody('MaintenancePartCreateRequest'),
+      responses: {
+        201: jsonResponse('MaintenancePartResponse', 'Pièce créée.'),
+        ...writeErrors,
+      },
+    },
+  },
+  '/maintenance/parts/{uuid}': {
+    parameters: [uuidParameter],
+    put: {
+      operationId: 'updateMaintenancePart',
+      tags: ['Maintenance'],
+      summary: 'Met à jour une référence de pièce.',
+      description: 'Nécessite `maintenance.update`.',
+      security: secure,
+      requestBody: jsonBody('MaintenancePartUpdateRequest'),
+      responses: {
+        200: jsonResponse('MaintenancePartResponse', 'Pièce mise à jour.'),
+        ...writeErrors,
+      },
+    },
+    delete: {
+      operationId: 'deleteMaintenancePart',
+      tags: ['Maintenance'],
+      summary: 'Supprime une pièce inutilisée.',
+      description: 'Nécessite `maintenance.delete`. Une pièce liée à un plan est conservée.',
+      security: secure,
+      responses: { 204: noContent, ...writeErrors },
+    },
+  },
+  '/maintenance/order-list': {
+    get: {
+      operationId: 'getMaintenanceOrderList',
+      tags: ['Maintenance'],
+      summary: 'Agrège les pièces nécessaires aux plans arrivant à échéance.',
+      description: 'Nécessite `maintenance.read`. Une échéance correspond à un besoin de pièces.',
+      security: secure,
+      parameters: [
+        {
+          name: 'horizonDays',
+          in: 'query',
+          schema: { type: 'integer', minimum: 0, maximum: 365, default: 30 },
+        },
+        {
+          name: 'includeOverdue',
+          in: 'query',
+          schema: { type: 'boolean', default: true },
+        },
+      ],
+      responses: {
+        200: jsonResponse('MaintenanceOrderListResponse', 'Liste de commande calculée.'),
+        ...standardErrors,
+      },
+    },
+  },
   '/maintenance': {
     get: {
       operationId: 'listMaintenanceTasks',
@@ -711,8 +835,9 @@ export const openApiPaths = {
     post: {
       operationId: 'createMaintenanceTask',
       tags: ['Maintenance'],
-      summary: 'Crée un plan et calcule sa prochaine échéance.',
-      description: 'Nécessite `maintenance.create`.',
+      summary: 'Crée un plan depuis une opération et calcule sa prochaine échéance.',
+      description:
+        'Nécessite `maintenance.create`. Le payload historique avec intitulé libre reste accepté pour compatibilité.',
       security: secure,
       requestBody: jsonBody('MaintenanceCreateRequest'),
       responses: {

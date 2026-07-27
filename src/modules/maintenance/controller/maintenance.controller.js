@@ -12,6 +12,9 @@ export default class MaintenanceController {
   async getByUuid(request, response) {
     response.json(successResponse(await this.service.getByUuid(request.params.uuid)));
   }
+  async orderList(request, response) {
+    response.json(successResponse(await this.service.getOrderList(request.query)));
+  }
   async create(request, response) {
     response
       .status(HTTP_STATUS.CREATED)

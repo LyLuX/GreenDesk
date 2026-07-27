@@ -3,6 +3,7 @@ export default function FormField({ label, error, ...props }) {
   const id = useId();
   const errorId = `${id}-error`;
   const { options, multiline, ...inputProps } = props;
+  delete inputProps.valueType;
   const controlProps = {
     id,
     'aria-describedby': error ? errorId : undefined,

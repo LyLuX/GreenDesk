@@ -4,18 +4,30 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   listMaintenance: vi.fn(),
+  listOperations: vi.fn(),
+  listParts: vi.fn(),
   listMaterials: vi.fn(),
+  createMaintenance: vi.fn(),
   executeMaintenance: vi.fn(),
 }));
 
 vi.mock('../api/maintenance.api.js', () => ({
-  createMaintenance: vi.fn(),
+  createMaintenance: mocks.createMaintenance,
   deleteMaintenance: vi.fn(),
   executeMaintenance: mocks.executeMaintenance,
   listMaintenance: mocks.listMaintenance,
+  listMaintenanceOperations: mocks.listOperations,
+  listMaintenanceParts: mocks.listParts,
   maintenanceHistory: vi.fn(),
   setMaintenanceStatus: vi.fn(),
   updateMaintenance: vi.fn(),
+  createMaintenanceOperation: vi.fn(),
+  updateMaintenanceOperation: vi.fn(),
+  deleteMaintenanceOperation: vi.fn(),
+  createMaintenancePart: vi.fn(),
+  updateMaintenancePart: vi.fn(),
+  deleteMaintenancePart: vi.fn(),
+  getMaintenanceOrderList: vi.fn(),
 }));
 vi.mock('../api/reference.api.js', () => ({
   createReferenceApi: () => ({ list: mocks.listMaterials }),
@@ -34,7 +46,37 @@ describe('MaintenancePage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.listMaterials.mockResolvedValue({ data: { data: [] } });
+    mocks.listMaterials.mockResolvedValue({
+      data: {
+        data: {
+          items: [{ uuid: 'material-uuid', name: 'Tronçonneuse' }],
+        },
+      },
+    });
+    mocks.listOperations.mockResolvedValue({
+      data: {
+        data: [
+          {
+            uuid: 'operation-uuid',
+            name: 'Vidange',
+            maintenanceType: 'preventive',
+          },
+        ],
+      },
+    });
+    mocks.listParts.mockResolvedValue({
+      data: {
+        data: [
+          {
+            uuid: 'part-uuid',
+            name: 'Bougie',
+            reference: 'BPMR8Y',
+            unit: 'pièce',
+          },
+        ],
+      },
+    });
+    mocks.createMaintenance.mockResolvedValue({ data: { data: {} } });
     mocks.executeMaintenance.mockResolvedValue({ data: { data: {} } });
     mocks.listMaintenance.mockResolvedValue({
       data: {
@@ -101,6 +143,43 @@ describe('MaintenancePage', () => {
       'align-items-center',
       'justify-content-center',
     );
+  });
+
+  it('replaces the manually entered title with a reusable operation', async () => {
+    const user = userEvent.setup();
+    render(<MaintenancePage />);
+
+    await user.click(await screen.findByRole('button', { name: 'Créer un plan' }));
+
+    expect(screen.getByLabelText('Opération')).toBeRequired();
+    expect(screen.getByRole('option', { name: 'Vidange — Préventif' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Intitulé')).not.toBeInTheDocument();
+  });
+
+  it('creates a plan with its operation and exact part instead of a free title', async () => {
+    const user = userEvent.setup();
+    render(<MaintenancePage />);
+
+    await user.click(await screen.findByRole('button', { name: 'Créer un plan' }));
+    await user.selectOptions(screen.getByLabelText('Matériel'), 'material-uuid');
+    await user.selectOptions(screen.getByLabelText('Opération'), 'operation-uuid');
+    await user.type(screen.getByLabelText('Intervalle (jours)'), '365');
+    await user.type(screen.getByLabelText('Dernier entretien'), '2026-07-01');
+    await user.click(screen.getByRole('checkbox', { name: 'Bougie — BPMR8Y' }));
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+
+    await waitFor(() =>
+      expect(mocks.createMaintenance).toHaveBeenCalledWith(
+        expect.objectContaining({
+          materialUuid: 'material-uuid',
+          operationUuid: 'operation-uuid',
+          intervalDays: 365,
+          lastMaintenanceDate: '2026-07-01',
+          parts: [{ partUuid: 'part-uuid', quantity: 1 }],
+        }),
+      ),
+    );
+    expect(mocks.createMaintenance.mock.calls[0][0]).not.toHaveProperty('title');
   });
 
   it('executes maintenance without requesting or sending engine hours', async () => {

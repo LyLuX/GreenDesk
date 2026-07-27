@@ -1,0 +1,34 @@
+import { DataTypes, Model } from 'sequelize';
+import { v4 as uuidv4 } from 'uuid';
+
+import sequelize from '../../../config/database.js';
+
+/** Exact orderable part reference reusable across maintenance plans. */
+class MaintenancePart extends Model {}
+
+MaintenancePart.init(
+  {
+    id: { type: DataTypes.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
+    uuid: { type: DataTypes.UUID, defaultValue: uuidv4, allowNull: false, unique: true },
+    name: { type: DataTypes.STRING(150), allowNull: false },
+    manufacturer: { type: DataTypes.STRING(150), allowNull: true },
+    reference: { type: DataTypes.STRING(150), allowNull: false },
+    supplierReference: {
+      type: DataTypes.STRING(150),
+      field: 'supplier_reference',
+      allowNull: true,
+    },
+    unit: { type: DataTypes.STRING(50), allowNull: false, defaultValue: 'pièce' },
+    active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    createdBy: { type: DataTypes.BIGINT.UNSIGNED, field: 'created_by', allowNull: true },
+    updatedBy: { type: DataTypes.BIGINT.UNSIGNED, field: 'updated_by', allowNull: true },
+  },
+  {
+    sequelize,
+    modelName: 'MaintenancePart',
+    tableName: 'maintenance_parts',
+    paranoid: true,
+  },
+);
+
+export default MaintenancePart;

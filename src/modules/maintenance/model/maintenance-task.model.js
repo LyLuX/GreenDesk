@@ -10,6 +10,11 @@ MaintenanceTask.init(
     id: { type: DataTypes.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
     uuid: { type: DataTypes.UUID, defaultValue: uuidv4, allowNull: false, unique: true },
     materialId: { type: DataTypes.BIGINT.UNSIGNED, field: 'material_id', allowNull: false },
+    operationId: {
+      type: DataTypes.BIGINT.UNSIGNED,
+      field: 'operation_id',
+      allowNull: true,
+    },
     title: { type: DataTypes.STRING(150), allowNull: false },
     description: { type: DataTypes.TEXT, allowNull: true },
     maintenanceType: {

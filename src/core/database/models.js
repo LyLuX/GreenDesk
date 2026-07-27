@@ -8,6 +8,9 @@ import MaterialFile from '../../modules/materials/model/material-file.model.js';
 import Brand from '../../modules/brands/model/brand.model.js';
 import MaintenanceTask from '../../modules/maintenance/model/maintenance-task.model.js';
 import MaintenanceHistory from '../../modules/maintenance/model/maintenance-history.model.js';
+import MaintenanceOperation from '../../modules/maintenance/model/maintenance-operation.model.js';
+import MaintenancePart from '../../modules/maintenance/model/maintenance-part.model.js';
+import MaintenanceTaskPart from '../../modules/maintenance/model/maintenance-task-part.model.js';
 import RevokedAccessToken from '../../modules/auth/model/revoked-access-token.model.js';
 
 let initialized = false;
@@ -51,8 +54,28 @@ export function initializeModels() {
   Material.belongsTo(Category, { foreignKey: 'category_id', as: 'category', onDelete: 'SET NULL' });
   Material.hasMany(MaterialFile, { foreignKey: 'material_id', as: 'files' });
   MaterialFile.belongsTo(Material, { foreignKey: 'material_id', as: 'material' });
-  Material.hasMany(MaintenanceTask, { foreignKey: 'material_id', as: 'maintenanceTasks' });
-  MaintenanceTask.belongsTo(Material, { foreignKey: 'material_id', as: 'material' });
+  Material.hasMany(MaintenanceTask, { foreignKey: 'materialId', as: 'maintenanceTasks' });
+  MaintenanceTask.belongsTo(Material, { foreignKey: 'materialId', as: 'material' });
+  MaintenanceOperation.hasMany(MaintenanceTask, {
+    foreignKey: 'operationId',
+    as: 'maintenanceTasks',
+  });
+  MaintenanceTask.belongsTo(MaintenanceOperation, {
+    foreignKey: 'operationId',
+    as: 'operation',
+  });
+  MaintenanceTask.belongsToMany(MaintenancePart, {
+    through: MaintenanceTaskPart,
+    foreignKey: 'maintenanceTaskId',
+    otherKey: 'maintenancePartId',
+    as: 'parts',
+  });
+  MaintenancePart.belongsToMany(MaintenanceTask, {
+    through: MaintenanceTaskPart,
+    foreignKey: 'maintenancePartId',
+    otherKey: 'maintenanceTaskId',
+    as: 'maintenanceTasks',
+  });
   MaintenanceTask.hasMany(MaintenanceHistory, { foreignKey: 'maintenance_task_id', as: 'history' });
   MaintenanceHistory.belongsTo(MaintenanceTask, { foreignKey: 'maintenance_task_id', as: 'task' });
   MaintenanceHistory.belongsTo(User, { foreignKey: 'performed_by', as: 'performedByUser' });
@@ -71,5 +94,8 @@ export {
   MaterialFile,
   MaintenanceTask,
   MaintenanceHistory,
+  MaintenanceOperation,
+  MaintenancePart,
+  MaintenanceTaskPart,
   RevokedAccessToken,
 };

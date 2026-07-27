@@ -2,13 +2,27 @@ import { Op, Sequelize } from 'sequelize';
 import sequelize from '../../../config/database.js';
 import Material from '../../materials/model/material.model.js';
 import MaintenanceHistory from '../model/maintenance-history.model.js';
+import MaintenanceOperation from '../model/maintenance-operation.model.js';
+import MaintenancePart from '../model/maintenance-part.model.js';
 import MaintenanceTask from '../model/maintenance-task.model.js';
+import MaintenanceTaskPart from '../model/maintenance-task-part.model.js';
 import User from '../../users/model/user.model.js';
 
 const materialInclude = {
   model: Material,
   as: 'material',
   attributes: ['uuid', 'name'],
+};
+const operationInclude = {
+  model: MaintenanceOperation,
+  as: 'operation',
+  attributes: ['uuid', 'name', 'description', 'maintenanceType'],
+};
+const partsInclude = {
+  model: MaintenancePart,
+  as: 'parts',
+  attributes: ['uuid', 'name', 'manufacturer', 'reference', 'supplierReference', 'unit', 'active'],
+  through: { attributes: ['quantity'] },
 };
 
 const getStatusConditions = ({ taskAlias = 'MaintenanceTask', today, upcoming }) => {
@@ -61,6 +75,8 @@ export default class MaintenanceRepository {
         ...materialInclude,
         ...(materialUuid ? { where: { uuid: materialUuid }, required: true } : {}),
       },
+      operationInclude,
+      partsInclude,
     ];
     const normalizedLimit = limit === 'all' ? null : Math.min(Number(limit) || 5, 100);
     return MaintenanceTask.findAndCountAll({
@@ -93,26 +109,62 @@ export default class MaintenanceRepository {
           ),
         ],
       },
-      include: [materialInclude],
+      include: [materialInclude, operationInclude, partsInclude],
       order: [['next_maintenance_date', 'ASC']],
     });
   }
   async findByUuid(uuid, options = {}) {
     return MaintenanceTask.findOne({
       where: { uuid },
-      include: [materialInclude],
+      include: [materialInclude, operationInclude, partsInclude],
       transaction: options.transaction,
       lock: options.lock ? options.transaction?.LOCK.UPDATE : undefined,
     });
   }
-  async create(values) {
-    return MaintenanceTask.create(values);
+  async create(values, options = {}) {
+    return MaintenanceTask.create(values, options);
   }
   async update(task, values, options = {}) {
     return task.update(values, options);
   }
   async createHistory(values, options = {}) {
     return MaintenanceHistory.create(values, options);
+  }
+  async replaceParts(taskId, parts, options = {}) {
+    await MaintenanceTaskPart.destroy({
+      where: { maintenanceTaskId: taskId },
+      transaction: options.transaction,
+    });
+    if (!parts.length) return [];
+    return MaintenanceTaskPart.bulkCreate(
+      parts.map(({ partId, quantity }) => ({
+        maintenanceTaskId: taskId,
+        maintenancePartId: partId,
+        quantity,
+      })),
+      { transaction: options.transaction },
+    );
+  }
+  async findForOrderList({ from, through }) {
+    return MaintenanceTask.findAll({
+      where: {
+        active: true,
+        nextMaintenanceDate: {
+          ...(from ? { [Op.gte]: from } : {}),
+          [Op.lte]: through,
+        },
+      },
+      include: [
+        materialInclude,
+        operationInclude,
+        {
+          ...partsInclude,
+          where: { active: true },
+          required: false,
+        },
+      ],
+      order: [['next_maintenance_date', 'ASC']],
+    });
   }
   async findHistory(taskId) {
     return MaintenanceHistory.findAll({

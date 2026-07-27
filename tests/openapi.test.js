@@ -112,6 +112,9 @@ describe('OpenAPI contract', () => {
     expect(material.purchasePrice.type).toBe('string');
     expect(maintenance).toHaveProperty('intervalDays');
     expect(maintenance).toHaveProperty('nextMaintenanceDate');
+    expect(maintenance).toHaveProperty('operation');
+    expect(maintenance).toHaveProperty('parts');
+    expect(swaggerSpec.paths).toHaveProperty('/maintenance/order-list');
     expect(dashboardMaintenance.items.properties).toEqual(
       expect.objectContaining({
         today: expect.any(Object),

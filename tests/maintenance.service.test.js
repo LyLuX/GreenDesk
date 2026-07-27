@@ -42,6 +42,143 @@ describe('MaintenanceService', () => {
     );
   });
 
+  it('derives the title and type from an operation and stores exact parts', async () => {
+    const operation = {
+      id: 8,
+      uuid: '44444444-4444-4444-8444-444444444444',
+      name: 'Remplacement des bougies',
+      description: 'Description catalogue',
+      maintenanceType: 'replacement',
+      active: true,
+    };
+    const part = {
+      id: 9,
+      uuid: '55555555-5555-4555-8555-555555555555',
+    };
+    const createdTask = {
+      id: 10,
+      uuid: '66666666-6666-4666-8666-666666666666',
+      toJSON() {
+        return { id: this.id, uuid: this.uuid };
+      },
+    };
+    const returnedTask = {
+      ...createdTask,
+      title: operation.name,
+      maintenanceType: operation.maintenanceType,
+      intervalDays: 365,
+      lastMaintenanceDate: '2026-07-01',
+      nextMaintenanceDate: '2027-07-01',
+      operation,
+      parts: [
+        {
+          ...part,
+          name: 'Bougie',
+          reference: 'BPMR8Y',
+          unit: 'pièce',
+          MaintenanceTaskPart: { quantity: 1 },
+        },
+      ],
+      toJSON() {
+        const values = { ...this };
+        delete values.toJSON;
+        return values;
+      },
+    };
+    const repository = {
+      withTransaction: jest.fn((callback) => callback({ id: 'transaction' })),
+      create: jest.fn().mockResolvedValue(createdTask),
+      replaceParts: jest.fn(),
+      findByUuid: jest.fn().mockResolvedValue(returnedTask),
+    };
+    const catalogRepository = {
+      findOperationByUuid: jest.fn().mockResolvedValue(operation),
+      findPartsByUuids: jest.fn().mockResolvedValue([part]),
+    };
+    const auditService = { record: jest.fn() };
+    const service = new MaintenanceService(
+      repository,
+      { getEntityByUuid: jest.fn().mockResolvedValue({ id: 7 }) },
+      auditService,
+      catalogRepository,
+    );
+
+    const result = await service.create(
+      {
+        materialUuid: '77777777-7777-4777-8777-777777777777',
+        operationUuid: operation.uuid,
+        intervalDays: 365,
+        lastMaintenanceDate: '2026-07-01',
+        parts: [{ partUuid: part.uuid, quantity: 1 }],
+      },
+      42,
+    );
+
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: operation.name,
+        description: operation.description,
+        maintenanceType: 'replacement',
+        operationId: operation.id,
+        materialId: 7,
+      }),
+      { transaction: { id: 'transaction' } },
+    );
+    expect(repository.replaceParts).toHaveBeenCalledWith(
+      createdTask.id,
+      [{ partId: part.id, quantity: 1 }],
+      { transaction: { id: 'transaction' } },
+    );
+    expect(result.parts).toEqual([expect.objectContaining({ reference: 'BPMR8Y', quantity: 1 })]);
+  });
+
+  it('aggregates parts required by plans in the order list', async () => {
+    const part = {
+      uuid: '88888888-8888-4888-8888-888888888888',
+      name: 'Bougie',
+      manufacturer: 'NGK',
+      reference: 'BPMR8Y',
+      supplierReference: null,
+      unit: 'pièce',
+      active: true,
+    };
+    const task = (uuid, materialName, quantity) => ({
+      uuid,
+      title: 'Remplacement des bougies',
+      intervalDays: 365,
+      lastMaintenanceDate: '2025-08-01',
+      nextMaintenanceDate: '2026-08-01',
+      material: { uuid: `${uuid.slice(0, -1)}2`, name: materialName },
+      parts: [{ ...part, MaintenanceTaskPart: { quantity } }],
+    });
+    const repository = {
+      findForOrderList: jest
+        .fn()
+        .mockResolvedValue([
+          task('11111111-1111-4111-8111-111111111111', 'Tronçonneuse 1', 1),
+          task('22222222-2222-4222-8222-222222222222', 'Tronçonneuse 2', 2),
+        ]),
+    };
+    const service = new MaintenanceService(repository, {}, {}, {});
+
+    const result = await service.getOrderList({ horizonDays: 30, includeOverdue: true });
+
+    expect(result.items).toEqual([
+      expect.objectContaining({
+        reference: 'BPMR8Y',
+        quantity: 3,
+        plans: expect.arrayContaining([
+          expect.objectContaining({
+            material: expect.objectContaining({ name: 'Tronçonneuse 1' }),
+          }),
+          expect.objectContaining({
+            material: expect.objectContaining({ name: 'Tronçonneuse 2' }),
+          }),
+        ]),
+      }),
+    ]);
+  });
+
   it('executes calendar maintenance without recording engine hours', async () => {
     const today = todayDateOnly();
     const task = {

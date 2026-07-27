@@ -12,12 +12,17 @@ const listLimit = query('limit')
   .customSanitizer((value) => (value === 'all' ? value : Number(value)));
 const intervals = [body('intervalDays').optional({ nullable: true }).isInt({ min: 1 }).toInt()];
 const fields = [
-  body('title').trim().notEmpty().isLength({ max: 150 }),
-  body('maintenanceType').isIn(MAINTENANCE_TYPES),
+  body('operationUuid').optional().isUUID(),
+  body('title').optional().trim().notEmpty().isLength({ max: 150 }),
+  body('description').optional({ nullable: true }).trim(),
+  body('maintenanceType').optional().isIn(MAINTENANCE_TYPES),
   body('priority').optional().isIn(MAINTENANCE_PRIORITIES),
   ...intervals,
   body('lastMaintenanceDate').optional({ nullable: true }).isISO8601(),
   body('notes').optional().trim(),
+  body('parts').optional().isArray({ max: 50 }),
+  body('parts.*.partUuid').isUUID(),
+  body('parts.*.quantity').isInt({ min: 1, max: 100000 }).toInt(),
 ];
 export const listValidator = [
   query('materialUuid').optional({ values: 'falsy' }).isUUID(),
@@ -32,20 +37,56 @@ export const listValidator = [
   query('page').optional().isInt({ min: 1 }).toInt(),
   listLimit,
 ];
-export const createValidator = [body('materialUuid').isUUID(), ...fields];
-export const updateValidator = [
-  uuid,
-  body('title').optional().trim().notEmpty().isLength({ max: 150 }),
-  body('maintenanceType').optional().isIn(MAINTENANCE_TYPES),
-  body('priority').optional().isIn(MAINTENANCE_PRIORITIES),
-  ...intervals,
-  body('lastMaintenanceDate').optional({ nullable: true }).isISO8601(),
-  body('notes').optional().trim(),
+export const createValidator = [
+  body('materialUuid').isUUID(),
+  body().custom((value) => {
+    if (value.operationUuid || (value.title && value.maintenanceType)) return true;
+    throw new Error('Une opération de maintenance doit être sélectionnée.');
+  }),
+  ...fields,
 ];
+export const updateValidator = [uuid, ...fields];
 export const uuidValidator = [uuid];
 export const statusValidator = [uuid, body('active').isBoolean().toBoolean()];
 export const executeValidator = [
   uuid,
   body('performedAt').optional().isISO8601(),
   body('comment').optional().trim(),
+];
+export const orderListValidator = [
+  query('horizonDays').optional().isInt({ min: 0, max: 365 }).toInt(),
+  query('includeOverdue').optional().isBoolean().toBoolean(),
+];
+const optionalText = (name, maxLength) =>
+  body(name)
+    .optional({ nullable: true })
+    .customSanitizer((value) => (typeof value === 'string' ? value.trim() || null : value))
+    .isLength({ max: maxLength });
+export const createOperationValidator = [
+  body('name').trim().notEmpty().isLength({ max: 150 }),
+  body('description').optional({ nullable: true }).trim(),
+  body('maintenanceType').isIn(MAINTENANCE_TYPES),
+];
+export const updateOperationValidator = [
+  uuid,
+  body('name').optional().trim().notEmpty().isLength({ max: 150 }),
+  body('description').optional({ nullable: true }).trim(),
+  body('maintenanceType').optional().isIn(MAINTENANCE_TYPES),
+  body('active').optional().isBoolean().toBoolean(),
+];
+export const createPartValidator = [
+  body('name').trim().notEmpty().isLength({ max: 150 }),
+  optionalText('manufacturer', 150),
+  body('reference').trim().notEmpty().isLength({ max: 150 }),
+  optionalText('supplierReference', 150),
+  body('unit').optional().trim().notEmpty().isLength({ max: 50 }),
+];
+export const updatePartValidator = [
+  uuid,
+  body('name').optional().trim().notEmpty().isLength({ max: 150 }),
+  optionalText('manufacturer', 150),
+  body('reference').optional().trim().notEmpty().isLength({ max: 150 }),
+  optionalText('supplierReference', 150),
+  body('unit').optional().trim().notEmpty().isLength({ max: 50 }),
+  body('active').optional().isBoolean().toBoolean(),
 ];

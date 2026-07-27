@@ -5,6 +5,8 @@ import {
   deleteMaintenance,
   executeMaintenance,
   listMaintenance,
+  listMaintenanceOperations,
+  listMaintenanceParts,
   maintenanceHistory,
   setMaintenanceStatus,
   updateMaintenance,
@@ -15,6 +17,8 @@ import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
+import MaintenanceCatalogModal from '../components/MaintenanceCatalogModal.jsx';
+import MaintenanceOrderListModal from '../components/MaintenanceOrderListModal.jsx';
 import Modal from '../components/Modal.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
 import useNotification from '../notifications/useNotification.js';
@@ -31,9 +35,8 @@ const types = Object.keys(maintenanceTypeLabels);
 const priorities = Object.keys(maintenancePriorityLabels);
 const baseFields = [
   { name: 'materialUuid', label: 'Matériel', required: true },
-  { name: 'title', label: 'Intitulé', required: true },
-  { name: 'description', label: 'Description', multiline: true },
-  { name: 'maintenanceType', label: 'Type', required: true },
+  { name: 'operationUuid', label: 'Opération', required: true },
+  { name: 'description', label: 'Description spécifique', multiline: true },
   { name: 'priority', label: 'Priorité' },
   {
     name: 'intervalDays',
@@ -64,6 +67,8 @@ export default function MaintenancePage() {
   const { notify } = useNotification();
   const [items, setItems] = useState([]);
   const [materials, setMaterials] = useState([]);
+  const [operations, setOperations] = useState([]);
+  const [parts, setParts] = useState([]);
   const [filters, setFilters] = useState({ page: 1, limit: 5 });
   const [pagination, setPagination] = useState(null);
   const [dialog, setDialog] = useState(null);
@@ -73,18 +78,24 @@ export default function MaintenancePage() {
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
+  const [catalogOpen, setCatalogOpen] = useState(false);
+  const [orderListOpen, setOrderListOpen] = useState(false);
 
   const load = useCallback(
     async (signal) => {
       setIsLoading(true);
       try {
-        const [tasks, materialList] = await Promise.all([
+        const [tasks, materialList, operationList, partList] = await Promise.all([
           listMaintenance(filters, signal),
           createReferenceApi('materials').list({ limit: 'all' }, signal),
+          listMaintenanceOperations(signal),
+          listMaintenanceParts(signal),
         ]);
         setItems(tasks.data.data?.items ?? []);
         setPagination(tasks.data.data?.pagination ?? null);
         setMaterials(materialList.data.data?.items ?? materialList.data.data ?? []);
+        setOperations(operationList.data.data ?? []);
+        setParts(partList.data.data ?? []);
         setError('');
       } catch (requestError) {
         if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
@@ -110,24 +121,39 @@ export default function MaintenancePage() {
   const formOptions = (field) => {
     if (field.name === 'materialUuid')
       return materials.map((item) => ({ value: item.uuid, label: item.name }));
-    if (field.name === 'maintenanceType')
-      return types.map((value) => ({ value, label: maintenanceTypeLabels[value] }));
+    if (field.name === 'operationUuid')
+      return operations
+        .filter((item) => item.active !== false)
+        .map((item) => ({
+          value: item.uuid,
+          label: `${item.name} — ${maintenanceTypeLabels[item.maintenanceType]}`,
+        }));
     if (field.name === 'priority')
       return priorities.map((value) => ({ value, label: maintenancePriorityLabels[value] }));
     return undefined;
   };
   const formDefault = (item, field) =>
-    item?.[field.name] ?? (field.name === 'materialUuid' ? item?.material?.uuid : '') ?? '';
+    item?.[field.name] ??
+    (field.name === 'materialUuid'
+      ? item?.material?.uuid
+      : field.name === 'operationUuid'
+        ? item?.operation?.uuid
+        : '') ??
+    '';
   const savePlan = async (event) => {
     event.preventDefault();
     if (busy) return;
     setBusy(true);
     setFormError('');
     try {
-      const payload = normalizeFormValues(
-        Object.fromEntries(new FormData(event.currentTarget)),
-        baseFields,
-      );
+      const formData = new FormData(event.currentTarget);
+      const payload = normalizeFormValues(Object.fromEntries(formData), baseFields);
+      payload.parts = parts
+        .filter((part) => formData.has(`part:${part.uuid}`))
+        .map((part) => ({
+          partUuid: part.uuid,
+          quantity: Number(formData.get(`quantity:${part.uuid}`)) || 1,
+        }));
       if (dialog.type === 'edit') await updateMaintenance(dialog.item.uuid, payload);
       else await createMaintenance(payload);
       notify(
@@ -219,9 +245,25 @@ export default function MaintenancePage() {
           <h1 className="page-title">Maintenance</h1>
           <p className="page-subtitle">Plans d’entretien préventif</p>
         </div>
-        {hasPermission('maintenance.create') && (
-          <Button onClick={() => setDialog({ type: 'create' })}>Créer</Button>
-        )}
+        <div className="d-flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="btn btn-outline-brand"
+            onClick={() => setOrderListOpen(true)}
+          >
+            Pièces à commander
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline-brand"
+            onClick={() => setCatalogOpen(true)}
+          >
+            Catalogue
+          </button>
+          {hasPermission('maintenance.create') && (
+            <Button onClick={() => setDialog({ type: 'create' })}>Créer un plan</Button>
+          )}
+        </div>
       </div>
       <div className="surface mb-4 grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-5">
         <select
@@ -327,6 +369,13 @@ export default function MaintenancePage() {
                       <strong>{item.title}</strong>
                       <br />
                       {maintenanceTypeLabels[item.maintenanceType]}
+                      {item.parts?.length > 0 && (
+                        <small className="d-block text-body-secondary">
+                          {item.parts
+                            .map((part) => `${part.reference} × ${part.quantity}`)
+                            .join(', ')}
+                        </small>
+                      )}
                     </td>
                     <td>{date(item.nextMaintenanceDate)}</td>
                     <td>{remainingDays(item.remainingDays)}</td>
@@ -443,11 +492,62 @@ export default function MaintenancePage() {
               options={formOptions(field)}
             />
           ))}
+          <fieldset className="surface d-grid gap-2 p-3">
+            <legend className="h6 mb-0">Pièces nécessaires</legend>
+            {parts.length === 0 ? (
+              <p className="mb-0 text-body-secondary">
+                Aucune pièce dans le catalogue. Vous pouvez enregistrer le plan sans pièce.
+              </p>
+            ) : (
+              parts
+                .filter((part) => part.active !== false)
+                .map((part) => {
+                  const assigned = activeItem?.parts?.find((item) => item.uuid === part.uuid);
+                  return (
+                    <div
+                      className="d-flex flex-wrap align-items-center justify-content-between gap-2"
+                      key={part.uuid}
+                    >
+                      <label className="form-check mb-0">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          name={`part:${part.uuid}`}
+                          defaultChecked={Boolean(assigned)}
+                        />
+                        <span className="form-check-label">
+                          {part.name} — {part.reference}
+                        </span>
+                      </label>
+                      <label className="d-flex align-items-center gap-2">
+                        <span className="small text-body-secondary">Quantité</span>
+                        <input
+                          className="form-control form-control-sm"
+                          style={{ width: '6rem' }}
+                          type="number"
+                          name={`quantity:${part.uuid}`}
+                          min="1"
+                          defaultValue={assigned?.quantity ?? 1}
+                        />
+                      </label>
+                    </div>
+                  );
+                })
+            )}
+          </fieldset>
           <Button type="submit" disabled={busy}>
             {busy ? 'Enregistrement…' : 'Enregistrer'}
           </Button>
         </form>
       </Modal>
+      <MaintenanceCatalogModal
+        open={catalogOpen}
+        operations={operations}
+        parts={parts}
+        onClose={() => setCatalogOpen(false)}
+        onChanged={() => load()}
+      />
+      <MaintenanceOrderListModal open={orderListOpen} onClose={() => setOrderListOpen(false)} />
       <Modal
         open={dialog?.type === 'execute'}
         title="Effectuer l’entretien"
