@@ -269,6 +269,24 @@ a:hover {
   font-weight: 700;
 }
 
+.metric-value-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  line-height: 1.15;
+  cursor: pointer;
+}
+
+.metric-value-button:hover {
+  color: var(--brand-forest);
+}
+
+.metric-value-button:focus-visible {
+  border-radius: 0.2rem;
+  outline: 3px solid rgba(242, 190, 34, 0.45);
+  outline-offset: 0.2rem;
+}
+
 .table-shell {
   overflow: hidden;
   border: 1px solid var(--border);
@@ -399,6 +417,46 @@ a:hover {
   border-top: 4px solid var(--brand-sun);
   border-radius: 0.55rem;
   box-shadow: 0 1rem 3rem rgba(8, 55, 38, 0.22);
+}
+
+.maintenance-summary-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.maintenance-summary-item {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  background: var(--brand-mist);
+}
+
+.maintenance-summary-material {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.maintenance-summary-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+}
+
+.maintenance-summary-details dt {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.maintenance-summary-details dd {
+  margin: 0.15rem 0 0;
+  color: var(--ink);
+  font-size: 0.88rem;
 }
 
 .confirm-dialog-message {

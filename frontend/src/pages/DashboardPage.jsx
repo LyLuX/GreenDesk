@@ -2,11 +2,49 @@ import { useCallback, useEffect, useState } from 'react';
 import { getDashboardSummary } from '../api/dashboard.api.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import Loader from '../components/Loader.jsx';
+import Modal from '../components/Modal.jsx';
 import StatusPanel from '../components/StatusPanel.jsx';
+import {
+  maintenancePriorityBadgeClasses,
+  maintenancePriorityLabels,
+  maintenanceTypeLabels,
+} from '../maintenance/maintenance.labels.js';
 import { formatCurrency } from '../utils/formatters.js';
+
+const maintenanceCards = [
+  {
+    key: 'today',
+    label: 'Entretiens aujourd’hui',
+    modalTitle: 'Entretiens à faire aujourd’hui',
+    status: 'dueToday',
+    className: 'maintenance-due-today',
+  },
+  {
+    key: 'upcoming',
+    label: 'Entretiens prévus sous 30 jours',
+    modalTitle: 'Entretiens prévus sous 30 jours',
+    status: 'upcoming',
+    className: 'maintenance-upcoming',
+  },
+  {
+    key: 'overdue',
+    label: 'Entretiens en retard',
+    modalTitle: 'Entretiens en retard',
+    status: 'overdue',
+    className: 'maintenance-overdue',
+  },
+];
+
+const formatDate = (value) =>
+  value ? new Intl.DateTimeFormat('fr-FR').format(new Date(`${value}T00:00:00Z`)) : '—';
+
+const formatHours = (value) =>
+  value === null || value === undefined ? '—' : `${Number(value).toLocaleString('fr-FR')} h`;
+
 export default function DashboardPage() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
+  const [maintenanceDialog, setMaintenanceDialog] = useState(null);
   const load = useCallback(async () => {
     setError('');
     try {
@@ -46,6 +84,7 @@ export default function DashboardPage() {
   const brands = data.brands ?? {};
   const fleet = data.fleet ?? {};
   const maintenance = data.maintenance ?? {};
+  const maintenanceItems = maintenance.items?.[maintenanceDialog?.key] ?? [];
   const cardGroups = [
     {
       label: 'Matériels et catégories',
@@ -67,17 +106,15 @@ export default function DashboardPage() {
     },
     {
       label: 'Entretien',
-      cards: [
-        ['Entretiens aujourd’hui', maintenance.today ?? 0, 'maintenance-due-today'],
-        ['Entretiens prévus sous 30 jours', maintenance.upcoming ?? 0, 'maintenance-upcoming'],
-        [
-          'Entretiens en retard',
-          maintenance.overdue ?? 0,
-          `maintenance-overdue ${
-            Number(maintenance.overdue ?? 0) > 0 ? 'maintenance-overdue-alert' : ''
-          }`,
-        ],
-      ],
+      cards: maintenanceCards.map((card) => ({
+        ...card,
+        value: maintenance[card.key] ?? 0,
+        className: `${card.className} ${
+          card.key === 'overdue' && Number(maintenance.overdue ?? 0) > 0
+            ? 'maintenance-overdue-alert'
+            : ''
+        }`,
+      })),
     },
   ];
   return (
@@ -89,15 +126,78 @@ export default function DashboardPage() {
       <div className="dashboard-card-groups">
         {cardGroups.map((group) => (
           <section aria-label={group.label} className="dashboard-card-row" key={group.label}>
-            {group.cards.map(([label, value, statusClass = '']) => (
-              <article className={`metric-card h-100 p-4 ${statusClass}`} key={label}>
-                <p className="metric-label mb-2">{label}</p>
-                <strong className="metric-value">{value}</strong>
-              </article>
-            ))}
+            {group.cards.map((card) => {
+              const normalizedCard = Array.isArray(card)
+                ? { label: card[0], value: card[1], className: card[2] ?? '' }
+                : card;
+              const count = Number(normalizedCard.value);
+              return (
+                <article
+                  className={`metric-card h-100 p-4 ${normalizedCard.className}`}
+                  key={normalizedCard.label}
+                >
+                  <p className="metric-label mb-2">{normalizedCard.label}</p>
+                  {normalizedCard.status && count > 0 ? (
+                    <button
+                      type="button"
+                      className="metric-value metric-value-button"
+                      aria-label={`Voir les entretiens concernés : ${normalizedCard.label}`}
+                      onClick={() => setMaintenanceDialog(normalizedCard)}
+                    >
+                      {normalizedCard.value}
+                    </button>
+                  ) : (
+                    <strong className="metric-value">{normalizedCard.value}</strong>
+                  )}
+                </article>
+              );
+            })}
           </section>
         ))}
       </div>
+      <Modal
+        open={Boolean(maintenanceDialog)}
+        title={maintenanceDialog?.modalTitle ?? ''}
+        onClose={() => setMaintenanceDialog(null)}
+      >
+        {maintenanceItems.length === 0 ? (
+          <p className="mb-0">Aucun entretien concerné.</p>
+        ) : (
+          <ul className="maintenance-summary-list">
+            {maintenanceItems.map((item) => (
+              <li className="maintenance-summary-item" key={item.uuid}>
+                <div className="d-flex flex-wrap align-items-start justify-content-between gap-2">
+                  <div>
+                    <strong className="d-block">{item.title}</strong>
+                    <span className="maintenance-summary-material">{item.material?.name}</span>
+                  </div>
+                  <span
+                    className={`status-badge ${
+                      maintenancePriorityBadgeClasses[item.priority] ?? 'priority-normal'
+                    }`}
+                  >
+                    {maintenancePriorityLabels[item.priority] ?? item.priority}
+                  </span>
+                </div>
+                <dl className="maintenance-summary-details">
+                  <div>
+                    <dt>Type</dt>
+                    <dd>{maintenanceTypeLabels[item.maintenanceType] ?? item.maintenanceType}</dd>
+                  </div>
+                  <div>
+                    <dt>Date prévue</dt>
+                    <dd>{formatDate(item.nextMaintenanceDate)}</dd>
+                  </div>
+                  <div>
+                    <dt>Compteur prévu</dt>
+                    <dd>{formatHours(item.nextEngineHours)}</dd>
+                  </div>
+                </dl>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Modal>
     </main>
   );
 }

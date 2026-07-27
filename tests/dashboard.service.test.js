@@ -14,17 +14,38 @@ describe('DashboardService', () => {
         totalPurchaseValue: 1600,
         averageCost: 200,
         averageAge: 3.5,
-        maintenanceToday: 1,
-        maintenanceOverdue: 2,
-        maintenanceUpcoming: 3,
+        maintenanceTasks: [
+          { uuid: 'today', status: 'dueToday' },
+          { uuid: 'overdue-1', status: 'overdue' },
+          { uuid: 'overdue-2', status: 'overdue' },
+          { uuid: 'upcoming', status: 'upcoming' },
+        ],
       }),
     };
-    await expect(new DashboardService(repository).getSummary()).resolves.toEqual({
+    const maintenanceService = {
+      toPublic: jest.fn((task) => task),
+    };
+    await expect(
+      new DashboardService(repository, maintenanceService).getSummary(),
+    ).resolves.toEqual({
       materials: { total: 8, active: 6, inactive: 2 },
       categories: { total: 3 },
       brands: { total: 2 },
       fleet: { totalPurchaseValue: 1600, averageCost: 200, averageAge: 3.5 },
-      maintenance: { today: 1, overdue: 2, upcoming: 3 },
+      maintenance: {
+        today: 1,
+        overdue: 2,
+        upcoming: 1,
+        items: {
+          today: [{ uuid: 'today', status: 'dueToday' }],
+          overdue: [
+            { uuid: 'overdue-1', status: 'overdue' },
+            { uuid: 'overdue-2', status: 'overdue' },
+          ],
+          upcoming: [{ uuid: 'upcoming', status: 'upcoming' }],
+        },
+      },
     });
+    expect(maintenanceService.toPublic).toHaveBeenCalledTimes(4);
   });
 });

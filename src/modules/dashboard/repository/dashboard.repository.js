@@ -17,7 +17,7 @@ export default class DashboardRepository {
       categoriesTotal,
       brandsTotal,
       materialMetrics,
-      maintenance,
+      maintenanceTasks,
     ] = await Promise.all([
       Material.count(),
       Material.count({ where: { active: true } }),
@@ -48,7 +48,7 @@ export default class DashboardRepository {
         ],
         raw: true,
       }),
-      this.maintenanceRepository.countDashboard(),
+      this.maintenanceRepository.findDashboard(),
     ]);
     return {
       materialsTotal,
@@ -59,9 +59,7 @@ export default class DashboardRepository {
       totalPurchaseValue: Number(materialMetrics.totalPurchaseValue),
       averageCost: Number(materialMetrics.averageCost),
       averageAge: Number(materialMetrics.averageAge),
-      maintenanceToday: maintenance.today,
-      maintenanceOverdue: maintenance.overdue,
-      maintenanceUpcoming: maintenance.upcoming,
+      maintenanceTasks,
     };
   }
 }
