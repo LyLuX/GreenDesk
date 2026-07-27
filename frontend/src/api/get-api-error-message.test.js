@@ -3,6 +3,17 @@ import { describe, expect, it } from 'vitest';
 import getApiErrorMessage from './get-api-error-message.js';
 
 describe('getApiErrorMessage', () => {
+  it('translates invalid login credentials into French', () => {
+    const error = {
+      response: {
+        status: 401,
+        data: { error: { message: 'Invalid email or password' } },
+      },
+    };
+
+    expect(getApiErrorMessage(error)).toBe('Adresse email ou mot de passe incorrect.');
+  });
+
   it('uses validation details when an older API returns a generic message', () => {
     const error = {
       response: {

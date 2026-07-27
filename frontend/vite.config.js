@@ -7,6 +7,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     server: {
+      host: 'greendesk.org',
       proxy: {
         '/api': {
           target: env.VITE_API_PROXY_TARGET || 'http://localhost:3000',

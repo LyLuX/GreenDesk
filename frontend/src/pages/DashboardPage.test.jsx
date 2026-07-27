@@ -42,7 +42,20 @@ describe('DashboardPage', () => {
     ).toHaveClass('maintenance-upcoming');
     expect(within(maintenance).getByText('Entretiens en retard').parentElement).toHaveClass(
       'maintenance-overdue',
+      'maintenance-overdue-alert',
     );
     expect(screen.queryByText('Entretiens réalisés ce mois')).not.toBeInTheDocument();
+  });
+
+  it('does not animate the overdue border when no maintenance is overdue', async () => {
+    getDashboardSummary.mockResolvedValueOnce({
+      data: { data: { maintenance: { overdue: 0 } } },
+    });
+
+    render(<DashboardPage />);
+
+    expect((await screen.findByText('Entretiens en retard')).parentElement).not.toHaveClass(
+      'maintenance-overdue-alert',
+    );
   });
 });

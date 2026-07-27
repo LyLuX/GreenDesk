@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import useAuth from '../auth/useAuth.js';
 import { navigationItems } from '../navigation.js';
+import useNotification from '../notifications/useNotification.js';
 export default function AppLayout() {
   const { user, logout, hasPermission } = useAuth();
+  const { notify } = useNotification();
   const navigate = useNavigate();
   const [isLoggingOut, setLoggingOut] = useState(false);
 
@@ -11,6 +13,7 @@ export default function AppLayout() {
     if (isLoggingOut) return;
     setLoggingOut(true);
     await logout();
+    notify('success', 'Vous avez été déconnecté avec succès.');
     navigate('/login', { replace: true });
   };
 

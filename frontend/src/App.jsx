@@ -21,15 +21,9 @@ import RolesPage from './pages/RolesPage.jsx';
 import PermissionsPage from './pages/PermissionsPage.jsx';
 import { formatCurrency } from './utils/formatters.js';
 const secure = (permission, page) => (
-  <ProtectedRoute>
-    <PermissionRoute permission={permission}>{page}</PermissionRoute>
-  </ProtectedRoute>
+  <PermissionRoute permission={permission}>{page}</PermissionRoute>
 );
-const adminOnly = (page) => (
-  <ProtectedRoute>
-    <AdminRoute>{page}</AdminRoute>
-  </ProtectedRoute>
-);
+const adminOnly = (page) => <AdminRoute>{page}</AdminRoute>;
 const table = (keys) => [
   ...keys.map(([key, label, render]) => ({ key, label, ...(render ? { render } : {}) })),
   {
@@ -82,103 +76,102 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/403" element={<ForbiddenPage />} />
-        <Route
-          element={
-            <ProtectedRoute>
-              <AppLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/dashboard" element={secure('dashboard.read', <DashboardPage />)} />
-          <Route path="/categories" element={secure('categories.read', <CategoriesPage />)} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/403" element={<ForbiddenPage />} />
+          <Route element={<AppLayout />}>
+            <Route path="/dashboard" element={secure('dashboard.read', <DashboardPage />)} />
+            <Route path="/categories" element={secure('categories.read', <CategoriesPage />)} />
+            <Route
+              path="/materials"
+              element={secure(
+                'materials.read',
+                <ReferencePage
+                  title="Matériels"
+                  resource="materials"
+                  createPermission="materials.create"
+                  updatePermission="materials.update"
+                  deletePermission="materials.delete"
+                  fields={[
+                    { name: 'name', label: 'Nom', required: true },
+                    {
+                      name: 'brandUuid',
+                      label: 'Marque',
+                      relation: 'brand',
+                      optionsResource: 'brands',
+                    },
+                    {
+                      name: 'categoryUuid',
+                      label: 'Catégorie',
+                      relation: 'category',
+                      optionsResource: 'categories',
+                    },
+                    { name: 'model', label: 'Modèle' },
+                    { name: 'serialNumber', label: 'Numéro de série' },
+                    { name: 'purchaseDate', label: 'Date d’achat', type: 'date' },
+                    {
+                      name: 'engineHours',
+                      label: 'Heures moteur',
+                      type: 'number',
+                      valueType: 'number',
+                      step: '0.1',
+                      min: '0',
+                    },
+                    { name: 'commissionedAt', label: 'Mise en service', type: 'date' },
+                    { name: 'retiredAt', label: 'Sortie de service', type: 'date' },
+                    { name: 'notes', label: 'Notes', multiline: true },
+                    { name: 'unit', label: 'Unité', required: true },
+                    {
+                      name: 'purchasePrice',
+                      label: 'Prix achat',
+                      type: 'number',
+                      valueType: 'number',
+                      step: '0.01',
+                      min: '0',
+                      required: true,
+                    },
+                  ]}
+                  columns={table([
+                    ['name', 'Nom'],
+                    ['brand', 'Marque', (value) => <MaterialBrandCell brand={value} />],
+                    ['unit', 'Unité'],
+                    ['purchasePrice', 'Achat', formatCurrency],
+                  ])}
+                  filters={[
+                    {
+                      name: 'active',
+                      label: 'Statut',
+                      options: [
+                        { value: 'true', label: 'Actif' },
+                        { value: 'false', label: 'Inactif' },
+                      ],
+                    },
+                    { name: 'brandUuid', label: 'Marque', optionsResource: 'brands' },
+                    { name: 'categoryUuid', label: 'Catégorie', optionsResource: 'categories' },
+                  ]}
+                  pagination
+                  detailPath={(row) => `/materials/${row.uuid}`}
+                />,
+              )}
+            />
+            <Route
+              path="/materials/:uuid"
+              element={secure('materials.read', <MaterialDetailPage />)}
+            />
+            <Route
+              path="/materials/:uuid/edit"
+              element={secure('materials.update', <MaterialEditPage />)}
+            />
+            <Route path="/maintenance" element={secure('maintenance.read', <MaintenancePage />)} />
+            <Route path="/brands" element={secure('brands.read', <BrandsPage />)} />
+            <Route path="/users" element={adminOnly(<UsersPage />)} />
+            <Route path="/roles" element={adminOnly(<RolesPage />)} />
+            <Route path="/permissions" element={adminOnly(<PermissionsPage />)} />
+          </Route>
           <Route
-            path="/materials"
-            element={secure(
-              'materials.read',
-              <ReferencePage
-                title="Matériels"
-                resource="materials"
-                createPermission="materials.create"
-                updatePermission="materials.update"
-                deletePermission="materials.delete"
-                fields={[
-                  { name: 'name', label: 'Nom', required: true },
-                  {
-                    name: 'brandUuid',
-                    label: 'Marque',
-                    relation: 'brand',
-                    optionsResource: 'brands',
-                  },
-                  {
-                    name: 'categoryUuid',
-                    label: 'Catégorie',
-                    relation: 'category',
-                    optionsResource: 'categories',
-                  },
-                  { name: 'model', label: 'Modèle' },
-                  { name: 'serialNumber', label: 'Numéro de série' },
-                  { name: 'purchaseDate', label: 'Date d’achat', type: 'date' },
-                  {
-                    name: 'engineHours',
-                    label: 'Heures moteur',
-                    type: 'number',
-                    valueType: 'number',
-                    step: '0.1',
-                    min: '0',
-                  },
-                  { name: 'commissionedAt', label: 'Mise en service', type: 'date' },
-                  { name: 'retiredAt', label: 'Sortie de service', type: 'date' },
-                  { name: 'notes', label: 'Notes', multiline: true },
-                  { name: 'unit', label: 'Unité', required: true },
-                  {
-                    name: 'purchasePrice',
-                    label: 'Prix achat',
-                    type: 'number',
-                    valueType: 'number',
-                    step: '0.01',
-                    min: '0',
-                    required: true,
-                  },
-                ]}
-                columns={table([
-                  ['name', 'Nom'],
-                  ['brand', 'Marque', (value) => <MaterialBrandCell brand={value} />],
-                  ['unit', 'Unité'],
-                  ['purchasePrice', 'Achat', formatCurrency],
-                ])}
-                filters={[
-                  {
-                    name: 'active',
-                    label: 'Statut',
-                    options: [
-                      { value: 'true', label: 'Actif' },
-                      { value: 'false', label: 'Inactif' },
-                    ],
-                  },
-                  { name: 'brandUuid', label: 'Marque', optionsResource: 'brands' },
-                  { name: 'categoryUuid', label: 'Catégorie', optionsResource: 'categories' },
-                ]}
-                pagination
-                detailPath={(row) => `/materials/${row.uuid}`}
-              />,
-            )}
+            path="*"
+            element={<NotFoundPage />}
           />
-          <Route
-            path="/materials/:uuid"
-            element={secure('materials.read', <MaterialDetailPage />)}
-          />
-          <Route
-            path="/materials/:uuid/edit"
-            element={secure('materials.update', <MaterialEditPage />)}
-          />
-          <Route path="/maintenance" element={secure('maintenance.read', <MaintenancePage />)} />
-          <Route path="/brands" element={secure('brands.read', <BrandsPage />)} />
-          <Route path="/users" element={adminOnly(<UsersPage />)} />
-          <Route path="/roles" element={adminOnly(<RolesPage />)} />
-          <Route path="/permissions" element={adminOnly(<PermissionsPage />)} />
         </Route>
-        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>
   );

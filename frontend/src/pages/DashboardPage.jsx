@@ -70,7 +70,13 @@ export default function DashboardPage() {
       cards: [
         ['Entretiens aujourd’hui', maintenance.today ?? 0, 'maintenance-due-today'],
         ['Entretiens prévus sous 30 jours', maintenance.upcoming ?? 0, 'maintenance-upcoming'],
-        ['Entretiens en retard', maintenance.overdue ?? 0, 'maintenance-overdue'],
+        [
+          'Entretiens en retard',
+          maintenance.overdue ?? 0,
+          `maintenance-overdue ${
+            Number(maintenance.overdue ?? 0) > 0 ? 'maintenance-overdue-alert' : ''
+          }`,
+        ],
       ],
     },
   ];

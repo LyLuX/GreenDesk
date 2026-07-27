@@ -338,6 +338,27 @@ a:hover {
   border-left-color: #b64141;
 }
 
+.metric-card.maintenance-overdue-alert {
+  animation: maintenance-overdue-border-pulse 1s ease-in-out infinite;
+}
+
+@keyframes maintenance-overdue-border-pulse {
+  0%,
+  100% {
+    border-left-color: #b64141;
+  }
+
+  50% {
+    border-left-color: #f5d8d8;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .metric-card.maintenance-overdue-alert {
+    animation: none;
+  }
+}
+
 .status-badge.maintenance-up-to-date {
   background: #eef0ee;
   color: #59635d;

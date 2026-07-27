@@ -18,6 +18,7 @@ const activityEvents = ['pointerdown', 'pointermove', 'keydown', 'scroll', 'touc
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [isInitializing, setInitializing] = useState(true);
+  const [isLoggingOut, setLoggingOut] = useState(false);
   const sessionRef = useRef(null);
   const lastActivityRef = useRef(0);
   const lastPersistedActivityRef = useRef(0);
@@ -186,6 +187,7 @@ export function AuthProvider({ children }) {
     const { data } = await client.post('/v1/auth/login', { email, password });
     const next = { ...data.data, lastActivityAt: Date.now() };
     isEndingSessionRef.current = false;
+    setLoggingOut(false);
     saveSession(next);
     sessionRef.current = next;
     setSession(next);
@@ -193,6 +195,7 @@ export function AuthProvider({ children }) {
   }, []);
   const logout = useCallback(async () => {
     isEndingSessionRef.current = true;
+    setLoggingOut(true);
     try {
       if (session?.accessToken) await client.post('/v1/auth/logout');
     } catch {
@@ -214,11 +217,12 @@ export function AuthProvider({ children }) {
       accessToken: session?.accessToken ?? null,
       isAuthenticated: Boolean(session?.accessToken),
       isInitializing,
+      isLoggingOut,
       login,
       logout,
       hasPermission,
     }),
-    [session, isInitializing, login, logout, hasPermission],
+    [session, isInitializing, isLoggingOut, login, logout, hasPermission],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

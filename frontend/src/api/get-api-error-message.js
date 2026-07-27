@@ -2,6 +2,9 @@ export default function getApiErrorMessage(error) {
   const status = error?.response?.status;
   const message = error?.response?.data?.error?.message;
   const details = error?.response?.data?.error?.details;
+  if (message === 'Invalid email or password') {
+    return 'Adresse email ou mot de passe incorrect.';
+  }
   if (message && message !== 'Validation failed') return message;
   if (Array.isArray(details) && details.length) {
     return [

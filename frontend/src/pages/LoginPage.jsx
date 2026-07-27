@@ -1,15 +1,29 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../auth/useAuth.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
+import useNotification from '../notifications/useNotification.js';
 export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
+  const { notify } = useNotification();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const notification = location.state?.notification;
+    if (!notification) return;
+
+    notify(notification.type, notification.message);
+    navigate(location.pathname, {
+      replace: true,
+      state: { ...location.state, notification: undefined },
+    });
+  }, [location.pathname, location.state, navigate, notify]);
+
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   const submit = async (event) => {
     event.preventDefault();
@@ -20,7 +34,8 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     try {
-      await login(email, password);
+      const session = await login(email, password);
+      notify('success', `Bienvenue ${session.user.firstName}, tu es maintenant connecté.`);
       navigate(location.state?.from || '/dashboard', { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err));

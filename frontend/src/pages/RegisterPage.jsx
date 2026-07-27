@@ -66,7 +66,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="auth-page d-grid place-items-center">
+    <main className="auth-page d-flex align-items-center justify-content-center">
       <form className="auth-card card d-grid gap-3 p-4 p-sm-5" onSubmit={submit}>
         <div className="mb-2 text-center">
           <img className="auth-logo mb-3" src="/auth-logo.jpg" alt="EI BOURNAZEL Paul" />
