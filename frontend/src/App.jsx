@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import PermissionRoute from './auth/PermissionRoute.jsx';
 import ProtectedRoute from './auth/ProtectedRoute.jsx';
 import AdminRoute from './auth/AdminRoute.jsx';
@@ -43,6 +43,7 @@ export const getModuleTitle = (pathname) => {
 
   return (
     {
+      '/': 'Tableau de bord',
       '/login': 'Connexion',
       '/register': 'Inscription',
       '/403': 'Accès refusé',
@@ -74,6 +75,7 @@ export default function App() {
     <>
       <DocumentTitle />
       <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route element={<ProtectedRoute />}>

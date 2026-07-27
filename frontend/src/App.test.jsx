@@ -4,6 +4,7 @@ import { getModuleTitle } from './App.jsx';
 
 describe('getModuleTitle', () => {
   it('returns the current module title for application routes', () => {
+    expect(getModuleTitle('/')).toBe('Tableau de bord');
     expect(getModuleTitle('/dashboard')).toBe('Tableau de bord');
     expect(getModuleTitle('/materials')).toBe('Matériels');
     expect(getModuleTitle('/materials/4f3f40f6-5ad8-4b61-a88b-01c9e0ce95f5/edit')).toBe(
