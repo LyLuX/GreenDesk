@@ -14,6 +14,8 @@ import RegisterPage from './pages/RegisterPage.jsx';
 import MaterialDetailPage from './pages/MaterialDetailPage.jsx';
 import MaterialEditPage from './pages/MaterialEditPage.jsx';
 import MaintenancePage from './pages/MaintenancePage.jsx';
+import MaintenanceOperationsPage from './pages/MaintenanceOperationsPage.jsx';
+import MaintenancePartsPage from './pages/MaintenancePartsPage.jsx';
 import BrandsPage from './pages/BrandsPage.jsx';
 import CategoriesPage from './pages/CategoriesPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
@@ -51,6 +53,8 @@ export const getModuleTitle = (pathname) => {
       '/categories': 'Catégories',
       '/materials': 'Matériels',
       '/maintenance': 'Maintenance',
+      '/maintenance/operations': 'Opérations de maintenance',
+      '/maintenance/parts': 'Pièces de maintenance',
       '/brands': 'Marques',
       '/users': 'Utilisateurs',
       '/roles': 'Rôles',
@@ -156,6 +160,14 @@ export default function App() {
               element={secure('materials.update', <MaterialEditPage />)}
             />
             <Route path="/maintenance" element={secure('maintenance.read', <MaintenancePage />)} />
+            <Route
+              path="/maintenance/operations"
+              element={secure('maintenance.read', <MaintenanceOperationsPage />)}
+            />
+            <Route
+              path="/maintenance/parts"
+              element={secure('maintenance.read', <MaintenancePartsPage />)}
+            />
             <Route path="/brands" element={secure('brands.read', <BrandsPage />)} />
             <Route path="/users" element={adminOnly(<UsersPage />)} />
             <Route path="/roles" element={adminOnly(<RolesPage />)} />

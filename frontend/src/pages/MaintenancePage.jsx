@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import {
   createMaintenance,
@@ -17,7 +18,6 @@ import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
-import MaintenanceCatalogModal from '../components/MaintenanceCatalogModal.jsx';
 import MaintenanceOrderListModal from '../components/MaintenanceOrderListModal.jsx';
 import Modal from '../components/Modal.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
@@ -78,7 +78,6 @@ export default function MaintenancePage() {
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
-  const [catalogOpen, setCatalogOpen] = useState(false);
   const [orderListOpen, setOrderListOpen] = useState(false);
 
   const load = useCallback(
@@ -123,7 +122,7 @@ export default function MaintenancePage() {
       return materials.map((item) => ({ value: item.uuid, label: item.name }));
     if (field.name === 'operationUuid')
       return operations
-        .filter((item) => item.active !== false)
+        .filter((item) => item.active !== false || item.uuid === dialog?.item?.operation?.uuid)
         .map((item) => ({
           value: item.uuid,
           label: `${item.name} — ${maintenanceTypeLabels[item.maintenanceType]}`,
@@ -253,13 +252,12 @@ export default function MaintenancePage() {
           >
             Pièces à commander
           </button>
-          <button
-            type="button"
-            className="btn btn-outline-brand"
-            onClick={() => setCatalogOpen(true)}
-          >
-            Catalogue
-          </button>
+          <Link className="btn btn-outline-brand" to="/maintenance/operations">
+            Gérer les opérations
+          </Link>
+          <Link className="btn btn-outline-brand" to="/maintenance/parts">
+            Gérer les pièces
+          </Link>
           {hasPermission('maintenance.create') && (
             <Button onClick={() => setDialog({ type: 'create' })}>Créer un plan</Button>
           )}
@@ -500,7 +498,11 @@ export default function MaintenancePage() {
               </p>
             ) : (
               parts
-                .filter((part) => part.active !== false)
+                .filter(
+                  (part) =>
+                    part.active !== false ||
+                    activeItem?.parts?.some((assignedPart) => assignedPart.uuid === part.uuid),
+                )
                 .map((part) => {
                   const assigned = activeItem?.parts?.find((item) => item.uuid === part.uuid);
                   return (
@@ -540,13 +542,6 @@ export default function MaintenancePage() {
           </Button>
         </form>
       </Modal>
-      <MaintenanceCatalogModal
-        open={catalogOpen}
-        operations={operations}
-        parts={parts}
-        onClose={() => setCatalogOpen(false)}
-        onChanged={() => load()}
-      />
       <MaintenanceOrderListModal open={orderListOpen} onClose={() => setOrderListOpen(false)} />
       <Modal
         open={dialog?.type === 'execute'}

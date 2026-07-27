@@ -132,7 +132,7 @@ describe('MaintenanceService', () => {
     expect(result.parts).toEqual([expect.objectContaining({ reference: 'BPMR8Y', quantity: 1 })]);
   });
 
-  it('aggregates parts required by plans in the order list', async () => {
+  it('aggregates parts still required by plans even when the catalogue entry is inactive', async () => {
     const part = {
       uuid: '88888888-8888-4888-8888-888888888888',
       name: 'Bougie',
@@ -140,7 +140,7 @@ describe('MaintenanceService', () => {
       reference: 'BPMR8Y',
       supplierReference: null,
       unit: 'pièce',
-      active: true,
+      active: false,
     };
     const task = (uuid, materialName, quantity) => ({
       uuid,

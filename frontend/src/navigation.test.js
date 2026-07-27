@@ -8,6 +8,8 @@ describe('frontend reference navigation', () => {
       '/dashboard',
       '/materials',
       '/maintenance',
+      '/maintenance/operations',
+      '/maintenance/parts',
       '/categories',
       '/brands',
       '/users',

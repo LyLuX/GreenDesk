@@ -769,7 +769,8 @@ export const openApiPaths = {
       operationId: 'getMaintenanceOrderList',
       tags: ['Maintenance'],
       summary: 'Agrège les pièces nécessaires aux plans arrivant à échéance.',
-      description: 'Nécessite `maintenance.read`. Une échéance correspond à un besoin de pièces.',
+      description:
+        'Nécessite `maintenance.read`. Une échéance correspond à un besoin de pièces ; une pièce désactivée reste comptée tant qu’un plan l’utilise.',
       security: secure,
       parameters: [
         {

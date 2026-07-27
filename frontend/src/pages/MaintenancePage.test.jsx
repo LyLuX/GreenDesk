@@ -1,5 +1,6 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -100,8 +101,15 @@ describe('MaintenancePage', () => {
     });
   });
 
+  const renderPage = () =>
+    render(
+      <MemoryRouter>
+        <MaintenancePage />
+      </MemoryRouter>,
+    );
+
   it('shows only the date deadline and the remaining days', async () => {
-    render(<MaintenancePage />);
+    renderPage();
 
     expect(await screen.findByText('12 jours')).toBeInTheDocument();
     expect(mocks.listMaintenance).toHaveBeenCalledWith(
@@ -122,7 +130,7 @@ describe('MaintenancePage', () => {
   });
 
   it('uses compact outline buttons for table actions', async () => {
-    render(<MaintenancePage />);
+    renderPage();
 
     const editButton = await screen.findByRole('button', {
       name: 'Modifier Vidange annuelle',
@@ -147,7 +155,7 @@ describe('MaintenancePage', () => {
 
   it('replaces the manually entered title with a reusable operation', async () => {
     const user = userEvent.setup();
-    render(<MaintenancePage />);
+    renderPage();
 
     await user.click(await screen.findByRole('button', { name: 'Créer un plan' }));
 
@@ -158,7 +166,7 @@ describe('MaintenancePage', () => {
 
   it('creates a plan with its operation and exact part instead of a free title', async () => {
     const user = userEvent.setup();
-    render(<MaintenancePage />);
+    renderPage();
 
     await user.click(await screen.findByRole('button', { name: 'Créer un plan' }));
     await user.selectOptions(screen.getByLabelText('Matériel'), 'material-uuid');
@@ -184,7 +192,7 @@ describe('MaintenancePage', () => {
 
   it('executes maintenance without requesting or sending engine hours', async () => {
     const user = userEvent.setup();
-    render(<MaintenancePage />);
+    renderPage();
 
     await user.click(
       await screen.findByRole('button', {

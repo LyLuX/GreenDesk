@@ -154,15 +154,7 @@ export default class MaintenanceRepository {
           [Op.lte]: through,
         },
       },
-      include: [
-        materialInclude,
-        operationInclude,
-        {
-          ...partsInclude,
-          where: { active: true },
-          required: false,
-        },
-      ],
+      include: [materialInclude, operationInclude, partsInclude],
       order: [['next_maintenance_date', 'ASC']],
     });
   }

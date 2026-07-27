@@ -52,6 +52,7 @@ export default function AppLayout() {
               .map((link) => (
                 <NavLink
                   className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                  end={link.path === '/maintenance'}
                   key={link.path}
                   to={link.path}
                 >

@@ -2,7 +2,17 @@
 export const navigationItems = [
   { label: 'Tableau de bord', path: '/dashboard', permission: 'dashboard.read' },
   { label: 'Matériels', path: '/materials', permission: 'materials.read' },
-  { label: 'Maintenance', path: '/maintenance', permission: 'maintenance.read' },
+  { label: 'Plans de maintenance', path: '/maintenance', permission: 'maintenance.read' },
+  {
+    label: 'Opérations de maintenance',
+    path: '/maintenance/operations',
+    permission: 'maintenance.read',
+  },
+  {
+    label: 'Pièces de maintenance',
+    path: '/maintenance/parts',
+    permission: 'maintenance.read',
+  },
   { label: 'Catégories', path: '/categories', permission: 'categories.read' },
   { label: 'Marques', path: '/brands', permission: 'brands.read' },
   { label: 'Utilisateurs', path: '/users', permission: 'ADMIN' },
