@@ -74,6 +74,21 @@ describe('UserService', () => {
     ]);
   });
 
+  it('allows an email normalization when the lookup returns the user being edited', async () => {
+    const legacyUser = { ...user, email: 'ADA@GREENDESK.LOCAL' };
+    const { service, userRepository } = createService();
+    userRepository.findByUuid.mockResolvedValue(legacyUser);
+    userRepository.findByEmail.mockResolvedValue(legacyUser);
+
+    await expect(service.update(legacyUser.uuid, { email: 'ada@greendesk.local' })).resolves.toBe(
+      legacyUser,
+    );
+    expect(userRepository.update).toHaveBeenCalledWith(
+      legacyUser,
+      expect.objectContaining({ email: 'ada@greendesk.local' }),
+    );
+  });
+
   it('restores a soft-deleted user with a new password', async () => {
     const deletedUser = { ...user, deletedAt: new Date() };
     const { service, userRepository, auditService } = createService();

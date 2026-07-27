@@ -37,6 +37,9 @@ vi.mock('../auth/useAuth.js', () => ({
 vi.mock('../notifications/useNotification.js', () => ({
   default: () => ({ notify: mocks.notify }),
 }));
+vi.mock('../components/ManufacturerLogo.jsx', () => ({
+  default: ({ manufacturer }) => <img alt={`Logo ${manufacturer?.name ?? 'indisponible'}`} />,
+}));
 
 import MaintenanceOperationsPage from './MaintenanceOperationsPage.jsx';
 import MaintenancePartsPage from './MaintenancePartsPage.jsx';
@@ -79,7 +82,15 @@ describe('dedicated maintenance catalogue pages', () => {
     });
     mocks.listManufacturers.mockResolvedValue({
       data: {
-        data: [{ uuid: 'manufacturer-uuid', name: 'NGK', notes: null, active: true }],
+        data: [
+          {
+            uuid: 'manufacturer-uuid',
+            name: 'NGK',
+            notes: null,
+            active: true,
+            hasLogo: true,
+          },
+        ],
       },
     });
     mocks.listSuppliers.mockResolvedValue({
@@ -100,7 +111,14 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(screen.getByText('Vidange')).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: 'Créer' }));
-    await user.type(screen.getByLabelText('Intitulé réutilisable'), 'Graissage');
+    const designation = screen.getByLabelText('Désignation');
+    await user.type(designation, 'Vid');
+    expect(screen.getByRole('listbox')).toHaveClass('autocomplete-options');
+    expect(screen.getByRole('option', { name: 'Vidange' })).toHaveClass('autocomplete-option');
+    await user.clear(designation);
+    await user.type(designation, 'Graissage');
+    expect(screen.getByRole('status')).toHaveClass('autocomplete-empty');
+    expect(screen.getByRole('status')).toHaveTextContent('Aucune proposition');
     await user.selectOptions(screen.getByLabelText('Type'), 'lubrication');
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
 
@@ -126,9 +144,16 @@ describe('dedicated maintenance catalogue pages', () => {
 
     expect(await screen.findByRole('heading', { name: 'Pièces de maintenance' })).toBeVisible();
     expect(await screen.findByText('BPMR8Y')).toBeVisible();
+    expect(screen.getByRole('img', { name: 'Logo NGK' })).toBeVisible();
+    expect(screen.queryByText('NGK')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Créer' }));
-    await user.type(screen.getByLabelText('Désignation'), 'Filtre à huile');
+    const designation = screen.getByLabelText('Désignation');
+    await user.type(designation, 'Bou');
+    await user.click(screen.getByRole('option', { name: 'Bougie' }));
+    expect(designation).toHaveValue('Bougie');
+    await user.clear(designation);
+    await user.type(designation, 'Filtre à huile');
     await user.selectOptions(screen.getByLabelText('Fabricant'), 'manufacturer-uuid');
     await user.type(screen.getByLabelText('Référence fabricant'), 'OF-123');
     await user.selectOptions(screen.getByLabelText('Fournisseur'), 'supplier-uuid');
@@ -144,5 +169,17 @@ describe('dedicated maintenance catalogue pages', () => {
         unit: 'pièce',
       }),
     );
+  });
+
+  it('reports that no designation is proposed when the database is empty', async () => {
+    const user = userEvent.setup();
+    mocks.listOperations.mockResolvedValue({ data: { data: [] } });
+    render(<MaintenanceOperationsPage />);
+
+    expect(await screen.findByText('Aucun élément enregistré.')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Créer' }));
+    await user.type(screen.getByLabelText('Désignation'), 'Gra');
+
+    expect(screen.getByText('Aucune proposition')).toBeVisible();
   });
 });

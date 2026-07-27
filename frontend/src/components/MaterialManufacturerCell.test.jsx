@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import MaterialManufacturerCell from './MaterialManufacturerCell.jsx';
 
 vi.mock('./ManufacturerLogo.jsx', () => ({
@@ -7,6 +7,8 @@ vi.mock('./ManufacturerLogo.jsx', () => ({
 }));
 
 describe('MaterialManufacturerCell', () => {
+  afterEach(cleanup);
+
   it('shows the logo instead of the manufacturer name when one is available', () => {
     render(
       <MaterialManufacturerCell
@@ -22,7 +24,7 @@ describe('MaterialManufacturerCell', () => {
     expect(screen.queryByText('Green')).not.toBeInTheDocument();
   });
 
-  it('keeps the manufacturer name when no logo is available', () => {
+  it('uses the logo placeholder instead of the manufacturer name when no logo is available', () => {
     render(
       <MaterialManufacturerCell
         manufacturer={{
@@ -33,6 +35,7 @@ describe('MaterialManufacturerCell', () => {
       />,
     );
 
-    expect(screen.getByText('Green')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Logo Green' })).toBeInTheDocument();
+    expect(screen.queryByText('Green')).not.toBeInTheDocument();
   });
 });

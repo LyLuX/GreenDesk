@@ -1,9 +1,7 @@
 import ManufacturerLogo from './ManufacturerLogo.jsx';
 
-/** Uses the manufacturer logo in material tables, with its name as the fallback. */
+/** Uses the manufacturer logo in material tables without displaying its name. */
 export default function MaterialManufacturerCell({ manufacturer }) {
   if (!manufacturer) return '—';
-  if (!manufacturer.hasLogo) return manufacturer.name;
-
   return <ManufacturerLogo manufacturer={manufacturer} />;
 }

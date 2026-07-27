@@ -475,6 +475,7 @@ export default function MaintenancePage() {
         title={dialog?.type === 'edit' ? 'Modifier le plan' : 'Créer un plan'}
         onClose={close}
         busy={busy}
+        className="maintenance-plan-modal"
       >
         <form key={activeItem?.uuid ?? 'create'} className="d-grid gap-3" onSubmit={savePlan}>
           {formError && (
@@ -497,44 +498,51 @@ export default function MaintenancePage() {
                 Aucune pièce dans le catalogue. Vous pouvez enregistrer le plan sans pièce.
               </p>
             ) : (
-              parts
-                .filter(
-                  (part) =>
-                    part.active !== false ||
-                    activeItem?.parts?.some((assignedPart) => assignedPart.uuid === part.uuid),
-                )
-                .map((part) => {
-                  const assigned = activeItem?.parts?.find((item) => item.uuid === part.uuid);
-                  return (
-                    <div
-                      className="d-flex flex-wrap align-items-center justify-content-between gap-2"
-                      key={part.uuid}
-                    >
-                      <label className="form-check mb-0">
-                        <input
-                          type="checkbox"
-                          className="form-check-input"
-                          name={`part:${part.uuid}`}
-                          defaultChecked={Boolean(assigned)}
-                        />
-                        <span className="form-check-label">
-                          {part.name} — {part.reference}
-                        </span>
-                      </label>
-                      <label className="d-flex align-items-center gap-2">
-                        <span className="small text-body-secondary">Quantité</span>
-                        <input
-                          className="form-control form-control-sm"
-                          style={{ width: '6rem' }}
-                          type="number"
-                          name={`quantity:${part.uuid}`}
-                          min="1"
-                          defaultValue={assigned?.quantity ?? 1}
-                        />
-                      </label>
-                    </div>
-                  );
-                })
+              <div
+                className="maintenance-plan-parts d-grid gap-2"
+                role="region"
+                aria-label="Pièces nécessaires"
+                tabIndex={0}
+              >
+                {parts
+                  .filter(
+                    (part) =>
+                      part.active !== false ||
+                      activeItem?.parts?.some((assignedPart) => assignedPart.uuid === part.uuid),
+                  )
+                  .map((part) => {
+                    const assigned = activeItem?.parts?.find((item) => item.uuid === part.uuid);
+                    return (
+                      <div
+                        className="maintenance-plan-part-row d-flex flex-nowrap align-items-center justify-content-between gap-4"
+                        key={part.uuid}
+                      >
+                        <label className="form-check mb-0">
+                          <input
+                            type="checkbox"
+                            className="form-check-input"
+                            name={`part:${part.uuid}`}
+                            defaultChecked={Boolean(assigned)}
+                          />
+                          <span className="form-check-label">
+                            {part.name} — {part.reference}
+                          </span>
+                        </label>
+                        <label className="d-flex align-items-center gap-2">
+                          <span className="small text-body-secondary">Quantité</span>
+                          <input
+                            className="form-control form-control-sm"
+                            style={{ width: '6rem' }}
+                            type="number"
+                            name={`quantity:${part.uuid}`}
+                            min="1"
+                            defaultValue={assigned?.quantity ?? 1}
+                          />
+                        </label>
+                      </div>
+                    );
+                  })}
+              </div>
             )}
           </fieldset>
           <Button type="submit" disabled={busy}>

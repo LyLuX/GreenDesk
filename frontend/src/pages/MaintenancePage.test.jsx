@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -162,6 +162,39 @@ describe('MaintenancePage', () => {
     expect(screen.getByLabelText('Opération')).toBeRequired();
     expect(screen.getByRole('option', { name: 'Vidange — Préventif' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Intitulé')).not.toBeInTheDocument();
+  });
+
+  it('uses the content-sized plan modal and keeps each part on one line', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Créer un plan' }));
+
+    expect(screen.getByRole('dialog', { name: 'Créer un plan' })).toHaveClass(
+      'maintenance-plan-modal',
+    );
+    expect(screen.getByRole('checkbox', { name: 'Bougie — BPMR8Y' }).closest('div')).toHaveClass(
+      'maintenance-plan-part-row',
+      'flex-nowrap',
+    );
+  });
+
+  it('keeps every catalogue part in a dedicated scrollable region', async () => {
+    const user = userEvent.setup();
+    const catalogueParts = Array.from({ length: 12 }, (_, index) => ({
+      uuid: `part-${index}`,
+      name: `Pièce ${index + 1}`,
+      reference: `REF-${index + 1}`,
+      unit: 'pièce',
+    }));
+    mocks.listParts.mockResolvedValue({ data: { data: catalogueParts } });
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Créer un plan' }));
+
+    const partsRegion = screen.getByRole('region', { name: 'Pièces nécessaires' });
+    expect(partsRegion).toHaveClass('maintenance-plan-parts');
+    expect(within(partsRegion).getAllByRole('checkbox')).toHaveLength(catalogueParts.length);
   });
 
   it('creates a plan with its operation and exact part instead of a free title', async () => {

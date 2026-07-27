@@ -40,3 +40,20 @@ describe.each(restorationCases)('$entity restoration', ({ Service, entity, value
     );
   });
 });
+
+describe('CategoryService update', () => {
+  it('allows an update when the name lookup returns the category being edited', async () => {
+    const item = restoredItem('Arbres');
+    item.deletedAt = null;
+    const repository = {
+      findByUuid: jest.fn().mockResolvedValue(item),
+      findByName: jest.fn().mockResolvedValue(item),
+      update: jest.fn((category, values) => Object.assign(category, values)),
+    };
+    const service = new CategoryService(repository, { record: jest.fn() });
+
+    await expect(service.update(item.uuid, { name: 'ARBRES' }, 3)).resolves.toMatchObject({
+      name: 'ARBRES',
+    });
+  });
+});

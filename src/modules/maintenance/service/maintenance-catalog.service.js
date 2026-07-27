@@ -57,9 +57,11 @@ export default class MaintenanceCatalogService {
 
   async updateOperation(uuid, values, userId) {
     const operation = await this.getOperationEntity(uuid);
-    if (values.name && values.name !== operation.name) {
+    if (values.name) {
       const duplicate = await this.repository.findOperationByName(values.name);
-      if (duplicate) throw new AppError('Cette opération existe déjà.', HTTP_STATUS.CONFLICT);
+      if (duplicate && duplicate.uuid !== operation.uuid) {
+        throw new AppError('Cette opération existe déjà.', HTTP_STATUS.CONFLICT);
+      }
     }
     const oldValues = this.toPublic(operation);
     await this.repository.withTransaction(async (transaction) => {

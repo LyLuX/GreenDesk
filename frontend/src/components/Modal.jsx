@@ -10,9 +10,18 @@ import { useEffect, useId, useRef } from 'react';
  * @param {() => void} props.onClose Callback used to close the modal.
  * @param {boolean} [props.busy=false] Prevents the modal from closing while an action is running.
  * @param {string} [props.descriptionId] Identifier of the modal description.
+ * @param {string} [props.className] Additional class applied to the modal surface.
  * @returns {JSX.Element | null} The modal when it is open.
  */
-export default function Modal({ open, title, children, onClose, busy = false, descriptionId }) {
+export default function Modal({
+  open,
+  title,
+  children,
+  onClose,
+  busy = false,
+  descriptionId,
+  className = '',
+}) {
   const titleId = useId();
   const dialogRef = useRef(null);
   const onCloseRef = useRef(onClose);
@@ -45,7 +54,7 @@ export default function Modal({ open, title, children, onClose, busy = false, de
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className="modal-surface"
+        className={`modal-surface ${className}`.trim()}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="mb-4 d-flex align-items-center justify-content-between">

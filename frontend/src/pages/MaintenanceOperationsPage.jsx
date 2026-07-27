@@ -8,7 +8,7 @@ import { maintenanceTypeLabels } from '../maintenance/maintenance.labels.js';
 import MaintenanceCatalogPage from './MaintenanceCatalogPage.jsx';
 
 const fields = [
-  { name: 'name', label: 'Intitulé réutilisable', required: true },
+  { name: 'name', label: 'Désignation', required: true, suggestionsFromRecords: true },
   {
     name: 'maintenanceType',
     label: 'Type',
@@ -23,12 +23,12 @@ export default function MaintenanceOperationsPage() {
   return (
     <MaintenanceCatalogPage
       title="Opérations de maintenance"
-      subtitle="Intitulés réutilisables dans les plans d’entretien"
+      subtitle="Désignations réutilisables dans les plans d’entretien"
       singular="Opération"
       singularWithArticle="l’opération"
       fields={fields}
       columns={[
-        { key: 'name', label: 'Intitulé' },
+        { key: 'name', label: 'Désignation' },
         {
           key: 'maintenanceType',
           label: 'Type',

@@ -15,6 +15,7 @@ import AuthenticatedImage from '../components/AuthenticatedImage.jsx';
 import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Loader from '../components/Loader.jsx';
+import ManufacturerLogo from '../components/ManufacturerLogo.jsx';
 import {
   maintenanceStatusClasses,
   maintenanceStatusLabels,
@@ -270,7 +271,14 @@ export default function MaterialDetailPage() {
       {activeTab === 'details' ? (
         <>
           <section className="detail-grid mt-5 grid gap-5 p-5 sm:grid-cols-2">
-            <Field label="Fabricant" value={material.manufacturer?.name} />
+            <Field
+              label="Fabricant"
+              value={
+                material.manufacturer ? (
+                  <ManufacturerLogo manufacturer={material.manufacturer} />
+                ) : null
+              }
+            />
             <Field label="Modèle" value={material.model} />
             <Field label="Numéro de série" value={material.serialNumber} />
             <Field label="Catégorie" value={material.category?.name} />

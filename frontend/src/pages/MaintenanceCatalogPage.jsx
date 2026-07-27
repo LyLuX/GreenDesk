@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import useAuth from '../auth/useAuth.js';
+import AutocompleteField from '../components/AutocompleteField.jsx';
 import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import DataTable from '../components/DataTable.jsx';
@@ -207,13 +208,20 @@ export default function MaintenanceCatalogPage({
               {formError}
             </p>
           )}
-          {fields.map((field) => (
-            <FormField
-              key={field.name}
-              {...field}
-              defaultValue={editing?.[field.name] ?? field.defaultValue ?? ''}
-            />
-          ))}
+          {fields.map((field) => {
+            const { suggestionsFromRecords, ...fieldProps } = field;
+            const defaultValue = editing?.[field.name] ?? field.defaultValue ?? '';
+            return suggestionsFromRecords ? (
+              <AutocompleteField
+                key={field.name}
+                {...fieldProps}
+                defaultValue={defaultValue}
+                suggestions={rows.map((row) => row[field.name])}
+              />
+            ) : (
+              <FormField key={field.name} {...fieldProps} defaultValue={defaultValue} />
+            );
+          })}
           <Button type="submit" disabled={busy}>
             {busy ? 'Enregistrement…' : 'Enregistrer'}
           </Button>

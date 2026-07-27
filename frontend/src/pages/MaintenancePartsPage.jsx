@@ -10,6 +10,7 @@ import {
 import { createReferenceApi } from '../api/reference.api.js';
 import Button from '../components/Button.jsx';
 import Loader from '../components/Loader.jsx';
+import ManufacturerLogo from '../components/ManufacturerLogo.jsx';
 import MaintenanceCatalogPage from './MaintenanceCatalogPage.jsx';
 
 const directoryOptions = (items) =>
@@ -71,7 +72,7 @@ export default function MaintenancePartsPage() {
   }
 
   const fields = [
-    { name: 'name', label: 'Désignation', required: true },
+    { name: 'name', label: 'Désignation', required: true, suggestionsFromRecords: true },
     {
       name: 'manufacturerUuid',
       label: 'Fabricant',
@@ -86,6 +87,9 @@ export default function MaintenancePartsPage() {
     { name: 'supplierReference', label: 'Référence fournisseur' },
     { name: 'unit', label: 'Unité', required: true, defaultValue: 'pièce' },
   ];
+  const manufacturerByUuid = new Map(
+    manufacturers.map((manufacturer) => [manufacturer.uuid, manufacturer]),
+  );
 
   return (
     <MaintenanceCatalogPage
@@ -96,7 +100,13 @@ export default function MaintenancePartsPage() {
       fields={fields}
       columns={[
         { key: 'name', label: 'Désignation' },
-        { key: 'manufacturer', label: 'Fabricant' },
+        {
+          key: 'manufacturer',
+          label: 'Fabricant',
+          render: (_value, part) => (
+            <ManufacturerLogo manufacturer={manufacturerByUuid.get(part.manufacturerUuid)} />
+          ),
+        },
         { key: 'reference', label: 'Référence fabricant' },
         { key: 'supplier', label: 'Fournisseur' },
         { key: 'supplierReference', label: 'Référence fournisseur' },

@@ -26,10 +26,9 @@ export default function ManufacturersPage() {
       columns={[
         {
           key: 'hasLogo',
-          label: 'Logo',
+          label: 'Fabricant',
           render: (_value, manufacturer) => <ManufacturerLogo manufacturer={manufacturer} />,
         },
-        { key: 'name', label: 'Nom' },
         {
           key: 'active',
           label: 'Statut',

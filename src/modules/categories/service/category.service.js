@@ -51,7 +51,7 @@ export default class CategoryService {
   async update(uuid, values, userId) {
     const item = await this.getByUuid(uuid);
     const oldValues = item.toJSON();
-    if (values.name && values.name !== item.name) await this.ensureName(values.name);
+    if (values.name) await this.ensureName(values.name, item.uuid);
     await this.categoryRepository.update(item, { ...values, updatedBy: userId });
     await this.auditService.record({
       userId,
@@ -75,8 +75,9 @@ export default class CategoryService {
       oldValues,
     });
   }
-  async ensureName(name) {
-    if (await this.categoryRepository.findByName(name))
+  async ensureName(name, currentUuid) {
+    const duplicate = await this.categoryRepository.findByName(name);
+    if (duplicate && duplicate.uuid !== currentUuid)
       throw new AppError('Category name is already in use', HTTP_STATUS.CONFLICT);
   }
 }

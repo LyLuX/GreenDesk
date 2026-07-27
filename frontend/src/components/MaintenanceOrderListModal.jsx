@@ -2,14 +2,17 @@ import { useCallback, useEffect, useState } from 'react';
 
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import { getMaintenanceOrderList } from '../api/maintenance.api.js';
+import { createReferenceApi } from '../api/reference.api.js';
 import Button from './Button.jsx';
 import Loader from './Loader.jsx';
+import ManufacturerLogo from './ManufacturerLogo.jsx';
 import Modal from './Modal.jsx';
 
 /** Displays parts aggregated from maintenance plans due in a chosen horizon. */
 export default function MaintenanceOrderListModal({ open, onClose }) {
   const [filters, setFilters] = useState({ horizonDays: 30, includeOverdue: true });
   const [data, setData] = useState(null);
+  const [manufacturers, setManufacturers] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -18,8 +21,14 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
       setLoading(true);
       setError('');
       try {
-        const response = await getMaintenanceOrderList(filters, signal);
+        const [response, manufacturerResponse] = await Promise.all([
+          getMaintenanceOrderList(filters, signal),
+          createReferenceApi('manufacturers')
+            .list({}, signal)
+            .catch(() => null),
+        ]);
         setData(response.data.data);
+        if (manufacturerResponse) setManufacturers(manufacturerResponse.data.data ?? []);
       } catch (requestError) {
         if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
       } finally {
@@ -35,6 +44,10 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
     load(controller.signal);
     return () => controller.abort();
   }, [load, open]);
+
+  const manufacturerByUuid = new Map(
+    manufacturers.map((manufacturer) => [manufacturer.uuid, manufacturer]),
+  );
 
   return (
     <Modal open={open} title="Pièces à commander" onClose={onClose} busy={loading}>
@@ -99,8 +112,12 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
                 <tr key={part.uuid}>
                   <td>
                     <strong>{part.name}</strong>
-                    {part.manufacturer && (
-                      <small className="d-block text-body-secondary">{part.manufacturer}</small>
+                    {(part.manufacturer || part.manufacturerUuid) && (
+                      <span className="mt-1 d-block">
+                        <ManufacturerLogo
+                          manufacturer={manufacturerByUuid.get(part.manufacturerUuid)}
+                        />
+                      </span>
                     )}
                   </td>
                   <td>

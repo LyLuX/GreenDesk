@@ -52,9 +52,11 @@ export default class SupplierService {
   }
   async update(uuid, values, userId) {
     const item = await this.getEntityByUuid(uuid);
-    if (values.name && values.name !== item.name) {
+    if (values.name) {
       const duplicate = await this.repository.findByName(values.name);
-      if (duplicate) throw new AppError('Ce fournisseur existe déjà.', HTTP_STATUS.CONFLICT);
+      if (duplicate && duplicate.uuid !== item.uuid) {
+        throw new AppError('Ce fournisseur existe déjà.', HTTP_STATUS.CONFLICT);
+      }
     }
     const oldValues = item.toJSON();
     await this.repository.withTransaction(async (transaction) => {

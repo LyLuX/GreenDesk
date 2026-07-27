@@ -14,6 +14,7 @@ describe('global business directory pages', () => {
   it('uses the global manufacturer resource and permissions', () => {
     render(<ManufacturersPage />);
 
+    const properties = referencePage.mock.calls[0][0];
     expect(referencePage).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Fabricants',
@@ -25,6 +26,7 @@ describe('global business directory pages', () => {
       }),
       undefined,
     );
+    expect(properties.columns.map((column) => column.key)).toEqual(['hasLogo', 'active']);
   });
 
   it('uses the global supplier resource and permissions', () => {

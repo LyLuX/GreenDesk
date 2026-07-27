@@ -3,6 +3,30 @@ import { jest } from '@jest/globals';
 import MaintenanceCatalogService from '../src/modules/maintenance/service/maintenance-catalog.service.js';
 
 describe('MaintenanceCatalogService', () => {
+  it('allows an update when the name lookup returns the operation being edited', async () => {
+    const operation = {
+      id: 1,
+      uuid: '11111111-1111-4111-8111-111111111111',
+      name: 'Vidange',
+      maintenanceType: 'service',
+      toJSON() {
+        return { ...this };
+      },
+    };
+    const repository = {
+      findOperationByUuid: jest.fn().mockResolvedValue(operation),
+      findOperationByName: jest.fn().mockResolvedValue(operation),
+      withTransaction: jest.fn((callback) => callback(undefined)),
+      updateOperation: jest.fn((item, values) => Object.assign(item, values)),
+      updateTasksForOperation: jest.fn(),
+    };
+    const service = new MaintenanceCatalogService(repository, { record: jest.fn() });
+
+    await expect(
+      service.updateOperation(operation.uuid, { name: 'VIDANGE' }, 42),
+    ).resolves.toMatchObject({ name: 'VIDANGE' });
+  });
+
   it('renames every linked plan when an operation is renamed', async () => {
     const operation = {
       id: 1,

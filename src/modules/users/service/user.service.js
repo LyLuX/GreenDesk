@@ -85,7 +85,9 @@ export default class UserService {
     const assignedRoles = roleUuids !== undefined ? await this.findRoles(roleUuids) : null;
     if (values.email && values.email.toLowerCase() !== user.email) {
       const existingUser = await this.userRepository.findByEmail(values.email.toLowerCase());
-      if (existingUser) throw new AppError('Email is already in use', HTTP_STATUS.CONFLICT);
+      if (existingUser && existingUser.uuid !== user.uuid) {
+        throw new AppError('Email is already in use', HTTP_STATUS.CONFLICT);
+      }
       updateValues.email = values.email.toLowerCase();
     }
     if (values.password)

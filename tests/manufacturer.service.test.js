@@ -68,4 +68,51 @@ describe('ManufacturerService', () => {
       transaction,
     });
   });
+
+  it('allows an update when the name lookup returns the manufacturer being edited', async () => {
+    const manufacturer = {
+      id: 6,
+      uuid: '66666666-6666-4666-8666-666666666666',
+      name: 'Acme',
+      active: true,
+      toJSON() {
+        return { ...this };
+      },
+    };
+    const repository = {
+      findByUuid: jest.fn().mockResolvedValue(manufacturer),
+      findByName: jest.fn().mockResolvedValue(manufacturer),
+      withTransaction: jest.fn((callback) => callback(undefined)),
+      update: jest.fn((item, values) => Object.assign(item, values)),
+      updatePartNames: jest.fn(),
+    };
+    const service = new ManufacturerService(repository, { record: jest.fn() });
+
+    await expect(service.update(manufacturer.uuid, { name: 'ACME' }, 42)).resolves.toMatchObject({
+      name: 'ACME',
+    });
+  });
+
+  it('still rejects the name of another manufacturer', async () => {
+    const manufacturer = {
+      id: 6,
+      uuid: '66666666-6666-4666-8666-666666666666',
+      name: 'Acme',
+      toJSON() {
+        return { ...this };
+      },
+    };
+    const repository = {
+      findByUuid: jest.fn().mockResolvedValue(manufacturer),
+      findByName: jest.fn().mockResolvedValue({
+        uuid: '77777777-7777-4777-8777-777777777777',
+        name: 'Autre fabricant',
+      }),
+    };
+    const service = new ManufacturerService(repository, { record: jest.fn() });
+
+    await expect(
+      service.update(manufacturer.uuid, { name: 'Autre fabricant' }, 42),
+    ).rejects.toThrow('Ce fabricant existe déjà.');
+  });
 });

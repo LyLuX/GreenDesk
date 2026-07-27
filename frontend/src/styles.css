@@ -137,6 +137,57 @@ a:hover {
   color: var(--muted);
 }
 
+.autocomplete-options {
+  z-index: 1080;
+  top: calc(100% + 0.35rem);
+  max-height: 14rem;
+  overflow-y: auto;
+  background: #fff;
+  border: 2px solid var(--brand-leaf);
+  border-radius: 0.55rem;
+  box-shadow: 0 0.85rem 2rem rgba(8, 55, 38, 0.24);
+}
+
+.autocomplete-input[aria-expanded='true'] {
+  border-color: var(--brand-leaf);
+  box-shadow: 0 0 0 0.2rem rgba(79, 125, 33, 0.2);
+}
+
+.autocomplete-options .autocomplete-option {
+  padding: 0.75rem 1rem;
+  color: var(--ink);
+  font-weight: 600;
+  background: #fff;
+  border-right: 0;
+  border-left: 0;
+}
+
+.autocomplete-options .autocomplete-option:first-child {
+  border-top: 0;
+}
+
+.autocomplete-options .autocomplete-option:last-child {
+  border-bottom: 0;
+}
+
+.autocomplete-options .autocomplete-option:hover,
+.autocomplete-options .autocomplete-option:focus,
+.autocomplete-options .autocomplete-option.active,
+.autocomplete-options .autocomplete-option[aria-selected='true'] {
+  color: #fff;
+  background: var(--brand-forest);
+  border-color: var(--brand-forest);
+}
+
+.autocomplete-empty {
+  padding: 0.85rem 1rem;
+  color: var(--brand-forest);
+  font-weight: 600;
+  font-style: italic;
+  background: var(--brand-mist);
+  border: 0;
+}
+
 .sidebar {
   width: 245px;
   min-height: calc(100vh - 76px);
@@ -417,6 +468,28 @@ a:hover {
   border-top: 4px solid var(--brand-sun);
   border-radius: 0.55rem;
   box-shadow: 0 1rem 3rem rgba(8, 55, 38, 0.22);
+}
+
+.modal-surface.maintenance-plan-modal {
+  width: fit-content;
+  min-width: min(34rem, calc(100vw - 3rem));
+  max-width: min(64rem, calc(100vw - 3rem));
+}
+
+.maintenance-plan-parts {
+  max-height: min(22rem, 40vh);
+  overflow: auto;
+  padding: 0.15rem 0.35rem 0.15rem 0.15rem;
+  scrollbar-gutter: stable;
+}
+
+.maintenance-plan-parts:focus-visible {
+  outline: 2px solid var(--brand-leaf);
+  outline-offset: 0.2rem;
+}
+
+.maintenance-plan-part-row {
+  min-width: max-content;
 }
 
 .maintenance-summary-list {
