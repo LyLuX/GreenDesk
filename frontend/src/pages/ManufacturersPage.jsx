@@ -9,11 +9,7 @@ export default function ManufacturersPage() {
       createPermission="manufacturers.create"
       updatePermission="manufacturers.update"
       deletePermission="manufacturers.delete"
-      fields={[
-        { name: 'name', label: 'Nom', required: true },
-        { name: 'description', label: 'Description', multiline: true },
-        { name: 'notes', label: 'Notes', multiline: true },
-      ]}
+      fields={[{ name: 'name', label: 'Nom', required: true }]}
       fileField={{
         name: 'logo',
         label: 'Logo',
@@ -34,7 +30,6 @@ export default function ManufacturersPage() {
           render: (_value, manufacturer) => <ManufacturerLogo manufacturer={manufacturer} />,
         },
         { key: 'name', label: 'Nom' },
-        { key: 'description', label: 'Description' },
         {
           key: 'active',
           label: 'Statut',

@@ -134,4 +134,13 @@ describe('OpenAPI contract', () => {
       }),
     );
   });
+
+  it('keeps manufacturers limited to their useful business fields', () => {
+    const manufacturer = swaggerSpec.components.schemas.Manufacturer.properties;
+    const createRequest = swaggerSpec.components.schemas.ManufacturerCreateRequest.properties;
+
+    expect(manufacturer).not.toHaveProperty('description');
+    expect(manufacturer).not.toHaveProperty('notes');
+    expect(createRequest).toEqual({ name: expect.any(Object) });
+  });
 });

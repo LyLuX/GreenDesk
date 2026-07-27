@@ -98,8 +98,6 @@ const manufacturer = {
   required: ['uuid', 'name', 'active', 'hasLogo'],
   properties: {
     ...manufacturerSummary.properties,
-    description: nullableString,
-    notes: nullableString,
     active: { type: 'boolean' },
     ...timestamps,
   },
@@ -482,18 +480,12 @@ export const openApiSchemas = {
   ManufacturerCreateRequest: {
     type: 'object',
     required: ['name'],
-    properties: {
-      name: writeText(150),
-      description: nullableString,
-      notes: nullableString,
-    },
+    properties: { name: writeText(150) },
   },
   ManufacturerUpdateRequest: {
     type: 'object',
     properties: {
       name: writeText(150),
-      description: nullableString,
-      notes: nullableString,
       active: { type: 'boolean' },
     },
   },

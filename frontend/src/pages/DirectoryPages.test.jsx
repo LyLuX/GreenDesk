@@ -21,6 +21,7 @@ describe('global business directory pages', () => {
         createPermission: 'manufacturers.create',
         updatePermission: 'manufacturers.update',
         deletePermission: 'manufacturers.delete',
+        fields: [{ name: 'name', label: 'Nom', required: true }],
       }),
       undefined,
     );
