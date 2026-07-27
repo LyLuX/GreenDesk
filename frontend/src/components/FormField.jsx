@@ -20,7 +20,7 @@ export default function FormField({ label, error, ...props }) {
         <select {...controlProps}>
           <option value="">Aucune sélection</option>
           {options.map((option) => (
-            <option key={option.value} value={option.value}>
+            <option key={option.value} value={option.value} disabled={option.disabled}>
               {option.label}
             </option>
           ))}

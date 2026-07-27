@@ -52,9 +52,9 @@ Les permissions sont `maintenance.read`, `maintenance.create`, `maintenance.upda
 
 Les intitulés répétitifs sont centralisés dans un catalogue d’opérations accessible via `/api/v1/maintenance/operations`. Les références réellement commandables sont enregistrées dans `/api/v1/maintenance/parts`, puis associées aux plans avec une quantité. Une même opération, par exemple le remplacement d’une bougie, peut ainsi utiliser des références différentes selon le matériel. `GET /api/v1/maintenance/order-list` regroupe les quantités nécessaires aux plans arrivant à échéance sur un horizon configurable.
 
-L’interface sépare ces référentiels sur les pages `/maintenance/operations` et `/maintenance/parts`. Elles permettent de rechercher, créer, modifier, désactiver, réactiver et supprimer les opérations ou pièces selon les permissions `maintenance.*`.
+L’interface sépare ces référentiels sur les pages `/maintenance/operations` et `/maintenance/parts`. Les fabricants et fournisseurs de pièces possèdent leurs propres pages, `/maintenance/manufacturers` et `/maintenance/suppliers`. Une pièce référence ainsi un fabricant et un fournisseur enregistrés, en plus de ses références fabricant et fournisseur. Ces pages permettent de rechercher, créer, modifier, désactiver, réactiver et supprimer les éléments selon les permissions `maintenance.*`.
 
-La migration `20260727_zz_add_maintenance_catalogs.js` est additive : elle conserve les intitulés et toutes les données historiques des plans. Son annulation supprime uniquement les catalogues, leurs associations et la colonne de liaison, ce qui permet de revenir au fonctionnement précédent sans perdre un plan.
+Les migrations `20260727_zz_add_maintenance_catalogs.js` et `20260727_zzz_add_part_manufacturers_suppliers.js` sont additives : elles conservent les intitulés, les fabricants saisis auparavant et toutes les données historiques des plans. Leur annulation retire uniquement les nouveaux catalogues et leurs associations, ce qui permet de revenir au fonctionnement précédent sans perdre un plan ni son ancien fabricant texte.
 
 ## Configuration
 

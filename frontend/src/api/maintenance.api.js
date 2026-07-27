@@ -19,6 +19,22 @@ export const updateMaintenanceOperation = (uuid, payload) =>
   client.put(`/v1/maintenance/operations/${uuid}`, payload);
 export const deleteMaintenanceOperation = (uuid) =>
   client.delete(`/v1/maintenance/operations/${uuid}`);
+export const listMaintenanceManufacturers = (signal) =>
+  client.get('/v1/maintenance/manufacturers', { signal });
+export const createMaintenanceManufacturer = (payload) =>
+  client.post('/v1/maintenance/manufacturers', payload);
+export const updateMaintenanceManufacturer = (uuid, payload) =>
+  client.put(`/v1/maintenance/manufacturers/${uuid}`, payload);
+export const deleteMaintenanceManufacturer = (uuid) =>
+  client.delete(`/v1/maintenance/manufacturers/${uuid}`);
+export const listMaintenanceSuppliers = (signal) =>
+  client.get('/v1/maintenance/suppliers', { signal });
+export const createMaintenanceSupplier = (payload) =>
+  client.post('/v1/maintenance/suppliers', payload);
+export const updateMaintenanceSupplier = (uuid, payload) =>
+  client.put(`/v1/maintenance/suppliers/${uuid}`, payload);
+export const deleteMaintenanceSupplier = (uuid) =>
+  client.delete(`/v1/maintenance/suppliers/${uuid}`);
 export const listMaintenanceParts = (signal) => client.get('/v1/maintenance/parts', { signal });
 export const createMaintenancePart = (payload) => client.post('/v1/maintenance/parts', payload);
 export const updateMaintenancePart = (uuid, payload) =>

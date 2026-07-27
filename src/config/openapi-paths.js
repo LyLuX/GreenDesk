@@ -716,6 +716,105 @@ export const openApiPaths = {
       responses: { 204: noContent, ...writeErrors },
     },
   },
+  '/maintenance/manufacturers': {
+    get: {
+      operationId: 'listMaintenancePartManufacturers',
+      tags: ['Maintenance'],
+      summary: 'Liste les fabricants réutilisables pour les pièces.',
+      description: 'Nécessite `maintenance.read`.',
+      security: secure,
+      responses: {
+        200: jsonResponse(
+          'MaintenancePartManufacturerListResponse',
+          'Fabricants de pièces retournés.',
+        ),
+        ...standardErrors,
+      },
+    },
+    post: {
+      operationId: 'createMaintenancePartManufacturer',
+      tags: ['Maintenance'],
+      summary: 'Crée ou restaure un fabricant de pièces.',
+      description: 'Nécessite `maintenance.create`.',
+      security: secure,
+      requestBody: jsonBody('MaintenancePartManufacturerCreateRequest'),
+      responses: {
+        201: jsonResponse('MaintenancePartManufacturerResponse', 'Fabricant créé.'),
+        ...writeErrors,
+      },
+    },
+  },
+  '/maintenance/manufacturers/{uuid}': {
+    parameters: [uuidParameter],
+    put: {
+      operationId: 'updateMaintenancePartManufacturer',
+      tags: ['Maintenance'],
+      summary: 'Met à jour un fabricant et le nom conservé sur ses pièces.',
+      description: 'Nécessite `maintenance.update`.',
+      security: secure,
+      requestBody: jsonBody('MaintenancePartManufacturerUpdateRequest'),
+      responses: {
+        200: jsonResponse('MaintenancePartManufacturerResponse', 'Fabricant mis à jour.'),
+        ...writeErrors,
+      },
+    },
+    delete: {
+      operationId: 'deleteMaintenancePartManufacturer',
+      tags: ['Maintenance'],
+      summary: 'Supprime un fabricant inutilisé.',
+      description: 'Nécessite `maintenance.delete`. Un fabricant lié à une pièce est conservé.',
+      security: secure,
+      responses: { 204: noContent, ...writeErrors },
+    },
+  },
+  '/maintenance/suppliers': {
+    get: {
+      operationId: 'listMaintenanceSuppliers',
+      tags: ['Maintenance'],
+      summary: 'Liste les fournisseurs de pièces.',
+      description: 'Nécessite `maintenance.read`.',
+      security: secure,
+      responses: {
+        200: jsonResponse('MaintenanceSupplierListResponse', 'Fournisseurs retournés.'),
+        ...standardErrors,
+      },
+    },
+    post: {
+      operationId: 'createMaintenanceSupplier',
+      tags: ['Maintenance'],
+      summary: 'Crée ou restaure un fournisseur.',
+      description: 'Nécessite `maintenance.create`.',
+      security: secure,
+      requestBody: jsonBody('MaintenanceSupplierCreateRequest'),
+      responses: {
+        201: jsonResponse('MaintenanceSupplierResponse', 'Fournisseur créé.'),
+        ...writeErrors,
+      },
+    },
+  },
+  '/maintenance/suppliers/{uuid}': {
+    parameters: [uuidParameter],
+    put: {
+      operationId: 'updateMaintenanceSupplier',
+      tags: ['Maintenance'],
+      summary: 'Met à jour un fournisseur et le nom conservé sur ses pièces.',
+      description: 'Nécessite `maintenance.update`.',
+      security: secure,
+      requestBody: jsonBody('MaintenanceSupplierUpdateRequest'),
+      responses: {
+        200: jsonResponse('MaintenanceSupplierResponse', 'Fournisseur mis à jour.'),
+        ...writeErrors,
+      },
+    },
+    delete: {
+      operationId: 'deleteMaintenanceSupplier',
+      tags: ['Maintenance'],
+      summary: 'Supprime un fournisseur inutilisé.',
+      description: 'Nécessite `maintenance.delete`. Un fournisseur lié à une pièce est conservé.',
+      security: secure,
+      responses: { 204: noContent, ...writeErrors },
+    },
+  },
   '/maintenance/parts': {
     get: {
       operationId: 'listMaintenanceParts',

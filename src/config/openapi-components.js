@@ -164,6 +164,33 @@ const maintenanceOperation = {
   },
 };
 
+const maintenancePartManufacturer = {
+  type: 'object',
+  required: ['uuid', 'name', 'active'],
+  properties: {
+    uuid,
+    name: writeText(150),
+    notes: nullableString,
+    active: { type: 'boolean' },
+    ...timestamps,
+  },
+};
+
+const maintenanceSupplier = {
+  type: 'object',
+  required: ['uuid', 'name', 'active'],
+  properties: {
+    uuid,
+    name: writeText(150),
+    contactName: { ...nullableString, maxLength: 150 },
+    email: { type: 'string', format: 'email', nullable: true, maxLength: 254 },
+    phone: { ...nullableString, maxLength: 50 },
+    notes: nullableString,
+    active: { type: 'boolean' },
+    ...timestamps,
+  },
+};
+
 const maintenancePart = {
   type: 'object',
   required: ['uuid', 'name', 'reference', 'unit', 'active'],
@@ -171,6 +198,9 @@ const maintenancePart = {
     uuid,
     name: writeText(150),
     manufacturer: { ...nullableString, maxLength: 150 },
+    manufacturerUuid: { ...uuid, nullable: true },
+    supplier: { ...nullableString, maxLength: 150 },
+    supplierUuid: { ...uuid, nullable: true },
     reference: writeText(150),
     supplierReference: { ...nullableString, maxLength: 150 },
     unit: writeText(50),
@@ -376,6 +406,8 @@ export const openApiSchemas = {
   Material: material,
   AuditLog: auditLog,
   MaintenanceOperation: maintenanceOperation,
+  MaintenancePartManufacturer: maintenancePartManufacturer,
+  MaintenanceSupplier: maintenanceSupplier,
   MaintenancePart: maintenancePart,
   MaintenanceTask: maintenanceTask,
   MaintenanceHistory: maintenanceHistory,
@@ -527,7 +559,14 @@ export const openApiSchemas = {
     required: ['name', 'reference'],
     properties: {
       name: writeText(150),
-      manufacturer: { ...nullableString, maxLength: 150 },
+      manufacturer: {
+        ...nullableString,
+        maxLength: 150,
+        deprecated: true,
+        description: 'Ancien champ texte conservé pour compatibilité.',
+      },
+      manufacturerUuid: { ...uuid, nullable: true },
+      supplierUuid: { ...uuid, nullable: true },
       reference: writeText(150),
       supplierReference: { ...nullableString, maxLength: 150 },
       unit: { ...writeText(50), default: 'pièce' },
@@ -537,10 +576,55 @@ export const openApiSchemas = {
     type: 'object',
     properties: {
       name: writeText(150),
-      manufacturer: { ...nullableString, maxLength: 150 },
+      manufacturer: {
+        ...nullableString,
+        maxLength: 150,
+        deprecated: true,
+        description: 'Ancien champ texte conservé pour compatibilité.',
+      },
+      manufacturerUuid: { ...uuid, nullable: true },
+      supplierUuid: { ...uuid, nullable: true },
       reference: writeText(150),
       supplierReference: { ...nullableString, maxLength: 150 },
       unit: writeText(50),
+      active: { type: 'boolean' },
+    },
+  },
+  MaintenancePartManufacturerCreateRequest: {
+    type: 'object',
+    required: ['name'],
+    properties: {
+      name: writeText(150),
+      notes: nullableString,
+    },
+  },
+  MaintenancePartManufacturerUpdateRequest: {
+    type: 'object',
+    properties: {
+      name: writeText(150),
+      notes: nullableString,
+      active: { type: 'boolean' },
+    },
+  },
+  MaintenanceSupplierCreateRequest: {
+    type: 'object',
+    required: ['name'],
+    properties: {
+      name: writeText(150),
+      contactName: { ...nullableString, maxLength: 150 },
+      email: { type: 'string', format: 'email', nullable: true, maxLength: 254 },
+      phone: { ...nullableString, maxLength: 50 },
+      notes: nullableString,
+    },
+  },
+  MaintenanceSupplierUpdateRequest: {
+    type: 'object',
+    properties: {
+      name: writeText(150),
+      contactName: { ...nullableString, maxLength: 150 },
+      email: { type: 'string', format: 'email', nullable: true, maxLength: 254 },
+      phone: { ...nullableString, maxLength: 50 },
+      notes: nullableString,
       active: { type: 'boolean' },
     },
   },
@@ -716,6 +800,12 @@ export const openApiSchemas = {
   MaintenanceListResponse: success(reference('MaintenancePage')),
   MaintenanceOperationResponse: success(reference('MaintenanceOperation')),
   MaintenanceOperationListResponse: success(arrayOf(reference('MaintenanceOperation'))),
+  MaintenancePartManufacturerResponse: success(reference('MaintenancePartManufacturer')),
+  MaintenancePartManufacturerListResponse: success(
+    arrayOf(reference('MaintenancePartManufacturer')),
+  ),
+  MaintenanceSupplierResponse: success(reference('MaintenanceSupplier')),
+  MaintenanceSupplierListResponse: success(arrayOf(reference('MaintenanceSupplier'))),
   MaintenancePartResponse: success(reference('MaintenancePart')),
   MaintenancePartListResponse: success(arrayOf(reference('MaintenancePart'))),
   MaintenanceOrderListResponse: success(reference('MaintenanceOrderList')),

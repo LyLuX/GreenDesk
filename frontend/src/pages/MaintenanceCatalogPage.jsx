@@ -17,6 +17,7 @@ export default function MaintenanceCatalogPage({
   subtitle,
   singular,
   singularWithArticle,
+  feminine = true,
   fields,
   columns,
   listItems,
@@ -35,6 +36,9 @@ export default function MaintenanceCatalogPage({
   const [loadError, setLoadError] = useState('');
   const [formError, setFormError] = useState('');
   const [actionError, setActionError] = useState('');
+  const agreement = feminine
+    ? { saved: 'enregistrée', deleted: 'supprimée', disabled: 'désactivée', enabled: 'réactivée' }
+    : { saved: 'enregistré', deleted: 'supprimé', disabled: 'désactivé', enabled: 'réactivé' };
 
   const load = useCallback(
     async (signal) => {
@@ -82,7 +86,7 @@ export default function MaintenanceCatalogPage({
       );
       if (editing?.uuid) await updateItem(editing.uuid, values);
       else await createItem(values);
-      notify('success', `${singular} enregistrée.`);
+      notify('success', `${singular} ${agreement.saved}.`);
       setEditing(null);
       await load();
     } catch (error) {
@@ -99,10 +103,13 @@ export default function MaintenanceCatalogPage({
     try {
       if (confirmation.action === 'delete') {
         await deleteItem(confirmation.row.uuid);
-        notify('success', `${singular} supprimée.`);
+        notify('success', `${singular} ${agreement.deleted}.`);
       } else {
         await updateItem(confirmation.row.uuid, { active: !confirmation.row.active });
-        notify('success', `${singular} ${confirmation.row.active ? 'désactivée' : 'réactivée'}.`);
+        notify(
+          'success',
+          `${singular} ${confirmation.row.active ? agreement.disabled : agreement.enabled}.`,
+        );
       }
       setConfirmation(null);
       await load();
@@ -222,10 +229,10 @@ export default function MaintenanceCatalogPage({
         }
         description={
           confirmation?.action === 'delete'
-            ? `« ${confirmation?.row.name ?? ''} » sera supprimée. Un élément utilisé par un plan ne peut pas être supprimé.`
+            ? `« ${confirmation?.row.name ?? ''} » sera ${agreement.deleted}. Un élément utilisé ne peut pas être supprimé.`
             : confirmation?.row.active
-              ? `« ${confirmation?.row.name ?? ''} » ne sera plus proposée dans les nouveaux plans.`
-              : `« ${confirmation?.row.name ?? ''} » sera de nouveau proposée dans les plans.`
+              ? `« ${confirmation?.row.name ?? ''} » ne sera plus ${feminine ? 'proposée' : 'proposé'} dans les nouvelles sélections.`
+              : `« ${confirmation?.row.name ?? ''} » sera de nouveau ${feminine ? 'proposée' : 'proposé'} dans les sélections.`
         }
         confirmLabel={
           confirmation?.action === 'delete'

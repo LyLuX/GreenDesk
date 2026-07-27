@@ -4,6 +4,8 @@ import Material from '../../materials/model/material.model.js';
 import MaintenanceHistory from '../model/maintenance-history.model.js';
 import MaintenanceOperation from '../model/maintenance-operation.model.js';
 import MaintenancePart from '../model/maintenance-part.model.js';
+import MaintenancePartManufacturer from '../model/maintenance-part-manufacturer.model.js';
+import MaintenanceSupplier from '../model/maintenance-supplier.model.js';
 import MaintenanceTask from '../model/maintenance-task.model.js';
 import MaintenanceTaskPart from '../model/maintenance-task-part.model.js';
 import User from '../../users/model/user.model.js';
@@ -21,8 +23,29 @@ const operationInclude = {
 const partsInclude = {
   model: MaintenancePart,
   as: 'parts',
-  attributes: ['uuid', 'name', 'manufacturer', 'reference', 'supplierReference', 'unit', 'active'],
+  attributes: [
+    'uuid',
+    'name',
+    'manufacturer',
+    'supplier',
+    'reference',
+    'supplierReference',
+    'unit',
+    'active',
+  ],
   through: { attributes: ['quantity'] },
+  include: [
+    {
+      model: MaintenancePartManufacturer,
+      as: 'manufacturerDirectory',
+      attributes: ['uuid'],
+    },
+    {
+      model: MaintenanceSupplier,
+      as: 'supplierDirectory',
+      attributes: ['uuid'],
+    },
+  ],
 };
 
 const getStatusConditions = ({ taskAlias = 'MaintenanceTask', today, upcoming }) => {

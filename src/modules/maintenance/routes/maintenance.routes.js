@@ -38,6 +38,58 @@ router.delete(
   asyncHandler(catalogController.removeOperation.bind(catalogController)),
 );
 router.get(
+  '/manufacturers',
+  authorize('maintenance.read'),
+  asyncHandler(catalogController.manufacturers.bind(catalogController)),
+);
+router.post(
+  '/manufacturers',
+  authorize('maintenance.create'),
+  validator.createManufacturerValidator,
+  validateRequest,
+  asyncHandler(catalogController.createManufacturer.bind(catalogController)),
+);
+router.put(
+  '/manufacturers/:uuid',
+  authorize('maintenance.update'),
+  validator.updateManufacturerValidator,
+  validateRequest,
+  asyncHandler(catalogController.updateManufacturer.bind(catalogController)),
+);
+router.delete(
+  '/manufacturers/:uuid',
+  authorize('maintenance.delete'),
+  validator.uuidValidator,
+  validateRequest,
+  asyncHandler(catalogController.removeManufacturer.bind(catalogController)),
+);
+router.get(
+  '/suppliers',
+  authorize('maintenance.read'),
+  asyncHandler(catalogController.suppliers.bind(catalogController)),
+);
+router.post(
+  '/suppliers',
+  authorize('maintenance.create'),
+  validator.createSupplierValidator,
+  validateRequest,
+  asyncHandler(catalogController.createSupplier.bind(catalogController)),
+);
+router.put(
+  '/suppliers/:uuid',
+  authorize('maintenance.update'),
+  validator.updateSupplierValidator,
+  validateRequest,
+  asyncHandler(catalogController.updateSupplier.bind(catalogController)),
+);
+router.delete(
+  '/suppliers/:uuid',
+  authorize('maintenance.delete'),
+  validator.uuidValidator,
+  validateRequest,
+  asyncHandler(catalogController.removeSupplier.bind(catalogController)),
+);
+router.get(
   '/parts',
   authorize('maintenance.read'),
   asyncHandler(catalogController.parts.bind(catalogController)),

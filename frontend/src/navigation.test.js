@@ -10,6 +10,8 @@ describe('frontend reference navigation', () => {
       '/maintenance',
       '/maintenance/operations',
       '/maintenance/parts',
+      '/maintenance/manufacturers',
+      '/maintenance/suppliers',
       '/categories',
       '/brands',
       '/users',

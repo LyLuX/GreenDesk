@@ -15,7 +15,9 @@ import MaterialDetailPage from './pages/MaterialDetailPage.jsx';
 import MaterialEditPage from './pages/MaterialEditPage.jsx';
 import MaintenancePage from './pages/MaintenancePage.jsx';
 import MaintenanceOperationsPage from './pages/MaintenanceOperationsPage.jsx';
+import MaintenanceManufacturersPage from './pages/MaintenanceManufacturersPage.jsx';
 import MaintenancePartsPage from './pages/MaintenancePartsPage.jsx';
+import MaintenanceSuppliersPage from './pages/MaintenanceSuppliersPage.jsx';
 import BrandsPage from './pages/BrandsPage.jsx';
 import CategoriesPage from './pages/CategoriesPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
@@ -54,7 +56,9 @@ export const getModuleTitle = (pathname) => {
       '/materials': 'Matériels',
       '/maintenance': 'Maintenance',
       '/maintenance/operations': 'Opérations de maintenance',
+      '/maintenance/manufacturers': 'Fabricants de pièces',
       '/maintenance/parts': 'Pièces de maintenance',
+      '/maintenance/suppliers': 'Fournisseurs',
       '/brands': 'Marques',
       '/users': 'Utilisateurs',
       '/roles': 'Rôles',
@@ -165,8 +169,16 @@ export default function App() {
               element={secure('maintenance.read', <MaintenanceOperationsPage />)}
             />
             <Route
+              path="/maintenance/manufacturers"
+              element={secure('maintenance.read', <MaintenanceManufacturersPage />)}
+            />
+            <Route
               path="/maintenance/parts"
               element={secure('maintenance.read', <MaintenancePartsPage />)}
+            />
+            <Route
+              path="/maintenance/suppliers"
+              element={secure('maintenance.read', <MaintenanceSuppliersPage />)}
             />
             <Route path="/brands" element={secure('brands.read', <BrandsPage />)} />
             <Route path="/users" element={adminOnly(<UsersPage />)} />

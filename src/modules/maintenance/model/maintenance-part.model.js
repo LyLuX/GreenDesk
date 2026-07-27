@@ -12,6 +12,17 @@ MaintenancePart.init(
     uuid: { type: DataTypes.UUID, defaultValue: uuidv4, allowNull: false, unique: true },
     name: { type: DataTypes.STRING(150), allowNull: false },
     manufacturer: { type: DataTypes.STRING(150), allowNull: true },
+    manufacturerId: {
+      type: DataTypes.BIGINT.UNSIGNED,
+      field: 'manufacturer_id',
+      allowNull: true,
+    },
+    supplier: { type: DataTypes.STRING(150), allowNull: true },
+    supplierId: {
+      type: DataTypes.BIGINT.UNSIGNED,
+      field: 'supplier_id',
+      allowNull: true,
+    },
     reference: { type: DataTypes.STRING(150), allowNull: false },
     supplierReference: {
       type: DataTypes.STRING(150),

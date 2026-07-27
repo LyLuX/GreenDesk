@@ -10,6 +10,8 @@ import MaintenanceTask from '../../modules/maintenance/model/maintenance-task.mo
 import MaintenanceHistory from '../../modules/maintenance/model/maintenance-history.model.js';
 import MaintenanceOperation from '../../modules/maintenance/model/maintenance-operation.model.js';
 import MaintenancePart from '../../modules/maintenance/model/maintenance-part.model.js';
+import MaintenancePartManufacturer from '../../modules/maintenance/model/maintenance-part-manufacturer.model.js';
+import MaintenanceSupplier from '../../modules/maintenance/model/maintenance-supplier.model.js';
 import MaintenanceTaskPart from '../../modules/maintenance/model/maintenance-task-part.model.js';
 import RevokedAccessToken from '../../modules/auth/model/revoked-access-token.model.js';
 
@@ -76,6 +78,22 @@ export function initializeModels() {
     otherKey: 'maintenanceTaskId',
     as: 'maintenanceTasks',
   });
+  MaintenancePartManufacturer.hasMany(MaintenancePart, {
+    foreignKey: 'manufacturerId',
+    as: 'parts',
+  });
+  MaintenancePart.belongsTo(MaintenancePartManufacturer, {
+    foreignKey: 'manufacturerId',
+    as: 'manufacturerDirectory',
+  });
+  MaintenanceSupplier.hasMany(MaintenancePart, {
+    foreignKey: 'supplierId',
+    as: 'parts',
+  });
+  MaintenancePart.belongsTo(MaintenanceSupplier, {
+    foreignKey: 'supplierId',
+    as: 'supplierDirectory',
+  });
   MaintenanceTask.hasMany(MaintenanceHistory, { foreignKey: 'maintenance_task_id', as: 'history' });
   MaintenanceHistory.belongsTo(MaintenanceTask, { foreignKey: 'maintenance_task_id', as: 'task' });
   MaintenanceHistory.belongsTo(User, { foreignKey: 'performed_by', as: 'performedByUser' });
@@ -96,6 +114,8 @@ export {
   MaintenanceHistory,
   MaintenanceOperation,
   MaintenancePart,
+  MaintenancePartManufacturer,
+  MaintenanceSupplier,
   MaintenanceTaskPart,
   RevokedAccessToken,
 };

@@ -89,7 +89,7 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
             <thead>
               <tr>
                 <th>Pièce</th>
-                <th>Référence</th>
+                <th>Fournisseur / référence</th>
                 <th>Quantité</th>
                 <th>Plans concernés</th>
               </tr>
@@ -103,7 +103,12 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
                       <small className="d-block text-body-secondary">{part.manufacturer}</small>
                     )}
                   </td>
-                  <td>{part.supplierReference || part.reference}</td>
+                  <td>
+                    {part.supplier && <span className="d-block">{part.supplier}</span>}
+                    <small className="text-body-secondary">
+                      {part.supplierReference || part.reference}
+                    </small>
+                  </td>
                   <td>
                     {part.quantity} {part.unit}
                   </td>

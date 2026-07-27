@@ -13,6 +13,16 @@ export const navigationItems = [
     path: '/maintenance/parts',
     permission: 'maintenance.read',
   },
+  {
+    label: 'Fabricants de pièces',
+    path: '/maintenance/manufacturers',
+    permission: 'maintenance.read',
+  },
+  {
+    label: 'Fournisseurs',
+    path: '/maintenance/suppliers',
+    permission: 'maintenance.read',
+  },
   { label: 'Catégories', path: '/categories', permission: 'categories.read' },
   { label: 'Marques', path: '/brands', permission: 'brands.read' },
   { label: 'Utilisateurs', path: '/users', permission: 'ADMIN' },

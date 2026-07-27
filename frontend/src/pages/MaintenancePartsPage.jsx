@@ -1,21 +1,93 @@
+import { useCallback, useEffect, useState } from 'react';
+
+import getApiErrorMessage from '../api/get-api-error-message.js';
 import {
   createMaintenancePart,
   deleteMaintenancePart,
+  listMaintenanceManufacturers,
   listMaintenanceParts,
+  listMaintenanceSuppliers,
   updateMaintenancePart,
 } from '../api/maintenance.api.js';
+import Button from '../components/Button.jsx';
+import Loader from '../components/Loader.jsx';
 import MaintenanceCatalogPage from './MaintenanceCatalogPage.jsx';
 
-const fields = [
-  { name: 'name', label: 'Désignation', required: true },
-  { name: 'manufacturer', label: 'Fabricant' },
-  { name: 'reference', label: 'Référence fabricant', required: true },
-  { name: 'supplierReference', label: 'Référence fournisseur' },
-  { name: 'unit', label: 'Unité', required: true, defaultValue: 'pièce' },
-];
+const directoryOptions = (items) =>
+  items.map((item) => ({
+    value: item.uuid,
+    label: `${item.name}${item.active ? '' : ' (inactif)'}`,
+    disabled: !item.active,
+  }));
 
 /** Dedicated exact maintenance-part management page. */
 export default function MaintenancePartsPage() {
+  const [manufacturers, setManufacturers] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadDirectories = useCallback(async (signal) => {
+    setIsLoading(true);
+    try {
+      const [manufacturerResponse, supplierResponse] = await Promise.all([
+        listMaintenanceManufacturers(signal),
+        listMaintenanceSuppliers(signal),
+      ]);
+      setManufacturers(manufacturerResponse.data.data ?? []);
+      setSuppliers(supplierResponse.data.data ?? []);
+      setError('');
+    } catch (requestError) {
+      if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
+    } finally {
+      if (!signal?.aborted) setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadDirectories(controller.signal);
+    return () => controller.abort();
+  }, [loadDirectories]);
+
+  if (isLoading) {
+    return (
+      <main className="app-page">
+        <Loader label="Chargement des fabricants et fournisseurs" />
+      </main>
+    );
+  }
+  if (error) {
+    return (
+      <main className="app-page">
+        <div
+          role="alert"
+          className="alert alert-danger d-flex align-items-center justify-content-between"
+        >
+          <p className="mb-0">{error}</p>
+          <Button onClick={() => loadDirectories()}>Réessayer</Button>
+        </div>
+      </main>
+    );
+  }
+
+  const fields = [
+    { name: 'name', label: 'Désignation', required: true },
+    {
+      name: 'manufacturerUuid',
+      label: 'Fabricant',
+      options: directoryOptions(manufacturers),
+    },
+    { name: 'reference', label: 'Référence fabricant', required: true },
+    {
+      name: 'supplierUuid',
+      label: 'Fournisseur',
+      options: directoryOptions(suppliers),
+    },
+    { name: 'supplierReference', label: 'Référence fournisseur' },
+    { name: 'unit', label: 'Unité', required: true, defaultValue: 'pièce' },
+  ];
+
   return (
     <MaintenanceCatalogPage
       title="Pièces de maintenance"
@@ -27,6 +99,7 @@ export default function MaintenancePartsPage() {
         { key: 'name', label: 'Désignation' },
         { key: 'manufacturer', label: 'Fabricant' },
         { key: 'reference', label: 'Référence fabricant' },
+        { key: 'supplier', label: 'Fournisseur' },
         { key: 'supplierReference', label: 'Référence fournisseur' },
         { key: 'unit', label: 'Unité' },
         {
