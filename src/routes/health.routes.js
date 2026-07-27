@@ -6,18 +6,6 @@ import env from '../config/env.js';
 
 const router = Router();
 
-/**
- * @openapi
- * /health:
- *   get:
- *     tags: [System]
- *     summary: Returns the API health status.
- *     responses:
- *       200:
- *         description: API and database are available.
- *       503:
- *         description: API is running but the database is unavailable.
- */
 router.get('/', async (_request, response) => {
   let databaseStatus = 'UP';
 

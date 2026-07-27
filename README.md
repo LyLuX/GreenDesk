@@ -8,18 +8,21 @@ Authentification, utilisateurs, rôles, permissions, audit, catégories, marques
 
 ## API
 
-- `GET|POST /api/categories`, `GET|PUT|DELETE /api/categories/:uuid`
+- `GET|POST /api/v1/categories`, `GET|PUT|DELETE /api/v1/categories/:uuid`
 - `GET|POST /api/v1/materials`, `GET|PUT|DELETE /api/v1/materials/:uuid`
-- `GET|POST /api/brands`, `GET|PUT|DELETE /api/brands/:uuid`
+- `GET|POST /api/v1/brands`, `PUT|DELETE /api/v1/brands/:uuid`
 - `GET|POST|DELETE /api/v1/brands/:uuid/logo`
+- `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`
 - `POST /api/v1/materials/:uuid/photos`, `POST /api/v1/materials/:uuid/documents`, `GET /api/v1/materials/:uuid/history`
 - `POST /api/v1/auth/logout` révoque le JWT courant avant son expiration
 - `GET /api/v1/materials/files/:fileUuid/content`, `GET /api/v1/materials/files/:fileUuid/download`
-- `PATCH|DELETE /api/v1/materials/files/:fileUuid`
+- `PATCH /api/v1/materials/files/:fileUuid/primary`, `DELETE /api/v1/materials/files/:fileUuid`
 
 Les permissions ajoutées sont `categories.*` et `materials.*` avec les actions `read`, `create`, `update`, `delete`.
 
-Le dashboard est disponible via `GET /api/dashboard/summary`, protégé par `dashboard.read`. Il compte les matériels, les catégories et les marques, puis calcule la valeur d’achat cumulée, le coût moyen et l’âge moyen du parc par agrégats SQL. La documentation OpenAPI est servie sur `/docs`.
+Le dashboard est disponible via `GET /api/v1/dashboard/summary`, protégé par `dashboard.read`. Il compte les matériels, les catégories et les marques, calcule la valeur d’achat cumulée, le coût moyen et l’âge moyen du parc, puis retourne les compteurs et les listes d’entretiens à faire aujourd’hui, sous 30 jours et en retard.
+
+La documentation Swagger UI est servie sur `/docs` et le document OpenAPI brut sur `/docs/openapi.json`. Son contrat est centralisé dans `src/config/openapi-paths.js` pour les opérations et `src/config/openapi-components.js` pour les données. Toute modification d’une route, d’un paramètre, d’un corps, d’une réponse, d’une permission ou d’un code HTTP doit mettre à jour ces fichiers dans le même commit. `npm run docs:check` valide la conformité OpenAPI 3 et vérifie automatiquement la couverture des routes canoniques, les références de composants, les identifiants d’opération et les données de maintenance.
 
 ## Sprint 5 : parc matériel
 
@@ -37,15 +40,15 @@ Chaque marque peut recevoir un logo JPEG, PNG ou WebP de 2 Mo maximum. Les logos
 | Marques    | `brands.read`, `brands.create`, `brands.update`, `brands.delete`                 |
 | Catégories | `categories.read`, `categories.create`, `categories.update`, `categories.delete` |
 
-`/api/v1` est le préfixe à utiliser pour les nouveaux appels. Les chemins historiques `/api/categories`, `/api/materials`, `/api/brands` et `/api/dashboard` restent des alias de compatibilité.
+`/api/v1` est le préfixe à utiliser pour les nouveaux appels. Les chemins historiques `/api/categories`, `/api/materials`, `/api/brands`, `/api/dashboard` et `/api/maintenance` restent des alias de compatibilité dépréciés.
 
 ## Sprint 6 : maintenance préventive
 
-Chaque matériel peut recevoir plusieurs plans de maintenance : préventif, inspection, remplacement, lubrification, nettoyage ou personnalisé. Un plan possède un intervalle en jours, une priorité et la date du dernier entretien. La prochaine échéance est recalculée à la création, à la modification et lors de l’exécution d’un entretien. L’API expose `GET|POST /api/v1/maintenance`, `GET|PUT /api/v1/maintenance/:uuid`, `POST /api/v1/maintenance/:uuid/execute` et `GET /api/v1/maintenance/:uuid/history`.
+Chaque matériel peut recevoir plusieurs plans de maintenance : préventif, inspection, remplacement, lubrification, nettoyage ou personnalisé. Un plan possède un intervalle en jours, une priorité et la date du dernier entretien. La prochaine échéance est recalculée à la création, à la modification et lors de l’exécution d’un entretien. L’API expose `GET|POST /api/v1/maintenance`, `GET|PUT|DELETE /api/v1/maintenance/:uuid`, `PATCH /api/v1/maintenance/:uuid/status`, `POST /api/v1/maintenance/:uuid/execute` et `GET /api/v1/maintenance/:uuid/history`.
 
 Une tâche est à faire aujourd’hui lorsque sa prochaine date correspond à la date du jour, en retard lorsque cette date est dépassée, et à prévoir lorsqu’elle tombe dans les 30 prochains jours. Les dates métier sont des valeurs UTC `YYYY-MM-DD`, sans heure. L’exécution met à jour transactionnellement la tâche et son historique.
 
-Les permissions sont `maintenance.read`, `maintenance.create`, `maintenance.update`, `maintenance.delete` et `maintenance.execute`. Le tableau de bord compte les entretiens prévus aujourd’hui, en retard, réalisés ce mois et prévus dans les 30 jours.
+Les permissions sont `maintenance.read`, `maintenance.create`, `maintenance.update`, `maintenance.delete` et `maintenance.execute`. Le tableau de bord compte les entretiens prévus aujourd’hui, en retard et dans les 30 prochains jours. Chaque compteur non nul donne accès à la liste exacte des entretiens concernés.
 
 ## Configuration
 
@@ -66,7 +69,7 @@ npm run dev
 
 ## Vérifications
 
-Backend : `npm test`, `npm run lint`, `npm run format:check`.
+Backend : `npm test`, `npm run docs:check`, `npm run lint`, `npm run format:check`.
 
 Frontend : `cd frontend`, puis `npm test` et `npm run build`.
 

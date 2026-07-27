@@ -1,0 +1,608 @@
+import {
+  MAINTENANCE_PRIORITIES,
+  MAINTENANCE_TYPES,
+} from '../modules/maintenance/maintenance.constants.js';
+import { DOCUMENT_TYPES } from '../modules/materials/material-file.constants.js';
+
+const uuid = { type: 'string', format: 'uuid' };
+const date = { type: 'string', format: 'date' };
+const dateTime = { type: 'string', format: 'date-time' };
+const nullableString = { type: 'string', nullable: true };
+const nullableDate = { ...date, nullable: true };
+const nullableDateTime = { ...dateTime, nullable: true };
+const timestamps = {
+  createdAt: dateTime,
+  updatedAt: dateTime,
+  deletedAt: nullableDateTime,
+};
+const writeText = (maxLength) => ({ type: 'string', maxLength });
+const success = (data) => ({
+  type: 'object',
+  required: ['success', 'data'],
+  properties: {
+    success: { type: 'boolean', enum: [true] },
+    data,
+  },
+});
+const arrayOf = (schema) => ({ type: 'array', items: schema });
+const reference = (name) => ({ $ref: `#/components/schemas/${name}` });
+
+const permission = {
+  type: 'object',
+  required: ['uuid', 'name'],
+  properties: {
+    id: { type: 'integer', readOnly: true },
+    uuid,
+    name: writeText(100),
+    description: { ...nullableString, maxLength: 500 },
+    ...timestamps,
+  },
+};
+
+const role = {
+  type: 'object',
+  required: ['uuid', 'name', 'permissions'],
+  properties: {
+    id: { type: 'integer', readOnly: true },
+    uuid,
+    name: writeText(100),
+    description: { ...nullableString, maxLength: 500 },
+    permissions: arrayOf(reference('Permission')),
+    ...timestamps,
+  },
+};
+
+const user = {
+  type: 'object',
+  required: ['uuid', 'firstName', 'lastName', 'email', 'isActive', 'roles'],
+  properties: {
+    id: { type: 'integer', readOnly: true },
+    uuid,
+    firstName: { type: 'string', maxLength: 100 },
+    lastName: { type: 'string', maxLength: 100 },
+    email: { type: 'string', format: 'email', maxLength: 255 },
+    isActive: { type: 'boolean' },
+    lastLoginAt: nullableDateTime,
+    roles: arrayOf(reference('UserRole')),
+    ...timestamps,
+  },
+};
+
+const category = {
+  type: 'object',
+  required: ['uuid', 'name', 'active'],
+  properties: {
+    id: { type: 'integer', readOnly: true },
+    uuid,
+    name: writeText(150),
+    description: nullableString,
+    active: { type: 'boolean' },
+    createdBy: { type: 'integer', nullable: true, readOnly: true },
+    updatedBy: { type: 'integer', nullable: true, readOnly: true },
+    ...timestamps,
+  },
+};
+
+const brandSummary = {
+  type: 'object',
+  required: ['uuid', 'name', 'hasLogo'],
+  properties: {
+    uuid,
+    name: writeText(150),
+    hasLogo: { type: 'boolean' },
+  },
+};
+
+const brand = {
+  type: 'object',
+  required: ['uuid', 'name', 'active', 'hasLogo'],
+  properties: {
+    ...brandSummary.properties,
+    active: { type: 'boolean' },
+    ...timestamps,
+  },
+};
+
+const materialFile = {
+  type: 'object',
+  required: ['uuid', 'kind', 'originalName', 'mimeType', 'size', 'isPrimary'],
+  properties: {
+    uuid,
+    kind: { type: 'string', enum: ['photo', 'document'] },
+    documentType: { type: 'string', enum: DOCUMENT_TYPES, nullable: true },
+    originalName: writeText(255),
+    fileName: writeText(255),
+    mimeType: writeText(100),
+    size: { type: 'integer', minimum: 0 },
+    isPrimary: { type: 'boolean' },
+    createdAt: dateTime,
+  },
+};
+
+const material = {
+  type: 'object',
+  required: ['uuid', 'name', 'unit', 'purchasePrice', 'active'],
+  properties: {
+    uuid,
+    name: writeText(150),
+    description: nullableString,
+    unit: writeText(50),
+    purchasePrice: {
+      type: 'string',
+      pattern: '^\\d+(\\.\\d{1,2})?$',
+      example: '930.00',
+      description: 'Valeur DECIMAL renvoyée sans perte de précision.',
+    },
+    model: { ...nullableString, maxLength: 150 },
+    serialNumber: { ...nullableString, maxLength: 150 },
+    purchaseDate: nullableDate,
+    commissionedAt: nullableDate,
+    retiredAt: nullableDate,
+    notes: nullableString,
+    active: { type: 'boolean' },
+    brand: { allOf: [reference('BrandSummary')], nullable: true },
+    category: {
+      type: 'object',
+      nullable: true,
+      properties: { uuid, name: writeText(150) },
+    },
+    files: arrayOf(reference('MaterialFile')),
+    ...timestamps,
+  },
+};
+
+const maintenanceTask = {
+  type: 'object',
+  required: [
+    'uuid',
+    'title',
+    'maintenanceType',
+    'intervalDays',
+    'lastMaintenanceDate',
+    'nextMaintenanceDate',
+    'priority',
+    'active',
+    'status',
+    'remainingDays',
+  ],
+  properties: {
+    uuid,
+    title: writeText(150),
+    description: nullableString,
+    maintenanceType: { type: 'string', enum: MAINTENANCE_TYPES },
+    intervalDays: { type: 'integer', minimum: 1 },
+    lastMaintenanceDate: date,
+    nextMaintenanceDate: date,
+    priority: { type: 'string', enum: MAINTENANCE_PRIORITIES },
+    active: { type: 'boolean' },
+    notes: nullableString,
+    material: {
+      type: 'object',
+      nullable: true,
+      properties: { uuid, name: writeText(150) },
+    },
+    status: {
+      type: 'string',
+      enum: ['upToDate', 'upcoming', 'dueToday', 'overdue'],
+    },
+    remainingDays: { type: 'integer', nullable: true },
+    ...timestamps,
+  },
+};
+
+const maintenanceHistory = {
+  type: 'object',
+  required: ['uuid', 'performedAt'],
+  properties: {
+    uuid,
+    performedAt: date,
+    comment: nullableString,
+    performedByUser: {
+      type: 'object',
+      nullable: true,
+      properties: {
+        uuid,
+        firstName: writeText(100),
+        lastName: writeText(100),
+      },
+    },
+    createdAt: dateTime,
+  },
+};
+
+const auditLog = {
+  type: 'object',
+  required: ['uuid', 'action', 'entity'],
+  properties: {
+    uuid,
+    action: writeText(100),
+    entity: writeText(100),
+    entityUuid: { ...uuid, nullable: true },
+    oldValues: { type: 'object', nullable: true, additionalProperties: true },
+    newValues: { type: 'object', nullable: true, additionalProperties: true },
+    createdAt: dateTime,
+  },
+};
+
+const pagination = {
+  type: 'object',
+  required: ['page', 'limit', 'total', 'totalPages'],
+  properties: {
+    page: { type: 'integer', minimum: 1 },
+    limit: { type: 'integer', minimum: 1 },
+    total: { type: 'integer', minimum: 0 },
+    totalPages: { type: 'integer', minimum: 1 },
+  },
+};
+
+const materialWriteProperties = {
+  name: writeText(150),
+  unit: writeText(50),
+  purchasePrice: { type: 'number', minimum: 0 },
+  brandUuid: { ...uuid, nullable: true },
+  categoryUuid: { ...uuid, nullable: true },
+  model: { ...nullableString, maxLength: 150 },
+  serialNumber: { ...nullableString, maxLength: 150 },
+  purchaseDate: nullableDate,
+  commissionedAt: nullableDate,
+  retiredAt: nullableDate,
+  notes: nullableString,
+};
+
+const maintenanceWriteProperties = {
+  title: writeText(150),
+  description: nullableString,
+  maintenanceType: { type: 'string', enum: MAINTENANCE_TYPES },
+  intervalDays: { type: 'integer', minimum: 1 },
+  lastMaintenanceDate: date,
+  priority: { type: 'string', enum: MAINTENANCE_PRIORITIES, default: 'normal' },
+  notes: nullableString,
+};
+
+export const openApiSchemas = {
+  ErrorResponse: {
+    type: 'object',
+    required: ['success', 'error'],
+    properties: {
+      success: { type: 'boolean', enum: [false] },
+      error: {
+        type: 'object',
+        required: ['message'],
+        properties: {
+          message: { type: 'string' },
+          details: { type: 'array', items: { type: 'object', additionalProperties: true } },
+        },
+      },
+    },
+  },
+  HealthResponse: {
+    type: 'object',
+    required: ['status', 'database', 'uptime', 'version', 'environment', 'timestamp'],
+    properties: {
+      status: { type: 'string', enum: ['UP', 'DOWN'] },
+      database: { type: 'string', enum: ['UP', 'DOWN'] },
+      uptime: { type: 'integer', minimum: 0 },
+      version: { type: 'string' },
+      environment: { type: 'string' },
+      timestamp: dateTime,
+    },
+  },
+  Pagination: pagination,
+  Permission: permission,
+  Role: role,
+  UserRole: {
+    type: 'object',
+    required: ['uuid', 'name', 'permissions'],
+    properties: {
+      uuid,
+      name: writeText(100),
+      description: { ...nullableString, maxLength: 500 },
+      permissions: arrayOf({
+        type: 'object',
+        required: ['name'],
+        properties: { name: writeText(100) },
+      }),
+    },
+  },
+  User: user,
+  Category: category,
+  BrandSummary: brandSummary,
+  Brand: brand,
+  MaterialFile: materialFile,
+  Material: material,
+  AuditLog: auditLog,
+  MaintenanceTask: maintenanceTask,
+  MaintenanceHistory: maintenanceHistory,
+  RegisterRequest: {
+    type: 'object',
+    required: ['firstName', 'lastName', 'email', 'password'],
+    properties: {
+      firstName: writeText(100),
+      lastName: writeText(100),
+      email: { type: 'string', format: 'email' },
+      password: { type: 'string', format: 'password', minLength: 8, writeOnly: true },
+    },
+  },
+  LoginRequest: {
+    type: 'object',
+    required: ['email', 'password'],
+    properties: {
+      email: { type: 'string', format: 'email' },
+      password: { type: 'string', format: 'password', writeOnly: true },
+    },
+  },
+  UserCreateRequest: {
+    allOf: [
+      reference('RegisterRequest'),
+      {
+        type: 'object',
+        properties: { roleUuids: arrayOf(uuid) },
+      },
+    ],
+  },
+  UserUpdateRequest: {
+    type: 'object',
+    properties: {
+      firstName: writeText(100),
+      lastName: writeText(100),
+      email: { type: 'string', format: 'email' },
+      password: { type: 'string', format: 'password', minLength: 8, writeOnly: true },
+      isActive: { type: 'boolean' },
+      roleUuids: arrayOf(uuid),
+    },
+  },
+  RoleCreateRequest: {
+    type: 'object',
+    required: ['name'],
+    properties: {
+      name: writeText(100),
+      description: { type: 'string', maxLength: 500 },
+      permissionUuids: arrayOf(uuid),
+    },
+  },
+  RoleUpdateRequest: {
+    type: 'object',
+    properties: {
+      name: writeText(100),
+      description: { type: 'string', maxLength: 500 },
+      permissionUuids: arrayOf(uuid),
+    },
+  },
+  PermissionCreateRequest: {
+    type: 'object',
+    required: ['name'],
+    properties: {
+      name: writeText(100),
+      description: { type: 'string', maxLength: 500 },
+    },
+  },
+  PermissionUpdateRequest: {
+    type: 'object',
+    properties: {
+      name: writeText(100),
+      description: { type: 'string', maxLength: 500 },
+    },
+  },
+  CategoryCreateRequest: {
+    type: 'object',
+    required: ['name'],
+    properties: { name: writeText(150), description: { type: 'string' } },
+  },
+  CategoryUpdateRequest: {
+    type: 'object',
+    properties: { name: writeText(150), description: { type: 'string' } },
+  },
+  BrandCreateRequest: {
+    type: 'object',
+    required: ['name'],
+    properties: { name: writeText(150) },
+  },
+  BrandUpdateRequest: {
+    type: 'object',
+    properties: { name: writeText(150) },
+  },
+  MaterialCreateRequest: {
+    type: 'object',
+    required: ['name', 'unit', 'purchasePrice'],
+    properties: materialWriteProperties,
+  },
+  MaterialUpdateRequest: {
+    type: 'object',
+    properties: materialWriteProperties,
+  },
+  MaintenanceCreateRequest: {
+    type: 'object',
+    required: ['materialUuid', 'title', 'maintenanceType', 'intervalDays', 'lastMaintenanceDate'],
+    properties: { materialUuid: uuid, ...maintenanceWriteProperties },
+  },
+  MaintenanceUpdateRequest: {
+    type: 'object',
+    properties: maintenanceWriteProperties,
+  },
+  MaintenanceStatusRequest: {
+    type: 'object',
+    required: ['active'],
+    properties: { active: { type: 'boolean' } },
+  },
+  MaintenanceExecuteRequest: {
+    type: 'object',
+    properties: {
+      performedAt: date,
+      comment: { type: 'string' },
+    },
+  },
+  AuthSession: {
+    type: 'object',
+    required: ['accessToken', 'user'],
+    properties: {
+      accessToken: { type: 'string', description: 'JWT access token.' },
+      user: {
+        type: 'object',
+        required: ['uuid', 'firstName', 'lastName', 'email', 'roles', 'permissions'],
+        properties: {
+          uuid,
+          firstName: writeText(100),
+          lastName: writeText(100),
+          email: { type: 'string', format: 'email' },
+          roles: arrayOf({ type: 'string' }),
+          permissions: arrayOf({ type: 'string' }),
+        },
+      },
+    },
+  },
+  MaterialPage: {
+    type: 'object',
+    required: ['items', 'pagination'],
+    properties: {
+      items: arrayOf(reference('Material')),
+      pagination: reference('Pagination'),
+    },
+  },
+  MaintenancePage: {
+    type: 'object',
+    required: ['items', 'pagination'],
+    properties: {
+      items: arrayOf(reference('MaintenanceTask')),
+      pagination: reference('Pagination'),
+    },
+  },
+  MaintenanceExecution: {
+    type: 'object',
+    required: ['task', 'history'],
+    properties: {
+      task: reference('MaintenanceTask'),
+      history: reference('MaintenanceHistory'),
+    },
+  },
+  DashboardSummary: {
+    type: 'object',
+    required: ['materials', 'categories', 'brands', 'fleet', 'maintenance'],
+    properties: {
+      materials: {
+        type: 'object',
+        required: ['total', 'active', 'inactive'],
+        properties: {
+          total: { type: 'integer', minimum: 0 },
+          active: { type: 'integer', minimum: 0 },
+          inactive: { type: 'integer', minimum: 0 },
+        },
+      },
+      categories: {
+        type: 'object',
+        required: ['total'],
+        properties: { total: { type: 'integer', minimum: 0 } },
+      },
+      brands: {
+        type: 'object',
+        required: ['total'],
+        properties: { total: { type: 'integer', minimum: 0 } },
+      },
+      fleet: {
+        type: 'object',
+        required: ['totalPurchaseValue', 'averageCost', 'averageAge'],
+        properties: {
+          totalPurchaseValue: { type: 'number' },
+          averageCost: { type: 'number' },
+          averageAge: { type: 'number' },
+        },
+      },
+      maintenance: {
+        type: 'object',
+        required: ['today', 'overdue', 'upcoming', 'items'],
+        properties: {
+          today: { type: 'integer', minimum: 0 },
+          overdue: { type: 'integer', minimum: 0 },
+          upcoming: { type: 'integer', minimum: 0 },
+          items: {
+            type: 'object',
+            required: ['today', 'overdue', 'upcoming'],
+            properties: {
+              today: arrayOf(reference('MaintenanceTask')),
+              overdue: arrayOf(reference('MaintenanceTask')),
+              upcoming: arrayOf(reference('MaintenanceTask')),
+            },
+          },
+        },
+      },
+    },
+  },
+  ApiEntryResponse: success({
+    type: 'object',
+    required: ['name', 'version'],
+    properties: { name: { type: 'string' }, version: { type: 'string' } },
+  }),
+  AuthSessionResponse: success(reference('AuthSession')),
+  LogoutResponse: success({
+    type: 'object',
+    required: ['message'],
+    properties: { message: { type: 'string' } },
+  }),
+  UserResponse: success(reference('User')),
+  UserListResponse: success(arrayOf(reference('User'))),
+  RoleResponse: success(reference('Role')),
+  RoleListResponse: success(arrayOf(reference('Role'))),
+  PermissionResponse: success(reference('Permission')),
+  PermissionListResponse: success(arrayOf(reference('Permission'))),
+  CategoryResponse: success(reference('Category')),
+  CategoryListResponse: success(arrayOf(reference('Category'))),
+  BrandResponse: success(reference('Brand')),
+  BrandListResponse: success(arrayOf(reference('Brand'))),
+  LogoStatusResponse: success({
+    type: 'object',
+    required: ['hasLogo'],
+    properties: { hasLogo: { type: 'boolean' } },
+  }),
+  MaterialResponse: success(reference('Material')),
+  MaterialListResponse: success(reference('MaterialPage')),
+  MaterialFileResponse: success(reference('MaterialFile')),
+  AuditLogListResponse: success(arrayOf(reference('AuditLog'))),
+  MaintenanceResponse: success(reference('MaintenanceTask')),
+  MaintenanceListResponse: success(reference('MaintenancePage')),
+  MaintenanceHistoryResponse: success(arrayOf(reference('MaintenanceHistory'))),
+  MaintenanceExecutionResponse: success(reference('MaintenanceExecution')),
+  DashboardResponse: success(reference('DashboardSummary')),
+};
+
+export const openApiResponses = {
+  BadRequest: {
+    description: 'Invalid request.',
+    content: { 'application/json': { schema: reference('ErrorResponse') } },
+  },
+  Unauthorized: {
+    description: 'Authentication is required or the token is invalid.',
+    content: { 'application/json': { schema: reference('ErrorResponse') } },
+  },
+  Forbidden: {
+    description: 'The authenticated user lacks the required role or permission.',
+    content: { 'application/json': { schema: reference('ErrorResponse') } },
+  },
+  NotFound: {
+    description: 'The requested resource was not found.',
+    content: { 'application/json': { schema: reference('ErrorResponse') } },
+  },
+  Conflict: {
+    description: 'The request conflicts with an existing resource.',
+    content: { 'application/json': { schema: reference('ErrorResponse') } },
+  },
+  InternalError: {
+    description: 'Unexpected server error.',
+    content: { 'application/json': { schema: reference('ErrorResponse') } },
+  },
+};
+
+export const openApiParameters = {
+  Uuid: {
+    name: 'uuid',
+    in: 'path',
+    required: true,
+    description: 'Public resource UUID.',
+    schema: uuid,
+  },
+  FileUuid: {
+    name: 'fileUuid',
+    in: 'path',
+    required: true,
+    description: 'Public file UUID.',
+    schema: uuid,
+  },
+};
