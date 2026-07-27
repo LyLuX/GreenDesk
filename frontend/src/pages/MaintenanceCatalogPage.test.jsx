@@ -8,13 +8,7 @@ const mocks = vi.hoisted(() => ({
   updateOperation: vi.fn(),
   deleteOperation: vi.fn(),
   listManufacturers: vi.fn(),
-  createManufacturer: vi.fn(),
-  updateManufacturer: vi.fn(),
-  deleteManufacturer: vi.fn(),
   listSuppliers: vi.fn(),
-  createSupplier: vi.fn(),
-  updateSupplier: vi.fn(),
-  deleteSupplier: vi.fn(),
   listParts: vi.fn(),
   createPart: vi.fn(),
   updatePart: vi.fn(),
@@ -27,18 +21,15 @@ vi.mock('../api/maintenance.api.js', () => ({
   createMaintenanceOperation: mocks.createOperation,
   updateMaintenanceOperation: mocks.updateOperation,
   deleteMaintenanceOperation: mocks.deleteOperation,
-  listMaintenanceManufacturers: mocks.listManufacturers,
-  createMaintenanceManufacturer: mocks.createManufacturer,
-  updateMaintenanceManufacturer: mocks.updateManufacturer,
-  deleteMaintenanceManufacturer: mocks.deleteManufacturer,
-  listMaintenanceSuppliers: mocks.listSuppliers,
-  createMaintenanceSupplier: mocks.createSupplier,
-  updateMaintenanceSupplier: mocks.updateSupplier,
-  deleteMaintenanceSupplier: mocks.deleteSupplier,
   listMaintenanceParts: mocks.listParts,
   createMaintenancePart: mocks.createPart,
   updateMaintenancePart: mocks.updatePart,
   deleteMaintenancePart: mocks.deletePart,
+}));
+vi.mock('../api/reference.api.js', () => ({
+  createReferenceApi: (resource) => ({
+    list: resource === 'manufacturers' ? mocks.listManufacturers : mocks.listSuppliers,
+  }),
 }));
 vi.mock('../auth/useAuth.js', () => ({
   default: () => ({ hasPermission: () => true }),
@@ -48,9 +39,7 @@ vi.mock('../notifications/useNotification.js', () => ({
 }));
 
 import MaintenanceOperationsPage from './MaintenanceOperationsPage.jsx';
-import MaintenanceManufacturersPage from './MaintenanceManufacturersPage.jsx';
 import MaintenancePartsPage from './MaintenancePartsPage.jsx';
-import MaintenanceSuppliersPage from './MaintenanceSuppliersPage.jsx';
 
 describe('dedicated maintenance catalogue pages', () => {
   afterEach(cleanup);
@@ -99,8 +88,6 @@ describe('dedicated maintenance catalogue pages', () => {
       },
     });
     mocks.createOperation.mockResolvedValue({ data: { data: {} } });
-    mocks.createManufacturer.mockResolvedValue({ data: { data: {} } });
-    mocks.createSupplier.mockResolvedValue({ data: { data: {} } });
     mocks.createPart.mockResolvedValue({ data: { data: {} } });
     mocks.updateOperation.mockResolvedValue({ data: { data: {} } });
   });
@@ -138,7 +125,7 @@ describe('dedicated maintenance catalogue pages', () => {
     render(<MaintenancePartsPage />);
 
     expect(await screen.findByRole('heading', { name: 'Pièces de maintenance' })).toBeVisible();
-    expect(screen.getByText('BPMR8Y')).toBeVisible();
+    expect(await screen.findByText('BPMR8Y')).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: 'Créer' }));
     await user.type(screen.getByLabelText('Désignation'), 'Filtre à huile');
@@ -155,44 +142,6 @@ describe('dedicated maintenance catalogue pages', () => {
         supplierUuid: 'supplier-uuid',
         supplierReference: null,
         unit: 'pièce',
-      }),
-    );
-  });
-
-  it('creates a manufacturer from its dedicated page', async () => {
-    const user = userEvent.setup();
-    render(<MaintenanceManufacturersPage />);
-
-    expect(await screen.findByRole('heading', { name: 'Fabricants de pièces' })).toBeVisible();
-    await user.click(screen.getByRole('button', { name: 'Créer' }));
-    await user.type(screen.getByLabelText('Nom'), 'Bosch');
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
-
-    await waitFor(() =>
-      expect(mocks.createManufacturer).toHaveBeenCalledWith({
-        name: 'Bosch',
-        notes: null,
-      }),
-    );
-  });
-
-  it('creates a supplier from its dedicated page', async () => {
-    const user = userEvent.setup();
-    render(<MaintenanceSuppliersPage />);
-
-    expect(await screen.findByRole('heading', { name: 'Fournisseurs' })).toBeVisible();
-    await user.click(screen.getByRole('button', { name: 'Créer' }));
-    await user.type(screen.getByLabelText('Nom'), 'Atelier Distribution');
-    await user.type(screen.getByLabelText('E-mail'), 'contact@example.com');
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
-
-    await waitFor(() =>
-      expect(mocks.createSupplier).toHaveBeenCalledWith({
-        name: 'Atelier Distribution',
-        contactName: null,
-        email: 'contact@example.com',
-        phone: null,
-        notes: null,
       }),
     );
   });

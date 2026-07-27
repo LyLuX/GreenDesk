@@ -2,7 +2,7 @@ import MaterialRepository from '../repository/material.repository.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';
-import BrandRepository from '../../brands/repository/brand.repository.js';
+import ManufacturerRepository from '../../manufacturers/repository/manufacturer.repository.js';
 import CategoryRepository from '../../../core/database/repositories/category.repository.js';
 
 /** Parses a DATEONLY value as UTC and rejects invalid calendar values. */
@@ -22,16 +22,19 @@ export default class MaterialService {
   constructor(
     materialRepository = new MaterialRepository(),
     auditService = new AuditService(),
-    brandRepository = new BrandRepository(),
+    manufacturerRepository = new ManufacturerRepository(),
     categoryRepository = new CategoryRepository(),
   ) {
     this.materialRepository = materialRepository;
     this.auditService = auditService;
-    this.brandRepository = brandRepository;
+    this.manufacturerRepository = manufacturerRepository;
     this.categoryRepository = categoryRepository;
   }
   async getAll(query) {
-    const result = await this.materialRepository.findAll(query);
+    const result = await this.materialRepository.findAll({
+      ...query,
+      manufacturerUuid: query.manufacturerUuid ?? query.brandUuid,
+    });
     const showAll = query.limit === 'all';
     const limit = showAll ? Math.max(result.count, 1) : Math.min(Number(query.limit) || 5, 100);
     const page = showAll ? 1 : Math.max(Number(query.page) || 1, 1);
@@ -172,18 +175,18 @@ export default class MaterialService {
     const files = value.files;
     const publicValue = { ...value };
     delete publicValue.id;
-    delete publicValue.brandId;
+    delete publicValue.manufacturerId;
     delete publicValue.categoryId;
     delete publicValue.createdBy;
     delete publicValue.updatedBy;
     delete publicValue.files;
     return {
       ...publicValue,
-      brand: value.brand
+      manufacturer: value.manufacturer
         ? {
-            uuid: value.brand.uuid,
-            name: value.brand.name,
-            hasLogo: Boolean(value.brand.logoFileName),
+            uuid: value.manufacturer.uuid,
+            name: value.manufacturer.name,
+            hasLogo: Boolean(value.manufacturer.logoFileName),
           }
         : null,
       category: value.category ? { uuid: value.category.uuid, name: value.category.name } : null,
@@ -201,13 +204,15 @@ export default class MaterialService {
   }
   async resolveRelations(values) {
     const resolved = { ...values };
-    if ('brandUuid' in resolved) {
-      const brand = resolved.brandUuid
-        ? await this.brandRepository.findByUuid(resolved.brandUuid)
+    if ('manufacturerUuid' in resolved || 'brandUuid' in resolved) {
+      const manufacturerUuid = resolved.manufacturerUuid ?? resolved.brandUuid;
+      const manufacturer = manufacturerUuid
+        ? await this.manufacturerRepository.findByUuid(manufacturerUuid)
         : null;
-      if (resolved.brandUuid && !brand)
-        throw new AppError('Brand not found', HTTP_STATUS.BAD_REQUEST);
-      resolved.brandId = brand?.id ?? null;
+      if (manufacturerUuid && !manufacturer)
+        throw new AppError('Fabricant introuvable.', HTTP_STATUS.BAD_REQUEST);
+      resolved.manufacturerId = manufacturer?.id ?? null;
+      delete resolved.manufacturerUuid;
       delete resolved.brandUuid;
     }
     if ('categoryUuid' in resolved) {

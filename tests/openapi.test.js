@@ -121,8 +121,10 @@ describe('OpenAPI contract', () => {
         supplier: expect.any(Object),
       }),
     );
-    expect(swaggerSpec.paths).toHaveProperty('/maintenance/manufacturers');
-    expect(swaggerSpec.paths).toHaveProperty('/maintenance/suppliers');
+    expect(swaggerSpec.paths).toHaveProperty('/manufacturers');
+    expect(swaggerSpec.paths).toHaveProperty('/suppliers');
+    expect(swaggerSpec.paths).not.toHaveProperty('/maintenance/manufacturers');
+    expect(swaggerSpec.paths).not.toHaveProperty('/maintenance/suppliers');
     expect(swaggerSpec.paths).toHaveProperty('/maintenance/order-list');
     expect(dashboardMaintenance.items.properties).toEqual(
       expect.objectContaining({

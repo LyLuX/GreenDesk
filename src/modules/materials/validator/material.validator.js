@@ -13,6 +13,7 @@ export const listValidator = [
   query('page').optional().isInt({ min: 1 }).toInt(),
   listLimit,
   query('active').optional({ values: 'falsy' }).isBoolean().toBoolean(),
+  query('manufacturerUuid').optional({ values: 'falsy' }).isUUID(),
   query('brandUuid').optional({ values: 'falsy' }).isUUID(),
   query('categoryUuid').optional({ values: 'falsy' }).isUUID(),
   query('sort').optional().isIn(['name', 'purchasePrice', 'purchaseDate']),
@@ -36,10 +37,11 @@ export const createValidator = [
     .isFloat({ min: 0 })
     .withMessage('Le prix d’achat doit être un nombre positif ou nul.')
     .toFloat(),
-  body('brandUuid')
+  body('manufacturerUuid')
     .optional({ nullable: true })
     .isUUID()
-    .withMessage('La marque sélectionnée est invalide.'),
+    .withMessage('Le fabricant sélectionné est invalide.'),
+  body('brandUuid').optional({ nullable: true }).isUUID(),
   body('categoryUuid')
     .optional({ nullable: true })
     .isUUID()
@@ -89,10 +91,11 @@ export const updateValidator = [
     .isFloat({ min: 0 })
     .withMessage('Le prix d’achat doit être un nombre positif ou nul.')
     .toFloat(),
-  body('brandUuid')
+  body('manufacturerUuid')
     .optional({ nullable: true })
     .isUUID()
-    .withMessage('La marque sélectionnée est invalide.'),
+    .withMessage('Le fabricant sélectionné est invalide.'),
+  body('brandUuid').optional({ nullable: true }).isUUID(),
   body('categoryUuid')
     .optional({ nullable: true })
     .isUUID()

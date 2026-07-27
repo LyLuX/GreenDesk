@@ -53,20 +53,36 @@ const permissionDefinitions = [
     description: 'Consulter les indicateurs du tableau de bord.',
   },
   {
-    name: 'brands.read',
-    description: 'Consulter la liste et le détail des marques.',
+    name: 'manufacturers.read',
+    description: 'Consulter la liste et le détail des fabricants.',
   },
   {
-    name: 'brands.create',
-    description: 'Ajouter de nouvelles marques au référentiel.',
+    name: 'manufacturers.create',
+    description: 'Ajouter de nouveaux fabricants au référentiel.',
   },
   {
-    name: 'brands.update',
-    description: 'Modifier les informations des marques.',
+    name: 'manufacturers.update',
+    description: 'Modifier les informations des fabricants.',
   },
   {
-    name: 'brands.delete',
-    description: 'Supprimer des marques du référentiel.',
+    name: 'manufacturers.delete',
+    description: 'Supprimer des fabricants du référentiel.',
+  },
+  {
+    name: 'suppliers.read',
+    description: 'Consulter la liste et le détail des fournisseurs.',
+  },
+  {
+    name: 'suppliers.create',
+    description: 'Ajouter de nouveaux fournisseurs au référentiel.',
+  },
+  {
+    name: 'suppliers.update',
+    description: 'Modifier les informations des fournisseurs.',
+  },
+  {
+    name: 'suppliers.delete',
+    description: 'Supprimer des fournisseurs du référentiel.',
   },
   {
     name: 'maintenance.read',

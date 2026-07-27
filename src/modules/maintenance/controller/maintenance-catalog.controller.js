@@ -31,58 +31,6 @@ export default class MaintenanceCatalogController {
     response.status(HTTP_STATUS.NO_CONTENT).send();
   }
 
-  async manufacturers(_request, response) {
-    response.json(successResponse(await this.service.getManufacturers()));
-  }
-
-  async createManufacturer(request, response) {
-    response
-      .status(HTTP_STATUS.CREATED)
-      .json(
-        successResponse(await this.service.createManufacturer(request.body, request.user.userId)),
-      );
-  }
-
-  async updateManufacturer(request, response) {
-    response.json(
-      successResponse(
-        await this.service.updateManufacturer(
-          request.params.uuid,
-          request.body,
-          request.user.userId,
-        ),
-      ),
-    );
-  }
-
-  async removeManufacturer(request, response) {
-    await this.service.removeManufacturer(request.params.uuid, request.user.userId);
-    response.status(HTTP_STATUS.NO_CONTENT).send();
-  }
-
-  async suppliers(_request, response) {
-    response.json(successResponse(await this.service.getSuppliers()));
-  }
-
-  async createSupplier(request, response) {
-    response
-      .status(HTTP_STATUS.CREATED)
-      .json(successResponse(await this.service.createSupplier(request.body, request.user.userId)));
-  }
-
-  async updateSupplier(request, response) {
-    response.json(
-      successResponse(
-        await this.service.updateSupplier(request.params.uuid, request.body, request.user.userId),
-      ),
-    );
-  }
-
-  async removeSupplier(request, response) {
-    await this.service.removeSupplier(request.params.uuid, request.user.userId);
-    response.status(HTTP_STATUS.NO_CONTENT).send();
-  }
-
   async parts(_request, response) {
     response.json(successResponse(await this.service.getParts()));
   }

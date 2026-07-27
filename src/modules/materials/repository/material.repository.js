@@ -1,11 +1,15 @@
 import { Op } from 'sequelize';
 
 import Material from '../model/material.model.js';
-import Brand from '../../brands/model/brand.model.js';
+import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
 import Category from '../../categories/model/category.model.js';
 
 const include = [
-  { model: Brand, as: 'brand', attributes: ['uuid', 'name', 'logoFileName'] },
+  {
+    model: PartManufacturer,
+    as: 'manufacturer',
+    attributes: ['uuid', 'name', 'logoFileName'],
+  },
   { model: Category, as: 'category', attributes: ['uuid', 'name'] },
 ];
 
@@ -14,7 +18,7 @@ export default class MaterialRepository {
   async findAll({
     search,
     active,
-    brandUuid,
+    manufacturerUuid,
     categoryUuid,
     page = 1,
     limit = 5,
@@ -29,7 +33,10 @@ export default class MaterialRepository {
       ];
     if (active !== undefined && active !== '') where.active = active;
     const filteredInclude = [
-      { ...include[0], ...(brandUuid ? { where: { uuid: brandUuid }, required: true } : {}) },
+      {
+        ...include[0],
+        ...(manufacturerUuid ? { where: { uuid: manufacturerUuid }, required: true } : {}),
+      },
       { ...include[1], ...(categoryUuid ? { where: { uuid: categoryUuid }, required: true } : {}) },
     ];
     const normalizedLimit = limit === 'all' ? null : Math.min(Number(limit) || 5, 100);

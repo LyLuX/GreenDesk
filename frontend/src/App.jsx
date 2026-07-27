@@ -3,7 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import PermissionRoute from './auth/PermissionRoute.jsx';
 import ProtectedRoute from './auth/ProtectedRoute.jsx';
 import AdminRoute from './auth/AdminRoute.jsx';
-import MaterialBrandCell from './components/MaterialBrandCell.jsx';
+import MaterialManufacturerCell from './components/MaterialManufacturerCell.jsx';
 import AppLayout from './layouts/AppLayout.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import ForbiddenPage from './pages/ForbiddenPage.jsx';
@@ -15,10 +15,9 @@ import MaterialDetailPage from './pages/MaterialDetailPage.jsx';
 import MaterialEditPage from './pages/MaterialEditPage.jsx';
 import MaintenancePage from './pages/MaintenancePage.jsx';
 import MaintenanceOperationsPage from './pages/MaintenanceOperationsPage.jsx';
-import MaintenanceManufacturersPage from './pages/MaintenanceManufacturersPage.jsx';
 import MaintenancePartsPage from './pages/MaintenancePartsPage.jsx';
-import MaintenanceSuppliersPage from './pages/MaintenanceSuppliersPage.jsx';
-import BrandsPage from './pages/BrandsPage.jsx';
+import ManufacturersPage from './pages/ManufacturersPage.jsx';
+import SuppliersPage from './pages/SuppliersPage.jsx';
 import CategoriesPage from './pages/CategoriesPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
 import RolesPage from './pages/RolesPage.jsx';
@@ -56,10 +55,9 @@ export const getModuleTitle = (pathname) => {
       '/materials': 'Matériels',
       '/maintenance': 'Maintenance',
       '/maintenance/operations': 'Opérations de maintenance',
-      '/maintenance/manufacturers': 'Fabricants de pièces',
       '/maintenance/parts': 'Pièces de maintenance',
-      '/maintenance/suppliers': 'Fournisseurs',
-      '/brands': 'Marques',
+      '/manufacturers': 'Fabricants',
+      '/suppliers': 'Fournisseurs',
       '/users': 'Utilisateurs',
       '/roles': 'Rôles',
       '/permissions': 'Permissions',
@@ -104,10 +102,10 @@ export default function App() {
                   fields={[
                     { name: 'name', label: 'Nom', required: true },
                     {
-                      name: 'brandUuid',
-                      label: 'Marque',
-                      relation: 'brand',
-                      optionsResource: 'brands',
+                      name: 'manufacturerUuid',
+                      label: 'Fabricant',
+                      relation: 'manufacturer',
+                      optionsResource: 'manufacturers',
                     },
                     {
                       name: 'categoryUuid',
@@ -134,7 +132,11 @@ export default function App() {
                   ]}
                   columns={table([
                     ['name', 'Nom'],
-                    ['brand', 'Marque', (value) => <MaterialBrandCell brand={value} />],
+                    [
+                      'manufacturer',
+                      'Fabricant',
+                      (value) => <MaterialManufacturerCell manufacturer={value} />,
+                    ],
                     ['unit', 'Unité'],
                     ['purchasePrice', 'Achat', formatCurrency],
                   ])}
@@ -147,7 +149,11 @@ export default function App() {
                         { value: 'false', label: 'Inactif' },
                       ],
                     },
-                    { name: 'brandUuid', label: 'Marque', optionsResource: 'brands' },
+                    {
+                      name: 'manufacturerUuid',
+                      label: 'Fabricant',
+                      optionsResource: 'manufacturers',
+                    },
                     { name: 'categoryUuid', label: 'Catégorie', optionsResource: 'categories' },
                   ]}
                   pagination
@@ -169,18 +175,20 @@ export default function App() {
               element={secure('maintenance.read', <MaintenanceOperationsPage />)}
             />
             <Route
-              path="/maintenance/manufacturers"
-              element={secure('maintenance.read', <MaintenanceManufacturersPage />)}
-            />
-            <Route
               path="/maintenance/parts"
               element={secure('maintenance.read', <MaintenancePartsPage />)}
             />
             <Route
-              path="/maintenance/suppliers"
-              element={secure('maintenance.read', <MaintenanceSuppliersPage />)}
+              path="/manufacturers"
+              element={secure('manufacturers.read', <ManufacturersPage />)}
             />
-            <Route path="/brands" element={secure('brands.read', <BrandsPage />)} />
+            <Route path="/suppliers" element={secure('suppliers.read', <SuppliersPage />)} />
+            <Route path="/brands" element={<Navigate to="/manufacturers" replace />} />
+            <Route
+              path="/maintenance/manufacturers"
+              element={<Navigate to="/manufacturers" replace />}
+            />
+            <Route path="/maintenance/suppliers" element={<Navigate to="/suppliers" replace />} />
             <Route path="/users" element={adminOnly(<UsersPage />)} />
             <Route path="/roles" element={adminOnly(<RolesPage />)} />
             <Route path="/permissions" element={adminOnly(<PermissionsPage />)} />

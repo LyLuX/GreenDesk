@@ -1,6 +1,6 @@
 import Category from '../../categories/model/category.model.js';
 import Material from '../../materials/model/material.model.js';
-import Brand from '../../brands/model/brand.model.js';
+import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
 import sequelize from '../../../config/database.js';
 import MaintenanceRepository from '../../maintenance/repository/maintenance.repository.js';
 
@@ -15,7 +15,7 @@ export default class DashboardRepository {
       materialsActive,
       materialsInactive,
       categoriesTotal,
-      brandsTotal,
+      manufacturersTotal,
       materialMetrics,
       maintenanceTasks,
     ] = await Promise.all([
@@ -23,7 +23,7 @@ export default class DashboardRepository {
       Material.count({ where: { active: true } }),
       Material.count({ where: { active: false } }),
       Category.count(),
-      Brand.count(),
+      PartManufacturer.count(),
       Material.findOne({
         attributes: [
           [
@@ -55,7 +55,7 @@ export default class DashboardRepository {
       materialsActive,
       materialsInactive,
       categoriesTotal,
-      brandsTotal,
+      manufacturersTotal,
       totalPurchaseValue: Number(materialMetrics.totalPurchaseValue),
       averageCost: Number(materialMetrics.averageCost),
       averageAge: Number(materialMetrics.averageAge),

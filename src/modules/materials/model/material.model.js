@@ -19,7 +19,11 @@ Material.init(
       defaultValue: 0,
       field: 'purchase_price',
     },
-    brandId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true, field: 'brand_id' },
+    manufacturerId: {
+      type: DataTypes.BIGINT.UNSIGNED,
+      allowNull: true,
+      field: 'manufacturer_id',
+    },
     categoryId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true, field: 'category_id' },
     model: { type: DataTypes.STRING(150), allowNull: true },
     serialNumber: {

@@ -78,7 +78,7 @@ export default function DashboardPage() {
     );
   const materials = data.materials ?? {};
   const categories = data.categories ?? {};
-  const brands = data.brands ?? {};
+  const manufacturers = data.manufacturers ?? {};
   const fleet = data.fleet ?? {};
   const maintenance = data.maintenance ?? {};
   const maintenanceItems = maintenance.items?.[maintenanceDialog?.key] ?? [];
@@ -90,7 +90,7 @@ export default function DashboardPage() {
         ['Matériels actifs', materials.active ?? 0],
         ['Matériels inactifs', materials.inactive ?? 0],
         ['Catégories', categories.total ?? 0],
-        ['Marques', brands.total ?? 0],
+        ['Fabricants', manufacturers.total ?? 0],
       ],
     },
     {

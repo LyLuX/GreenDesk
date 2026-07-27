@@ -18,7 +18,11 @@ const swaggerSpec = {
     { name: 'Roles', description: 'Administration des rôles.' },
     { name: 'Permissions', description: 'Administration des permissions.' },
     { name: 'Categories', description: 'Référentiel des catégories.' },
-    { name: 'Brands', description: 'Référentiel des marques et de leurs logos.' },
+    {
+      name: 'Manufacturers',
+      description: 'Référentiel global des fabricants et de leurs logos.',
+    },
+    { name: 'Suppliers', description: 'Référentiel global des fournisseurs.' },
     { name: 'Materials', description: 'Gestion du parc matériel.' },
     { name: 'Material files', description: 'Photos et documents protégés des matériels.' },
     { name: 'Maintenance', description: 'Plans et historique d’entretien.' },

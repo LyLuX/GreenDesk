@@ -32,8 +32,8 @@ describe('MaterialService', () => {
             id: 7,
             uuid: '11111111-1111-4111-8111-111111111111',
             name: 'Tondeuse',
-            brandId: 2,
-            brand: {
+            manufacturerId: 2,
+            manufacturer: {
               uuid: '22222222-2222-4222-8222-222222222222',
               name: 'Green',
               logoFileName: 'green.png',
@@ -48,7 +48,7 @@ describe('MaterialService', () => {
         {
           uuid: '11111111-1111-4111-8111-111111111111',
           name: 'Tondeuse',
-          brand: {
+          manufacturer: {
             uuid: '22222222-2222-4222-8222-222222222222',
             name: 'Green',
             hasLogo: true,
@@ -58,7 +58,11 @@ describe('MaterialService', () => {
       ],
       pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
     });
-    expect(repository.findAll).toHaveBeenCalledWith({ page: 1, limit: 10 });
+    expect(repository.findAll).toHaveBeenCalledWith({
+      page: 1,
+      limit: 10,
+      manufacturerUuid: undefined,
+    });
   });
 
   it('returns every material without pagination when requested', async () => {

@@ -82,8 +82,6 @@ describe('MaintenanceCatalogService', () => {
     };
     const repository = {
       withTransaction: jest.fn((callback) => callback(transaction)),
-      findManufacturerByUuid: jest.fn().mockResolvedValue(manufacturer),
-      findSupplierByUuid: jest.fn().mockResolvedValue(supplier),
       findPartByIdentity: jest.fn().mockResolvedValue(null),
       createPart: jest.fn().mockResolvedValue(created),
       findPartByUuid: jest.fn().mockResolvedValue({
@@ -95,7 +93,18 @@ describe('MaintenanceCatalogService', () => {
       }),
     };
     const auditService = { record: jest.fn() };
-    const service = new MaintenanceCatalogService(repository, auditService);
+    const manufacturerRepository = {
+      findByUuid: jest.fn().mockResolvedValue(manufacturer),
+    };
+    const supplierRepository = {
+      findByUuid: jest.fn().mockResolvedValue(supplier),
+    };
+    const service = new MaintenanceCatalogService(
+      repository,
+      auditService,
+      manufacturerRepository,
+      supplierRepository,
+    );
 
     const result = await service.createPart(
       {
@@ -124,53 +133,5 @@ describe('MaintenanceCatalogService', () => {
         supplierUuid: supplier.uuid,
       }),
     );
-  });
-
-  it('propagates a renamed manufacturer to the compatibility field on linked parts', async () => {
-    const transaction = { id: 'transaction' };
-    const manufacturer = {
-      id: 6,
-      uuid: '66666666-6666-4666-8666-666666666666',
-      name: 'Ancien nom',
-      active: true,
-      toJSON() {
-        return { ...this };
-      },
-    };
-    const repository = {
-      findManufacturerByUuid: jest.fn().mockResolvedValue(manufacturer),
-      findManufacturerByName: jest.fn().mockResolvedValue(null),
-      withTransaction: jest.fn((callback) => callback(transaction)),
-      updateManufacturer: jest.fn((item, values) => Object.assign(item, values)),
-      updatePartsForManufacturer: jest.fn(),
-    };
-    const service = new MaintenanceCatalogService(repository, { record: jest.fn() });
-
-    await service.updateManufacturer(manufacturer.uuid, { name: 'Nouveau nom' }, 42);
-
-    expect(repository.updatePartsForManufacturer).toHaveBeenCalledWith(
-      manufacturer.id,
-      'Nouveau nom',
-      { transaction },
-    );
-  });
-
-  it('refuses to delete a supplier still referenced by a part', async () => {
-    const supplier = {
-      id: 7,
-      uuid: '77777777-7777-4777-8777-777777777777',
-      name: 'Pièces Pro',
-    };
-    const repository = {
-      findSupplierByUuid: jest.fn().mockResolvedValue(supplier),
-      countPartsForSupplier: jest.fn().mockResolvedValue(1),
-      removeSupplier: jest.fn(),
-    };
-    const service = new MaintenanceCatalogService(repository, {});
-
-    await expect(service.removeSupplier(supplier.uuid, 42)).rejects.toThrow(
-      'encore utilisé par une pièce',
-    );
-    expect(repository.removeSupplier).not.toHaveBeenCalled();
   });
 });

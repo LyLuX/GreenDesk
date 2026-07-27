@@ -4,16 +4,16 @@ import sequelize from '../../../config/database.js';
 import MaintenanceTask from '../model/maintenance-task.model.js';
 import MaintenanceOperation from '../model/maintenance-operation.model.js';
 import MaintenancePart from '../model/maintenance-part.model.js';
-import MaintenancePartManufacturer from '../model/maintenance-part-manufacturer.model.js';
-import MaintenanceSupplier from '../model/maintenance-supplier.model.js';
+import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
+import Supplier from '../../suppliers/model/supplier.model.js';
 
 const manufacturerInclude = {
-  model: MaintenancePartManufacturer,
+  model: PartManufacturer,
   as: 'manufacturerDirectory',
   attributes: ['uuid', 'name'],
 };
 const supplierInclude = {
-  model: MaintenanceSupplier,
+  model: Supplier,
   as: 'supplierDirectory',
   attributes: ['uuid', 'name'],
 };
@@ -139,97 +139,6 @@ export default class MaintenanceCatalogRepository {
       distinct: true,
       transaction,
     });
-  }
-
-  findManufacturers() {
-    return MaintenancePartManufacturer.findAll({ order: [['name', 'ASC']] });
-  }
-
-  findManufacturerByUuid(uuid, { transaction, withDeleted = false } = {}) {
-    return MaintenancePartManufacturer.findOne({
-      where: { uuid },
-      paranoid: !withDeleted,
-      transaction,
-    });
-  }
-
-  findManufacturerByName(name, { transaction, withDeleted = false } = {}) {
-    return MaintenancePartManufacturer.findOne({
-      where: { name },
-      paranoid: !withDeleted,
-      transaction,
-    });
-  }
-
-  createManufacturer(values, { transaction } = {}) {
-    return MaintenancePartManufacturer.create(values, { transaction });
-  }
-
-  updateManufacturer(manufacturer, values, { transaction } = {}) {
-    return manufacturer.update(values, { transaction });
-  }
-
-  restoreManufacturer(manufacturer, { transaction } = {}) {
-    return manufacturer.restore({ transaction });
-  }
-
-  removeManufacturer(manufacturer, { transaction } = {}) {
-    return manufacturer.destroy({ transaction });
-  }
-
-  countPartsForManufacturer(manufacturerId, { transaction } = {}) {
-    return MaintenancePart.count({ where: { manufacturerId }, transaction });
-  }
-
-  updatePartsForManufacturer(manufacturerId, name, { transaction } = {}) {
-    return MaintenancePart.update(
-      { manufacturer: name },
-      { where: { manufacturerId }, transaction },
-    );
-  }
-
-  findSuppliers() {
-    return MaintenanceSupplier.findAll({ order: [['name', 'ASC']] });
-  }
-
-  findSupplierByUuid(uuid, { transaction, withDeleted = false } = {}) {
-    return MaintenanceSupplier.findOne({
-      where: { uuid },
-      paranoid: !withDeleted,
-      transaction,
-    });
-  }
-
-  findSupplierByName(name, { transaction, withDeleted = false } = {}) {
-    return MaintenanceSupplier.findOne({
-      where: { name },
-      paranoid: !withDeleted,
-      transaction,
-    });
-  }
-
-  createSupplier(values, { transaction } = {}) {
-    return MaintenanceSupplier.create(values, { transaction });
-  }
-
-  updateSupplier(supplier, values, { transaction } = {}) {
-    return supplier.update(values, { transaction });
-  }
-
-  restoreSupplier(supplier, { transaction } = {}) {
-    return supplier.restore({ transaction });
-  }
-
-  removeSupplier(supplier, { transaction } = {}) {
-    return supplier.destroy({ transaction });
-  }
-
-  countPartsForSupplier(supplierId, { transaction } = {}) {
-    return MaintenancePart.count({ where: { supplierId }, transaction });
-  }
-
-  updatePartsForSupplier(supplierId, name, { transaction } = {}) {
-    return MaintenancePart.update({ supplier: name }, { where: { supplierId }, transaction });
   }
 
   withTransaction(callback) {

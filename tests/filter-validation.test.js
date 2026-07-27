@@ -14,7 +14,7 @@ describe('list filter validation', () => {
     await expect(
       validate(materialListValidator, {
         active: '',
-        brandUuid: '',
+        manufacturerUuid: '',
         categoryUuid: '',
         search: '',
       }),

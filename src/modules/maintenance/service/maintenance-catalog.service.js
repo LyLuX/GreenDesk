@@ -1,13 +1,22 @@
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';
+import ManufacturerRepository from '../../manufacturers/repository/manufacturer.repository.js';
+import SupplierRepository from '../../suppliers/repository/supplier.repository.js';
 import MaintenanceCatalogRepository from '../repository/maintenance-catalog.repository.js';
 
 /** Reusable operation and exact-part catalogue lifecycle. */
 export default class MaintenanceCatalogService {
-  constructor(repository = new MaintenanceCatalogRepository(), auditService = new AuditService()) {
+  constructor(
+    repository = new MaintenanceCatalogRepository(),
+    auditService = new AuditService(),
+    manufacturerRepository = new ManufacturerRepository(),
+    supplierRepository = new SupplierRepository(),
+  ) {
     this.repository = repository;
     this.auditService = auditService;
+    this.manufacturerRepository = manufacturerRepository;
+    this.supplierRepository = supplierRepository;
   }
 
   async getOperations() {
@@ -186,7 +195,7 @@ export default class MaintenanceCatalogService {
       partValues.manufacturer = manufacturer?.name ?? null;
     } else if (Object.hasOwn(values, 'manufacturer')) {
       const manufacturer = values.manufacturer
-        ? await this.repository.findManufacturerByName(values.manufacturer, { transaction })
+        ? await this.manufacturerRepository.findByName(values.manufacturer, { transaction })
         : null;
       partValues.manufacturerId = manufacturer?.id ?? null;
       partValues.manufacturer = values.manufacturer || null;
@@ -205,147 +214,20 @@ export default class MaintenanceCatalogService {
     return partValues;
   }
 
-  async getManufacturers() {
-    return (await this.repository.findManufacturers()).map((item) => this.toPublic(item));
-  }
-
   async getManufacturerEntity(uuid, { allowInactive = true, ...options } = {}) {
-    const manufacturer = await this.repository.findManufacturerByUuid(uuid, options);
+    const manufacturer = await this.manufacturerRepository.findByUuid(uuid, options);
     if (!manufacturer || (!allowInactive && !manufacturer.active)) {
       throw new AppError('Fabricant de pièce introuvable ou inactif.', HTTP_STATUS.NOT_FOUND);
     }
     return manufacturer;
   }
 
-  async createManufacturer(values, userId) {
-    const existing = await this.repository.findManufacturerByName(values.name, {
-      withDeleted: true,
-    });
-    if (existing && !existing.deletedAt) {
-      throw new AppError('Ce fabricant existe déjà.', HTTP_STATUS.CONFLICT);
-    }
-    const manufacturer = await this.repository.withTransaction(async (transaction) => {
-      if (existing) {
-        await this.repository.restoreManufacturer(existing, { transaction });
-        return this.repository.updateManufacturer(
-          existing,
-          { ...values, active: true, updatedBy: userId },
-          { transaction },
-        );
-      }
-      return this.repository.createManufacturer(
-        { ...values, createdBy: userId, updatedBy: userId },
-        { transaction },
-      );
-    });
-    await this.record(
-      userId,
-      existing ? 'RESTORE' : 'CREATE',
-      'MAINTENANCE_PART_MANUFACTURER',
-      manufacturer,
-    );
-    return this.toPublic(manufacturer);
-  }
-
-  async updateManufacturer(uuid, values, userId) {
-    const manufacturer = await this.getManufacturerEntity(uuid);
-    if (values.name && values.name !== manufacturer.name) {
-      const duplicate = await this.repository.findManufacturerByName(values.name);
-      if (duplicate) throw new AppError('Ce fabricant existe déjà.', HTTP_STATUS.CONFLICT);
-    }
-    const oldValues = this.toPublic(manufacturer);
-    await this.repository.withTransaction(async (transaction) => {
-      await this.repository.updateManufacturer(
-        manufacturer,
-        { ...values, updatedBy: userId },
-        { transaction },
-      );
-      if (values.name) {
-        await this.repository.updatePartsForManufacturer(manufacturer.id, manufacturer.name, {
-          transaction,
-        });
-      }
-    });
-    await this.record(userId, 'UPDATE', 'MAINTENANCE_PART_MANUFACTURER', manufacturer, oldValues);
-    return this.toPublic(manufacturer);
-  }
-
-  async removeManufacturer(uuid, userId) {
-    const manufacturer = await this.getManufacturerEntity(uuid);
-    if (await this.repository.countPartsForManufacturer(manufacturer.id)) {
-      throw new AppError('Ce fabricant est encore utilisé par une pièce.', HTTP_STATUS.CONFLICT);
-    }
-    const oldValues = this.toPublic(manufacturer);
-    await this.repository.removeManufacturer(manufacturer);
-    await this.record(userId, 'DELETE', 'MAINTENANCE_PART_MANUFACTURER', manufacturer, oldValues);
-  }
-
-  async getSuppliers() {
-    return (await this.repository.findSuppliers()).map((item) => this.toPublic(item));
-  }
-
   async getSupplierEntity(uuid, { allowInactive = true, ...options } = {}) {
-    const supplier = await this.repository.findSupplierByUuid(uuid, options);
+    const supplier = await this.supplierRepository.findByUuid(uuid, options);
     if (!supplier || (!allowInactive && !supplier.active)) {
       throw new AppError('Fournisseur introuvable ou inactif.', HTTP_STATUS.NOT_FOUND);
     }
     return supplier;
-  }
-
-  async createSupplier(values, userId) {
-    const existing = await this.repository.findSupplierByName(values.name, {
-      withDeleted: true,
-    });
-    if (existing && !existing.deletedAt) {
-      throw new AppError('Ce fournisseur existe déjà.', HTTP_STATUS.CONFLICT);
-    }
-    const supplier = await this.repository.withTransaction(async (transaction) => {
-      if (existing) {
-        await this.repository.restoreSupplier(existing, { transaction });
-        return this.repository.updateSupplier(
-          existing,
-          { ...values, active: true, updatedBy: userId },
-          { transaction },
-        );
-      }
-      return this.repository.createSupplier(
-        { ...values, createdBy: userId, updatedBy: userId },
-        { transaction },
-      );
-    });
-    await this.record(userId, existing ? 'RESTORE' : 'CREATE', 'MAINTENANCE_SUPPLIER', supplier);
-    return this.toPublic(supplier);
-  }
-
-  async updateSupplier(uuid, values, userId) {
-    const supplier = await this.getSupplierEntity(uuid);
-    if (values.name && values.name !== supplier.name) {
-      const duplicate = await this.repository.findSupplierByName(values.name);
-      if (duplicate) throw new AppError('Ce fournisseur existe déjà.', HTTP_STATUS.CONFLICT);
-    }
-    const oldValues = this.toPublic(supplier);
-    await this.repository.withTransaction(async (transaction) => {
-      await this.repository.updateSupplier(
-        supplier,
-        { ...values, updatedBy: userId },
-        { transaction },
-      );
-      if (values.name) {
-        await this.repository.updatePartsForSupplier(supplier.id, supplier.name, { transaction });
-      }
-    });
-    await this.record(userId, 'UPDATE', 'MAINTENANCE_SUPPLIER', supplier, oldValues);
-    return this.toPublic(supplier);
-  }
-
-  async removeSupplier(uuid, userId) {
-    const supplier = await this.getSupplierEntity(uuid);
-    if (await this.repository.countPartsForSupplier(supplier.id)) {
-      throw new AppError('Ce fournisseur est encore utilisé par une pièce.', HTTP_STATUS.CONFLICT);
-    }
-    const oldValues = this.toPublic(supplier);
-    await this.repository.removeSupplier(supplier);
-    await this.record(userId, 'DELETE', 'MAINTENANCE_SUPPLIER', supplier, oldValues);
   }
 
   async removePart(uuid, userId) {

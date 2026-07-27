@@ -1,14 +1,15 @@
 import apiRoutes from './index.js';
 import healthRoutes from './health.routes.js';
 import authRoutes from '../modules/auth/routes/auth.routes.js';
-import brandRoutes from '../modules/brands/routes/brand.routes.js';
 import categoryRoutes from '../modules/categories/routes/category.routes.js';
 import dashboardRoutes from '../modules/dashboard/routes/dashboard.routes.js';
 import maintenanceRoutes from '../modules/maintenance/routes/maintenance.routes.js';
+import manufacturerRoutes from '../modules/manufacturers/routes/manufacturer.routes.js';
 import materialFileRoutes from '../modules/materials/routes/material-file.routes.js';
 import materialRoutes from '../modules/materials/routes/material.routes.js';
 import permissionRoutes from '../modules/permissions/routes/permission.routes.js';
 import roleRoutes from '../modules/roles/routes/role.routes.js';
+import supplierRoutes from '../modules/suppliers/routes/supplier.routes.js';
 import userRoutes from '../modules/users/routes/user.routes.js';
 
 /**
@@ -39,8 +40,34 @@ export const routeRegistry = [
     openApiBasePath: '/materials',
   },
   { mountPath: '/api/v1/dashboard', router: dashboardRoutes, openApiBasePath: '/dashboard' },
-  { mountPath: '/api/v1/brands', router: brandRoutes, openApiBasePath: '/brands' },
-  { mountPath: '/api/brands', router: brandRoutes, deprecatedAlias: true },
+  {
+    mountPath: '/api/v1/manufacturers',
+    router: manufacturerRoutes,
+    openApiBasePath: '/manufacturers',
+  },
+  { mountPath: '/api/v1/brands', router: manufacturerRoutes, deprecatedAlias: true },
+  { mountPath: '/api/brands', router: manufacturerRoutes, deprecatedAlias: true },
+  {
+    mountPath: '/api/v1/maintenance/manufacturers',
+    router: manufacturerRoutes,
+    deprecatedAlias: true,
+  },
+  {
+    mountPath: '/api/maintenance/manufacturers',
+    router: manufacturerRoutes,
+    deprecatedAlias: true,
+  },
+  { mountPath: '/api/v1/suppliers', router: supplierRoutes, openApiBasePath: '/suppliers' },
+  {
+    mountPath: '/api/v1/maintenance/suppliers',
+    router: supplierRoutes,
+    deprecatedAlias: true,
+  },
+  {
+    mountPath: '/api/maintenance/suppliers',
+    router: supplierRoutes,
+    deprecatedAlias: true,
+  },
   {
     mountPath: '/api/v1/maintenance',
     router: maintenanceRoutes,

@@ -94,29 +94,3 @@ export const updatePartValidator = [
   body('unit').optional().trim().notEmpty().isLength({ max: 50 }),
   body('active').optional().isBoolean().toBoolean(),
 ];
-export const createManufacturerValidator = [
-  body('name').trim().notEmpty().isLength({ max: 150 }),
-  optionalText('notes', 10000),
-];
-export const updateManufacturerValidator = [
-  uuid,
-  body('name').optional().trim().notEmpty().isLength({ max: 150 }),
-  optionalText('notes', 10000),
-  body('active').optional().isBoolean().toBoolean(),
-];
-const supplierFields = () => [
-  optionalText('contactName', 150),
-  body('email').optional({ nullable: true }).trim().isEmail().isLength({ max: 254 }),
-  optionalText('phone', 50),
-  optionalText('notes', 10000),
-];
-export const createSupplierValidator = [
-  body('name').trim().notEmpty().isLength({ max: 150 }),
-  ...supplierFields(),
-];
-export const updateSupplierValidator = [
-  uuid,
-  body('name').optional().trim().notEmpty().isLength({ max: 150 }),
-  ...supplierFields(),
-  body('active').optional().isBoolean().toBoolean(),
-];

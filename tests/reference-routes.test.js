@@ -22,28 +22,35 @@ describe('reference routes authorization and validation', () => {
       .expect(403);
   });
 
-  it('requires the brand read permission to list brands', async () => {
+  it('requires the manufacturer read permission to list manufacturers', async () => {
     await request(app)
-      .get('/api/v1/brands')
+      .get('/api/v1/manufacturers')
       .set('Authorization', `Bearer ${tokenFor(['materials.read'])}`)
       .expect(403);
   });
 
-  it('protects brand logos with the brand permissions', async () => {
+  it('requires the supplier read permission to list suppliers', async () => {
+    await request(app)
+      .get('/api/v1/suppliers')
+      .set('Authorization', `Bearer ${tokenFor(['maintenance.read'])}`)
+      .expect(403);
+  });
+
+  it('protects manufacturer logos with the manufacturer permissions', async () => {
     const uuid = 'f75ce638-18d2-4e29-9958-2afaa4ae5151';
     await request(app)
-      .get(`/api/v1/brands/${uuid}/logo`)
+      .get(`/api/v1/manufacturers/${uuid}/logo`)
       .set('Authorization', `Bearer ${tokenFor([])}`)
       .expect(403);
     await request(app)
-      .post(`/api/v1/brands/${uuid}/logo`)
-      .set('Authorization', `Bearer ${tokenFor(['brands.read'])}`)
+      .post(`/api/v1/manufacturers/${uuid}/logo`)
+      .set('Authorization', `Bearer ${tokenFor(['manufacturers.read'])}`)
       .expect(403);
   });
 
   it('allows material readers to request the logo used by the material list', async () => {
     await request(app)
-      .get('/api/v1/brands/f75ce638-18d2-4e29-9958-2afaa4ae5151/logo')
+      .get('/api/v1/manufacturers/f75ce638-18d2-4e29-9958-2afaa4ae5151/logo')
       .set('Authorization', `Bearer ${tokenFor(['materials.read'])}`)
       .expect(404);
   });

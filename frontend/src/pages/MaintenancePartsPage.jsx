@@ -4,11 +4,10 @@ import getApiErrorMessage from '../api/get-api-error-message.js';
 import {
   createMaintenancePart,
   deleteMaintenancePart,
-  listMaintenanceManufacturers,
   listMaintenanceParts,
-  listMaintenanceSuppliers,
   updateMaintenancePart,
 } from '../api/maintenance.api.js';
+import { createReferenceApi } from '../api/reference.api.js';
 import Button from '../components/Button.jsx';
 import Loader from '../components/Loader.jsx';
 import MaintenanceCatalogPage from './MaintenanceCatalogPage.jsx';
@@ -31,8 +30,8 @@ export default function MaintenancePartsPage() {
     setIsLoading(true);
     try {
       const [manufacturerResponse, supplierResponse] = await Promise.all([
-        listMaintenanceManufacturers(signal),
-        listMaintenanceSuppliers(signal),
+        createReferenceApi('manufacturers').list({}, signal),
+        createReferenceApi('suppliers').list({}, signal),
       ]);
       setManufacturers(manufacturerResponse.data.data ?? []);
       setSuppliers(supplierResponse.data.data ?? []);

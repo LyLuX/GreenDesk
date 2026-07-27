@@ -34,7 +34,7 @@ describe('ReferencePage file field', () => {
     mocks.createReferenceApi.mockReturnValue(mocks.api);
     mocks.api.list.mockResolvedValue({ data: { data: [] } });
     mocks.api.create.mockResolvedValue({
-      data: { data: { uuid: 'brand-uuid', name: 'ECHO', hasLogo: false } },
+      data: { data: { uuid: 'manufacturer-uuid', name: 'ECHO', hasLogo: false } },
     });
   });
 
@@ -43,11 +43,11 @@ describe('ReferencePage file field', () => {
     const upload = vi.fn().mockResolvedValue({});
     render(
       <ReferencePage
-        title="Marques"
-        resource="brands"
-        createPermission="brands.create"
-        updatePermission="brands.update"
-        deletePermission="brands.delete"
+        title="Fabricants"
+        resource="manufacturers"
+        createPermission="manufacturers.create"
+        updatePermission="manufacturers.update"
+        deletePermission="manufacturers.delete"
         fields={[{ name: 'name', label: 'Nom', required: true }]}
         columns={[{ key: 'name', label: 'Nom' }]}
         fileField={{
@@ -70,7 +70,7 @@ describe('ReferencePage file field', () => {
 
     await waitFor(() => {
       expect(mocks.api.create).toHaveBeenCalledWith({ name: 'ECHO' });
-      expect(upload).toHaveBeenCalledWith('brand-uuid', logo);
+      expect(upload).toHaveBeenCalledWith('manufacturer-uuid', logo);
     });
   });
 });

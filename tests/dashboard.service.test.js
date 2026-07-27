@@ -10,7 +10,7 @@ describe('DashboardService', () => {
         materialsActive: 6,
         materialsInactive: 2,
         categoriesTotal: 3,
-        brandsTotal: 2,
+        manufacturersTotal: 2,
         totalPurchaseValue: 1600,
         averageCost: 200,
         averageAge: 3.5,
@@ -30,7 +30,7 @@ describe('DashboardService', () => {
     ).resolves.toEqual({
       materials: { total: 8, active: 6, inactive: 2 },
       categories: { total: 3 },
-      brands: { total: 2 },
+      manufacturers: { total: 2 },
       fleet: { totalPurchaseValue: 1600, averageCost: 200, averageAge: 3.5 },
       maintenance: {
         today: 1,

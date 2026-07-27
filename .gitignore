@@ -4,5 +4,6 @@ coverage/
 frontend/dist/
 uploads/materials/
 uploads/brands/
+uploads/manufacturers/
 logs/
 *.log

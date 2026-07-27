@@ -270,7 +270,7 @@ export default function MaterialDetailPage() {
       {activeTab === 'details' ? (
         <>
           <section className="detail-grid mt-5 grid gap-5 p-5 sm:grid-cols-2">
-            <Field label="Marque" value={material.brand?.name} />
+            <Field label="Fabricant" value={material.manufacturer?.name} />
             <Field label="Modèle" value={material.model} />
             <Field label="Numéro de série" value={material.serialNumber} />
             <Field label="Catégorie" value={material.category?.name} />

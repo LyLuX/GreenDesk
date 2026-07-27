@@ -83,7 +83,7 @@ const category = {
   },
 };
 
-const brandSummary = {
+const manufacturerSummary = {
   type: 'object',
   required: ['uuid', 'name', 'hasLogo'],
   properties: {
@@ -93,11 +93,13 @@ const brandSummary = {
   },
 };
 
-const brand = {
+const manufacturer = {
   type: 'object',
   required: ['uuid', 'name', 'active', 'hasLogo'],
   properties: {
-    ...brandSummary.properties,
+    ...manufacturerSummary.properties,
+    description: nullableString,
+    notes: nullableString,
     active: { type: 'boolean' },
     ...timestamps,
   },
@@ -140,7 +142,7 @@ const material = {
     retiredAt: nullableDate,
     notes: nullableString,
     active: { type: 'boolean' },
-    brand: { allOf: [reference('BrandSummary')], nullable: true },
+    manufacturer: { allOf: [reference('ManufacturerSummary')], nullable: true },
     category: {
       type: 'object',
       nullable: true,
@@ -164,19 +166,7 @@ const maintenanceOperation = {
   },
 };
 
-const maintenancePartManufacturer = {
-  type: 'object',
-  required: ['uuid', 'name', 'active'],
-  properties: {
-    uuid,
-    name: writeText(150),
-    notes: nullableString,
-    active: { type: 'boolean' },
-    ...timestamps,
-  },
-};
-
-const maintenanceSupplier = {
+const supplier = {
   type: 'object',
   required: ['uuid', 'name', 'active'],
   properties: {
@@ -311,7 +301,7 @@ const materialWriteProperties = {
   name: writeText(150),
   unit: writeText(50),
   purchasePrice: { type: 'number', minimum: 0 },
-  brandUuid: { ...uuid, nullable: true },
+  manufacturerUuid: { ...uuid, nullable: true },
   categoryUuid: { ...uuid, nullable: true },
   model: { ...nullableString, maxLength: 150 },
   serialNumber: { ...nullableString, maxLength: 150 },
@@ -400,14 +390,13 @@ export const openApiSchemas = {
   },
   User: user,
   Category: category,
-  BrandSummary: brandSummary,
-  Brand: brand,
+  ManufacturerSummary: manufacturerSummary,
+  Manufacturer: manufacturer,
   MaterialFile: materialFile,
   Material: material,
   AuditLog: auditLog,
   MaintenanceOperation: maintenanceOperation,
-  MaintenancePartManufacturer: maintenancePartManufacturer,
-  MaintenanceSupplier: maintenanceSupplier,
+  Supplier: supplier,
   MaintenancePart: maintenancePart,
   MaintenanceTask: maintenanceTask,
   MaintenanceHistory: maintenanceHistory,
@@ -490,14 +479,23 @@ export const openApiSchemas = {
     type: 'object',
     properties: { name: writeText(150), description: { type: 'string' } },
   },
-  BrandCreateRequest: {
+  ManufacturerCreateRequest: {
     type: 'object',
     required: ['name'],
-    properties: { name: writeText(150) },
+    properties: {
+      name: writeText(150),
+      description: nullableString,
+      notes: nullableString,
+    },
   },
-  BrandUpdateRequest: {
+  ManufacturerUpdateRequest: {
     type: 'object',
-    properties: { name: writeText(150) },
+    properties: {
+      name: writeText(150),
+      description: nullableString,
+      notes: nullableString,
+      active: { type: 'boolean' },
+    },
   },
   MaterialCreateRequest: {
     type: 'object',
@@ -590,23 +588,7 @@ export const openApiSchemas = {
       active: { type: 'boolean' },
     },
   },
-  MaintenancePartManufacturerCreateRequest: {
-    type: 'object',
-    required: ['name'],
-    properties: {
-      name: writeText(150),
-      notes: nullableString,
-    },
-  },
-  MaintenancePartManufacturerUpdateRequest: {
-    type: 'object',
-    properties: {
-      name: writeText(150),
-      notes: nullableString,
-      active: { type: 'boolean' },
-    },
-  },
-  MaintenanceSupplierCreateRequest: {
+  SupplierCreateRequest: {
     type: 'object',
     required: ['name'],
     properties: {
@@ -617,7 +599,7 @@ export const openApiSchemas = {
       notes: nullableString,
     },
   },
-  MaintenanceSupplierUpdateRequest: {
+  SupplierUpdateRequest: {
     type: 'object',
     properties: {
       name: writeText(150),
@@ -716,7 +698,7 @@ export const openApiSchemas = {
   },
   DashboardSummary: {
     type: 'object',
-    required: ['materials', 'categories', 'brands', 'fleet', 'maintenance'],
+    required: ['materials', 'categories', 'manufacturers', 'fleet', 'maintenance'],
     properties: {
       materials: {
         type: 'object',
@@ -732,7 +714,7 @@ export const openApiSchemas = {
         required: ['total'],
         properties: { total: { type: 'integer', minimum: 0 } },
       },
-      brands: {
+      manufacturers: {
         type: 'object',
         required: ['total'],
         properties: { total: { type: 'integer', minimum: 0 } },
@@ -785,8 +767,8 @@ export const openApiSchemas = {
   PermissionListResponse: success(arrayOf(reference('Permission'))),
   CategoryResponse: success(reference('Category')),
   CategoryListResponse: success(arrayOf(reference('Category'))),
-  BrandResponse: success(reference('Brand')),
-  BrandListResponse: success(arrayOf(reference('Brand'))),
+  ManufacturerResponse: success(reference('Manufacturer')),
+  ManufacturerListResponse: success(arrayOf(reference('Manufacturer'))),
   LogoStatusResponse: success({
     type: 'object',
     required: ['hasLogo'],
@@ -800,12 +782,8 @@ export const openApiSchemas = {
   MaintenanceListResponse: success(reference('MaintenancePage')),
   MaintenanceOperationResponse: success(reference('MaintenanceOperation')),
   MaintenanceOperationListResponse: success(arrayOf(reference('MaintenanceOperation'))),
-  MaintenancePartManufacturerResponse: success(reference('MaintenancePartManufacturer')),
-  MaintenancePartManufacturerListResponse: success(
-    arrayOf(reference('MaintenancePartManufacturer')),
-  ),
-  MaintenanceSupplierResponse: success(reference('MaintenanceSupplier')),
-  MaintenanceSupplierListResponse: success(arrayOf(reference('MaintenanceSupplier'))),
+  SupplierResponse: success(reference('Supplier')),
+  SupplierListResponse: success(arrayOf(reference('Supplier'))),
   MaintenancePartResponse: success(reference('MaintenancePart')),
   MaintenancePartListResponse: success(arrayOf(reference('MaintenancePart'))),
   MaintenanceOrderListResponse: success(reference('MaintenanceOrderList')),

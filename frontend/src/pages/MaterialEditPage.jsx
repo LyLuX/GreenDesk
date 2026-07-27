@@ -9,7 +9,7 @@ import normalizeFormValues from '../utils/normalize-form-values.js';
 
 const fields = [
   { name: 'name', label: 'Nom', required: true },
-  { name: 'brandUuid', label: 'Marque' },
+  { name: 'manufacturerUuid', label: 'Fabricant' },
   { name: 'categoryUuid', label: 'Catégorie' },
   { name: 'model', label: 'Modèle' },
   { name: 'serialNumber', label: 'Numéro de série' },
@@ -45,19 +45,19 @@ export default function MaterialEditPage() {
   const { uuid } = useParams();
   const navigate = useNavigate();
   const [material, setMaterial] = useState(null);
-  const [options, setOptions] = useState({ brands: [], categories: [] });
+  const [options, setOptions] = useState({ manufacturers: [], categories: [] });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const load = useCallback(async () => {
     try {
-      const [item, brands, categories] = await Promise.all([
+      const [item, manufacturers, categories] = await Promise.all([
         createReferenceApi('materials').get(uuid),
-        createReferenceApi('brands').list(),
+        createReferenceApi('manufacturers').list(),
         createReferenceApi('categories').list(),
       ]);
       setMaterial(item.data.data);
       setOptions({
-        brands: brands.data.data ?? [],
+        manufacturers: manufacturers.data.data ?? [],
         categories: categories.data.data ?? [],
       });
       setError('');
@@ -118,8 +118,8 @@ export default function MaterialEditPage() {
               material[field.name] ?? material[field.name.replace('Uuid', '')]?.uuid ?? ''
             }
             options={
-              field.name === 'brandUuid'
-                ? relationOptions(options.brands)
+              field.name === 'manufacturerUuid'
+                ? relationOptions(options.manufacturers)
                 : field.name === 'categoryUuid'
                   ? relationOptions(options.categories)
                   : undefined

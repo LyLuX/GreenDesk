@@ -5,7 +5,7 @@ describe('permission definitions', () => {
     const names = permissionDefinitions.map(({ name }) => name);
 
     expect(new Set(names).size).toBe(names.length);
-    expect(names).toHaveLength(22);
+    expect(names).toHaveLength(26);
     for (const { name, description } of permissionDefinitions) {
       expect(description).not.toContain(name);
       expect(description.length).toBeGreaterThan(25);

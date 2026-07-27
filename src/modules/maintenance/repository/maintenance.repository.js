@@ -4,8 +4,8 @@ import Material from '../../materials/model/material.model.js';
 import MaintenanceHistory from '../model/maintenance-history.model.js';
 import MaintenanceOperation from '../model/maintenance-operation.model.js';
 import MaintenancePart from '../model/maintenance-part.model.js';
-import MaintenancePartManufacturer from '../model/maintenance-part-manufacturer.model.js';
-import MaintenanceSupplier from '../model/maintenance-supplier.model.js';
+import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
+import Supplier from '../../suppliers/model/supplier.model.js';
 import MaintenanceTask from '../model/maintenance-task.model.js';
 import MaintenanceTaskPart from '../model/maintenance-task-part.model.js';
 import User from '../../users/model/user.model.js';
@@ -36,12 +36,12 @@ const partsInclude = {
   through: { attributes: ['quantity'] },
   include: [
     {
-      model: MaintenancePartManufacturer,
+      model: PartManufacturer,
       as: 'manufacturerDirectory',
       attributes: ['uuid'],
     },
     {
-      model: MaintenanceSupplier,
+      model: Supplier,
       as: 'supplierDirectory',
       attributes: ['uuid'],
     },

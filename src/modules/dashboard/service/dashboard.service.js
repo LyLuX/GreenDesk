@@ -28,7 +28,9 @@ export default class DashboardService {
       },
       categories: { total: counts.categoriesTotal },
     };
-    if (counts.brandsTotal !== undefined) summary.brands = { total: counts.brandsTotal };
+    if (counts.manufacturersTotal !== undefined) {
+      summary.manufacturers = { total: counts.manufacturersTotal };
+    }
     if (counts.averageCost !== undefined)
       summary.fleet = {
         totalPurchaseValue: counts.totalPurchaseValue,

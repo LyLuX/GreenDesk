@@ -13,7 +13,7 @@ describe('material validation', () => {
     await expect(
       validate({
         name: 'Tondeuse',
-        brandUuid: '11111111-1111-4111-8111-111111111111',
+        manufacturerUuid: '11111111-1111-4111-8111-111111111111',
         categoryUuid: '22222222-2222-4222-8222-222222222222',
         model: 'Pro 500',
         purchaseDate: '2026-07-01',

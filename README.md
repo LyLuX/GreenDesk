@@ -4,14 +4,15 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Modules disponibles
 
-Authentification, utilisateurs, rôles, permissions, audit, catégories, marques et matériels.
+Authentification, utilisateurs, rôles, permissions, audit, catégories, fabricants, fournisseurs et matériels.
 
 ## API
 
 - `GET|POST /api/v1/categories`, `GET|PUT|DELETE /api/v1/categories/:uuid`
 - `GET|POST /api/v1/materials`, `GET|PUT|DELETE /api/v1/materials/:uuid`
-- `GET|POST /api/v1/brands`, `PUT|DELETE /api/v1/brands/:uuid`
-- `GET|POST|DELETE /api/v1/brands/:uuid/logo`
+- `GET|POST /api/v1/manufacturers`, `PUT|DELETE /api/v1/manufacturers/:uuid`
+- `GET|POST|DELETE /api/v1/manufacturers/:uuid/logo`
+- `GET|POST /api/v1/suppliers`, `PUT|DELETE /api/v1/suppliers/:uuid`
 - `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`
 - `POST /api/v1/materials/:uuid/photos`, `POST /api/v1/materials/:uuid/documents`, `GET /api/v1/materials/:uuid/history`
 - `POST /api/v1/auth/logout` révoque le JWT courant avant son expiration
@@ -20,27 +21,28 @@ Authentification, utilisateurs, rôles, permissions, audit, catégories, marques
 
 Les permissions ajoutées sont `categories.*` et `materials.*` avec les actions `read`, `create`, `update`, `delete`.
 
-Le dashboard est disponible via `GET /api/v1/dashboard/summary`, protégé par `dashboard.read`. Il compte les matériels, les catégories et les marques, calcule la valeur d’achat cumulée, le coût moyen et l’âge moyen du parc, puis retourne les compteurs et les listes d’entretiens à faire aujourd’hui, sous 30 jours et en retard.
+Le dashboard est disponible via `GET /api/v1/dashboard/summary`, protégé par `dashboard.read`. Il compte les matériels, les catégories et les fabricants, calcule la valeur d’achat cumulée, le coût moyen et l’âge moyen du parc, puis retourne les compteurs et les listes d’entretiens à faire aujourd’hui, sous 30 jours et en retard.
 
 La documentation Swagger UI est servie sur `/docs` et le document OpenAPI brut sur `/docs/openapi.json`. Son contrat est centralisé dans `src/config/openapi-paths.js` pour les opérations et `src/config/openapi-components.js` pour les données. Toute modification d’une route, d’un paramètre, d’un corps, d’une réponse, d’une permission ou d’un code HTTP doit mettre à jour ces fichiers dans le même commit. `npm run docs:check` valide la conformité OpenAPI 3 et vérifie automatiquement la couverture des routes canoniques, les références de composants, les identifiants d’opération et les données de maintenance.
 
 ## Sprint 5 : parc matériel
 
-Un matériel contient son UUID public, nom, marque, modèle, catégorie, numéro de série, dates, prix d’achat et notes. Les relations sont exclusivement transmises et renvoyées avec des UUID publics. La liste supporte la recherche, les filtres par statut, marque et catégorie, le tri et la pagination.
+Un matériel contient son UUID public, nom, fabricant, modèle, catégorie, numéro de série, dates, prix d’achat et notes. Les relations sont exclusivement transmises et renvoyées avec des UUID publics. La liste supporte la recherche, les filtres par statut, fabricant et catégorie, le tri et la pagination.
 
 Les photos (JPEG, PNG, WebP) et documents PDF sont stockés sous `uploads/materials`, sans exposition statique du dossier. Les photos sont consultées via une route authentifiée inline ; les documents sont téléchargés en pièce jointe via une route authentifiée. Chaque fichier est limité à 10 Mo et chaque matériel à 10 photos. Les fichiers reçoivent un nom UUID dérivé de leur MIME autorisé, jamais de leur nom client. L’historique de chaque modification est disponible sur la fiche matériel.
 
-Chaque marque peut recevoir un logo JPEG, PNG ou WebP de 2 Mo maximum. Les logos sont stockés sous `uploads/brands` avec un nom serveur UUID et sont affichés via une route authentifiée.
+Chaque fabricant peut recevoir un logo JPEG, PNG ou WebP de 2 Mo maximum. Les logos sont stockés sous `uploads/manufacturers` avec un nom serveur UUID et sont affichés via une route authentifiée. Les anciennes marques sont migrées dans ce référentiel avec leurs logos et leurs matériels.
 
 ### Permissions
 
-| Domaine    | Permissions                                                                      |
-| ---------- | -------------------------------------------------------------------------------- |
-| Matériels  | `materials.read`, `materials.create`, `materials.update`, `materials.delete`     |
-| Marques    | `brands.read`, `brands.create`, `brands.update`, `brands.delete`                 |
-| Catégories | `categories.read`, `categories.create`, `categories.update`, `categories.delete` |
+| Domaine      | Permissions                                                                                  |
+| ------------ | -------------------------------------------------------------------------------------------- |
+| Matériels    | `materials.read`, `materials.create`, `materials.update`, `materials.delete`                 |
+| Fabricants   | `manufacturers.read`, `manufacturers.create`, `manufacturers.update`, `manufacturers.delete` |
+| Fournisseurs | `suppliers.read`, `suppliers.create`, `suppliers.update`, `suppliers.delete`                 |
+| Catégories   | `categories.read`, `categories.create`, `categories.update`, `categories.delete`             |
 
-`/api/v1` est le préfixe à utiliser pour les nouveaux appels. Les chemins historiques `/api/categories`, `/api/materials`, `/api/brands`, `/api/dashboard` et `/api/maintenance` restent des alias de compatibilité dépréciés.
+`/api/v1` est le préfixe à utiliser pour les nouveaux appels. Les chemins historiques `/api/categories`, `/api/materials`, `/api/brands`, `/api/dashboard`, `/api/maintenance`, `/api/v1/brands`, `/api/v1/maintenance/manufacturers` et `/api/v1/maintenance/suppliers` restent des alias de compatibilité dépréciés.
 
 ## Sprint 6 : maintenance préventive
 
@@ -52,7 +54,7 @@ Les permissions sont `maintenance.read`, `maintenance.create`, `maintenance.upda
 
 Les intitulés répétitifs sont centralisés dans un catalogue d’opérations accessible via `/api/v1/maintenance/operations`. Les références réellement commandables sont enregistrées dans `/api/v1/maintenance/parts`, puis associées aux plans avec une quantité. Une même opération, par exemple le remplacement d’une bougie, peut ainsi utiliser des références différentes selon le matériel. `GET /api/v1/maintenance/order-list` regroupe les quantités nécessaires aux plans arrivant à échéance sur un horizon configurable.
 
-L’interface sépare ces référentiels sur les pages `/maintenance/operations` et `/maintenance/parts`. Les fabricants et fournisseurs de pièces possèdent leurs propres pages, `/maintenance/manufacturers` et `/maintenance/suppliers`. Une pièce référence ainsi un fabricant et un fournisseur enregistrés, en plus de ses références fabricant et fournisseur. Ces pages permettent de rechercher, créer, modifier, désactiver, réactiver et supprimer les éléments selon les permissions `maintenance.*`.
+L’interface sépare les opérations et les pièces sur les pages `/maintenance/operations` et `/maintenance/parts`. Les fabricants et les fournisseurs sont des référentiels globaux accessibles sur `/manufacturers` et `/suppliers`, avec leurs permissions dédiées. Une pièce référence ainsi un fabricant et un fournisseur enregistrés, en plus de ses références fabricant et fournisseur.
 
 Les migrations `20260727_zz_add_maintenance_catalogs.js` et `20260727_zzz_add_part_manufacturers_suppliers.js` sont additives : elles conservent les intitulés, les fabricants saisis auparavant et toutes les données historiques des plans. Leur annulation retire uniquement les nouveaux catalogues et leurs associations, ce qui permet de revenir au fonctionnement précédent sans perdre un plan ni son ancien fabricant texte.
 

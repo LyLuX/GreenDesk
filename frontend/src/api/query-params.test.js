@@ -6,7 +6,7 @@ describe('compactQueryParams', () => {
   it('removes cleared filters and preserves meaningful falsy values', () => {
     expect(
       compactQueryParams({
-        brandUuid: '',
+        manufacturerUuid: '',
         categoryUuid: null,
         status: undefined,
         active: false,

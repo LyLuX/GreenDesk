@@ -5,13 +5,12 @@ import User from '../../modules/users/model/user.model.js';
 import Category from '../../modules/categories/model/category.model.js';
 import Material from '../../modules/materials/model/material.model.js';
 import MaterialFile from '../../modules/materials/model/material-file.model.js';
-import Brand from '../../modules/brands/model/brand.model.js';
+import PartManufacturer from '../../modules/manufacturers/model/part-manufacturer.model.js';
 import MaintenanceTask from '../../modules/maintenance/model/maintenance-task.model.js';
 import MaintenanceHistory from '../../modules/maintenance/model/maintenance-history.model.js';
 import MaintenanceOperation from '../../modules/maintenance/model/maintenance-operation.model.js';
 import MaintenancePart from '../../modules/maintenance/model/maintenance-part.model.js';
-import MaintenancePartManufacturer from '../../modules/maintenance/model/maintenance-part-manufacturer.model.js';
-import MaintenanceSupplier from '../../modules/maintenance/model/maintenance-supplier.model.js';
+import Supplier from '../../modules/suppliers/model/supplier.model.js';
 import MaintenanceTaskPart from '../../modules/maintenance/model/maintenance-task-part.model.js';
 import RevokedAccessToken from '../../modules/auth/model/revoked-access-token.model.js';
 
@@ -52,7 +51,15 @@ export function initializeModels() {
     as: 'roles',
   });
   AuditLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-  Material.belongsTo(Brand, { foreignKey: 'brand_id', as: 'brand', onDelete: 'SET NULL' });
+  Material.belongsTo(PartManufacturer, {
+    foreignKey: 'manufacturerId',
+    as: 'manufacturer',
+    onDelete: 'SET NULL',
+  });
+  PartManufacturer.hasMany(Material, {
+    foreignKey: 'manufacturerId',
+    as: 'materials',
+  });
   Material.belongsTo(Category, { foreignKey: 'category_id', as: 'category', onDelete: 'SET NULL' });
   Material.hasMany(MaterialFile, { foreignKey: 'material_id', as: 'files' });
   MaterialFile.belongsTo(Material, { foreignKey: 'material_id', as: 'material' });
@@ -78,19 +85,19 @@ export function initializeModels() {
     otherKey: 'maintenanceTaskId',
     as: 'maintenanceTasks',
   });
-  MaintenancePartManufacturer.hasMany(MaintenancePart, {
+  PartManufacturer.hasMany(MaintenancePart, {
     foreignKey: 'manufacturerId',
     as: 'parts',
   });
-  MaintenancePart.belongsTo(MaintenancePartManufacturer, {
+  MaintenancePart.belongsTo(PartManufacturer, {
     foreignKey: 'manufacturerId',
     as: 'manufacturerDirectory',
   });
-  MaintenanceSupplier.hasMany(MaintenancePart, {
+  Supplier.hasMany(MaintenancePart, {
     foreignKey: 'supplierId',
     as: 'parts',
   });
-  MaintenancePart.belongsTo(MaintenanceSupplier, {
+  MaintenancePart.belongsTo(Supplier, {
     foreignKey: 'supplierId',
     as: 'supplierDirectory',
   });
@@ -108,14 +115,13 @@ export {
   User,
   Category,
   Material,
-  Brand,
+  PartManufacturer,
   MaterialFile,
   MaintenanceTask,
   MaintenanceHistory,
   MaintenanceOperation,
   MaintenancePart,
-  MaintenancePartManufacturer,
-  MaintenanceSupplier,
+  Supplier,
   MaintenanceTaskPart,
   RevokedAccessToken,
 };
