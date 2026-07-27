@@ -7,6 +7,7 @@ import Material from '../../modules/materials/model/material.model.js';
 import MaterialFile from '../../modules/materials/model/material-file.model.js';
 import Brand from '../../modules/brands/model/brand.model.js';
 import MaintenanceTask from '../../modules/maintenance/model/maintenance-task.model.js';
+import MaintenanceTemplate from '../../modules/maintenance/model/maintenance-template.model.js';
 import MaintenanceHistory from '../../modules/maintenance/model/maintenance-history.model.js';
 import RevokedAccessToken from '../../modules/auth/model/revoked-access-token.model.js';
 
@@ -53,6 +54,16 @@ export function initializeModels() {
   MaterialFile.belongsTo(Material, { foreignKey: 'material_id', as: 'material' });
   Material.hasMany(MaintenanceTask, { foreignKey: 'material_id', as: 'maintenanceTasks' });
   MaintenanceTask.belongsTo(Material, { foreignKey: 'material_id', as: 'material' });
+  Brand.hasMany(MaintenanceTemplate, { foreignKey: 'brand_id', as: 'maintenanceTemplates' });
+  MaintenanceTemplate.belongsTo(Brand, { foreignKey: 'brand_id', as: 'brand' });
+  MaintenanceTemplate.hasMany(MaintenanceTask, {
+    foreignKey: 'template_id',
+    as: 'maintenanceTasks',
+  });
+  MaintenanceTask.belongsTo(MaintenanceTemplate, {
+    foreignKey: 'template_id',
+    as: 'template',
+  });
   MaintenanceTask.hasMany(MaintenanceHistory, { foreignKey: 'maintenance_task_id', as: 'history' });
   MaintenanceHistory.belongsTo(MaintenanceTask, { foreignKey: 'maintenance_task_id', as: 'task' });
   MaintenanceHistory.belongsTo(User, { foreignKey: 'performed_by', as: 'performedByUser' });
@@ -70,6 +81,7 @@ export {
   Brand,
   MaterialFile,
   MaintenanceTask,
+  MaintenanceTemplate,
   MaintenanceHistory,
   RevokedAccessToken,
 };

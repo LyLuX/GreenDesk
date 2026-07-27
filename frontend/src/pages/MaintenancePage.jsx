@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import getApiErrorMessage from '../api/get-api-error-message.js';
+import { listMaintenanceTemplates } from '../api/maintenance-template.api.js';
 import {
   createMaintenance,
   deleteMaintenance,
@@ -31,18 +33,7 @@ const types = Object.keys(maintenanceTypeLabels);
 const priorities = Object.keys(maintenancePriorityLabels);
 const baseFields = [
   { name: 'materialUuid', label: 'Matériel', required: true },
-  { name: 'title', label: 'Intitulé', required: true },
-  { name: 'description', label: 'Description', multiline: true },
-  { name: 'maintenanceType', label: 'Type', required: true },
-  { name: 'priority', label: 'Priorité' },
-  {
-    name: 'intervalDays',
-    label: 'Intervalle (jours)',
-    type: 'number',
-    valueType: 'number',
-    min: '1',
-    required: true,
-  },
+  { name: 'templateUuid', label: 'Modèle d’entretien', required: true },
   {
     name: 'lastMaintenanceDate',
     label: 'Dernier entretien',
@@ -64,6 +55,8 @@ export default function MaintenancePage() {
   const { notify } = useNotification();
   const [items, setItems] = useState([]);
   const [materials, setMaterials] = useState([]);
+  const [templates, setTemplates] = useState([]);
+  const [selectedMaterialUuid, setSelectedMaterialUuid] = useState('');
   const [filters, setFilters] = useState({ page: 1, limit: 5 });
   const [pagination, setPagination] = useState(null);
   const [dialog, setDialog] = useState(null);
@@ -78,13 +71,15 @@ export default function MaintenancePage() {
     async (signal) => {
       setIsLoading(true);
       try {
-        const [tasks, materialList] = await Promise.all([
+        const [tasks, materialList, templateList] = await Promise.all([
           listMaintenance(filters, signal),
           createReferenceApi('materials').list({ limit: 'all' }, signal),
+          listMaintenanceTemplates({ active: true }, signal),
         ]);
         setItems(tasks.data.data?.items ?? []);
         setPagination(tasks.data.data?.pagination ?? null);
         setMaterials(materialList.data.data?.items ?? materialList.data.data ?? []);
+        setTemplates(templateList.data.data ?? []);
         setError('');
       } catch (requestError) {
         if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
@@ -102,6 +97,7 @@ export default function MaintenancePage() {
   const close = () => {
     if (!busy) {
       setDialog(null);
+      setSelectedMaterialUuid('');
       setFormError('');
     }
   };
@@ -110,14 +106,37 @@ export default function MaintenancePage() {
   const formOptions = (field) => {
     if (field.name === 'materialUuid')
       return materials.map((item) => ({ value: item.uuid, label: item.name }));
-    if (field.name === 'maintenanceType')
-      return types.map((value) => ({ value, label: maintenanceTypeLabels[value] }));
-    if (field.name === 'priority')
-      return priorities.map((value) => ({ value, label: maintenancePriorityLabels[value] }));
+    if (field.name === 'templateUuid') {
+      const material = materials.find(({ uuid }) => uuid === selectedMaterialUuid);
+      return templates
+        .filter(
+          (template) =>
+            material &&
+            template.brand?.uuid === material.brand?.uuid &&
+            template.materialModel?.trim().toLocaleLowerCase('fr-FR') ===
+              material.model?.trim().toLocaleLowerCase('fr-FR'),
+        )
+        .map((template) => ({
+          value: template.uuid,
+          label: `${template.title}${
+            template.partReference ? ` — réf. ${template.partReference}` : ''
+          }`,
+        }));
+    }
     return undefined;
   };
   const formDefault = (item, field) =>
-    item?.[field.name] ?? (field.name === 'materialUuid' ? item?.material?.uuid : '') ?? '';
+    item?.[field.name] ??
+    (field.name === 'materialUuid'
+      ? item?.material?.uuid
+      : field.name === 'templateUuid'
+        ? item?.template?.uuid
+        : '') ??
+    '';
+  const openPlanDialog = (type, item) => {
+    setSelectedMaterialUuid(item?.material?.uuid ?? '');
+    setDialog({ type, ...(item ? { item } : {}) });
+  };
   const savePlan = async (event) => {
     event.preventDefault();
     if (busy) return;
@@ -219,9 +238,14 @@ export default function MaintenancePage() {
           <h1 className="page-title">Maintenance</h1>
           <p className="page-subtitle">Plans d’entretien préventif</p>
         </div>
-        {hasPermission('maintenance.create') && (
-          <Button onClick={() => setDialog({ type: 'create' })}>Créer</Button>
-        )}
+        <div className="d-flex flex-wrap gap-2">
+          <Link className="btn btn-outline-brand" to="/maintenance/templates">
+            Gérer les modèles
+          </Link>
+          {hasPermission('maintenance.create') && (
+            <Button onClick={() => openPlanDialog('create')}>Créer un plan</Button>
+          )}
+        </div>
       </div>
       <div className="surface mb-4 grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-5">
         <select
@@ -327,6 +351,13 @@ export default function MaintenancePage() {
                       <strong>{item.title}</strong>
                       <br />
                       {maintenanceTypeLabels[item.maintenanceType]}
+                      {item.partReference && (
+                        <>
+                          <br />
+                          Réf. {item.partReference}
+                          {item.quantity ? ` × ${item.quantity}` : ''}
+                        </>
+                      )}
                     </td>
                     <td>{date(item.nextMaintenanceDate)}</td>
                     <td>{remainingDays(item.remainingDays)}</td>
@@ -359,7 +390,7 @@ export default function MaintenancePage() {
                             className="btn btn-sm btn-outline-brand flex-fill"
                             type="button"
                             disabled={busy}
-                            onClick={() => setDialog({ type: 'edit', item })}
+                            onClick={() => openPlanDialog('edit', item)}
                           >
                             Modifier
                           </button>
@@ -441,6 +472,11 @@ export default function MaintenancePage() {
               {...field}
               defaultValue={formDefault(activeItem, field)}
               options={formOptions(field)}
+              onChange={
+                field.name === 'materialUuid'
+                  ? (event) => setSelectedMaterialUuid(event.target.value)
+                  : undefined
+              }
             />
           ))}
           <Button type="submit" disabled={busy}>

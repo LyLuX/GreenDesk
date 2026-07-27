@@ -42,6 +42,76 @@ describe('MaintenanceService', () => {
     );
   });
 
+  it('assigns only a compatible model-specific template', async () => {
+    const material = {
+      id: 3,
+      brandId: 2,
+      model: 'CS-621SX',
+      uuid: '22222222-2222-4222-8222-222222222222',
+      name: 'Tronçonneuse',
+    };
+    const template = {
+      id: 7,
+      uuid: '33333333-3333-4333-8333-333333333333',
+      intervalDays: 365,
+      active: true,
+    };
+    const created = {
+      uuid: '44444444-4444-4444-8444-444444444444',
+      toJSON: () => ({ uuid: '44444444-4444-4444-8444-444444444444' }),
+    };
+    const repository = {
+      findByMaterialAndTemplate: jest.fn().mockResolvedValue(null),
+      create: jest.fn().mockResolvedValue(created),
+      findByUuid: jest.fn().mockResolvedValue({
+        ...created,
+        material,
+        template,
+        lastMaintenanceDate: '2026-07-01',
+        nextMaintenanceDate: '2027-07-01',
+      }),
+    };
+    const materialService = { getEntityByUuid: jest.fn().mockResolvedValue(material) };
+    const auditService = { record: jest.fn() };
+    const templateService = {
+      getEntityByUuid: jest.fn().mockResolvedValue(template),
+      isCompatible: jest.fn().mockReturnValue(true),
+      toPublic: jest.fn().mockReturnValue({
+        uuid: template.uuid,
+        title: 'Bougie',
+        intervalDays: 365,
+        priority: 'normal',
+      }),
+    };
+    const service = new MaintenanceService(
+      repository,
+      materialService,
+      auditService,
+      templateService,
+    );
+
+    await service.create(
+      {
+        materialUuid: material.uuid,
+        templateUuid: template.uuid,
+        lastMaintenanceDate: '2026-07-01',
+        notes: null,
+      },
+      42,
+    );
+
+    expect(repository.create).toHaveBeenCalledWith({
+      lastMaintenanceDate: '2026-07-01',
+      nextMaintenanceDate: '2027-07-01',
+      notes: null,
+      materialId: 3,
+      templateId: 7,
+      createdBy: 42,
+      updatedBy: 42,
+    });
+    expect(templateService.isCompatible).toHaveBeenCalledWith(template, material);
+  });
+
   it('executes calendar maintenance without recording engine hours', async () => {
     const today = todayDateOnly();
     const task = {

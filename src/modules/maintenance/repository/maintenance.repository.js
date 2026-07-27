@@ -1,14 +1,29 @@
 import { Op, Sequelize } from 'sequelize';
 import sequelize from '../../../config/database.js';
+import Brand from '../../brands/model/brand.model.js';
 import Material from '../../materials/model/material.model.js';
 import MaintenanceHistory from '../model/maintenance-history.model.js';
 import MaintenanceTask from '../model/maintenance-task.model.js';
+import MaintenanceTemplate from '../model/maintenance-template.model.js';
 import User from '../../users/model/user.model.js';
 
 const materialInclude = {
   model: Material,
   as: 'material',
-  attributes: ['uuid', 'name'],
+  attributes: ['uuid', 'name', 'brandId', 'model'],
+};
+
+const templateInclude = {
+  model: MaintenanceTemplate,
+  as: 'template',
+  required: true,
+  include: [
+    {
+      model: Brand,
+      as: 'brand',
+      attributes: ['uuid', 'name'],
+    },
+  ],
 };
 
 const getStatusConditions = ({ taskAlias = 'MaintenanceTask', today, upcoming }) => {
@@ -36,9 +51,10 @@ export default class MaintenanceRepository {
     limit = 5,
   } = {}) {
     const where = {};
-    if (priority) where.priority = priority;
-    if (maintenanceType) where.maintenanceType = maintenanceType;
     if (active !== undefined && active !== '') where.active = active;
+    const templateWhere = {};
+    if (priority) templateWhere.priority = priority;
+    if (maintenanceType) templateWhere.maintenanceType = maintenanceType;
     const today = new Date().toISOString().slice(0, 10);
     const next = new Date();
     next.setUTCDate(next.getUTCDate() + 30);
@@ -61,6 +77,7 @@ export default class MaintenanceRepository {
         ...materialInclude,
         ...(materialUuid ? { where: { uuid: materialUuid }, required: true } : {}),
       },
+      { ...templateInclude, where: templateWhere },
     ];
     const normalizedLimit = limit === 'all' ? null : Math.min(Number(limit) || 5, 100);
     return MaintenanceTask.findAndCountAll({
@@ -93,16 +110,26 @@ export default class MaintenanceRepository {
           ),
         ],
       },
-      include: [materialInclude],
+      include: [materialInclude, templateInclude],
       order: [['next_maintenance_date', 'ASC']],
     });
   }
   async findByUuid(uuid, options = {}) {
     return MaintenanceTask.findOne({
       where: { uuid },
-      include: [materialInclude],
+      include: [materialInclude, templateInclude],
       transaction: options.transaction,
       lock: options.lock ? options.transaction?.LOCK.UPDATE : undefined,
+    });
+  }
+  async findByMaterialAndTemplate(materialId, templateId, excludeUuid) {
+    return MaintenanceTask.findOne({
+      where: {
+        materialId,
+        templateId,
+        ...(excludeUuid ? { uuid: { [Op.ne]: excludeUuid } } : {}),
+      },
+      paranoid: false,
     });
   }
   async create(values) {
@@ -125,6 +152,9 @@ export default class MaintenanceRepository {
   }
   async remove(task) {
     return task.destroy();
+  }
+  async restore(task) {
+    return task.restore();
   }
   async withTransaction(callback) {
     return sequelize.transaction(callback);

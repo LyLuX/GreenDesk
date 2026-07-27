@@ -14,6 +14,7 @@ import RegisterPage from './pages/RegisterPage.jsx';
 import MaterialDetailPage from './pages/MaterialDetailPage.jsx';
 import MaterialEditPage from './pages/MaterialEditPage.jsx';
 import MaintenancePage from './pages/MaintenancePage.jsx';
+import MaintenanceTemplatesPage from './pages/MaintenanceTemplatesPage.jsx';
 import BrandsPage from './pages/BrandsPage.jsx';
 import CategoriesPage from './pages/CategoriesPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
@@ -50,6 +51,7 @@ export const getModuleTitle = (pathname) => {
       '/categories': 'Catégories',
       '/materials': 'Matériels',
       '/maintenance': 'Maintenance',
+      '/maintenance/templates': 'Modèles d’entretien',
       '/brands': 'Marques',
       '/users': 'Utilisateurs',
       '/roles': 'Rôles',
@@ -154,6 +156,10 @@ export default function App() {
               element={secure('materials.update', <MaterialEditPage />)}
             />
             <Route path="/maintenance" element={secure('maintenance.read', <MaintenancePage />)} />
+            <Route
+              path="/maintenance/templates"
+              element={secure('maintenance.read', <MaintenanceTemplatesPage />)}
+            />
             <Route path="/brands" element={secure('brands.read', <BrandsPage />)} />
             <Route path="/users" element={adminOnly(<UsersPage />)} />
             <Route path="/roles" element={adminOnly(<RolesPage />)} />
