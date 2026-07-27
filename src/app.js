@@ -21,7 +21,6 @@ import dashboardRoutes from './modules/dashboard/routes/dashboard.routes.js';
 import brandRoutes from './modules/brands/routes/brand.routes.js';
 import materialFileRoutes from './modules/materials/routes/material-file.routes.js';
 import maintenanceRoutes from './modules/maintenance/routes/maintenance.routes.js';
-import maintenanceTemplateRoutes from './modules/maintenance/routes/maintenance-template.routes.js';
 
 const app = express();
 
@@ -56,8 +55,6 @@ app.use('/api/v1/brands', brandRoutes);
 app.use('/api/brands', brandRoutes);
 app.use('/api/v1/maintenance', maintenanceRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
-app.use('/api/v1/maintenance-templates', maintenanceTemplateRoutes);
-app.use('/api/maintenance-templates', maintenanceTemplateRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -3,7 +3,6 @@ import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';
 import MaterialService from '../../materials/service/material.service.js';
 import MaintenanceRepository from '../repository/maintenance.repository.js';
-import MaintenanceTemplateService from './maintenance-template.service.js';
 import {
   addDaysDateOnly,
   getDeadlineDetails,
@@ -19,12 +18,10 @@ export default class MaintenanceService {
     repository = new MaintenanceRepository(),
     materialService = new MaterialService(),
     auditService = new AuditService(),
-    templateService = new MaintenanceTemplateService(),
   ) {
     this.repository = repository;
     this.materialService = materialService;
     this.auditService = auditService;
-    this.templateService = templateService;
   }
   async getAll(query) {
     const result = await this.repository.findAll(query);
@@ -50,9 +47,7 @@ export default class MaintenanceService {
     return task;
   }
   calculateDeadlines(values, current = {}) {
-    const intervalDays = has(values, 'intervalDays')
-      ? values.intervalDays
-      : (current.intervalDays ?? current.template?.intervalDays);
+    const intervalDays = has(values, 'intervalDays') ? values.intervalDays : current.intervalDays;
     if (!Number(intervalDays))
       throw new AppError('Un intervalle en jours doit être renseigné.', HTTP_STATUS.BAD_REQUEST);
     const lastMaintenanceDate = has(values, 'lastMaintenanceDate')
@@ -69,44 +64,11 @@ export default class MaintenanceService {
   }
   async create(values, userId) {
     const material = await this.materialService.getEntityByUuid(values.materialUuid);
-    const template = await this.templateService.getEntityByUuid(values.templateUuid);
-    if (!template.active)
-      throw new AppError('Ce modèle d’entretien est inactif.', HTTP_STATUS.BAD_REQUEST);
-    if (!this.templateService.isCompatible(template, material))
-      throw new AppError(
-        'Ce modèle d’entretien n’est pas compatible avec la marque et le modèle du matériel.',
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    const existingTask = await this.repository.findByMaterialAndTemplate(material.id, template.id);
-    if (existingTask && !existingTask.deletedAt)
-      throw new AppError('Ce modèle est déjà affecté à ce matériel.', HTTP_STATUS.CONFLICT);
-    const deadlines = this.calculateDeadlines(values, template);
-    if (existingTask) {
-      const oldValues = existingTask.toJSON();
-      await this.repository.restore(existingTask);
-      await this.repository.update(existingTask, {
-        lastMaintenanceDate: values.lastMaintenanceDate,
-        notes: values.notes ?? null,
-        ...deadlines,
-        active: true,
-        updatedBy: userId,
-      });
-      await this.auditService.record({
-        userId,
-        action: 'RESTORE',
-        entity: 'MAINTENANCE_TASK',
-        entityUuid: existingTask.uuid,
-        oldValues,
-        newValues: existingTask.toJSON(),
-      });
-      return this.getByUuid(existingTask.uuid);
-    }
+    const deadlines = this.calculateDeadlines(values);
     const task = await this.repository.create({
-      lastMaintenanceDate: values.lastMaintenanceDate,
-      notes: values.notes ?? null,
+      ...values,
       ...deadlines,
       materialId: material.id,
-      templateId: template.id,
       createdBy: userId,
       updatedBy: userId,
     });
@@ -117,41 +79,13 @@ export default class MaintenanceService {
       entityUuid: task.uuid,
       newValues: task.toJSON(),
     });
-    return this.getByUuid(task.uuid);
+    return this.toPublic(task);
   }
   async update(uuid, values, userId) {
     const task = await this.getEntityByUuid(uuid);
     const oldValues = task.toJSON();
-    const material = values.materialUuid
-      ? await this.materialService.getEntityByUuid(values.materialUuid)
-      : task.material;
-    const template = values.templateUuid
-      ? await this.templateService.getEntityByUuid(values.templateUuid)
-      : task.template;
-    if (values.templateUuid && !template.active)
-      throw new AppError('Ce modèle d’entretien est inactif.', HTTP_STATUS.BAD_REQUEST);
-    if (!this.templateService.isCompatible(template, material))
-      throw new AppError(
-        'Ce modèle d’entretien n’est pas compatible avec la marque et le modèle du matériel.',
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    if (
-      await this.repository.findByMaterialAndTemplate(
-        material.id ?? task.materialId,
-        template.id ?? task.templateId,
-        task.uuid,
-      )
-    )
-      throw new AppError('Ce modèle est déjà affecté à ce matériel.', HTTP_STATUS.CONFLICT);
-    const update = {
-      materialId: material.id ?? task.materialId,
-      templateId: template.id ?? task.templateId,
-      lastMaintenanceDate: values.lastMaintenanceDate ?? task.lastMaintenanceDate,
-      notes: has(values, 'notes') ? values.notes : task.notes,
-      updatedBy: userId,
-    };
-    const deadlines = this.calculateDeadlines(update, template);
-    await this.repository.update(task, { ...update, ...deadlines });
+    const deadlines = this.calculateDeadlines(values, task);
+    await this.repository.update(task, { ...values, ...deadlines, updatedBy: userId });
     await this.auditService.record({
       userId,
       action: 'UPDATE',
@@ -160,15 +94,10 @@ export default class MaintenanceService {
       oldValues,
       newValues: task.toJSON(),
     });
-    return this.getByUuid(task.uuid);
+    return this.toPublic(task);
   }
   async changeStatus(uuid, active, userId) {
     const task = await this.getEntityByUuid(uuid);
-    if (active && !task.template?.active)
-      throw new AppError(
-        'Un plan lié à un modèle d’entretien inactif ne peut pas être activé.',
-        HTTP_STATUS.BAD_REQUEST,
-      );
     const oldValues = task.toJSON();
     await this.repository.update(task, { active, updatedBy: userId });
     await this.auditService.record({
@@ -246,25 +175,10 @@ export default class MaintenanceService {
     const publicValue = { ...value };
     delete publicValue.id;
     delete publicValue.materialId;
-    delete publicValue.templateId;
-    delete publicValue.material_id;
-    delete publicValue.template_id;
     delete publicValue.createdBy;
     delete publicValue.updatedBy;
-    delete publicValue.material;
-    delete publicValue.template;
-    const template = value.template ? this.templateService.toPublic(value.template) : null;
     return {
       ...publicValue,
-      title: template?.title,
-      description: template?.description,
-      maintenanceType: template?.maintenanceType,
-      intervalDays: template?.intervalDays,
-      priority: template?.priority,
-      partReference: template?.partReference,
-      quantity: template?.quantity,
-      instructions: template?.instructions,
-      template,
       material: value.material
         ? {
             uuid: value.material.uuid,

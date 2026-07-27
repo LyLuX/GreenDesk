@@ -41,9 +41,7 @@ Chaque marque peut recevoir un logo JPEG, PNG ou WebP de 2 Mo maximum. Les logos
 
 ## Sprint 6 : maintenance préventive
 
-Les modèles d’entretien sont définis pour une marque et un modèle de matériel précis. Ils portent l’opération, la périodicité, la priorité, la référence de pièce ou consommable, la quantité et les consignes spécifiques. Un plan affecte ensuite un modèle compatible à un matériel et conserve uniquement ses dates et notes individuelles. Cette séparation évite de recopier une référence tout en empêchant son utilisation sur un matériel incompatible.
-
-La prochaine échéance est recalculée à l’affectation, lors de la modification de la périodicité du modèle et lors de l’exécution d’un entretien. L’API expose `GET|POST /api/v1/maintenance-templates`, `PUT|DELETE /api/v1/maintenance-templates/:uuid`, `GET|POST /api/v1/maintenance`, `GET|PUT /api/v1/maintenance/:uuid`, `POST /api/v1/maintenance/:uuid/execute` et `GET /api/v1/maintenance/:uuid/history`.
+Chaque matériel peut recevoir plusieurs plans de maintenance : préventif, inspection, remplacement, lubrification, nettoyage ou personnalisé. Un plan possède un intervalle en jours, une priorité et la date du dernier entretien. La prochaine échéance est recalculée à la création, à la modification et lors de l’exécution d’un entretien. L’API expose `GET|POST /api/v1/maintenance`, `GET|PUT /api/v1/maintenance/:uuid`, `POST /api/v1/maintenance/:uuid/execute` et `GET /api/v1/maintenance/:uuid/history`.
 
 Une tâche est à faire aujourd’hui lorsque sa prochaine date correspond à la date du jour, en retard lorsque cette date est dépassée, et à prévoir lorsqu’elle tombe dans les 30 prochains jours. Les dates métier sont des valeurs UTC `YYYY-MM-DD`, sans heure. L’exécution met à jour transactionnellement la tâche et son historique.
 

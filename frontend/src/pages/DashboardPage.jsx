@@ -185,14 +185,6 @@ export default function DashboardPage() {
                     <dt>Date prévue</dt>
                     <dd>{formatDate(item.nextMaintenanceDate)}</dd>
                   </div>
-                  <div>
-                    <dt>Référence</dt>
-                    <dd>
-                      {item.partReference
-                        ? `${item.partReference}${item.quantity ? ` × ${item.quantity}` : ''}`
-                        : '—'}
-                    </dd>
-                  </div>
                 </dl>
               </li>
             ))}
