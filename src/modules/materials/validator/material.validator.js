@@ -15,7 +15,7 @@ export const listValidator = [
   query('active').optional({ values: 'falsy' }).isBoolean().toBoolean(),
   query('brandUuid').optional({ values: 'falsy' }).isUUID(),
   query('categoryUuid').optional({ values: 'falsy' }).isUUID(),
-  query('sort').optional().isIn(['name', 'purchasePrice', 'purchaseDate', 'engineHours']),
+  query('sort').optional().isIn(['name', 'purchasePrice', 'purchaseDate']),
   query('direction').optional().isIn(['ASC', 'DESC']),
 ];
 export const uuidValidator = [uuid];
@@ -54,11 +54,6 @@ export const createValidator = [
     .trim()
     .isLength({ max: 150 })
     .withMessage('Le numéro de série ne peut pas dépasser 150 caractères.'),
-  body('engineHours')
-    .optional({ nullable: true })
-    .isFloat({ min: 0 })
-    .withMessage('Le nombre d’heures moteur doit être positif ou nul.')
-    .toFloat(),
   body('purchaseDate')
     .optional({ nullable: true })
     .isISO8601()
@@ -112,11 +107,6 @@ export const updateValidator = [
     .trim()
     .isLength({ max: 150 })
     .withMessage('Le numéro de série ne peut pas dépasser 150 caractères.'),
-  body('engineHours')
-    .optional({ nullable: true })
-    .isFloat({ min: 0 })
-    .withMessage('Le nombre d’heures moteur doit être positif ou nul.')
-    .toFloat(),
   body('purchaseDate')
     .optional({ nullable: true })
     .isISO8601()

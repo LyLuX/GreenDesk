@@ -276,7 +276,6 @@ export default function MaterialDetailPage() {
             <Field label="Catégorie" value={material.category?.name} />
             <Field label="Prix d’achat" value={formatCurrency(material.purchasePrice)} />
             <Field label="Date d’achat" value={formatDate(material.purchaseDate)} />
-            <Field label="Heures moteur" value={material.engineHours} />
             <Field label="Mise en service" value={formatDate(material.commissionedAt)} />
             <Field label="Sortie de service" value={formatDate(material.retiredAt)} />
             <Field label="Notes" value={material.notes} />
@@ -417,9 +416,7 @@ export default function MaterialDetailPage() {
                   >
                     {maintenanceStatusLabels[task.status] ?? maintenanceStatusLabels.upToDate}
                   </span>
-                  <span className="ml-3">
-                    Échéance : {task.nextMaintenanceDate ?? task.nextEngineHours ?? '—'}
-                  </span>
+                  <span className="ml-3">Échéance : {task.nextMaintenanceDate ?? '—'}</span>
                 </li>
               ))}
             </ul>

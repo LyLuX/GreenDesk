@@ -24,23 +24,10 @@ export const addDaysDateOnly = (value, days) => {
 export const differenceInDays = (from, to) =>
   Math.round((parseDateOnly(to) - parseDateOnly(from)) / 86400000);
 
-/** A task is due as soon as either date or hour deadline is reached. */
-export function getDeadlineDetails({
-  nextMaintenanceDate,
-  nextEngineHours,
-  intervalHours,
-  materialEngineHours,
-  today = todayDateOnly(),
-}) {
+/** Determines a maintenance status from its calendar deadline. */
+export function getDeadlineDetails({ nextMaintenanceDate, today = todayDateOnly() }) {
   const remainingDays = nextMaintenanceDate ? differenceInDays(today, nextMaintenanceDate) : null;
-  const remainingEngineHours =
-    nextEngineHours !== null &&
-    nextEngineHours !== undefined &&
-    materialEngineHours !== null &&
-    materialEngineHours !== undefined
-      ? Number(nextEngineHours) - Number(materialEngineHours)
-      : null;
-  const dateStatus =
+  const status =
     remainingDays === null
       ? 'upToDate'
       : remainingDays < 0
@@ -50,29 +37,5 @@ export function getDeadlineDetails({
           : remainingDays <= 30
             ? 'upcoming'
             : 'upToDate';
-  const hourThreshold = intervalHours ? Math.max(10, Number(intervalHours) * 0.2) : null;
-  const engineHoursStatus =
-    remainingEngineHours === null
-      ? 'upToDate'
-      : remainingEngineHours <= 0
-        ? 'overdue'
-        : remainingEngineHours <= hourThreshold
-          ? 'upcoming'
-          : 'upToDate';
-  const status =
-    dateStatus === 'overdue' || engineHoursStatus === 'overdue'
-      ? 'overdue'
-      : dateStatus === 'dueToday'
-        ? 'dueToday'
-        : dateStatus === 'upcoming' || engineHoursStatus === 'upcoming'
-          ? 'upcoming'
-          : 'upToDate';
-  return {
-    status,
-    dateStatus,
-    engineHoursStatus,
-    remainingDays,
-    remainingEngineHours,
-    engineHoursUpcomingThreshold: hourThreshold,
-  };
+  return { status, remainingDays };
 }

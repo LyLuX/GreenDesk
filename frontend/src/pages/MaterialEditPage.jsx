@@ -26,14 +26,6 @@ const fields = [
     min: '0',
     required: true,
   },
-  {
-    name: 'engineHours',
-    label: 'Heures moteur',
-    type: 'number',
-    valueType: 'number',
-    step: '0.1',
-    min: '0',
-  },
   { name: 'notes', label: 'Notes', multiline: true },
 ];
 

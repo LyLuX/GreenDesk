@@ -38,7 +38,7 @@ export default class MaterialRepository {
       include: filteredInclude,
       order: [
         [
-          ['name', 'purchasePrice', 'purchaseDate', 'engineHours'].includes(sort) ? sort : 'name',
+          ['name', 'purchasePrice', 'purchaseDate'].includes(sort) ? sort : 'name',
           direction === 'DESC' ? 'DESC' : 'ASC',
         ],
       ],

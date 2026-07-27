@@ -24,7 +24,7 @@
  *       - { in: query, name: categoryUuid, schema: { type: string, format: uuid } }
  *       - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
  *       - { in: query, name: limit, description: Use `all` to return every matching material., schema: { oneOf: [{ type: integer, minimum: 1, maximum: 100 }, { type: string, enum: [all] }], default: 5 } }
- *       - { in: query, name: sort, schema: { type: string, enum: [name, purchasePrice, purchaseDate, engineHours] } }
+ *       - { in: query, name: sort, schema: { type: string, enum: [name, purchasePrice, purchaseDate] } }
  *       - { in: query, name: direction, schema: { type: string, enum: [ASC, DESC] } }
  *     responses: { 200: { description: Paginated material records }, 401: { description: Authentication required }, 403: { description: materials.read is required } }
  *   post:

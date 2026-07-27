@@ -108,14 +108,6 @@ export default function App() {
                     { name: 'model', label: 'Modèle' },
                     { name: 'serialNumber', label: 'Numéro de série' },
                     { name: 'purchaseDate', label: 'Date d’achat', type: 'date' },
-                    {
-                      name: 'engineHours',
-                      label: 'Heures moteur',
-                      type: 'number',
-                      valueType: 'number',
-                      step: '0.1',
-                      min: '0',
-                    },
                     { name: 'commissionedAt', label: 'Mise en service', type: 'date' },
                     { name: 'retiredAt', label: 'Sortie de service', type: 'date' },
                     { name: 'notes', label: 'Notes', multiline: true },
@@ -167,10 +159,7 @@ export default function App() {
             <Route path="/roles" element={adminOnly(<RolesPage />)} />
             <Route path="/permissions" element={adminOnly(<PermissionsPage />)} />
           </Route>
-          <Route
-            path="*"
-            element={<NotFoundPage />}
-          />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
     </>

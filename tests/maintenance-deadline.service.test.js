@@ -15,39 +15,21 @@ describe('maintenance deadline rules', () => {
   it('distinguishes a task due today from an overdue task', () => {
     expect(getDeadlineDetails({ nextMaintenanceDate: today, today })).toMatchObject({
       status: 'dueToday',
-      dateStatus: 'dueToday',
       remainingDays: 0,
     });
     expect(getDeadlineDetails({ nextMaintenanceDate: '2026-07-23', today })).toMatchObject({
       status: 'overdue',
-      dateStatus: 'overdue',
       remainingDays: -1,
     });
   });
-  it('marks a task upcoming with an approaching engine-hour threshold', () => {
-    expect(
-      getDeadlineDetails({
-        nextEngineHours: 100,
-        materialEngineHours: 85,
-        intervalHours: 100,
-        today,
-      }),
-    ).toMatchObject({
+  it('distinguishes an upcoming task from a later task', () => {
+    expect(getDeadlineDetails({ nextMaintenanceDate: '2026-08-20', today })).toMatchObject({
       status: 'upcoming',
-      engineHoursStatus: 'upcoming',
-      remainingEngineHours: 15,
-      engineHoursUpcomingThreshold: 20,
+      remainingDays: 27,
     });
-  });
-  it('marks a task overdue when its engine hours are reached even when date is current', () => {
-    expect(
-      getDeadlineDetails({
-        nextMaintenanceDate: '2026-12-01',
-        nextEngineHours: 100,
-        materialEngineHours: 101,
-        intervalHours: 50,
-        today,
-      }),
-    ).toMatchObject({ status: 'overdue', dateStatus: 'upToDate', engineHoursStatus: 'overdue' });
+    expect(getDeadlineDetails({ nextMaintenanceDate: '2026-09-01', today })).toMatchObject({
+      status: 'upToDate',
+      remainingDays: 39,
+    });
   });
 });

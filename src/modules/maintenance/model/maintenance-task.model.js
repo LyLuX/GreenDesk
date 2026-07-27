@@ -17,27 +17,16 @@ MaintenanceTask.init(
       field: 'maintenance_type',
       allowNull: false,
     },
-    intervalHours: { type: DataTypes.DECIMAL(10, 2), field: 'interval_hours', allowNull: true },
-    intervalDays: { type: DataTypes.INTEGER.UNSIGNED, field: 'interval_days', allowNull: true },
+    intervalDays: { type: DataTypes.INTEGER.UNSIGNED, field: 'interval_days', allowNull: false },
     lastMaintenanceDate: {
       type: DataTypes.DATEONLY,
       field: 'last_maintenance_date',
-      allowNull: true,
-    },
-    lastEngineHours: {
-      type: DataTypes.DECIMAL(10, 2),
-      field: 'last_engine_hours',
-      allowNull: true,
+      allowNull: false,
     },
     nextMaintenanceDate: {
       type: DataTypes.DATEONLY,
       field: 'next_maintenance_date',
-      allowNull: true,
-    },
-    nextEngineHours: {
-      type: DataTypes.DECIMAL(10, 2),
-      field: 'next_engine_hours',
-      allowNull: true,
+      allowNull: false,
     },
     priority: {
       type: DataTypes.ENUM(...MAINTENANCE_PRIORITIES),

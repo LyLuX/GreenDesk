@@ -14,7 +14,6 @@ MaintenanceHistory.init(
       allowNull: false,
     },
     performedAt: { type: DataTypes.DATEONLY, field: 'performed_at', allowNull: false },
-    engineHours: { type: DataTypes.DECIMAL(10, 2), field: 'engine_hours', allowNull: true },
     comment: { type: DataTypes.TEXT, allowNull: true },
     performedBy: { type: DataTypes.BIGINT.UNSIGNED, field: 'performed_by', allowNull: true },
   },

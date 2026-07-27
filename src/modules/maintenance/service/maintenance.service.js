@@ -48,35 +48,19 @@ export default class MaintenanceService {
   }
   calculateDeadlines(values, current = {}) {
     const intervalDays = has(values, 'intervalDays') ? values.intervalDays : current.intervalDays;
-    const intervalHours = has(values, 'intervalHours')
-      ? values.intervalHours
-      : current.intervalHours;
-    if (!Number(intervalDays) && !Number(intervalHours))
-      throw new AppError('Au moins un intervalle doit être renseigné.', HTTP_STATUS.BAD_REQUEST);
+    if (!Number(intervalDays))
+      throw new AppError('Un intervalle en jours doit être renseigné.', HTTP_STATUS.BAD_REQUEST);
     const lastMaintenanceDate = has(values, 'lastMaintenanceDate')
       ? values.lastMaintenanceDate
       : current.lastMaintenanceDate;
-    const lastEngineHours = has(values, 'lastEngineHours')
-      ? values.lastEngineHours
-      : current.lastEngineHours;
-    if (Number(intervalDays) && !lastMaintenanceDate)
+    if (!lastMaintenanceDate)
       throw new AppError(
         'La date du dernier entretien est requise pour un intervalle en jours.',
         HTTP_STATUS.BAD_REQUEST,
       );
-    if (Number(intervalHours) && (lastEngineHours === null || lastEngineHours === undefined))
-      throw new AppError(
-        'Les heures du dernier entretien sont requises pour un intervalle en heures.',
-        HTTP_STATUS.BAD_REQUEST,
-      );
-    const result = {};
-    if (Number(intervalDays)) {
-      result.nextMaintenanceDate = addDaysDateOnly(lastMaintenanceDate, intervalDays);
-    } else result.nextMaintenanceDate = null;
-    if (Number(intervalHours))
-      result.nextEngineHours = Number(lastEngineHours) + Number(intervalHours);
-    else result.nextEngineHours = null;
-    return result;
+    return {
+      nextMaintenanceDate: addDaysDateOnly(lastMaintenanceDate, intervalDays),
+    };
   }
   async create(values, userId) {
     const material = await this.materialService.getEntityByUuid(values.materialUuid);
@@ -155,45 +139,16 @@ export default class MaintenanceService {
           'La date réalisée ne peut pas précéder le dernier entretien.',
           HTTP_STATUS.BAD_REQUEST,
         );
-      const isHourly = Number(task.intervalHours) > 0;
-      if (isHourly && (values.engineHours === null || values.engineHours === undefined))
-        throw new AppError(
-          'Les heures moteur sont obligatoires pour ce plan.',
-          HTTP_STATUS.BAD_REQUEST,
-        );
-      const engineHours = values.engineHours ?? task.lastEngineHours;
-      if (engineHours !== null && engineHours !== undefined) {
-        if (Number(engineHours) < 0)
-          throw new AppError('Les heures moteur doivent être positives.', HTTP_STATUS.BAD_REQUEST);
-        if (task.lastEngineHours !== null && Number(engineHours) < Number(task.lastEngineHours))
-          throw new AppError(
-            'Les heures moteur ne peuvent pas reculer par rapport au dernier entretien.',
-            HTTP_STATUS.BAD_REQUEST,
-          );
-        if (
-          task.material?.engineHours !== null &&
-          task.material?.engineHours !== undefined &&
-          Number(engineHours) < Number(task.material.engineHours)
-        )
-          throw new AppError(
-            'Les heures moteur ne peuvent pas être inférieures au compteur matériel.',
-            HTTP_STATUS.BAD_REQUEST,
-          );
-      }
       const update = {
         lastMaintenanceDate: performedAt,
-        lastEngineHours: engineHours,
         updatedBy: userId,
       };
       const deadlines = this.calculateDeadlines(update, task);
       await this.repository.update(task, { ...update, ...deadlines }, { transaction });
-      if (task.material && Number(engineHours) > Number(task.material.engineHours ?? 0))
-        await task.material.update({ engineHours }, { transaction });
       const history = await this.repository.createHistory(
         {
           maintenanceTaskId: task.id,
           performedAt,
-          engineHours: engineHours ?? null,
           comment: values.comment ?? null,
           performedBy: userId,
         },
@@ -228,10 +183,9 @@ export default class MaintenanceService {
         ? {
             uuid: value.material.uuid,
             name: value.material.name,
-            engineHours: value.material.engineHours,
           }
         : null,
-      ...getDeadlineDetails({ ...publicValue, materialEngineHours: value.material?.engineHours }),
+      ...getDeadlineDetails(publicValue),
     };
   }
   toHistory(history) {

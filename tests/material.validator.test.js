@@ -21,7 +21,6 @@ describe('material validation', () => {
         unit: 'unité',
         purchasePrice: 1200,
         serialNumber: null,
-        engineHours: null,
         retiredAt: null,
         notes: null,
       }),

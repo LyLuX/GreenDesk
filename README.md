@@ -23,7 +23,7 @@ Le dashboard est disponible via `GET /api/dashboard/summary`, protégé par `das
 
 ## Sprint 5 : parc matériel
 
-Un matériel contient son UUID public, nom, marque, modèle, catégorie, numéro de série, dates, prix d’achat, heures moteur et notes. Les relations sont exclusivement transmises et renvoyées avec des UUID publics. La liste supporte la recherche, les filtres par statut, marque et catégorie, le tri et la pagination.
+Un matériel contient son UUID public, nom, marque, modèle, catégorie, numéro de série, dates, prix d’achat et notes. Les relations sont exclusivement transmises et renvoyées avec des UUID publics. La liste supporte la recherche, les filtres par statut, marque et catégorie, le tri et la pagination.
 
 Les photos (JPEG, PNG, WebP) et documents PDF sont stockés sous `uploads/materials`, sans exposition statique du dossier. Les photos sont consultées via une route authentifiée inline ; les documents sont téléchargés en pièce jointe via une route authentifiée. Chaque fichier est limité à 10 Mo et chaque matériel à 10 photos. Les fichiers reçoivent un nom UUID dérivé de leur MIME autorisé, jamais de leur nom client. L’historique de chaque modification est disponible sur la fiche matériel.
 
@@ -41,9 +41,9 @@ Chaque marque peut recevoir un logo JPEG, PNG ou WebP de 2 Mo maximum. Les logos
 
 ## Sprint 6 : maintenance préventive
 
-Chaque matériel peut recevoir plusieurs plans de maintenance : préventif, inspection, remplacement, lubrification, nettoyage ou personnalisé. Un plan possède un intervalle en jours et/ou en heures moteur, une priorité et ses dernières valeurs d’entretien. Les prochaines échéances sont recalculées à la création, à la modification et lors de l’exécution d’un entretien. L’API expose `GET|POST /api/v1/maintenance`, `GET|PUT /api/v1/maintenance/:uuid`, `POST /api/v1/maintenance/:uuid/execute` et `GET /api/v1/maintenance/:uuid/history`.
+Chaque matériel peut recevoir plusieurs plans de maintenance : préventif, inspection, remplacement, lubrification, nettoyage ou personnalisé. Un plan possède un intervalle en jours, une priorité et la date du dernier entretien. La prochaine échéance est recalculée à la création, à la modification et lors de l’exécution d’un entretien. L’API expose `GET|POST /api/v1/maintenance`, `GET|PUT /api/v1/maintenance/:uuid`, `POST /api/v1/maintenance/:uuid/execute` et `GET /api/v1/maintenance/:uuid/history`.
 
-Une tâche est en retard dès que sa première échéance est atteinte : date du jour supérieure ou égale à la prochaine date, ou compteur matériel supérieur ou égal au prochain compteur. Elle est à prévoir dans les 30 jours ou lorsque les heures restantes sont inférieures ou égales à `max(10 h, 20 % de l’intervalle horaire)`. Les dates métier sont des valeurs UTC `YYYY-MM-DD`, sans heure. L’exécution est transactionnelle : tâche, historique et compteur matériel sont mis à jour ensemble.
+Une tâche est à faire aujourd’hui lorsque sa prochaine date correspond à la date du jour, en retard lorsque cette date est dépassée, et à prévoir lorsqu’elle tombe dans les 30 prochains jours. Les dates métier sont des valeurs UTC `YYYY-MM-DD`, sans heure. L’exécution met à jour transactionnellement la tâche et son historique.
 
 Les permissions sont `maintenance.read`, `maintenance.create`, `maintenance.update`, `maintenance.delete` et `maintenance.execute`. Le tableau de bord compte les entretiens prévus aujourd’hui, en retard, réalisés ce mois et prévus dans les 30 jours.
 

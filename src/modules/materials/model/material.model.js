@@ -29,7 +29,6 @@ Material.init(
       field: 'serial_number',
     },
     purchaseDate: { type: DataTypes.DATEONLY, allowNull: true, field: 'purchase_date' },
-    engineHours: { type: DataTypes.DECIMAL(10, 2), allowNull: true, field: 'engine_hours' },
     commissionedAt: { type: DataTypes.DATEONLY, allowNull: true, field: 'commissioned_at' },
     retiredAt: { type: DataTypes.DATEONLY, allowNull: true, field: 'retired_at' },
     notes: { type: DataTypes.TEXT, allowNull: true },

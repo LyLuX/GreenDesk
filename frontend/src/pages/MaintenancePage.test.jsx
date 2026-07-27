@@ -1,15 +1,17 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   listMaintenance: vi.fn(),
   listMaterials: vi.fn(),
+  executeMaintenance: vi.fn(),
 }));
 
 vi.mock('../api/maintenance.api.js', () => ({
   createMaintenance: vi.fn(),
   deleteMaintenance: vi.fn(),
-  executeMaintenance: vi.fn(),
+  executeMaintenance: mocks.executeMaintenance,
   listMaintenance: mocks.listMaintenance,
   maintenanceHistory: vi.fn(),
   setMaintenanceStatus: vi.fn(),
@@ -33,6 +35,7 @@ describe('MaintenancePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.listMaterials.mockResolvedValue({ data: { data: [] } });
+    mocks.executeMaintenance.mockResolvedValue({ data: { data: {} } });
     mocks.listMaintenance.mockResolvedValue({
       data: {
         data: {
@@ -46,9 +49,7 @@ describe('MaintenancePage', () => {
               status: 'upcoming',
               material: { name: 'Tondeuse' },
               nextMaintenanceDate: '2026-08-05',
-              nextEngineHours: 400,
               remainingDays: 12,
-              remainingEngineHours: 25,
             },
           ],
           pagination: null,
@@ -68,8 +69,6 @@ describe('MaintenancePage', () => {
     expect(mocks.listMaterials).toHaveBeenCalledWith({ limit: 'all' }, expect.any(AbortSignal));
     expect(screen.getByText('05/08/2026')).toBeInTheDocument();
     expect(screen.queryByText(/Compteur/)).not.toBeInTheDocument();
-    expect(screen.queryByText('400 h')).not.toBeInTheDocument();
-    expect(screen.queryByText('25 h')).not.toBeInTheDocument();
     expect(screen.getByText('Normale', { selector: 'span' })).toHaveClass(
       'status-badge',
       'priority-normal',
@@ -101,6 +100,27 @@ describe('MaintenancePage', () => {
       'flex-wrap',
       'align-items-center',
       'justify-content-center',
+    );
+  });
+
+  it('executes maintenance without requesting or sending engine hours', async () => {
+    const user = userEvent.setup();
+    render(<MaintenancePage />);
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Effectuer Vidange annuelle',
+      }),
+    );
+
+    expect(screen.queryByLabelText('Heures moteur')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Valider' }));
+
+    await waitFor(() =>
+      expect(mocks.executeMaintenance).toHaveBeenCalledWith('maintenance-uuid', {
+        performedAt: new Date().toISOString().slice(0, 10),
+        comment: '',
+      }),
     );
   });
 });

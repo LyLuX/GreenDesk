@@ -8,29 +8,20 @@ import User from '../../users/model/user.model.js';
 const materialInclude = {
   model: Material,
   as: 'material',
-  attributes: ['uuid', 'name', 'engineHours'],
+  attributes: ['uuid', 'name'],
 };
 
-const getStatusConditions = ({
-  taskAlias = 'MaintenanceTask',
-  materialAlias = 'material',
-  today,
-  upcoming,
-}) => {
+const getStatusConditions = ({ taskAlias = 'MaintenanceTask', today, upcoming }) => {
   const overdue =
-    `(${taskAlias}.next_maintenance_date IS NOT NULL AND ` +
-    `${taskAlias}.next_maintenance_date < '${today}') OR ` +
-    `(${taskAlias}.next_engine_hours IS NOT NULL AND ` +
-    `${materialAlias}.engine_hours >= ${taskAlias}.next_engine_hours)`;
-  const dueToday = `NOT (${overdue}) AND ` + `${taskAlias}.next_maintenance_date = '${today}'`;
+    `${taskAlias}.next_maintenance_date IS NOT NULL AND ` +
+    `${taskAlias}.next_maintenance_date < '${today}'`;
+  const dueToday =
+    `${taskAlias}.next_maintenance_date IS NOT NULL AND ` +
+    `${taskAlias}.next_maintenance_date = '${today}'`;
   const upcomingCondition =
-    `NOT (${overdue}) AND NOT (${dueToday}) AND (` +
-    `(${taskAlias}.next_maintenance_date IS NOT NULL AND ` +
+    `${taskAlias}.next_maintenance_date IS NOT NULL AND ` +
     `${taskAlias}.next_maintenance_date > '${today}' AND ` +
-    `${taskAlias}.next_maintenance_date <= '${upcoming}') OR ` +
-    `(${taskAlias}.next_engine_hours IS NOT NULL AND ` +
-    `${materialAlias}.engine_hours >= ${taskAlias}.next_engine_hours - ` +
-    `GREATEST(10, ${taskAlias}.interval_hours * 0.2)))`;
+    `${taskAlias}.next_maintenance_date <= '${upcoming}'`;
   return { overdue, dueToday, upcoming: upcomingCondition };
 };
 

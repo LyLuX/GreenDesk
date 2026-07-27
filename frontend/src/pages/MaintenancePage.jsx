@@ -41,30 +41,18 @@ const baseFields = [
     type: 'number',
     valueType: 'number',
     min: '1',
+    required: true,
   },
   {
-    name: 'intervalHours',
-    label: 'Intervalle (heures)',
-    type: 'number',
-    valueType: 'number',
-    min: '0.1',
-    step: '0.1',
-  },
-  { name: 'lastMaintenanceDate', label: 'Dernier entretien', type: 'date' },
-  {
-    name: 'lastEngineHours',
-    label: 'Heures dernier entretien',
-    type: 'number',
-    valueType: 'number',
-    min: '0',
-    step: '0.1',
+    name: 'lastMaintenanceDate',
+    label: 'Dernier entretien',
+    type: 'date',
+    required: true,
   },
   { name: 'notes', label: 'Notes', multiline: true },
 ];
 const date = (value) =>
   value ? new Intl.DateTimeFormat('fr-FR').format(new Date(`${value}T00:00:00Z`)) : '—';
-const number = (value, suffix = '') =>
-  value === null || value === undefined ? '—' : `${Number(value).toLocaleString('fr-FR')}${suffix}`;
 const remainingDays = (value) => {
   if (value === null || value === undefined) return '—';
   return `${Number(value).toLocaleString('fr-FR')} ${Math.abs(Number(value)) === 1 ? 'jour' : 'jours'}`;
@@ -161,11 +149,8 @@ export default function MaintenancePage() {
     setFormError('');
     try {
       const values = Object.fromEntries(new FormData(event.currentTarget));
-      if (dialog.item.intervalHours && !values.engineHours)
-        throw new Error('Les heures moteur sont obligatoires pour ce plan.');
       await executeMaintenance(dialog.item.uuid, {
         performedAt: values.performedAt,
-        engineHours: values.engineHours ? Number(values.engineHours) : null,
         comment: values.comment,
       });
       notify('success', 'Entretien enregistré.');
@@ -482,15 +467,6 @@ export default function MaintenancePage() {
             required
             defaultValue={new Date().toISOString().slice(0, 10)}
           />
-          <FormField
-            label="Heures moteur"
-            name="engineHours"
-            type="number"
-            min={activeItem?.material?.engineHours ?? 0}
-            step="0.1"
-            required={Boolean(activeItem?.intervalHours)}
-            defaultValue={activeItem?.material?.engineHours ?? activeItem?.lastEngineHours ?? ''}
-          />
           <FormField label="Commentaire" name="comment" multiline />
           <Button type="submit" disabled={busy}>
             {busy ? 'Validation…' : 'Valider'}
@@ -515,7 +491,7 @@ export default function MaintenancePage() {
                   ? `${entry.performedByUser.firstName} ${entry.performedByUser.lastName}`
                   : 'Utilisateur supprimé'}
                 <br />
-                {number(entry.engineHours, ' h')} · {entry.comment || 'Sans commentaire'}
+                {entry.comment || 'Sans commentaire'}
               </li>
             ))}
           </ul>

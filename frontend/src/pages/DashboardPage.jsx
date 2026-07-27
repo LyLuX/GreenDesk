@@ -38,9 +38,6 @@ const maintenanceCards = [
 const formatDate = (value) =>
   value ? new Intl.DateTimeFormat('fr-FR').format(new Date(`${value}T00:00:00Z`)) : '—';
 
-const formatHours = (value) =>
-  value === null || value === undefined ? '—' : `${Number(value).toLocaleString('fr-FR')} h`;
-
 export default function DashboardPage() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -187,10 +184,6 @@ export default function DashboardPage() {
                   <div>
                     <dt>Date prévue</dt>
                     <dd>{formatDate(item.nextMaintenanceDate)}</dd>
-                  </div>
-                  <div>
-                    <dt>Compteur prévu</dt>
-                    <dd>{formatHours(item.nextEngineHours)}</dd>
                   </div>
                 </dl>
               </li>
