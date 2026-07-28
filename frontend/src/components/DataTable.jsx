@@ -45,7 +45,7 @@ export default function DataTable({
                   {onView && (
                     <button
                       aria-label={`Voir ${row.name ?? 'l’élément'}`}
-                      className="btn btn-sm btn-outline-brand me-2"
+                      className="btn btn-sm btn-outline-brand flex-fill"
                       type="button"
                       onClick={() => onView(row)}
                     >
@@ -55,7 +55,7 @@ export default function DataTable({
                   {onEdit && (
                     <button
                       aria-label={`Modifier ${row.name ?? 'l’élément'}`}
-                      className="btn btn-sm btn-outline-brand"
+                      className="btn btn-sm btn-outline-brand flex-fill ms-1 me-1"
                       type="button"
                       onClick={() => onEdit(row)}
                       disabled={actionLoadingId === row.uuid}
@@ -66,7 +66,7 @@ export default function DataTable({
                   {onStatus && (
                     <button
                       aria-label={`${row.active ? 'Désactiver' : 'Activer'} ${row.name ?? 'l’élément'}`}
-                      className="btn btn-sm btn-outline-secondary"
+                      className="btn btn-sm btn-outline-secondary ms-1 me-1"
                       type="button"
                       onClick={() => onStatus(row)}
                       disabled={actionLoadingId === row.uuid}
@@ -81,7 +81,7 @@ export default function DataTable({
                   {onDelete && (
                     <button
                       aria-label={`Supprimer ${row.name ?? 'l’élément'}`}
-                      className="btn btn-sm btn-outline-danger ms-2"
+                      className="btn btn-sm btn-outline-danger ms-1 me-1"
                       type="button"
                       onClick={() => onDelete(row)}
                       disabled={actionLoadingId === row.uuid}
