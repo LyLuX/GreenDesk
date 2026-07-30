@@ -8,6 +8,9 @@
   every change. Reuse the existing shared components, Bootstrap structures, labels, action colors,
   spacing, confirmation dialogs, and responsive behavior whenever an equivalent pattern already
   exists.
+- Make every new or modified UI element user-friendly by default. Keep primary actions visible and
+  reachable, prevent content and controls from escaping the viewport, preserve responsive and
+  keyboard-accessible behavior, and provide clear labels, states, feedback, and consequences.
 - Increment GreenDesk's semantic version for every delivered change before committing and pushing:
   use `PATCH` for a backward-compatible fix, `MINOR` for a backward-compatible feature, and `MAJOR`
   for a breaking change. Never leave a delivered commit on the previous version.

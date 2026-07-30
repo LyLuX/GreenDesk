@@ -707,7 +707,15 @@ a:hover {
   overflow: hidden;
 }
 
-.maintenance-order-list-modal > :first-child {
+.modal-surface.material-form-modal {
+  display: flex;
+  flex-direction: column;
+  height: calc(90vh - 3rem);
+  overflow: hidden;
+}
+
+.maintenance-order-list-modal > :first-child,
+.material-form-modal > :first-child {
   flex: 0 0 auto;
 }
 
@@ -730,6 +738,25 @@ a:hover {
 }
 
 .maintenance-order-list-actions {
+  flex: 0 0 auto;
+}
+
+.material-form-modal-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.material-form-modal-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+  scrollbar-gutter: stable;
+}
+
+.material-form-modal-actions {
   flex: 0 0 auto;
 }
 

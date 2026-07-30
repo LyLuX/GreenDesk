@@ -148,6 +148,44 @@ describe('ReferencePage pagination', () => {
     expect(screen.getByLabelText('Filtrer par statut')).toHaveValue('true');
   });
 
+  it('keeps the material form action visible outside its scrollable fields', async () => {
+    api.list.mockResolvedValue({ data: { data: [] } });
+    const user = userEvent.setup();
+
+    render(
+      <ReferencePage
+        title="Matériels"
+        resource="materials"
+        createPermission="materials.create"
+        updatePermission="materials.update"
+        deletePermission="materials.delete"
+        fields={[
+          { name: 'name', label: 'Nom' },
+          { name: 'model', label: 'Modèle' },
+          { name: 'serialNumber', label: 'Numéro de série' },
+          { name: 'purchaseDate', label: 'Date d’achat', type: 'date' },
+          { name: 'notes', label: 'Notes', multiline: true },
+        ]}
+        columns={[{ key: 'name', label: 'Nom' }]}
+      />,
+    );
+
+    await waitFor(() => expect(api.list).toHaveBeenCalled());
+    await user.click(screen.getByRole('button', { name: 'Créer' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Créer Matériels' });
+    const saveButton = within(dialog).getByRole('button', { name: 'Enregistrer' });
+    const scrollableFields = dialog.querySelector('.material-form-modal-scroll');
+
+    expect(dialog).toHaveClass('material-form-modal');
+    expect(scrollableFields).toBeVisible();
+    expect(scrollableFields).not.toContainElement(saveButton);
+    expect(saveButton.parentElement).toHaveClass(
+      'material-form-modal-actions',
+      'justify-content-end',
+    );
+  });
+
   it('uses the update permission and endpoint to change an active status', async () => {
     api.list.mockResolvedValue({
       data: { data: [{ uuid: 'material-uuid', name: 'Tondeuse', active: true }] },

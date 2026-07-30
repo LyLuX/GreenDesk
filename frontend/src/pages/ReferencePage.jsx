@@ -233,6 +233,52 @@ export default function ReferencePage({
   const emptyMessage = debouncedSearch
     ? `Aucun résultat pour « ${debouncedSearch} ».`
     : 'Aucun élément trouvé.';
+  const isMaterialForm = resource === 'materials';
+  const referenceFormFields = (
+    <>
+      {formError && (
+        <p role="alert" className="alert alert-danger mb-0">
+          {formError}
+        </p>
+      )}
+      {fields.map((field) => (
+        <FormField
+          key={field.name}
+          label={field.label}
+          name={field.name}
+          type={field.type ?? 'text'}
+          step={field.step}
+          min={field.min}
+          defaultValue={editing?.[field.name] ?? editing?.[field.relation]?.uuid ?? ''}
+          required={field.required}
+          multiline={field.multiline}
+          options={selectOptions(field)}
+        />
+      ))}
+      {fileField && (
+        <>
+          {editing?.uuid && fileField.hasFile(editing) && fileField.renderPreview?.(editing)}
+          <FormField
+            label={fileField.label}
+            name={fileField.name}
+            type="file"
+            accept={fileField.accept}
+          />
+          {editing?.uuid && fileField.hasFile(editing) && (
+            <label className="form-check text-body-secondary">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                name={`${fileField.name}Remove`}
+              />
+              {fileField.removeLabel}
+            </label>
+          )}
+          {fileField.help && <small className="text-body-secondary">{fileField.help}</small>}
+        </>
+      )}
+    </>
+  );
 
   return (
     <main className="app-page">
@@ -364,52 +410,26 @@ export default function ReferencePage({
         title={editing?.uuid ? `Modifier ${title}` : `Créer ${title}`}
         onClose={() => setEditing(null)}
         busy={isSaving}
+        className={isMaterialForm ? 'material-form-modal' : ''}
       >
-        <form className="d-grid gap-4" onSubmit={save}>
-          {formError && (
-            <p role="alert" className="alert alert-danger mb-0">
-              {formError}
-            </p>
+        <form
+          className={isMaterialForm ? 'material-form-modal-content' : 'd-grid gap-4'}
+          onSubmit={save}
+        >
+          {isMaterialForm ? (
+            <div className="material-form-modal-scroll d-grid gap-4">{referenceFormFields}</div>
+          ) : (
+            referenceFormFields
           )}
-          {fields.map((field) => (
-            <FormField
-              key={field.name}
-              label={field.label}
-              name={field.name}
-              type={field.type ?? 'text'}
-              step={field.step}
-              min={field.min}
-              defaultValue={editing?.[field.name] ?? editing?.[field.relation]?.uuid ?? ''}
-              required={field.required}
-              multiline={field.multiline}
-              options={selectOptions(field)}
-            />
-          ))}
-          {fileField && (
-            <>
-              {editing?.uuid && fileField.hasFile(editing) && fileField.renderPreview?.(editing)}
-              <FormField
-                label={fileField.label}
-                name={fileField.name}
-                type="file"
-                accept={fileField.accept}
-              />
-              {editing?.uuid && fileField.hasFile(editing) && (
-                <label className="form-check text-body-secondary">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    name={`${fileField.name}Remove`}
-                  />
-                  {fileField.removeLabel}
-                </label>
-              )}
-              {fileField.help && <small className="text-body-secondary">{fileField.help}</small>}
-            </>
-          )}
-          <Button type="submit" disabled={isSaving}>
-            {isSaving ? 'Enregistrement…' : 'Enregistrer'}
-          </Button>
+          <div
+            className={
+              isMaterialForm ? 'material-form-modal-actions mt-3 d-flex justify-content-end' : ''
+            }
+          >
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? 'Enregistrement…' : 'Enregistrer'}
+            </Button>
+          </div>
         </form>
       </Modal>
       <ConfirmDialog
