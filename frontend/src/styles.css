@@ -757,8 +757,14 @@ a:hover {
   border-top: 4px solid var(--brand-sun);
 }
 
+.toast-stack {
+  width: min(24rem, calc(100vw - 2rem));
+}
+
 .toast-stack .alert {
-  min-width: min(360px, calc(100vw - 2rem));
+  width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
   box-shadow: 0 0.6rem 1.4rem rgba(21, 54, 37, 0.16);
 }
 
