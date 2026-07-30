@@ -44,7 +44,20 @@ export const groupOrderPartsBySupplier = (parts = []) => {
   );
 };
 
-function OrderPartsTable({ parts, manufacturerByUuid, showSupplier = true }) {
+/** Splits each supplier into complete A4-sized batches without dropping any part. */
+export const paginateSupplierGroups = (groups = [], partsPerPage = 10) =>
+  groups.flatMap((group) => {
+    const pageCount = Math.ceil(group.parts.length / partsPerPage);
+    return Array.from({ length: pageCount }, (_, pageIndex) => ({
+      ...group,
+      key: `${group.key}-page-${pageIndex + 1}`,
+      parts: group.parts.slice(pageIndex * partsPerPage, (pageIndex + 1) * partsPerPage),
+      pageNumber: pageIndex + 1,
+      pageCount,
+    }));
+  });
+
+function OrderPartsTable({ parts, manufacturerByUuid, showSupplier = true, showPlans = true }) {
   return (
     <div className="table-shell">
       <div className="table-responsive">
@@ -54,7 +67,7 @@ function OrderPartsTable({ parts, manufacturerByUuid, showSupplier = true }) {
               <th>Pièce</th>
               <th>{showSupplier ? 'Fournisseur / référence' : 'Référence fournisseur'}</th>
               <th>Quantité</th>
-              <th>Plans concernés</th>
+              {showPlans ? <th>Plans concernés</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -79,15 +92,17 @@ function OrderPartsTable({ parts, manufacturerByUuid, showSupplier = true }) {
                   </small>
                 </td>
                 <td>{formatOrderQuantity(part.quantity, part.unit)}</td>
-                <td>
-                  <ul className="mb-0 ps-3">
-                    {part.plans.map((plan) => (
-                      <li key={plan.maintenanceUuid}>
-                        {plan.material?.name} — {plan.quantity}
-                      </li>
-                    ))}
-                  </ul>
-                </td>
+                {showPlans ? (
+                  <td>
+                    <ul className="mb-0 ps-3">
+                      {part.plans.map((plan) => (
+                        <li key={plan.maintenanceUuid}>
+                          {plan.material?.name} — {plan.quantity}
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                ) : null}
               </tr>
             ))}
           </tbody>
@@ -111,21 +126,28 @@ function PrintBrandHeader() {
   );
 }
 
-function MaintenanceOrderPrintPages({ supplierGroups, manufacturerByUuid }) {
+function MaintenanceOrderPrintPages({ supplierPages, manufacturerByUuid }) {
   return (
     <div className="maintenance-order-list-printable" aria-hidden="true">
-      {supplierGroups.map((group) => (
-        <section className="maintenance-order-print-page" key={group.key}>
+      {supplierPages.map((page) => (
+        <section className="maintenance-order-print-page" key={page.key}>
           <PrintBrandHeader />
           <main className="maintenance-order-print-content">
             <h1>Pièces à commander</h1>
             <p className="maintenance-order-print-supplier">
-              Fournisseur : <strong>{group.supplier}</strong>
+              Fournisseur : <strong>{page.supplier}</strong>
+              {page.pageCount > 1 ? (
+                <span>
+                  {' '}
+                  — page {page.pageNumber}/{page.pageCount}
+                </span>
+              ) : null}
             </p>
             <OrderPartsTable
-              parts={group.parts}
+              parts={page.parts}
               manufacturerByUuid={manufacturerByUuid}
               showSupplier={false}
+              showPlans={false}
             />
           </main>
           <div className="maintenance-order-print-footer">
@@ -178,6 +200,7 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
     manufacturers.map((manufacturer) => [manufacturer.uuid, manufacturer]),
   );
   const supplierGroups = groupOrderPartsBySupplier(data?.items);
+  const supplierPages = paginateSupplierGroups(supplierGroups);
 
   return (
     <>
@@ -250,10 +273,10 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
           ) : null}
         </div>
       </Modal>
-      {open && supplierGroups.length
+      {open && supplierPages.length
         ? createPortal(
             <MaintenanceOrderPrintPages
-              supplierGroups={supplierGroups}
+              supplierPages={supplierPages}
               manufacturerByUuid={manufacturerByUuid}
             />,
             document.body,

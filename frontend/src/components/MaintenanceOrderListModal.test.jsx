@@ -20,6 +20,7 @@ vi.mock('./ManufacturerLogo.jsx', () => ({
 import MaintenanceOrderListModal, {
   formatOrderQuantity,
   groupOrderPartsBySupplier,
+  paginateSupplierGroups,
 } from './MaintenanceOrderListModal.jsx';
 
 describe('MaintenanceOrderListModal', () => {
@@ -100,6 +101,24 @@ describe('MaintenanceOrderListModal', () => {
     ]);
   });
 
+  it('paginates a large supplier without losing or duplicating parts', () => {
+    const parts = Array.from({ length: 23 }, (_, index) => ({
+      uuid: `part-${index + 1}`,
+      plans: [],
+    }));
+    const pages = paginateSupplierGroups([
+      { key: 'supplier-1', supplier: 'Coché Motoculture', parts },
+    ]);
+
+    expect(pages).toHaveLength(3);
+    expect(pages.map((page) => page.parts.length)).toEqual([10, 10, 3]);
+    expect(pages.map((page) => page.pageNumber)).toEqual([1, 2, 3]);
+    expect(pages.every((page) => page.pageCount === 3)).toBe(true);
+    expect(pages.flatMap((page) => page.parts.map((part) => part.uuid))).toEqual(
+      parts.map((part) => part.uuid),
+    );
+  });
+
   it('prints the displayed order list from a shared GreenDesk button', async () => {
     const user = userEvent.setup();
     render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
@@ -118,6 +137,9 @@ describe('MaintenanceOrderListModal', () => {
     expect(printHeader).toHaveTextContent('GreenDesk');
     expect(printHeader).toHaveTextContent('EI BOURNAZEL Paul');
     expect(printHeader).not.toHaveTextContent('Échéance');
+    expect(document.querySelector('.maintenance-order-print-page')).not.toHaveTextContent(
+      'Plans concernés',
+    );
     const printFooter = document.querySelector('.maintenance-order-print-footer .app-footer');
     expect(printFooter).toHaveTextContent('EI BOURNAZEL Paul');
     expect(printFooter).toHaveTextContent('GreenDesk · version');

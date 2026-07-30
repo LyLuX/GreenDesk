@@ -1194,6 +1194,8 @@ a:hover {
   .maintenance-order-list-printable .table td {
     color: #24362b;
     border-color: var(--border);
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .maintenance-order-list-printable .table thead th {
