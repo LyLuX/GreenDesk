@@ -98,7 +98,7 @@ export default function AppLayout() {
           </div>
         </div>
       </header>
-      <div className="d-md-flex">
+      <div className="app-body d-md-flex">
         <nav
           ref={sidebarRef}
           aria-label="Navigation principale"

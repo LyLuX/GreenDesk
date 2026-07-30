@@ -26,5 +26,6 @@ describe('root route', () => {
     );
 
     expect(await screen.findByRole('heading', { name: 'Tableau de bord' })).toBeInTheDocument();
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   });
 });

@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import PermissionRoute from './auth/PermissionRoute.jsx';
 import ProtectedRoute from './auth/ProtectedRoute.jsx';
 import AdminRoute from './auth/AdminRoute.jsx';
+import AppFooter from './components/AppFooter.jsx';
 import MaterialManufacturerCell from './components/MaterialManufacturerCell.jsx';
 import { activityStatusFilter } from './filters/filter-options.js';
 import AppLayout from './layouts/AppLayout.jsx';
@@ -199,6 +200,7 @@ export default function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
+      <AppFooter />
     </>
   );
 }
