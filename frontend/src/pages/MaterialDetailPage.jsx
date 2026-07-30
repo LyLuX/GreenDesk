@@ -389,20 +389,24 @@ export default function MaterialDetailPage() {
                   onChange={queuePhotos}
                 />
                 {selectedPhotos.length > 0 && (
-                  <div className="flex flex-wrap gap-3">
+                  <div className="material-photo-queue">
                     {selectedPhotos.map((item) => (
-                      <article className="surface w-32 p-2" key={item.localId}>
+                      <article className="material-photo-queue-item surface p-2" key={item.localId}>
                         <img
-                          className="h-24 w-full object-cover"
+                          className="material-photo-queue-preview"
                           src={item.previewUrl}
                           alt={`Aperçu ${item.file.name}`}
                         />
-                        <p className="truncate text-xs">{item.file.name}</p>
+                        <p className="material-file-name">{item.file.name}</p>
                         {item.status === 'uploading' && (
-                          <progress className="w-full" value={item.progress} max="100" />
+                          <progress
+                            className="material-file-progress"
+                            value={item.progress}
+                            max="100"
+                          />
                         )}
                         {item.error && (
-                          <p role="alert" className="text-xs text-red-700">
+                          <p role="alert" className="material-file-error">
                             {item.error}
                           </p>
                         )}
@@ -426,11 +430,11 @@ export default function MaterialDetailPage() {
                 </Button>
               </div>
             )}
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="material-photo-grid mt-4">
               {photos.map((file) => (
                 <article className="surface p-3" key={file.uuid}>
                   <AuthenticatedImage
-                    className="h-40 w-full object-cover"
+                    className="material-photo-image"
                     fileUuid={file.uuid}
                     alt={file.originalName}
                   />
@@ -439,7 +443,7 @@ export default function MaterialDetailPage() {
                     {file.isPrimary ? ' (principale)' : ''}
                   </p>
                   {hasPermission('materials.update') && (
-                    <div className="mt-2 space-x-2">
+                    <div className="material-photo-actions mt-2">
                       <Button
                         type="button"
                         disabled={file.isPrimary}

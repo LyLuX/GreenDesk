@@ -283,7 +283,7 @@ export default function ReferencePage({
       {pagination && resource === 'materials' && (
         <FilterPanel
           ariaLabel="Tri"
-          className="text-sm"
+          className="small"
           fields={[
             {
               name: 'sort',

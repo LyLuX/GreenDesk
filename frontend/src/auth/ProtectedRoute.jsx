@@ -6,7 +6,7 @@ export default function ProtectedRoute({ children }) {
   const location = useLocation();
   if (isInitializing)
     return (
-      <main className="loading-page d-grid place-items-center">
+      <main className="loading-page d-grid align-items-center justify-content-center">
         <Loader label="Chargement de la session" />
       </main>
     );

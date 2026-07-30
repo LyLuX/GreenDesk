@@ -610,7 +610,7 @@ export default function MaintenancePage() {
         {history.length === 0 && !formError ? (
           <p>Aucun entretien enregistré.</p>
         ) : (
-          <ul className="divide-y">
+          <ul className="maintenance-history-list">
             {history.map((entry) => (
               <li className="py-2" key={entry.uuid}>
                 <strong>{date(entry.performedAt)}</strong> ·{' '}

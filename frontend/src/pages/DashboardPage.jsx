@@ -63,7 +63,7 @@ export default function DashboardPage() {
   }, [load]);
   if (error)
     return (
-      <main className="loading-page d-grid place-items-center">
+      <main className="loading-page d-grid align-items-center justify-content-center">
         <StatusPanel as="div">
           <p role="alert" className="text-danger mb-3">
             {error}
@@ -76,7 +76,7 @@ export default function DashboardPage() {
     );
   if (!data)
     return (
-      <main className="loading-page d-grid place-items-center">
+      <main className="loading-page d-grid align-items-center justify-content-center">
         <Loader label="Chargement du tableau de bord" />
       </main>
     );

@@ -21,7 +21,7 @@ export default function DataTable({
               </th>
             ))}
             <th className="px-4 py-3" scope="col">
-              <span className="sr-only">Actions</span>
+              <span className="visually-hidden">Actions</span>
             </th>
           </tr>
         </thead>
