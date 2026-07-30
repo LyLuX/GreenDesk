@@ -758,12 +758,16 @@ a:hover {
 }
 
 .toast-stack {
-  width: min(24rem, calc(100vw - 2rem));
+  max-width: min(22rem, calc(100vw - 2rem));
+  justify-items: end;
 }
 
 .toast-stack .alert {
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   min-width: 0;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.875rem;
   overflow-wrap: anywhere;
   box-shadow: 0 0.6rem 1.4rem rgba(21, 54, 37, 0.16);
 }
