@@ -103,6 +103,27 @@ describe('administrator table pagination', () => {
     expect(screen.getByText('user6@example.test')).toBeVisible();
   });
 
+  it('uses the shared password input in the user creation modal', async () => {
+    const user = userEvent.setup();
+    render(<UsersPage />);
+
+    await screen.findByText('user5@example.test');
+    await user.click(screen.getByRole('button', { name: 'Créer un utilisateur' }));
+
+    const dialog = within(screen.getByRole('dialog', { name: 'Créer un utilisateur' }));
+    const password = dialog.getByLabelText('Mot de passe');
+    expect(password).toHaveAttribute('type', 'password');
+    expect(password.closest('.input-group')).toBeVisible();
+    expect(dialog.getByRole('button', { name: 'Afficher le mot de passe' })).toHaveClass(
+      'password-visibility-toggle',
+    );
+
+    await user.click(dialog.getByRole('button', { name: 'Afficher le mot de passe' }));
+
+    expect(password).toHaveAttribute('type', 'text');
+    expect(dialog.getByRole('button', { name: 'Masquer le mot de passe' })).toBeVisible();
+  });
+
   it('filters roles by search and permission', async () => {
     const user = userEvent.setup();
     render(<RolesPage />);

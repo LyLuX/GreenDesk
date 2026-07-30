@@ -9,6 +9,7 @@ import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
+import PasswordInput from '../components/PasswordInput.jsx';
 import { activityStatusFilter } from '../filters/filter-options.js';
 import useNotification from '../notifications/useNotification.js';
 import { paginateItems } from '../utils/pagination.js';
@@ -342,15 +343,18 @@ export default function UsersPage() {
             onChange={updateField}
             required
           />
-          <FormField
-            label={editing?.uuid ? 'Nouveau mot de passe' : 'Mot de passe'}
-            name="password"
-            type="password"
-            value={form.password}
-            onChange={updateField}
-            minLength="8"
-            required={!editing?.uuid}
-          />
+          <label className="form-label mb-0 text-body-secondary" htmlFor="user-password">
+            {editing?.uuid ? 'Nouveau mot de passe' : 'Mot de passe'}
+            <PasswordInput
+              id="user-password"
+              name="password"
+              value={form.password}
+              onChange={updateField}
+              minLength="8"
+              required={!editing?.uuid}
+              autoComplete="new-password"
+            />
+          </label>
           <div>
             <p className="form-label mb-2 text-body-secondary">Rôles</p>
             {roles.map((role) => (
