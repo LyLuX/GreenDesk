@@ -766,7 +766,7 @@ a:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 0.25rem 1rem;
   padding: 0.4rem 1rem;
   color: var(--muted);
@@ -816,7 +816,6 @@ a:hover {
 
 @media (max-width: 575.98px) {
   .app-footer {
-    justify-content: center;
     text-align: center;
   }
 }
