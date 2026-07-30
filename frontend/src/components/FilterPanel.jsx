@@ -19,10 +19,7 @@ export default function FilterPanel({
   }
 
   return (
-    <section
-      aria-label={ariaLabel}
-      className={`filter-panel filter-panel--${Math.min(fields.length, 3)}-columns surface mb-4 p-3 ${className}`.trim()}
-    >
+    <section aria-label={ariaLabel} className={`filter-panel surface mb-4 p-3 ${className}`.trim()}>
       {fields.map((field) => {
         const id = `${idPrefix}-${field.name}`;
         const isSelect = field.type === 'select';
