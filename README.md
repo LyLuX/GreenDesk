@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **1.5.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **1.6.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -92,6 +92,14 @@ cd frontend
 npm install
 npm run dev
 ```
+
+Pour rendre le frontend accessible aux appareils connectés au même réseau local, démarrez d’abord le backend normalement, puis utilisez le script dédié dans `frontend` :
+
+```bash
+npm run dev:lan
+```
+
+Vite écoute alors sur toutes les interfaces réseau. Ouvrez depuis l’autre appareil l’adresse affichée sous `Network`, par exemple `http://192.168.1.6:5173`. Cette commande est réservée au développement sur un réseau privé de confiance.
 
 ## Vérifications
 
