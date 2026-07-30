@@ -132,6 +132,7 @@ describe('MaterialDetailPage', () => {
     await screen.findByRole('img', { name: 'Logo Green' });
     await user.click(screen.getByRole('tab', { name: 'Historique' }));
 
+    expect(screen.getByText('30/07/2026 12:00')).toBeVisible();
     expect(screen.getByText('Fabricant')).toBeVisible();
     expect(screen.getByText('GreenDesk')).toBeVisible();
     expect(screen.getByText('Nom')).toBeVisible();

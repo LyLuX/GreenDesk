@@ -14,6 +14,7 @@ import { activityStatusFilter } from '../filters/filter-options.js';
 import useNotification from '../notifications/useNotification.js';
 import { paginateItems } from '../utils/pagination.js';
 import { getStatusActionButtonClass } from '../utils/status-action.js';
+import { formatDateTime } from '../utils/formatters.js';
 
 const emptyUser = () => ({
   firstName: '',
@@ -23,13 +24,6 @@ const emptyUser = () => ({
   isActive: true,
   roleUuids: [],
 });
-
-const formatDate = (value) =>
-  value
-    ? new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }).format(
-        new Date(value),
-      )
-    : 'Jamais';
 
 /** Administrator workspace for creating and maintaining application users. */
 export default function UsersPage() {
@@ -294,7 +288,7 @@ export default function UsersPage() {
                         {user.isActive ? 'Actif' : 'Inactif'}
                       </span>
                     </td>
-                    <td>{formatDate(user.lastLoginAt)}</td>
+                    <td>{formatDateTime(user.lastLoginAt, 'Jamais')}</td>
                     <td>
                       <div className="d-flex h-100 w-100 flex-wrap align-items-center justify-content-center gap-1">
                         <button

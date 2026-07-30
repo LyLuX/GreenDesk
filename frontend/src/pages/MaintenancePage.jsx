@@ -37,6 +37,7 @@ import {
 } from '../maintenance/maintenance.labels.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import { getStatusActionButtonClass } from '../utils/status-action.js';
+import { formatDate } from '../utils/formatters.js';
 
 const types = Object.keys(maintenanceTypeLabels);
 const priorities = Object.keys(maintenancePriorityLabels);
@@ -62,8 +63,6 @@ const baseFields = [
   },
   { name: 'notes', label: 'Notes', multiline: true },
 ];
-const date = (value) =>
-  value ? new Intl.DateTimeFormat('fr-FR').format(new Date(`${value}T00:00:00Z`)) : '—';
 const remainingDays = (value) => {
   if (value === null || value === undefined) return '—';
   return `${Number(value).toLocaleString('fr-FR')} ${Math.abs(Number(value)) === 1 ? 'jour' : 'jours'}`;
@@ -401,7 +400,7 @@ export default function MaintenancePage() {
                         </small>
                       )}
                     </td>
-                    <td>{date(item.nextMaintenanceDate)}</td>
+                    <td>{formatDate(item.nextMaintenanceDate)}</td>
                     <td>{remainingDays(item.remainingDays)}</td>
                     <td>
                       <span
@@ -621,7 +620,7 @@ export default function MaintenancePage() {
           <ul className="maintenance-history-list">
             {history.map((entry) => (
               <li className="py-2" key={entry.uuid}>
-                <strong>{date(entry.performedAt)}</strong> ·{' '}
+                <strong>{formatDate(entry.performedAt)}</strong> ·{' '}
                 {entry.performedByUser
                   ? `${entry.performedByUser.firstName} ${entry.performedByUser.lastName}`
                   : 'Utilisateur supprimé'}

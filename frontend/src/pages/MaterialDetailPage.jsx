@@ -21,7 +21,7 @@ import {
   maintenanceStatusLabels,
 } from '../maintenance/maintenance.labels.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
-import { formatCurrency } from '../utils/formatters.js';
+import { formatCurrency, formatDate, formatDateTime } from '../utils/formatters.js';
 
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const documentTypeLabels = Object.freeze({
@@ -69,15 +69,6 @@ const Field = ({ label, value }) => (
     <td>{value ?? '—'}</td>
   </tr>
 );
-const formatDate = (value) =>
-  value ? new Intl.DateTimeFormat('fr-FR').format(new Date(`${value}T00:00:00Z`)) : '—';
-const formatDateTime = (value) =>
-  value
-    ? new Intl.DateTimeFormat('fr-FR', {
-        dateStyle: 'short',
-        timeStyle: 'short',
-      }).format(new Date(value))
-    : '—';
 const auditValuesAreEqual = (key, before, after) => {
   if (key === 'purchasePrice' && before !== null && after !== null) {
     return Number(before) === Number(after);

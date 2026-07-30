@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **1.15.1**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **1.15.2**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -27,6 +27,8 @@ Le pied de page global affiche le copyright `EI BOURNAZEL Paul` ainsi que la ver
 Les pages « Accès refusé » et « Page introuvable » proposent une action permettant de retourner directement au tableau de bord.
 
 Les notifications s’adaptent à la longueur de leur contenu et conservent une largeur maximale responsive afin de rester compactes sans déborder de l’écran.
+
+Toutes les dates affichées utilisent le format français numérique `JJ/MM/AAAA`. Lorsqu’une heure est nécessaire, le format commun est `JJ/MM/AAAA HH:mm` dans le fuseau `Europe/Paris`. Les champs de formulaire et les échanges avec l’API conservent leurs valeurs ISO techniques.
 
 Le gabarit principal occupe exactement la hauteur visible de la fenêtre, footer compris. Les contenus dépassant cette hauteur restent accessibles dans leur zone centrale sans afficher de barre de défilement globale ou interne.
 

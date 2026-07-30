@@ -12,7 +12,7 @@ import {
   maintenanceTypeLabels,
 } from '../maintenance/maintenance.labels.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
-import { formatCurrency } from '../utils/formatters.js';
+import { formatCurrency, formatDate } from '../utils/formatters.js';
 
 const maintenanceCards = [
   {
@@ -37,9 +37,6 @@ const maintenanceCards = [
     className: 'maintenance-overdue',
   },
 ];
-
-const formatDate = (value) =>
-  value ? new Intl.DateTimeFormat('fr-FR').format(new Date(`${value}T00:00:00Z`)) : '—';
 
 export default function DashboardPage() {
   const { hasPermission } = useAuth();
