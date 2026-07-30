@@ -117,7 +117,7 @@ export default function DashboardPage() {
   ];
   return (
     <main className="app-page">
-      <div className="page-header">
+      <div className="page-header mb-3">
         <h1 className="page-title">Tableau de bord</h1>
         <p className="page-subtitle">Vue d’ensemble du parc matériel et des opérations à suivre.</p>
       </div>

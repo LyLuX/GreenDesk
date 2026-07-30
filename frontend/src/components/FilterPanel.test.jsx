@@ -37,7 +37,8 @@ describe('FilterPanel', () => {
     );
 
     const panel = screen.getByRole('region', { name: 'Recherche et filtres' });
-    expect(panel).toHaveClass('filter-panel', 'surface');
+    expect(panel).toHaveClass('filter-panel', 'surface', 'mb-1');
+    expect(panel).not.toHaveClass('mb-4');
     expect(screen.getByLabelText('Rechercher des éléments').closest('label')).toHaveTextContent(
       /^Recherche/,
     );

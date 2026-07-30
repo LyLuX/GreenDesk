@@ -130,7 +130,7 @@ export default function MaintenanceCatalogPage({
 
   return (
     <main className="app-page">
-      <div className="page-header d-flex flex-wrap align-items-start justify-content-between gap-3">
+      <div className="page-header mb-3 d-flex flex-wrap align-items-start justify-content-between gap-3">
         <div>
           <h1 className="page-title">{title}</h1>
           <p className="page-subtitle">{subtitle}</p>
