@@ -38,6 +38,17 @@ const maintenanceCards = [
   },
 ];
 
+/** Converts a decimal number of years into a readable years-and-months duration. */
+export const formatAverageAge = (value) => {
+  const totalMonths = Math.max(0, Math.round((Number(value) || 0) * 12));
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  const parts = [];
+  if (years) parts.push(`${years} ${years === 1 ? 'an' : 'ans'}`);
+  if (months || !parts.length) parts.push(`${months} mois`);
+  return parts.join(' et ');
+};
+
 export default function DashboardPage() {
   const { hasPermission } = useAuth();
   const [data, setData] = useState(null);
@@ -99,7 +110,7 @@ export default function DashboardPage() {
       cards: [
         ['Valeur du parc', formatCurrency(fleet.totalPurchaseValue)],
         ['Valeur moyennne', formatCurrency(fleet.averageCost)],
-        ['Âge moyen', `${Number(fleet.averageAge ?? 0).toFixed(1)} ans`],
+        ['Âge moyen', formatAverageAge(fleet.averageAge)],
       ],
     },
     ...(hasPermission(maintenancePermissions.plans.read)

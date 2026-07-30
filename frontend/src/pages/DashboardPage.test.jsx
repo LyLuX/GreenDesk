@@ -59,7 +59,7 @@ vi.mock('../auth/useAuth.js', () => ({
   default: () => ({ hasPermission }),
 }));
 
-import DashboardPage from './DashboardPage.jsx';
+import DashboardPage, { formatAverageAge } from './DashboardPage.jsx';
 
 describe('DashboardPage', () => {
   beforeEach(() => {
@@ -77,6 +77,13 @@ describe('DashboardPage', () => {
         <DashboardPage />
       </MemoryRouter>,
     );
+
+  it('formats the average age in years and months with French plurals', () => {
+    expect(formatAverageAge(1.6)).toBe('1 an et 7 mois');
+    expect(formatAverageAge(2)).toBe('2 ans');
+    expect(formatAverageAge(1 / 12)).toBe('1 mois');
+    expect(formatAverageAge(0)).toBe('0 mois');
+  });
 
   it('distributes cards across the three requested dashboard rows', async () => {
     renderPage();
