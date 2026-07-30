@@ -63,6 +63,26 @@ const getStatusConditions = ({ taskAlias = 'MaintenanceTask', today, upcoming })
   return { overdue, dueToday, upcoming: upcomingCondition };
 };
 
+const getStatusFilter = (status) => {
+  if (!status) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  const next = new Date();
+  next.setUTCDate(next.getUTCDate() + 30);
+  const conditions = getStatusConditions({
+    today,
+    upcoming: next.toISOString().slice(0, 10),
+  });
+  if (status === 'overdue') return Sequelize.literal(`(${conditions.overdue})`);
+  if (status === 'dueToday') return Sequelize.literal(`(${conditions.dueToday})`);
+  if (status === 'upcoming') return Sequelize.literal(`(${conditions.upcoming})`);
+  if (status === 'upToDate')
+    return Sequelize.literal(
+      `NOT (${conditions.overdue}) AND NOT (${conditions.dueToday}) AND ` +
+        `NOT (${conditions.upcoming})`,
+    );
+  return null;
+};
+
 export default class MaintenanceRepository {
   async findAll({
     search,
@@ -97,23 +117,8 @@ export default class MaintenanceRepository {
     if (maintenanceType) where.maintenanceType = maintenanceType;
     const normalizedActive = normalizeBooleanFilter(active);
     if (normalizedActive !== undefined) where.active = normalizedActive;
-    const today = new Date().toISOString().slice(0, 10);
-    const next = new Date();
-    next.setUTCDate(next.getUTCDate() + 30);
-    const conditions = getStatusConditions({
-      today,
-      upcoming: next.toISOString().slice(0, 10),
-    });
-    if (status === 'overdue') where[Op.and] = [Sequelize.literal(`(${conditions.overdue})`)];
-    if (status === 'dueToday') where[Op.and] = [Sequelize.literal(`(${conditions.dueToday})`)];
-    if (status === 'upcoming') where[Op.and] = [Sequelize.literal(`(${conditions.upcoming})`)];
-    if (status === 'upToDate')
-      where[Op.and] = [
-        Sequelize.literal(
-          `NOT (${conditions.overdue}) AND NOT (${conditions.dueToday}) AND ` +
-            `NOT (${conditions.upcoming})`,
-        ),
-      ];
+    const statusFilter = getStatusFilter(status);
+    if (statusFilter) where[Op.and] = [statusFilter];
     const include = [
       {
         ...materialInclude,
@@ -189,14 +194,19 @@ export default class MaintenanceRepository {
       { transaction: options.transaction },
     );
   }
-  async findForOrderList({ from, through }) {
+  async findForOrderList({ from, through, status }) {
+    const statusFilter = getStatusFilter(status);
     return MaintenanceTask.findAll({
       where: {
         active: true,
-        nextMaintenanceDate: {
-          ...(from ? { [Op.gte]: from } : {}),
-          [Op.lte]: through,
-        },
+        ...(statusFilter
+          ? { [Op.and]: [statusFilter] }
+          : {
+              nextMaintenanceDate: {
+                ...(from ? { [Op.gte]: from } : {}),
+                [Op.lte]: through,
+              },
+            }),
       },
       include: [materialInclude, operationInclude, partsInclude],
       order: [['next_maintenance_date', 'ASC']],

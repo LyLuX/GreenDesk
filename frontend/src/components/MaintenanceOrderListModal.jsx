@@ -18,6 +18,19 @@ const horizonOptions = [
   { value: 365, label: 'Sous un an' },
 ];
 
+const defaultOrderListFilters = Object.freeze({ horizonDays: 30, includeOverdue: true });
+
+/** Converts the maintenance page deadline filter into the matching order-list period. */
+export const getOrderListFiltersForDeadline = (deadlineStatus) => {
+  const filtersByDeadline = {
+    overdue: { status: 'overdue', horizonDays: 0, includeOverdue: true },
+    dueToday: { status: 'dueToday', horizonDays: 0, includeOverdue: false },
+    upcoming: { status: 'upcoming', horizonDays: 30, includeOverdue: false },
+    upToDate: { status: 'upToDate', horizonDays: 365, includeOverdue: false },
+  };
+  return filtersByDeadline[deadlineStatus] ?? { ...defaultOrderListFilters };
+};
+
 /** Formats the default part unit with its French plural when required. */
 export const formatOrderQuantity = (quantity, unit) => {
   const numericQuantity = Number(quantity);
@@ -175,8 +188,11 @@ function MaintenanceOrderPrintPages({ supplierPages, manufacturerByUuid }) {
 }
 
 /** Displays parts aggregated from maintenance plans due in a chosen horizon. */
-export default function MaintenanceOrderListModal({ open, onClose }) {
-  const [filters, setFilters] = useState({ horizonDays: 30, includeOverdue: true });
+export default function MaintenanceOrderListModal({ open, onClose, initialFilters }) {
+  const [filters, setFilters] = useState(() => ({
+    ...defaultOrderListFilters,
+    ...initialFilters,
+  }));
   const [data, setData] = useState(null);
   const [manufacturers, setManufacturers] = useState([]);
   const [error, setError] = useState('');
@@ -236,6 +252,7 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
                 onChange={(event) =>
                   setFilters((current) => ({
                     ...current,
+                    status: undefined,
                     horizonDays: Number(event.target.value),
                   }))
                 }
@@ -255,6 +272,7 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
                 onChange={(event) =>
                   setFilters((current) => ({
                     ...current,
+                    status: undefined,
                     includeOverdue: event.target.checked,
                   }))
                 }

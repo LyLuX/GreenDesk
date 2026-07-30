@@ -55,6 +55,9 @@ export const executeValidator = [
   body('comment').optional().trim(),
 ];
 export const orderListValidator = [
+  query('status')
+    .optional({ values: 'falsy' })
+    .isIn(['upToDate', 'upcoming', 'dueToday', 'overdue']),
   query('horizonDays').optional().isInt({ min: 0, max: 365 }).toInt(),
   query('includeOverdue').optional().isBoolean().toBoolean(),
 ];

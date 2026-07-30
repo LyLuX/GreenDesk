@@ -827,9 +827,18 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Agrège les pièces nécessaires aux plans arrivant à échéance.',
       description:
-        'Nécessite `maintenance.read`. Une échéance correspond à un besoin de pièces ; une pièce désactivée reste comptée tant qu’un plan l’utilise.',
+        'Nécessite `maintenance.read`. Une échéance correspond à un besoin de pièces ; une pièce désactivée reste comptée tant qu’un plan l’utilise. Le filtre `status`, lorsqu’il est renseigné, prend la priorité sur la période.',
       security: secure,
       parameters: [
+        {
+          name: 'status',
+          in: 'query',
+          description: 'Statut exact d’échéance, partagé avec le filtre de la page Maintenance.',
+          schema: {
+            type: 'string',
+            enum: ['upToDate', 'upcoming', 'dueToday', 'overdue'],
+          },
+        },
         {
           name: 'horizonDays',
           in: 'query',

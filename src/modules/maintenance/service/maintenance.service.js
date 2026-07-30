@@ -254,13 +254,17 @@ export default class MaintenanceService {
     const task = await this.getEntityByUuid(uuid);
     return (await this.repository.findHistory(task.id)).map((history) => this.toHistory(history));
   }
-  async getOrderList({ horizonDays = 30, includeOverdue = true } = {}) {
+  async getOrderList({ horizonDays = 30, includeOverdue = true, status } = {}) {
     const normalizedHorizon = Math.min(Math.max(Number(horizonDays) || 0, 0), 365);
+    const normalizedStatus = ['upToDate', 'upcoming', 'dueToday', 'overdue'].includes(status)
+      ? status
+      : undefined;
     const today = todayDateOnly();
     const through = addDaysDateOnly(today, normalizedHorizon);
     const tasks = await this.repository.findForOrderList({
       from: includeOverdue === false ? today : undefined,
       through,
+      status: normalizedStatus,
     });
     const grouped = new Map();
     for (const task of tasks.map((item) => this.toPublic(item))) {
@@ -292,6 +296,7 @@ export default class MaintenanceService {
     return {
       horizonDays: normalizedHorizon,
       includeOverdue: includeOverdue !== false,
+      status: normalizedStatus ?? null,
       from: today,
       through,
       items: [...grouped.values()].sort((left, right) => left.name.localeCompare(right.name, 'fr')),

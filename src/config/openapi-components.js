@@ -685,8 +685,13 @@ export const openApiSchemas = {
   },
   MaintenanceOrderList: {
     type: 'object',
-    required: ['horizonDays', 'includeOverdue', 'from', 'through', 'items'],
+    required: ['status', 'horizonDays', 'includeOverdue', 'from', 'through', 'items'],
     properties: {
+      status: {
+        type: 'string',
+        enum: ['upToDate', 'upcoming', 'dueToday', 'overdue'],
+        nullable: true,
+      },
       horizonDays: { type: 'integer', minimum: 0, maximum: 365 },
       includeOverdue: { type: 'boolean' },
       from: date,

@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   listOperations: vi.fn(),
   listParts: vi.fn(),
   listMaterials: vi.fn(),
+  listManufacturers: vi.fn(),
+  getOrderList: vi.fn(),
   createMaintenance: vi.fn(),
   executeMaintenance: vi.fn(),
   hasPermission: vi.fn(),
@@ -29,10 +31,12 @@ vi.mock('../api/maintenance.api.js', () => ({
   createMaintenancePart: vi.fn(),
   updateMaintenancePart: vi.fn(),
   deleteMaintenancePart: vi.fn(),
-  getMaintenanceOrderList: vi.fn(),
+  getMaintenanceOrderList: mocks.getOrderList,
 }));
 vi.mock('../api/reference.api.js', () => ({
-  createReferenceApi: () => ({ list: mocks.listMaterials }),
+  createReferenceApi: (resource) => ({
+    list: resource === 'manufacturers' ? mocks.listManufacturers : mocks.listMaterials,
+  }),
 }));
 vi.mock('../auth/useAuth.js', () => ({
   default: () => ({ hasPermission: mocks.hasPermission }),
@@ -53,6 +57,16 @@ describe('MaintenancePage', () => {
       data: {
         data: {
           items: [{ uuid: 'material-uuid', name: 'Tronçonneuse' }],
+        },
+      },
+    });
+    mocks.listManufacturers.mockResolvedValue({ data: { data: [] } });
+    mocks.getOrderList.mockResolvedValue({
+      data: {
+        data: {
+          horizonDays: 30,
+          includeOverdue: false,
+          items: [],
         },
       },
     });
@@ -180,6 +194,33 @@ describe('MaintenancePage', () => {
     expect(mocks.listMaintenance).toHaveBeenCalledWith(
       { page: 1, limit: 5, active: 'true', status: 'overdue' },
       expect.any(AbortSignal),
+    );
+  });
+
+  it('opens the order list with the period matching the selected deadline', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await screen.findByText('12 jours');
+    await user.selectOptions(screen.getByLabelText('Filtrer par échéance'), 'upcoming');
+    await user.click(screen.getByRole('button', { name: 'Pièces à commander' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Pièces à commander' });
+    expect(within(dialog).getByLabelText('Échéance')).toHaveValue('30');
+    expect(within(dialog).getByLabelText('Inclure les plans en retard')).not.toBeChecked();
+    await waitFor(() =>
+      expect(mocks.getOrderList).toHaveBeenCalledWith(
+        { status: 'upcoming', horizonDays: 30, includeOverdue: false },
+        expect.any(AbortSignal),
+      ),
+    );
+
+    await user.selectOptions(within(dialog).getByLabelText('Échéance'), '60');
+    await waitFor(() =>
+      expect(mocks.getOrderList).toHaveBeenLastCalledWith(
+        { horizonDays: 60, includeOverdue: false },
+        expect.any(AbortSignal),
+      ),
     );
   });
 

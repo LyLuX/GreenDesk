@@ -19,7 +19,9 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import FilterPanel from '../components/FilterPanel.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
-import MaintenanceOrderListModal from '../components/MaintenanceOrderListModal.jsx';
+import MaintenanceOrderListModal, {
+  getOrderListFiltersForDeadline,
+} from '../components/MaintenanceOrderListModal.jsx';
 import Modal from '../components/Modal.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
@@ -574,7 +576,13 @@ export default function MaintenancePage() {
           </Button>
         </form>
       </Modal>
-      <MaintenanceOrderListModal open={orderListOpen} onClose={() => setOrderListOpen(false)} />
+      {orderListOpen ? (
+        <MaintenanceOrderListModal
+          open
+          initialFilters={getOrderListFiltersForDeadline(filters.status)}
+          onClose={() => setOrderListOpen(false)}
+        />
+      ) : null}
       <Modal
         open={dialog?.type === 'execute'}
         title="Effectuer l’entretien"

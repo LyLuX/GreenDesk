@@ -179,6 +179,22 @@ describe('MaintenanceService', () => {
     ]);
   });
 
+  it('uses the exact maintenance deadline status for the order list', async () => {
+    const repository = { findForOrderList: jest.fn().mockResolvedValue([]) };
+    const service = new MaintenanceService(repository, {}, {}, {});
+
+    const result = await service.getOrderList({
+      status: 'overdue',
+      horizonDays: 0,
+      includeOverdue: true,
+    });
+
+    expect(repository.findForOrderList).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'overdue' }),
+    );
+    expect(result.status).toBe('overdue');
+  });
+
   it('executes calendar maintenance without recording engine hours', async () => {
     const today = todayDateOnly();
     const task = {

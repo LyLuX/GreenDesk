@@ -19,6 +19,7 @@ vi.mock('./ManufacturerLogo.jsx', () => ({
 
 import MaintenanceOrderListModal, {
   formatOrderQuantity,
+  getOrderListFiltersForDeadline,
   groupOrderPartsBySupplier,
   paginateSupplierGroups,
 } from './MaintenanceOrderListModal.jsx';
@@ -79,6 +80,33 @@ describe('MaintenanceOrderListModal', () => {
   it('pluralizes the default part unit according to the ordered quantity', () => {
     expect(formatOrderQuantity(1, 'pièce')).toBe('1 pièce');
     expect(formatOrderQuantity(2, 'pièce')).toBe('2 pièces');
+  });
+
+  it('matches maintenance deadline filters with order-list periods', () => {
+    expect(getOrderListFiltersForDeadline('overdue')).toEqual({
+      status: 'overdue',
+      horizonDays: 0,
+      includeOverdue: true,
+    });
+    expect(getOrderListFiltersForDeadline('dueToday')).toEqual({
+      status: 'dueToday',
+      horizonDays: 0,
+      includeOverdue: false,
+    });
+    expect(getOrderListFiltersForDeadline('upcoming')).toEqual({
+      status: 'upcoming',
+      horizonDays: 30,
+      includeOverdue: false,
+    });
+    expect(getOrderListFiltersForDeadline('upToDate')).toEqual({
+      status: 'upToDate',
+      horizonDays: 365,
+      includeOverdue: false,
+    });
+    expect(getOrderListFiltersForDeadline()).toEqual({
+      horizonDays: 30,
+      includeOverdue: true,
+    });
   });
 
   it('groups suppliers alphabetically and keeps missing suppliers together', () => {
