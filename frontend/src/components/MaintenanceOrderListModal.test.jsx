@@ -1,5 +1,6 @@
-import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getOrderList: vi.fn(),
@@ -16,11 +17,14 @@ vi.mock('./ManufacturerLogo.jsx', () => ({
   default: ({ manufacturer }) => <img alt={`Logo ${manufacturer?.name ?? 'indisponible'}`} />,
 }));
 
-import MaintenanceOrderListModal from './MaintenanceOrderListModal.jsx';
+import MaintenanceOrderListModal, { formatOrderQuantity } from './MaintenanceOrderListModal.jsx';
 
 describe('MaintenanceOrderListModal', () => {
+  afterEach(cleanup);
+
   beforeEach(() => {
     vi.clearAllMocks();
+    window.print = vi.fn();
     mocks.getOrderList.mockResolvedValue({
       data: {
         data: {
@@ -59,5 +63,24 @@ describe('MaintenanceOrderListModal', () => {
 
     expect(await screen.findByRole('img', { name: 'Logo NGK' })).toBeVisible();
     expect(screen.queryByText('NGK')).not.toBeInTheDocument();
+  });
+
+  it('pluralizes the default part unit according to the ordered quantity', () => {
+    expect(formatOrderQuantity(1, 'pièce')).toBe('1 pièce');
+    expect(formatOrderQuantity(2, 'pièce')).toBe('2 pièces');
+  });
+
+  it('prints the displayed order list from a shared GreenDesk button', async () => {
+    const user = userEvent.setup();
+    render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
+
+    expect(await screen.findByText('2 pièces')).toBeVisible();
+    const printButton = screen.getByRole('button', { name: 'Imprimer la liste' });
+    expect(printButton).toHaveClass('btn', 'btn-brand');
+    expect(printButton.parentElement).toHaveClass('justify-content-end');
+
+    await user.click(printButton);
+
+    expect(window.print).toHaveBeenCalledOnce();
   });
 });

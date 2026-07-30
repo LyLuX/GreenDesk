@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **1.6.1**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **1.7.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -70,7 +70,7 @@ Une tâche est à faire aujourd’hui lorsque sa prochaine date correspond à la
 
 Les permissions sont `maintenance.read`, `maintenance.create`, `maintenance.update`, `maintenance.delete` et `maintenance.execute`. Le tableau de bord compte les entretiens prévus aujourd’hui, en retard et dans les 30 prochains jours. Chaque compteur non nul donne accès à la liste exacte des entretiens concernés. Un bouton dans cette liste ouvre la page Maintenance en présélectionnant l’échéance correspondante.
 
-Les intitulés répétitifs sont centralisés dans un catalogue d’opérations accessible via `/api/v1/maintenance/operations`. Les références réellement commandables sont enregistrées dans `/api/v1/maintenance/parts`, puis associées aux plans avec une quantité. Une même opération, par exemple le remplacement d’une bougie, peut ainsi utiliser des références différentes selon le matériel. `GET /api/v1/maintenance/order-list` regroupe les quantités nécessaires aux plans arrivant à échéance sur un horizon configurable.
+Les intitulés répétitifs sont centralisés dans un catalogue d’opérations accessible via `/api/v1/maintenance/operations`. Les références réellement commandables sont enregistrées dans `/api/v1/maintenance/parts`, puis associées aux plans avec une quantité. Une même opération, par exemple le remplacement d’une bougie, peut ainsi utiliser des références différentes selon le matériel. `GET /api/v1/maintenance/order-list` regroupe les quantités nécessaires aux plans arrivant à échéance sur un horizon configurable. La modale de commande accorde le libellé `pièce` à la quantité et permet d’imprimer une liste dédiée, sans les contrôles de l’interface.
 
 L’interface sépare les opérations et les pièces sur les pages `/maintenance/operations` et `/maintenance/parts`. Les fabricants et les fournisseurs sont des référentiels globaux accessibles sur `/manufacturers` et `/suppliers`, avec leurs permissions dédiées. Une pièce référence ainsi un fabricant et un fournisseur enregistrés, en plus de ses références fabricant et fournisseur.
 
