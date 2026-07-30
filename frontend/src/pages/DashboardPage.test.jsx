@@ -1,5 +1,6 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const { getDashboardSummary } = vi.hoisted(() => ({
@@ -62,8 +63,15 @@ describe('DashboardPage', () => {
     vi.clearAllMocks();
   });
 
+  const renderPage = () =>
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>,
+    );
+
   it('distributes cards across the three requested dashboard rows', async () => {
-    render(<DashboardPage />);
+    renderPage();
 
     const inventory = await screen.findByRole('region', {
       name: 'Matériels et catégories',
@@ -92,7 +100,7 @@ describe('DashboardPage', () => {
       data: { data: { maintenance: { overdue: 0 } } },
     });
 
-    render(<DashboardPage />);
+    renderPage();
 
     expect((await screen.findByText('Entretiens en retard')).parentElement).not.toHaveClass(
       'maintenance-overdue-alert',
@@ -100,17 +108,24 @@ describe('DashboardPage', () => {
   });
 
   it.each([
-    ['Entretiens aujourd’hui', 'Entretiens à faire aujourd’hui', 'Vidange moteur', 'Tracteur 01'],
+    [
+      'Entretiens aujourd’hui',
+      'Entretiens à faire aujourd’hui',
+      'Vidange moteur',
+      'Tracteur 01',
+      'dueToday',
+    ],
     [
       'Entretiens prévus sous 30 jours',
       'Entretiens prévus sous 30 jours',
       'Contrôle général',
       'Tracteur 02',
+      'upcoming',
     ],
-    ['Entretiens en retard', 'Entretiens en retard', 'Bougie', 'EP-534 THX'],
-  ])('opens the list matching the "%s" counter', async (label, title, task, material) => {
+    ['Entretiens en retard', 'Entretiens en retard', 'Bougie', 'EP-534 THX', 'overdue'],
+  ])('opens the list matching the "%s" counter', async (label, title, task, material, status) => {
     const user = userEvent.setup();
-    render(<DashboardPage />);
+    renderPage();
 
     await user.click(
       await screen.findByRole('button', {
@@ -121,6 +136,14 @@ describe('DashboardPage', () => {
     const dialog = await screen.findByRole('dialog', { name: title });
     expect(within(dialog).getByText(task)).toBeInTheDocument();
     expect(within(dialog).getByText(material)).toBeInTheDocument();
+    expect(within(dialog).getByRole('link', { name: 'Voir la maintenance' })).toHaveAttribute(
+      'href',
+      `/maintenance?status=${status}`,
+    );
+    expect(within(dialog).getByRole('link', { name: 'Voir la maintenance' })).toHaveClass(
+      'btn',
+      'btn-outline-brand',
+    );
   });
 
   it('does not make an empty maintenance counter clickable', async () => {
@@ -128,7 +151,7 @@ describe('DashboardPage', () => {
       data: { data: { maintenance: { today: 0, overdue: 0, upcoming: 0 } } },
     });
 
-    render(<DashboardPage />);
+    renderPage();
 
     await screen.findByText('Entretiens aujourd’hui');
     expect(

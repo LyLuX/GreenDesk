@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { getDashboardSummary } from '../api/dashboard.api.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import Loader from '../components/Loader.jsx';
@@ -189,6 +190,16 @@ export default function DashboardPage() {
               </li>
             ))}
           </ul>
+        )}
+        {maintenanceDialog?.status && (
+          <div className="mt-4 d-flex justify-content-end">
+            <Link
+              className="btn btn-outline-brand"
+              to={`/maintenance?status=${encodeURIComponent(maintenanceDialog.status)}`}
+            >
+              Voir la maintenance
+            </Link>
+          </div>
         )}
       </Modal>
     </main>

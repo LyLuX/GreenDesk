@@ -169,6 +169,18 @@ describe('MaintenancePage', () => {
     );
   });
 
+  it('selects the deadline provided by the dashboard', async () => {
+    renderPage('/maintenance?status=overdue');
+
+    await screen.findByText('12 jours');
+
+    expect(screen.getByLabelText('Filtrer par échéance')).toHaveValue('overdue');
+    expect(mocks.listMaintenance).toHaveBeenCalledWith(
+      { page: 1, limit: 5, status: 'overdue' },
+      expect.any(AbortSignal),
+    );
+  });
+
   it('uses compact outline buttons for table actions', async () => {
     renderPage();
 

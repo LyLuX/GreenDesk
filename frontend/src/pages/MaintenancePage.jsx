@@ -36,6 +36,7 @@ import {
 
 const types = Object.keys(maintenanceTypeLabels);
 const priorities = Object.keys(maintenancePriorityLabels);
+const deadlineStatuses = new Set(Object.keys(maintenanceStatusLabels));
 const baseFields = [
   { name: 'materialUuid', label: 'Matériel', required: true },
   { name: 'operationUuid', label: 'Opération', required: true },
@@ -75,10 +76,12 @@ export default function MaintenancePage() {
   const [parts, setParts] = useState([]);
   const [filters, setFilters] = useState(() => {
     const materialUuid = searchParams.get('materialUuid');
+    const status = searchParams.get('status');
     return {
       page: 1,
       limit: searchParams.get('limit') === 'all' ? 'all' : 5,
       ...(materialUuid ? { materialUuid } : {}),
+      ...(deadlineStatuses.has(status) ? { status } : {}),
     };
   });
   const [search, setSearch] = useState('');
