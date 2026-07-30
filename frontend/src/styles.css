@@ -6,6 +6,8 @@
   --brand-forest-dark: #083726;
   --brand-leaf: #4f7d21;
   --brand-sun: #d8b72a;
+  --brand-blue: #2c7189;
+  --brand-blue-dark: #20566b;
   --brand-mist: #f3f6f1;
   --ink: #1f2a25;
   --muted: #64716a;
@@ -80,6 +82,20 @@ a:hover {
   --bs-btn-hover-border-color: var(--brand-forest);
   --bs-btn-active-bg: var(--brand-forest-dark);
   --bs-btn-active-border-color: var(--brand-forest-dark);
+}
+
+.btn-outline-activation {
+  --bs-btn-color: var(--brand-blue-dark);
+  --bs-btn-border-color: var(--brand-blue);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: var(--brand-blue);
+  --bs-btn-hover-border-color: var(--brand-blue);
+  --bs-btn-focus-shadow-rgb: 44, 113, 137;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: var(--brand-blue-dark);
+  --bs-btn-active-border-color: var(--brand-blue-dark);
+  --bs-btn-disabled-color: var(--brand-blue);
+  --bs-btn-disabled-border-color: var(--brand-blue);
 }
 
 .form-control,
@@ -369,6 +385,55 @@ a:hover {
   box-shadow: 0 0.2rem 0.8rem rgba(21, 54, 37, 0.05);
 }
 
+.permission-picker {
+  display: grid;
+  max-height: min(24rem, 45vh);
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.permission-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.permission-option:last-child {
+  border-bottom: 0;
+}
+
+.permission-option:hover {
+  background: var(--brand-mist);
+}
+
+.permission-option.selected {
+  background: #edf3e9;
+}
+
+.permission-option .form-check-input {
+  margin-top: 0.2rem;
+}
+
+.permission-option .form-check-label {
+  display: grid;
+  gap: 0.2rem;
+  cursor: pointer;
+}
+
+.permission-description {
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.permission-code {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
 .auth-page {
   min-height: 0;
   padding: 1.5rem;
@@ -401,6 +466,38 @@ a:hover {
   color: var(--brand-forest-dark);
   font-size: 1.65rem;
   font-weight: 700;
+}
+
+.password-visibility-toggle {
+  display: inline-flex;
+  min-width: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem 0.65rem;
+  border-color: #cbd7ce;
+  color: var(--muted);
+}
+
+.password-visibility-toggle:hover {
+  border-color: var(--brand-forest);
+  background: var(--brand-forest);
+  color: #fff;
+}
+
+.password-visibility-toggle:focus-visible {
+  border-color: var(--brand-leaf);
+  box-shadow: 0 0 0 0.2rem rgba(79, 125, 33, 0.16);
+}
+
+.password-visibility-toggle svg {
+  display: block;
+  width: 1.2rem;
+  height: 1.2rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .metric-card {

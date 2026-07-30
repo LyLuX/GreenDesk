@@ -63,4 +63,25 @@ describe('RegisterPage', () => {
     );
     expect(client.post).not.toHaveBeenCalled();
   });
+
+  it('shows each password temporarily from its own icon button', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const password = screen.getByLabelText('Mot de passe');
+    const confirmation = screen.getByLabelText('Confirmer le mot de passe');
+    const toggles = screen.getAllByRole('button', { name: 'Afficher le mot de passe' });
+
+    expect(password).toHaveAttribute('type', 'password');
+    expect(confirmation).toHaveAttribute('type', 'password');
+    expect(toggles).toHaveLength(2);
+
+    await user.click(toggles[0]);
+    expect(password).toHaveAttribute('type', 'text');
+    expect(confirmation).toHaveAttribute('type', 'password');
+    expect(screen.getByRole('button', { name: 'Masquer le mot de passe' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
 });

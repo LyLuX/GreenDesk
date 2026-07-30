@@ -32,6 +32,13 @@ export default function RolesPage() {
   const [limit, setLimit] = useState(5);
   const [search, setSearch] = useState('');
   const [permissionUuid, setPermissionUuid] = useState('');
+  const sortedPermissions = useMemo(
+    () =>
+      [...permissions].sort((left, right) =>
+        left.name.localeCompare(right.name, 'fr', { sensitivity: 'base' }),
+      ),
+    [permissions],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -165,7 +172,7 @@ export default function RolesPage() {
             label: 'Permission',
             ariaLabel: 'Filtrer par permission',
             emptyLabel: 'Toutes les permissions',
-            options: permissions.map((permission) => ({
+            options: sortedPermissions.map((permission) => ({
               value: permission.uuid,
               label: permission.name,
             })),
@@ -282,26 +289,41 @@ export default function RolesPage() {
               setForm((current) => ({ ...current, description: event.target.value }))
             }
           />
-          <div>
-            <p className="form-label mb-2 text-body-secondary">Permissions attribuées</p>
-            <div className="surface p-3">
-              {permissions.map((permission) => (
-                <div className="form-check" key={permission.uuid}>
-                  <input
-                    className="form-check-input"
-                    id={`permission-${permission.uuid}`}
-                    type="checkbox"
-                    checked={form.permissionUuids.includes(permission.uuid)}
-                    onChange={() => togglePermission(permission.uuid)}
-                  />
-                  <label className="form-check-label" htmlFor={`permission-${permission.uuid}`}>
-                    {permission.name}
-                    {permission.description ? ` — ${permission.description}` : ''}
-                  </label>
-                </div>
-              ))}
+          <fieldset>
+            <legend className="form-label d-flex justify-content-between gap-3">
+              <span>Permissions attribuées</span>
+              <span className="text-body-secondary fw-normal">
+                {form.permissionUuids.length} sur {sortedPermissions.length}
+              </span>
+            </legend>
+            <div className="permission-picker">
+              {sortedPermissions.map((permission) => {
+                const selected = form.permissionUuids.includes(permission.uuid);
+                return (
+                  <div
+                    className={`permission-option ${selected ? 'selected' : ''}`}
+                    key={permission.uuid}
+                  >
+                    <input
+                      className="form-check-input"
+                      id={`permission-${permission.uuid}`}
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => togglePermission(permission.uuid)}
+                    />
+                    <label className="form-check-label" htmlFor={`permission-${permission.uuid}`}>
+                      <span className="permission-description">
+                        {permission.description || permission.name}
+                      </span>
+                      {permission.description && (
+                        <code className="permission-code">{permission.name}</code>
+                      )}
+                    </label>
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          </fieldset>
           <Button type="submit" disabled={saving}>
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </Button>

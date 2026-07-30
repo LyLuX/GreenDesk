@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import {
   createMaintenance,
@@ -277,16 +277,6 @@ export default function MaintenancePage() {
           >
             Pièces à commander
           </button>
-          {hasPermission(maintenancePermissions.operations.read) && (
-            <Link className="btn btn-outline-brand" to="/maintenance/operations">
-              Gérer les opérations
-            </Link>
-          )}
-          {hasPermission(maintenancePermissions.parts.read) && (
-            <Link className="btn btn-outline-brand" to="/maintenance/parts">
-              Gérer les pièces
-            </Link>
-          )}
           {hasPermission(maintenancePermissions.plans.create) && (
             <Button onClick={() => setDialog({ type: 'create' })}>Créer un plan</Button>
           )}

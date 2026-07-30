@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import client from '../api/client.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import useAuth from '../auth/useAuth.js';
+import PasswordInput from '../components/PasswordInput.jsx';
 
 /** Creates a user account through the public authentication endpoint. */
 export default function RegisterPage() {
@@ -116,34 +117,34 @@ export default function RegisterPage() {
             required
           />
         </label>
-        <label className="form-label" htmlFor="password">
-          Mot de passe
-          <input
+        <div>
+          <label className="form-label" htmlFor="password">
+            Mot de passe
+          </label>
+          <PasswordInput
             id="password"
-            className="form-control mt-1"
             name="password"
-            type="password"
             value={values.password}
             onChange={updateValue}
             autoComplete="new-password"
             minLength="8"
             required
           />
-        </label>
-        <label className="form-label" htmlFor="passwordConfirmation">
-          Confirmer le mot de passe
-          <input
+        </div>
+        <div>
+          <label className="form-label" htmlFor="passwordConfirmation">
+            Confirmer le mot de passe
+          </label>
+          <PasswordInput
             id="passwordConfirmation"
-            className="form-control mt-1"
             name="passwordConfirmation"
-            type="password"
             value={values.passwordConfirmation}
             onChange={updateValue}
             autoComplete="new-password"
             minLength="8"
             required
           />
-        </label>
+        </div>
         <button className="btn btn-brand w-100 py-2" disabled={loading}>
           {loading ? 'Création…' : 'Créer mon compte'}
         </button>

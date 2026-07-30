@@ -238,24 +238,20 @@ describe('MaintenancePage', () => {
     const activateButton = await screen.findByRole('button', {
       name: 'Activer Vidange annuelle',
     });
-    expect(activateButton).toHaveClass('btn-outline-primary');
+    expect(activateButton).toHaveClass('btn-outline-activation');
 
     await user.click(activateButton);
     expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Activer' })).toHaveClass(
-      'btn-outline-primary',
+      'btn-outline-activation',
     );
   });
 
-  it('filters catalogue-management links with their dedicated read permissions', async () => {
-    mocks.hasPermission.mockImplementation(
-      (permission) => permission === 'maintenance.operations.read',
-    );
-
+  it('does not duplicate catalogue-management links in the maintenance header', async () => {
     renderPage();
 
-    expect(await screen.findByRole('link', { name: 'Gérer les opérations' })).toBeVisible();
+    await screen.findByText('12 jours');
+    expect(screen.queryByRole('link', { name: 'Gérer les opérations' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Gérer les pièces' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Créer un plan' })).not.toBeInTheDocument();
   });
 
   it('replaces the manually entered title with a reusable operation', async () => {

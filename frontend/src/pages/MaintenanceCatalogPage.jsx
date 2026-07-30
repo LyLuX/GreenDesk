@@ -10,9 +10,11 @@ import FilterPanel from '../components/FilterPanel.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
+import PaginationControls from '../components/PaginationControls.jsx';
 import { activityStatusFilter } from '../filters/filter-options.js';
 import useNotification from '../notifications/useNotification.js';
 import normalizeFormValues from '../utils/normalize-form-values.js';
+import { paginateItems } from '../utils/pagination.js';
 
 /** Reusable full-page CRUD screen for a maintenance catalogue. */
 export default function MaintenanceCatalogPage({
@@ -34,6 +36,8 @@ export default function MaintenanceCatalogPage({
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState('');
   const [active, setActive] = useState(activityStatusFilter.defaultValue);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(5);
   const [editing, setEditing] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -81,6 +85,7 @@ export default function MaintenanceCatalogPage({
       return matchesSearch && matchesStatus;
     });
   }, [active, fields, rows, search]);
+  const rowPage = paginateItems(filteredRows, page, limit);
 
   const save = async (event) => {
     event.preventDefault();
@@ -156,7 +161,10 @@ export default function MaintenanceCatalogPage({
             ariaLabel: `Rechercher dans ${title.toLocaleLowerCase('fr')}`,
             placeholder: 'Rechercher',
             value: search,
-            onChange: setSearch,
+            onChange: (value) => {
+              setSearch(value);
+              setPage(1);
+            },
           },
           {
             name: 'active',
@@ -164,7 +172,10 @@ export default function MaintenanceCatalogPage({
             ...activityStatusFilter,
             ariaLabel: 'Filtrer par statut',
             value: active,
-            onChange: setActive,
+            onChange: (value) => {
+              setActive(value);
+              setPage(1);
+            },
           },
         ]}
       />
@@ -188,7 +199,7 @@ export default function MaintenanceCatalogPage({
       ) : (
         <DataTable
           columns={columns}
-          rows={filteredRows}
+          rows={rowPage.items}
           emptyMessage={
             search.trim() || active
               ? 'Aucun élément ne correspond aux filtres.'
@@ -213,6 +224,19 @@ export default function MaintenanceCatalogPage({
               ? (row) => setConfirmation({ action: 'delete', row })
               : undefined
           }
+        />
+      )}
+      {!isLoading && (
+        <PaginationControls
+          pagination={rowPage.pagination}
+          limit={limit}
+          itemLabel={`${singular.toLocaleLowerCase('fr')}(s)`}
+          disabled={busy}
+          onLimitChange={(value) => {
+            setLimit(value);
+            setPage(1);
+          }}
+          onPageChange={setPage}
         />
       )}
 

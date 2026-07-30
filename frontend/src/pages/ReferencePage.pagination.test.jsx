@@ -108,7 +108,7 @@ describe('ReferencePage pagination', () => {
     await waitFor(() => expect(screen.queryByText('Actif')).not.toBeInTheDocument());
     expect(screen.getByText('Inactif')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Activer Inactif' })).toHaveClass(
-      'btn-outline-primary',
+      'btn-outline-activation',
     );
     expect(api.list).toHaveBeenLastCalledWith(
       expect.not.objectContaining({ active: 'false' }),

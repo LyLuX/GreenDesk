@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../auth/useAuth.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
+import PasswordInput from '../components/PasswordInput.jsx';
 import useNotification from '../notifications/useNotification.js';
 export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
@@ -72,17 +73,17 @@ export default function LoginPage() {
             autoComplete="email"
           />
         </label>
-        <label className="form-label" htmlFor="login-password">
-          Mot de passe
-          <input
+        <div>
+          <label className="form-label" htmlFor="login-password">
+            Mot de passe
+          </label>
+          <PasswordInput
             id="login-password"
-            className="form-control mt-1"
-            type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="current-password"
           />
-        </label>
+        </div>
         <button className="btn btn-brand align-self-center px-4 mt-5" disabled={loading}>
           {loading ? 'Connexion…' : 'Se connecter'}
         </button>

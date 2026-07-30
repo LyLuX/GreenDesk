@@ -206,10 +206,36 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(screen.getByText('Contrôle')).toBeVisible();
     expect(screen.queryByText('Vidange')).not.toBeInTheDocument();
     const activateButton = screen.getByRole('button', { name: 'Activer Contrôle' });
-    expect(activateButton).toHaveClass('btn-outline-primary');
+    expect(activateButton).toHaveClass('btn-outline-activation');
 
     await user.click(activateButton);
-    expect(screen.getByRole('button', { name: 'Réactiver' })).toHaveClass('btn-outline-primary');
+    expect(screen.getByRole('button', { name: 'Réactiver' })).toHaveClass('btn-outline-activation');
+  });
+
+  it('uses the shared pagination controls for maintenance catalogues', async () => {
+    const user = userEvent.setup();
+    mocks.listOperations.mockResolvedValue({
+      data: {
+        data: Array.from({ length: 6 }, (_value, index) => ({
+          uuid: `operation-${index + 1}`,
+          name: `Opération ${index + 1}`,
+          maintenanceType: 'preventive',
+          description: null,
+          active: true,
+        })),
+      },
+    });
+
+    render(<MaintenanceOperationsPage />);
+
+    expect(await screen.findByText('Opération 5')).toBeVisible();
+    expect(screen.queryByText('Opération 6')).not.toBeInTheDocument();
+    expect(screen.getByText('6 opération(s), page 1 sur 2')).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Suivant' }));
+
+    expect(screen.getByText('Opération 6')).toBeVisible();
+    expect(screen.queryByText('Opération 1')).not.toBeInTheDocument();
   });
 
   it('filters operation actions with operation-specific permissions', async () => {

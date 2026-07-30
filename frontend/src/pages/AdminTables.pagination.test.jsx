@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -113,5 +113,37 @@ describe('administrator table pagination', () => {
     await user.selectOptions(screen.getByLabelText('Filtrer par permission'), 'permission-admin');
     expect(screen.getByText('Rôle 6')).toBeVisible();
     expect(screen.queryByText('Rôle 5')).not.toBeInTheDocument();
+  });
+
+  it('presents permissions by description and sorts their technical names', async () => {
+    const user = userEvent.setup();
+    mocks.referenceApis.permissions.list.mockResolvedValueOnce({
+      data: {
+        data: [
+          {
+            uuid: 'permission-zeta',
+            name: 'zeta.read',
+            description: 'Consulter les éléments Zeta.',
+          },
+          {
+            uuid: 'permission-alpha',
+            name: 'alpha.create',
+            description: 'Créer les éléments Alpha.',
+          },
+        ],
+      },
+    });
+    render(<RolesPage />);
+
+    await screen.findByText('Rôle 5');
+    await user.click(screen.getByRole('button', { name: 'Créer un rôle' }));
+
+    const dialog = within(screen.getByRole('dialog', { name: 'Créer un rôle' }));
+    expect(dialog.getByText('Créer les éléments Alpha.')).toBeVisible();
+    expect(dialog.getByText('Consulter les éléments Zeta.')).toBeVisible();
+    expect(
+      dialog.getAllByText(/^(alpha|zeta)\./, { selector: 'code' }).map((node) => node.textContent),
+    ).toEqual(['alpha.create', 'zeta.read']);
+    expect(dialog.getByText('0 sur 2')).toBeVisible();
   });
 });
