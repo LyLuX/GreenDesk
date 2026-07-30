@@ -4,6 +4,7 @@ import { authorize } from '../../../core/middlewares/authorization.middleware.js
 import { validateRequest } from '../../../core/middlewares/validate-request.js';
 import { asyncHandler } from '../../../core/utils/async-handler.js';
 import SupplierController from '../controller/supplier.controller.js';
+import maintenancePermissions from '../../maintenance/maintenance.permissions.js';
 import * as validator from '../validator/supplier.validator.js';
 
 const router = Router();
@@ -11,7 +12,7 @@ const controller = new SupplierController();
 router.use(authenticate);
 router.get(
   '/',
-  authorize('suppliers.read'),
+  authorize('suppliers.read', maintenancePermissions.parts.read),
   validator.listValidator,
   validateRequest,
   asyncHandler(controller.getAll.bind(controller)),

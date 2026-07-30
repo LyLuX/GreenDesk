@@ -20,6 +20,7 @@ import {
   maintenanceStatusClasses,
   maintenanceStatusLabels,
 } from '../maintenance/maintenance.labels.js';
+import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import { formatCurrency } from '../utils/formatters.js';
 
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -144,7 +145,7 @@ export default function MaterialDetailPage() {
     load();
   }, [load]);
   useEffect(() => {
-    if (!hasPermission('maintenance.read')) return undefined;
+    if (!hasPermission(maintenancePermissions.plans.read)) return undefined;
     const controller = new AbortController();
     listMaintenance({ materialUuid: uuid }, controller.signal)
       .then((response) => setMaintenance(response.data.data?.items ?? []))
@@ -334,7 +335,7 @@ export default function MaterialDetailPage() {
         >
           Historique
         </button>
-        {hasPermission('maintenance.read') && (
+        {hasPermission(maintenancePermissions.plans.read) && (
           <button
             className="p-2"
             role="tab"

@@ -33,6 +33,7 @@ import {
   maintenanceStatusLabels,
   maintenanceTypeLabels,
 } from '../maintenance/maintenance.labels.js';
+import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 
 const types = Object.keys(maintenanceTypeLabels);
 const priorities = Object.keys(maintenancePriorityLabels);
@@ -274,13 +275,17 @@ export default function MaintenancePage() {
           >
             Pièces à commander
           </button>
-          <Link className="btn btn-outline-brand" to="/maintenance/operations">
-            Gérer les opérations
-          </Link>
-          <Link className="btn btn-outline-brand" to="/maintenance/parts">
-            Gérer les pièces
-          </Link>
-          {hasPermission('maintenance.create') && (
+          {hasPermission(maintenancePermissions.operations.read) && (
+            <Link className="btn btn-outline-brand" to="/maintenance/operations">
+              Gérer les opérations
+            </Link>
+          )}
+          {hasPermission(maintenancePermissions.parts.read) && (
+            <Link className="btn btn-outline-brand" to="/maintenance/parts">
+              Gérer les pièces
+            </Link>
+          )}
+          {hasPermission(maintenancePermissions.plans.create) && (
             <Button onClick={() => setDialog({ type: 'create' })}>Créer un plan</Button>
           )}
         </div>
@@ -425,7 +430,7 @@ export default function MaintenancePage() {
                     </td>
                     <td>
                       <div className="d-flex h-100 w-100 flex-wrap align-items-center justify-content-center gap-1">
-                        {hasPermission('maintenance.update') && (
+                        {hasPermission(maintenancePermissions.plans.update) && (
                           <button
                             aria-label={`Modifier ${item.title}`}
                             className="btn btn-sm btn-outline-brand flex-fill"
@@ -436,7 +441,7 @@ export default function MaintenancePage() {
                             Modifier
                           </button>
                         )}
-                        {hasPermission('maintenance.update') && (
+                        {hasPermission(maintenancePermissions.plans.update) && (
                           <button
                             aria-label={`${item.active ? 'Désactiver' : 'Activer'} ${item.title}`}
                             className="btn btn-sm btn-outline-secondary flex-fill"
@@ -447,7 +452,7 @@ export default function MaintenancePage() {
                             {item.active ? 'Désactiver' : 'Activer'}
                           </button>
                         )}
-                        {hasPermission('maintenance.execute') && item.active && (
+                        {hasPermission(maintenancePermissions.plans.execute) && item.active && (
                           <button
                             aria-label={`Effectuer ${item.title}`}
                             className="btn btn-sm btn-outline-brand flex-fill"
@@ -467,7 +472,7 @@ export default function MaintenancePage() {
                         >
                           Historique
                         </button>
-                        {hasPermission('maintenance.delete') && (
+                        {hasPermission(maintenancePermissions.plans.delete) && (
                           <button
                             aria-label={`Supprimer ${item.title}`}
                             className="btn btn-sm btn-outline-danger flex-fill"

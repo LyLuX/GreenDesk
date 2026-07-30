@@ -1,9 +1,9 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { getDashboardSummary } = vi.hoisted(() => ({
+const { getDashboardSummary, hasPermission } = vi.hoisted(() => ({
   getDashboardSummary: vi.fn().mockResolvedValue({
     data: {
       data: {
@@ -51,13 +51,21 @@ const { getDashboardSummary } = vi.hoisted(() => ({
       },
     },
   }),
+  hasPermission: vi.fn(),
 }));
 
 vi.mock('../api/dashboard.api.js', () => ({ getDashboardSummary }));
+vi.mock('../auth/useAuth.js', () => ({
+  default: () => ({ hasPermission }),
+}));
 
 import DashboardPage from './DashboardPage.jsx';
 
 describe('DashboardPage', () => {
+  beforeEach(() => {
+    hasPermission.mockReturnValue(true);
+  });
+
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
@@ -159,5 +167,15 @@ describe('DashboardPage', () => {
         name: 'Voir les entretiens concernés : Entretiens aujourd’hui',
       }),
     ).not.toBeInTheDocument();
+  });
+
+  it('hides every maintenance indicator without maintenance read access', async () => {
+    hasPermission.mockReturnValue(false);
+
+    renderPage();
+
+    expect(await screen.findByRole('region', { name: 'Matériels et catégories' })).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'Entretien' })).not.toBeInTheDocument();
+    expect(hasPermission).toHaveBeenCalledWith('maintenance.read');
   });
 });

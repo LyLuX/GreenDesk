@@ -26,11 +26,23 @@ describe('frontend reference navigation', () => {
       'Maintenance',
       'Administration',
     ]);
-    expect(
-      navigationSections
-        .find((section) => section.key === 'maintenance')
-        .items.map((item) => item.label),
-    ).toEqual(['Plans de maintenance', 'Opérations', 'Pièces']);
+    expect(navigationSections.find((section) => section.key === 'maintenance').items).toEqual([
+      {
+        label: 'Plans de maintenance',
+        path: '/maintenance',
+        permission: 'maintenance.read',
+      },
+      {
+        label: 'Opérations',
+        path: '/maintenance/operations',
+        permission: 'maintenance.operations.read',
+      },
+      {
+        label: 'Pièces',
+        path: '/maintenance/parts',
+        permission: 'maintenance.parts.read',
+      },
+    ]);
   });
 
   it('uses the centralized API prefix', () => {

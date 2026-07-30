@@ -712,7 +712,7 @@ export const openApiSchemas = {
   },
   DashboardSummary: {
     type: 'object',
-    required: ['materials', 'categories', 'manufacturers', 'fleet', 'maintenance'],
+    required: ['materials', 'categories', 'manufacturers', 'fleet'],
     properties: {
       materials: {
         type: 'object',
@@ -744,6 +744,7 @@ export const openApiSchemas = {
       },
       maintenance: {
         type: 'object',
+        description: 'Présent uniquement lorsque l’utilisateur possède `maintenance.read`.',
         required: ['today', 'overdue', 'upcoming', 'items'],
         properties: {
           today: { type: 'integer', minimum: 0 },

@@ -27,6 +27,7 @@ export default function MaintenanceCatalogPage({
   createItem,
   updateItem,
   deleteItem,
+  permissions,
 }) {
   const { hasPermission } = useAuth();
   const { notify } = useNotification();
@@ -135,7 +136,7 @@ export default function MaintenanceCatalogPage({
           <h1 className="page-title">{title}</h1>
           <p className="page-subtitle">{subtitle}</p>
         </div>
-        {hasPermission('maintenance.create') && (
+        {hasPermission(permissions.create) && (
           <Button
             onClick={() => {
               setFormError('');
@@ -195,7 +196,7 @@ export default function MaintenanceCatalogPage({
           }
           actionLoadingId={busy ? confirmation?.row.uuid : null}
           onEdit={
-            hasPermission('maintenance.update')
+            hasPermission(permissions.update)
               ? (row) => {
                   setFormError('');
                   setEditing(row);
@@ -203,12 +204,12 @@ export default function MaintenanceCatalogPage({
               : undefined
           }
           onStatus={
-            hasPermission('maintenance.update')
+            hasPermission(permissions.update)
               ? (row) => setConfirmation({ action: 'status', row })
               : undefined
           }
           onDelete={
-            hasPermission('maintenance.delete')
+            hasPermission(permissions.delete)
               ? (row) => setConfirmation({ action: 'delete', row })
               : undefined
           }

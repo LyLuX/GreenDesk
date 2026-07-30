@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   updatePart: vi.fn(),
   deletePart: vi.fn(),
   notify: vi.fn(),
+  hasPermission: vi.fn(),
 }));
 
 vi.mock('../api/maintenance.api.js', () => ({
@@ -32,7 +33,7 @@ vi.mock('../api/reference.api.js', () => ({
   }),
 }));
 vi.mock('../auth/useAuth.js', () => ({
-  default: () => ({ hasPermission: () => true }),
+  default: () => ({ hasPermission: mocks.hasPermission }),
 }));
 vi.mock('../notifications/useNotification.js', () => ({
   default: () => ({ notify: mocks.notify }),
@@ -49,6 +50,7 @@ describe('dedicated maintenance catalogue pages', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.hasPermission.mockReturnValue(true);
     mocks.listOperations.mockResolvedValue({
       data: {
         data: [
@@ -202,5 +204,22 @@ describe('dedicated maintenance catalogue pages', () => {
 
     expect(screen.getByText('Contrôle')).toBeVisible();
     expect(screen.queryByText('Vidange')).not.toBeInTheDocument();
+  });
+
+  it('filters operation actions with operation-specific permissions', async () => {
+    mocks.hasPermission.mockImplementation(
+      (permission) => permission === 'maintenance.operations.read',
+    );
+
+    render(<MaintenanceOperationsPage />);
+
+    expect(await screen.findByText('Vidange')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Créer' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Modifier Vidange' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Désactiver Vidange' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Supprimer Vidange' })).not.toBeInTheDocument();
+    expect(mocks.hasPermission).toHaveBeenCalledWith('maintenance.operations.create');
+    expect(mocks.hasPermission).toHaveBeenCalledWith('maintenance.operations.update');
+    expect(mocks.hasPermission).toHaveBeenCalledWith('maintenance.operations.delete');
   });
 });

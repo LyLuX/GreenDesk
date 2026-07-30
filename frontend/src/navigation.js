@@ -1,3 +1,5 @@
+import maintenancePermissions from './maintenance/maintenance.permissions.js';
+
 /** Hierarchical navigation model shared by the sidebar and its tests. */
 export const navigationSections = [
   {
@@ -25,17 +27,17 @@ export const navigationSections = [
       {
         label: 'Plans de maintenance',
         path: '/maintenance',
-        permission: 'maintenance.read',
+        permission: maintenancePermissions.plans.read,
       },
       {
         label: 'Opérations',
         path: '/maintenance/operations',
-        permission: 'maintenance.read',
+        permission: maintenancePermissions.operations.read,
       },
       {
         label: 'Pièces',
         path: '/maintenance/parts',
-        permission: 'maintenance.read',
+        permission: maintenancePermissions.parts.read,
       },
     ],
   },

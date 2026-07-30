@@ -11,6 +11,7 @@ import { createReferenceApi } from '../api/reference.api.js';
 import Button from '../components/Button.jsx';
 import Loader from '../components/Loader.jsx';
 import ManufacturerLogo from '../components/ManufacturerLogo.jsx';
+import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import MaintenanceCatalogPage from './MaintenanceCatalogPage.jsx';
 
 const directoryOptions = (items) =>
@@ -125,6 +126,7 @@ export default function MaintenancePartsPage() {
       createItem={createMaintenancePart}
       updateItem={updateMaintenancePart}
       deleteItem={deleteMaintenancePart}
+      permissions={maintenancePermissions.parts}
     />
   );
 }

@@ -1,3 +1,5 @@
+import maintenancePermissions from '../../modules/maintenance/maintenance.permissions.js';
+
 /** Canonical permission descriptions displayed when administrators configure roles. */
 const permissionDefinitions = [
   {
@@ -85,24 +87,56 @@ const permissionDefinitions = [
     description: 'Supprimer des fournisseurs du référentiel.',
   },
   {
-    name: 'maintenance.read',
+    name: maintenancePermissions.plans.read,
     description: 'Consulter les plans et l’historique de maintenance.',
   },
   {
-    name: 'maintenance.create',
+    name: maintenancePermissions.plans.create,
     description: 'Créer de nouveaux plans de maintenance.',
   },
   {
-    name: 'maintenance.update',
+    name: maintenancePermissions.plans.update,
     description: 'Modifier le paramétrage et le statut des plans de maintenance.',
   },
   {
-    name: 'maintenance.delete',
+    name: maintenancePermissions.plans.delete,
     description: 'Supprimer des plans de maintenance.',
   },
   {
-    name: 'maintenance.execute',
+    name: maintenancePermissions.plans.execute,
     description: 'Enregistrer un entretien réalisé et recalculer ses prochaines échéances.',
+  },
+  {
+    name: maintenancePermissions.operations.read,
+    description: 'Consulter le catalogue des opérations réutilisables de maintenance.',
+  },
+  {
+    name: maintenancePermissions.operations.create,
+    description: 'Ajouter de nouvelles opérations réutilisables de maintenance.',
+  },
+  {
+    name: maintenancePermissions.operations.update,
+    description: 'Modifier les opérations réutilisables et leur statut d’activation.',
+  },
+  {
+    name: maintenancePermissions.operations.delete,
+    description: 'Supprimer les opérations de maintenance qui ne sont utilisées par aucun plan.',
+  },
+  {
+    name: maintenancePermissions.parts.read,
+    description: 'Consulter le catalogue des références de pièces utilisées en maintenance.',
+  },
+  {
+    name: maintenancePermissions.parts.create,
+    description: 'Ajouter de nouvelles références de pièces destinées à la maintenance.',
+  },
+  {
+    name: maintenancePermissions.parts.update,
+    description: 'Modifier les références de pièces et leur statut d’activation.',
+  },
+  {
+    name: maintenancePermissions.parts.delete,
+    description: 'Supprimer les pièces de maintenance qui ne sont utilisées par aucun plan.',
   },
 ];
 

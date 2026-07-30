@@ -10,8 +10,8 @@ export default class DashboardService {
     this.repository = repository;
     this.maintenanceService = maintenanceService;
   }
-  async getSummary() {
-    const counts = await this.repository.getCounts();
+  async getSummary({ includeMaintenance = true } = {}) {
+    const counts = await this.repository.getCounts({ includeMaintenance });
     const maintenanceItems = (counts.maintenanceTasks ?? []).map((task) =>
       this.maintenanceService.toPublic(task),
     );

@@ -55,6 +55,18 @@ describe('reference routes authorization and validation', () => {
       .expect(404);
   });
 
+  it('allows maintenance readers to request manufacturer logos used by maintenance views', async () => {
+    const logoPath = '/api/v1/manufacturers/f75ce638-18d2-4e29-9958-2afaa4ae5151/logo';
+    await request(app)
+      .get(logoPath)
+      .set('Authorization', `Bearer ${tokenFor(['maintenance.read'])}`)
+      .expect(404);
+    await request(app)
+      .get(logoPath)
+      .set('Authorization', `Bearer ${tokenFor(['maintenance.parts.read'])}`)
+      .expect(404);
+  });
+
   it('restricts user management to administrators', async () => {
     await request(app)
       .get('/api/v1/users')

@@ -354,7 +354,7 @@ export const openApiPaths = {
       tags: ['Manufacturers'],
       summary: 'Liste les fabricants.',
       description:
-        'Nécessite `manufacturers.read`. Les anciennes routes `/brands` et `/maintenance/manufacturers` sont dépréciées.',
+        'Nécessite `manufacturers.read` ou `maintenance.parts.read`. Les anciennes routes `/brands` et `/maintenance/manufacturers` sont dépréciées.',
       security: secure,
       parameters: [searchParameter],
       responses: {
@@ -404,7 +404,8 @@ export const openApiPaths = {
       operationId: 'getManufacturerLogo',
       tags: ['Manufacturers'],
       summary: 'Affiche le logo protégé d’un fabricant.',
-      description: 'Nécessite `manufacturers.read` ou `materials.read`.',
+      description:
+        'Nécessite `manufacturers.read`, `materials.read`, `maintenance.read` ou `maintenance.parts.read`.',
       security: secure,
       responses: {
         200: binaryResponse('Image du logo.', ['image/jpeg', 'image/png', 'image/webp']),
@@ -672,7 +673,7 @@ export const openApiPaths = {
       operationId: 'listMaintenanceOperations',
       tags: ['Maintenance'],
       summary: 'Liste les opérations réutilisables.',
-      description: 'Nécessite `maintenance.read`.',
+      description: 'Nécessite `maintenance.operations.read` ou `maintenance.read`.',
       security: secure,
       responses: {
         200: jsonResponse(
@@ -686,7 +687,7 @@ export const openApiPaths = {
       operationId: 'createMaintenanceOperation',
       tags: ['Maintenance'],
       summary: 'Crée ou restaure une opération réutilisable.',
-      description: 'Nécessite `maintenance.create`.',
+      description: 'Nécessite `maintenance.operations.create`.',
       security: secure,
       requestBody: jsonBody('MaintenanceOperationCreateRequest'),
       responses: {
@@ -701,7 +702,7 @@ export const openApiPaths = {
       operationId: 'updateMaintenanceOperation',
       tags: ['Maintenance'],
       summary: 'Met à jour une opération et les intitulés des plans associés.',
-      description: 'Nécessite `maintenance.update`.',
+      description: 'Nécessite `maintenance.operations.update`.',
       security: secure,
       requestBody: jsonBody('MaintenanceOperationUpdateRequest'),
       responses: {
@@ -713,7 +714,8 @@ export const openApiPaths = {
       operationId: 'deleteMaintenanceOperation',
       tags: ['Maintenance'],
       summary: 'Supprime une opération inutilisée.',
-      description: 'Nécessite `maintenance.delete`. Une opération liée à un plan est conservée.',
+      description:
+        'Nécessite `maintenance.operations.delete`. Une opération liée à un plan est conservée.',
       security: secure,
       responses: { 204: noContent, ...writeErrors },
     },
@@ -724,7 +726,7 @@ export const openApiPaths = {
       tags: ['Suppliers'],
       summary: 'Liste les fournisseurs.',
       description:
-        'Nécessite `suppliers.read`. L’ancienne route `/maintenance/suppliers` est dépréciée.',
+        'Nécessite `suppliers.read` ou `maintenance.parts.read`. L’ancienne route `/maintenance/suppliers` est dépréciée.',
       security: secure,
       parameters: [searchParameter],
       responses: {
@@ -773,7 +775,7 @@ export const openApiPaths = {
       operationId: 'listMaintenanceParts',
       tags: ['Maintenance'],
       summary: 'Liste les références de pièces commandables.',
-      description: 'Nécessite `maintenance.read`.',
+      description: 'Nécessite `maintenance.parts.read` ou `maintenance.read`.',
       security: secure,
       responses: {
         200: jsonResponse('MaintenancePartListResponse', 'Pièces retournées.'),
@@ -784,7 +786,7 @@ export const openApiPaths = {
       operationId: 'createMaintenancePart',
       tags: ['Maintenance'],
       summary: 'Crée ou restaure une référence de pièce.',
-      description: 'Nécessite `maintenance.create`.',
+      description: 'Nécessite `maintenance.parts.create`.',
       security: secure,
       requestBody: jsonBody('MaintenancePartCreateRequest'),
       responses: {
@@ -799,7 +801,7 @@ export const openApiPaths = {
       operationId: 'updateMaintenancePart',
       tags: ['Maintenance'],
       summary: 'Met à jour une référence de pièce.',
-      description: 'Nécessite `maintenance.update`.',
+      description: 'Nécessite `maintenance.parts.update`.',
       security: secure,
       requestBody: jsonBody('MaintenancePartUpdateRequest'),
       responses: {
@@ -811,7 +813,7 @@ export const openApiPaths = {
       operationId: 'deleteMaintenancePart',
       tags: ['Maintenance'],
       summary: 'Supprime une pièce inutilisée.',
-      description: 'Nécessite `maintenance.delete`. Une pièce liée à un plan est conservée.',
+      description: 'Nécessite `maintenance.parts.delete`. Une pièce liée à un plan est conservée.',
       security: secure,
       responses: { 204: noContent, ...writeErrors },
     },
@@ -986,9 +988,9 @@ export const openApiPaths = {
     get: {
       operationId: 'getDashboardSummary',
       tags: ['Dashboard'],
-      summary: 'Retourne tous les indicateurs et entretiens du tableau de bord.',
+      summary: 'Retourne les indicateurs autorisés du tableau de bord.',
       description:
-        'Nécessite `dashboard.read`. Les listes `today`, `upcoming` et `overdue` correspondent exactement aux compteurs affichés. Alias historique déprécié : `/api/dashboard/summary`.',
+        'Nécessite `dashboard.read`. Les indicateurs de maintenance sont inclus uniquement avec `maintenance.read` ; leurs listes `today`, `upcoming` et `overdue` correspondent exactement aux compteurs affichés. Alias historique déprécié : `/api/dashboard/summary`.',
       security: secure,
       responses: {
         200: jsonResponse('DashboardResponse', 'Synthèse retournée.'),

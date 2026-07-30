@@ -7,6 +7,7 @@ import AppFooter from './components/AppFooter.jsx';
 import MaterialManufacturerCell from './components/MaterialManufacturerCell.jsx';
 import { activityStatusFilter } from './filters/filter-options.js';
 import AppLayout from './layouts/AppLayout.jsx';
+import maintenancePermissions from './maintenance/maintenance.permissions.js';
 import DashboardPage from './pages/DashboardPage.jsx';
 import ForbiddenPage from './pages/ForbiddenPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
@@ -173,14 +174,20 @@ export default function App() {
               path="/materials/:uuid/edit"
               element={secure('materials.update', <MaterialEditPage />)}
             />
-            <Route path="/maintenance" element={secure('maintenance.read', <MaintenancePage />)} />
+            <Route
+              path="/maintenance"
+              element={secure(maintenancePermissions.plans.read, <MaintenancePage />)}
+            />
             <Route
               path="/maintenance/operations"
-              element={secure('maintenance.read', <MaintenanceOperationsPage />)}
+              element={secure(
+                maintenancePermissions.operations.read,
+                <MaintenanceOperationsPage />,
+              )}
             />
             <Route
               path="/maintenance/parts"
-              element={secure('maintenance.read', <MaintenancePartsPage />)}
+              element={secure(maintenancePermissions.parts.read, <MaintenancePartsPage />)}
             />
             <Route
               path="/manufacturers"

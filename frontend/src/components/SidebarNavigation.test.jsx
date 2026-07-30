@@ -52,6 +52,21 @@ describe('SidebarNavigation', () => {
     expect(screen.queryByRole('link', { name: 'Utilisateurs' })).not.toBeInTheDocument();
   });
 
+  it('filters each maintenance link with its dedicated read permission', () => {
+    render(
+      <MemoryRouter initialEntries={['/maintenance']}>
+        <SidebarNavigation
+          hasPermission={(permission) => permission === 'maintenance.read'}
+          onNavigate={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('link', { name: 'Plans de maintenance' })).toBeVisible();
+    expect(screen.queryByRole('link', { name: 'Opérations' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Pièces' })).not.toBeInTheDocument();
+  });
+
   it('notifies the drawer after a link is selected', async () => {
     const onNavigate = vi.fn();
     const user = userEvent.setup();

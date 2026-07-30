@@ -9,7 +9,7 @@ export default class DashboardRepository {
   constructor(maintenanceRepository = new MaintenanceRepository()) {
     this.maintenanceRepository = maintenanceRepository;
   }
-  async getCounts() {
+  async getCounts({ includeMaintenance = true } = {}) {
     const [
       materialsTotal,
       materialsActive,
@@ -48,7 +48,7 @@ export default class DashboardRepository {
         ],
         raw: true,
       }),
-      this.maintenanceRepository.findDashboard(),
+      includeMaintenance ? this.maintenanceRepository.findDashboard() : undefined,
     ]);
     return {
       materialsTotal,

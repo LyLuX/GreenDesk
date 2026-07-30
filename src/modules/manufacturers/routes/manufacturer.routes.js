@@ -15,6 +15,7 @@ import {
   MANUFACTURER_LOGO_MAX_SIZE,
   MANUFACTURER_LOGO_MIME_TYPES,
 } from '../manufacturer-logo.constants.js';
+import maintenancePermissions from '../../maintenance/maintenance.permissions.js';
 import * as validator from '../validator/manufacturer.validator.js';
 const router = Router();
 const controller = new ManufacturerController();
@@ -45,7 +46,7 @@ const uploadLogo = (request, response, next) =>
 router.use(authenticate);
 router.get(
   '/',
-  authorize('manufacturers.read'),
+  authorize('manufacturers.read', maintenancePermissions.parts.read),
   validator.listValidator,
   validateRequest,
   asyncHandler(controller.getAll.bind(controller)),
@@ -59,7 +60,12 @@ router.post(
 );
 router.get(
   '/:uuid/logo',
-  authorize('manufacturers.read', 'materials.read'),
+  authorize(
+    'manufacturers.read',
+    'materials.read',
+    maintenancePermissions.parts.read,
+    maintenancePermissions.plans.read,
+  ),
   validator.uuidValidator,
   validateRequest,
   asyncHandler(controller.logoContent.bind(controller)),

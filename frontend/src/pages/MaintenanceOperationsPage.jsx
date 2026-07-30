@@ -5,6 +5,7 @@ import {
   updateMaintenanceOperation,
 } from '../api/maintenance.api.js';
 import { maintenanceTypeLabels } from '../maintenance/maintenance.labels.js';
+import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import MaintenanceCatalogPage from './MaintenanceCatalogPage.jsx';
 
 const fields = [
@@ -49,6 +50,7 @@ export default function MaintenanceOperationsPage() {
       createItem={createMaintenanceOperation}
       updateItem={updateMaintenanceOperation}
       deleteItem={deleteMaintenanceOperation}
+      permissions={maintenancePermissions.operations}
     />
   );
 }

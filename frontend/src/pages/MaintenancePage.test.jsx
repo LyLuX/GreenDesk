@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   listMaterials: vi.fn(),
   createMaintenance: vi.fn(),
   executeMaintenance: vi.fn(),
+  hasPermission: vi.fn(),
 }));
 
 vi.mock('../api/maintenance.api.js', () => ({
@@ -34,7 +35,7 @@ vi.mock('../api/reference.api.js', () => ({
   createReferenceApi: () => ({ list: mocks.listMaterials }),
 }));
 vi.mock('../auth/useAuth.js', () => ({
-  default: () => ({ hasPermission: () => true }),
+  default: () => ({ hasPermission: mocks.hasPermission }),
 }));
 vi.mock('../notifications/useNotification.js', () => ({
   default: () => ({ notify: vi.fn() }),
@@ -47,6 +48,7 @@ describe('MaintenancePage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.hasPermission.mockReturnValue(true);
     mocks.listMaterials.mockResolvedValue({
       data: {
         data: {
@@ -203,6 +205,18 @@ describe('MaintenancePage', () => {
       'align-items-center',
       'justify-content-center',
     );
+  });
+
+  it('filters catalogue-management links with their dedicated read permissions', async () => {
+    mocks.hasPermission.mockImplementation(
+      (permission) => permission === 'maintenance.operations.read',
+    );
+
+    renderPage();
+
+    expect(await screen.findByRole('link', { name: 'Gérer les opérations' })).toBeVisible();
+    expect(screen.queryByRole('link', { name: 'Gérer les pièces' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Créer un plan' })).not.toBeInTheDocument();
   });
 
   it('replaces the manually entered title with a reusable operation', async () => {

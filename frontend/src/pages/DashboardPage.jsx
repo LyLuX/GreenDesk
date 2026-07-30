@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getDashboardSummary } from '../api/dashboard.api.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
+import useAuth from '../auth/useAuth.js';
 import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
 import StatusPanel from '../components/StatusPanel.jsx';
@@ -10,6 +11,7 @@ import {
   maintenancePriorityLabels,
   maintenanceTypeLabels,
 } from '../maintenance/maintenance.labels.js';
+import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import { formatCurrency } from '../utils/formatters.js';
 
 const maintenanceCards = [
@@ -40,6 +42,7 @@ const formatDate = (value) =>
   value ? new Intl.DateTimeFormat('fr-FR').format(new Date(`${value}T00:00:00Z`)) : '—';
 
 export default function DashboardPage() {
+  const { hasPermission } = useAuth();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [maintenanceDialog, setMaintenanceDialog] = useState(null);
@@ -102,18 +105,22 @@ export default function DashboardPage() {
         ['Âge moyen', `${Number(fleet.averageAge ?? 0).toFixed(1)} ans`],
       ],
     },
-    {
-      label: 'Entretien',
-      cards: maintenanceCards.map((card) => ({
-        ...card,
-        value: maintenance[card.key] ?? 0,
-        className: `${card.className} ${
-          card.key === 'overdue' && Number(maintenance.overdue ?? 0) > 0
-            ? 'maintenance-overdue-alert'
-            : ''
-        }`,
-      })),
-    },
+    ...(hasPermission(maintenancePermissions.plans.read)
+      ? [
+          {
+            label: 'Entretien',
+            cards: maintenanceCards.map((card) => ({
+              ...card,
+              value: maintenance[card.key] ?? 0,
+              className: `${card.className} ${
+                card.key === 'overdue' && Number(maintenance.overdue ?? 0) > 0
+                  ? 'maintenance-overdue-alert'
+                  : ''
+              }`,
+            })),
+          },
+        ]
+      : []),
   ];
   return (
     <main className="app-page">
