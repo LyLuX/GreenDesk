@@ -585,7 +585,10 @@ export default function MaterialDetailPage() {
               </table>
             </div>
           )}
-          <Link className="btn btn-outline-brand mt-3" to="/maintenance">
+          <Link
+            className="btn btn-outline-brand mt-3"
+            to={`/maintenance?materialUuid=${encodeURIComponent(uuid)}&limit=all`}
+          >
             Voir la maintenance
           </Link>
         </section>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import {
   createMaintenance,
@@ -68,11 +68,19 @@ const remainingDays = (value) => {
 export default function MaintenancePage() {
   const { hasPermission } = useAuth();
   const { notify } = useNotification();
+  const [searchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [operations, setOperations] = useState([]);
   const [parts, setParts] = useState([]);
-  const [filters, setFilters] = useState({ page: 1, limit: 5 });
+  const [filters, setFilters] = useState(() => {
+    const materialUuid = searchParams.get('materialUuid');
+    return {
+      page: 1,
+      limit: searchParams.get('limit') === 'all' ? 'all' : 5,
+      ...(materialUuid ? { materialUuid } : {}),
+    };
+  });
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search, 300);
   const [pagination, setPagination] = useState(null);

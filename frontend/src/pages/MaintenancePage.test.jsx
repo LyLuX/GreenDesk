@@ -95,15 +95,15 @@ describe('MaintenancePage', () => {
               remainingDays: 12,
             },
           ],
-          pagination: null,
+          pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
         },
       },
     });
   });
 
-  const renderPage = () =>
+  const renderPage = (initialEntry = '/maintenance') =>
     render(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <MaintenancePage />
       </MemoryRouter>,
     );
@@ -153,6 +153,19 @@ describe('MaintenancePage', () => {
         { page: 1, limit: 5, search: 'tondeuse' },
         expect.any(AbortSignal),
       ),
+    );
+  });
+
+  it('loads all plans for the material provided by the detail page', async () => {
+    renderPage('/maintenance?materialUuid=material-uuid&limit=all');
+
+    await screen.findByText('12 jours');
+
+    expect(screen.getByLabelText('Filtrer par matériel')).toHaveValue('material-uuid');
+    expect(screen.getByLabelText('Nombre d’éléments par page')).toHaveValue('all');
+    expect(mocks.listMaintenance).toHaveBeenCalledWith(
+      { page: 1, limit: 'all', materialUuid: 'material-uuid' },
+      expect.any(AbortSignal),
     );
   });
 

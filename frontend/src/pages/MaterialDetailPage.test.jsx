@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getReference: vi.fn(),
   hasPermission: vi.fn(),
   history: [],
+  listMaintenance: vi.fn(),
   uploadPhoto: vi.fn(),
 }));
 
@@ -24,7 +25,7 @@ vi.mock('../api/material-files.api.js', () => ({
   uploadMaterialPhoto: mocks.uploadPhoto,
 }));
 vi.mock('../api/maintenance.api.js', () => ({
-  listMaintenance: vi.fn(),
+  listMaintenance: mocks.listMaintenance,
 }));
 vi.mock('../components/ManufacturerLogo.jsx', () => ({
   default: ({ manufacturer }) => <img alt={`Logo ${manufacturer.name}`} />,
@@ -41,6 +42,7 @@ describe('MaterialDetailPage', () => {
     URL.revokeObjectURL = vi.fn();
     mocks.history = [];
     mocks.hasPermission.mockReturnValue(false);
+    mocks.listMaintenance.mockResolvedValue({ data: { data: { items: [] } } });
     mocks.getReference.mockImplementation((path) =>
       Promise.resolve({
         data: {
@@ -134,5 +136,25 @@ describe('MaterialDetailPage', () => {
     expect(screen.getByText('GreenDesk')).toBeVisible();
     expect(screen.getByText('Nom')).toBeVisible();
     expect(screen.queryByText('Prix d’achat')).not.toBeInTheDocument();
+  });
+
+  it('opens all maintenance plans filtered by the current material', async () => {
+    mocks.hasPermission.mockImplementation((permission) => permission === 'maintenance.read');
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/materials/material-uuid']}>
+        <Routes>
+          <Route path="/materials/:uuid" element={<MaterialDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('img', { name: 'Logo Green' });
+    await user.click(screen.getByRole('tab', { name: 'Maintenance' }));
+
+    expect(screen.getByRole('link', { name: 'Voir la maintenance' })).toHaveAttribute(
+      'href',
+      '/maintenance?materialUuid=material-uuid&limit=all',
+    );
   });
 });
