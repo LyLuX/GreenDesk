@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **1.10.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **1.10.1**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -85,7 +85,7 @@ Les intitulés répétitifs sont centralisés dans un catalogue d’opérations 
 
 L’interface sépare les opérations et les pièces sur les pages `/maintenance/operations` et `/maintenance/parts`. Les fabricants et les fournisseurs sont des référentiels globaux accessibles sur `/manufacturers` et `/suppliers`, avec leurs permissions dédiées. Une pièce référence ainsi un fabricant et un fournisseur enregistrés, en plus de ses références fabricant et fournisseur.
 
-Les migrations `20260727_zz_add_maintenance_catalogs.js` et `20260727_zzz_add_part_manufacturers_suppliers.js` sont additives : elles conservent les intitulés, les fabricants saisis auparavant et toutes les données historiques des plans. Leur annulation retire uniquement les nouveaux catalogues et leurs associations, ce qui permet de revenir au fonctionnement précédent sans perdre un plan ni son ancien fabricant texte. La migration `20260730_add_maintenance_catalog_permissions.js` ajoute les permissions dédiées et recopie les attributions génériques existantes pour préserver les accès lors du déploiement.
+Les migrations `20260727_zz_add_maintenance_catalogs.js` et `20260727_zzz_add_part_manufacturers_suppliers.js` sont additives : elles conservent les intitulés, les fabricants saisis auparavant et toutes les données historiques des plans. Leur annulation retire uniquement les nouveaux catalogues et leurs associations, ce qui permet de revenir au fonctionnement précédent sans perdre un plan ni son ancien fabricant texte. Les migrations `20260730_add_maintenance_catalog_permissions.js` et `20260730_zz_add_maintenance_plan_permissions.js` ajoutent toutes les permissions de maintenance aux bases existantes ; les attributions génériques déjà présentes sont recopiées vers les catalogues pour préserver les accès lors du déploiement.
 
 ## Configuration
 

@@ -1,6 +1,7 @@
 import { jest } from '@jest/globals';
 
 import migration from '../migrations/20260730_add_maintenance_catalog_permissions.js';
+import planMigration from '../migrations/20260730_zz_add_maintenance_plan_permissions.js';
 
 const expectedNames = [
   'maintenance.operations.read',
@@ -50,6 +51,45 @@ describe('maintenance catalogue permission migration', () => {
 
     expect(queryInterface.bulkDelete).toHaveBeenCalledWith('permissions', {
       name: expectedNames,
+    });
+  });
+});
+
+describe('maintenance plan permission migration', () => {
+  const planPermissionNames = [
+    'maintenance.read',
+    'maintenance.create',
+    'maintenance.update',
+    'maintenance.delete',
+    'maintenance.execute',
+  ];
+
+  it('restores deleted permissions and creates every missing plan permission', async () => {
+    const query = jest.fn().mockResolvedValueOnce([]).mockResolvedValueOnce([[], {}]);
+    const queryInterface = {
+      sequelize: { query },
+      bulkInsert: jest.fn().mockResolvedValue(undefined),
+    };
+
+    await planMigration.up(queryInterface);
+
+    expect(query.mock.calls[0][0]).toContain('deleted_at = NULL');
+    expect(queryInterface.bulkInsert.mock.calls[0][1].map(({ name }) => name)).toEqual(
+      planPermissionNames,
+    );
+  });
+
+  it('removes plan grants before the permissions on rollback', async () => {
+    const queryInterface = {
+      sequelize: { query: jest.fn().mockResolvedValue(undefined) },
+      bulkDelete: jest.fn().mockResolvedValue(undefined),
+    };
+
+    await planMigration.down(queryInterface);
+
+    expect(queryInterface.sequelize.query.mock.calls[0][0]).toContain('DELETE grants');
+    expect(queryInterface.bulkDelete).toHaveBeenCalledWith('permissions', {
+      name: planPermissionNames,
     });
   });
 });
