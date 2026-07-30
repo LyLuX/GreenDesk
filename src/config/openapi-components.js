@@ -278,8 +278,30 @@ const auditLog = {
     action: writeText(100),
     entity: writeText(100),
     entityUuid: { ...uuid, nullable: true },
-    oldValues: { type: 'object', nullable: true, additionalProperties: true },
-    newValues: { type: 'object', nullable: true, additionalProperties: true },
+    oldValues: {
+      type: 'object',
+      nullable: true,
+      description:
+        'Valeurs métier avant l’action. Les identifiants techniques sont masqués et les relations fabricant/catégorie sont exposées par leur nom.',
+      properties: {
+        manufacturer: { type: 'string', nullable: true },
+        category: { type: 'string', nullable: true },
+        purchasePrice: { type: 'number', minimum: 0 },
+      },
+      additionalProperties: true,
+    },
+    newValues: {
+      type: 'object',
+      nullable: true,
+      description:
+        'Valeurs métier après l’action. Les identifiants techniques sont masqués et les relations fabricant/catégorie sont exposées par leur nom.',
+      properties: {
+        manufacturer: { type: 'string', nullable: true },
+        category: { type: 'string', nullable: true },
+        purchasePrice: { type: 'number', minimum: 0 },
+      },
+      additionalProperties: true,
+    },
     createdAt: dateTime,
   },
 };

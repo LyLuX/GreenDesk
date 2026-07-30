@@ -25,7 +25,7 @@ export const maintenanceStatusLabels = Object.freeze({
   overdue: 'En retard',
 });
 export const maintenanceStatusClasses = Object.freeze({
-  upToDate: 'maintenance-up-to-date',
+  upToDate: '',
   upcoming: 'maintenance-upcoming',
   dueToday: 'maintenance-due-today',
   overdue: 'maintenance-overdue',

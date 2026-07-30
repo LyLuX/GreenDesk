@@ -5,6 +5,55 @@ import AuditService from '../../audit/service/audit.service.js';
 import ManufacturerRepository from '../../manufacturers/repository/manufacturer.repository.js';
 import CategoryRepository from '../../../core/database/repositories/category.repository.js';
 
+const relationIds = (events, keys) => [
+  ...new Set(
+    events.flatMap((event) => {
+      const value = typeof event.toJSON === 'function' ? event.toJSON() : event;
+      return [value.oldValues, value.newValues]
+        .filter(Boolean)
+        .flatMap((snapshot) => keys.map((key) => snapshot[key]))
+        .filter((id) => id !== null && id !== undefined);
+    }),
+  ),
+];
+
+const nameMap = (items = []) =>
+  new Map(
+    items.map((item) => {
+      const value = typeof item.toJSON === 'function' ? item.toJSON() : item;
+      return [String(value.id), value.name];
+    }),
+  );
+
+const publicAuditSnapshot = (snapshot, manufacturerNames, categoryNames) => {
+  if (!snapshot) return snapshot;
+  const values = { ...snapshot };
+  const manufacturerId = values.manufacturerId ?? values.brandId;
+  const categoryId = values.categoryId;
+
+  delete values.id;
+  delete values.manufacturerId;
+  delete values.brandId;
+  delete values.categoryId;
+  delete values.createdBy;
+  delete values.updatedBy;
+
+  if (manufacturerId !== undefined) {
+    values.manufacturer =
+      manufacturerId === null
+        ? null
+        : (manufacturerNames.get(String(manufacturerId)) ?? 'Fabricant inconnu');
+  }
+  if (categoryId !== undefined) {
+    values.category =
+      categoryId === null ? null : (categoryNames.get(String(categoryId)) ?? 'Catégorie inconnue');
+  }
+  if (values.purchasePrice !== undefined && Number.isFinite(Number(values.purchasePrice))) {
+    values.purchasePrice = Number(values.purchasePrice);
+  }
+  return values;
+};
+
 /** Parses a DATEONLY value as UTC and rejects invalid calendar values. */
 export function parseDateOnly(value) {
   if (!value) return null;
@@ -119,9 +168,22 @@ export default class MaterialService {
   async getHistory(uuid) {
     await this.getEntityByUuid(uuid);
     const events = await this.auditService.findByEntity('MATERIAL', uuid);
+    const manufacturerIds = relationIds(events, ['manufacturerId', 'brandId']);
+    const categoryIds = relationIds(events, ['categoryId']);
+    const [manufacturers, categories] = await Promise.all([
+      this.manufacturerRepository.findByIds?.(manufacturerIds),
+      this.categoryRepository.findByIds?.(categoryIds),
+    ]);
+    const manufacturerNames = nameMap(manufacturers);
+    const categoryNames = nameMap(categories);
+
     return events.map((event) => {
       const value = event.toJSON();
-      const publicValue = { ...value };
+      const publicValue = {
+        ...value,
+        oldValues: publicAuditSnapshot(value.oldValues, manufacturerNames, categoryNames),
+        newValues: publicAuditSnapshot(value.newValues, manufacturerNames, categoryNames),
+      };
       delete publicValue.id;
       delete publicValue.userId;
       return publicValue;

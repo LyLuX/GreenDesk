@@ -243,7 +243,7 @@ export default function ReferencePage({
         }}
       />
       {filters.length > 0 && (
-        <div className="surface mb-4 grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="reference-filters surface mb-4 p-3">
           {filters.map((filter) => (
             <FormField
               key={filter.name}
@@ -260,11 +260,11 @@ export default function ReferencePage({
         </div>
       )}
       {pagination && resource === 'materials' && (
-        <div className="surface mb-4 flex flex-wrap gap-3 p-3 text-sm">
-          <label>
-            Trier par{' '}
+        <div className="reference-sort-controls surface mb-4 p-3 text-sm">
+          <label className="form-label mb-0 text-body-secondary">
+            Trier par
             <select
-              className="form-select d-inline-block ms-1 w-auto"
+              className="form-select"
               value={sort}
               onChange={(event) => {
                 setSort(event.target.value);
@@ -276,10 +276,10 @@ export default function ReferencePage({
               <option value="purchaseDate">Date d’achat</option>
             </select>
           </label>
-          <label>
-            Ordre{' '}
+          <label className="form-label mb-0 text-body-secondary">
+            Ordre
             <select
-              className="form-select d-inline-block ms-1 w-auto"
+              className="form-select"
               value={direction}
               onChange={(event) => {
                 setDirection(event.target.value);
@@ -340,7 +340,7 @@ export default function ReferencePage({
         onClose={() => setEditing(null)}
         busy={isSaving}
       >
-        <form className="d-grid gap-3" onSubmit={save}>
+        <form className="d-grid gap-4" onSubmit={save}>
           {formError && (
             <p role="alert" className="alert alert-danger mb-0">
               {formError}

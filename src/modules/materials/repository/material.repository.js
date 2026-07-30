@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 
+import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 import Material from '../model/material.model.js';
 import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
 import Category from '../../categories/model/category.model.js';
@@ -31,7 +32,8 @@ export default class MaterialRepository {
         { name: { [Op.like]: `%${search}%` } },
         { serialNumber: { [Op.like]: `%${search}%` } },
       ];
-    if (active !== undefined && active !== '') where.active = active;
+    const normalizedActive = normalizeBooleanFilter(active);
+    if (normalizedActive !== undefined) where.active = normalizedActive;
     const filteredInclude = [
       {
         ...include[0],

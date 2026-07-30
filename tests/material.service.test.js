@@ -76,6 +76,46 @@ describe('MaterialService', () => {
     });
   });
 
+  it('replaces relation ids with names in material history', async () => {
+    const material = model({ uuid: '11111111-1111-4111-8111-111111111111' });
+    const { audit, service } = createService({
+      findByUuid: jest.fn().mockResolvedValue(material),
+    });
+    service.manufacturerRepository = {
+      findByIds: jest.fn().mockResolvedValue([model({ id: 2, name: 'Green' })]),
+    };
+    service.categoryRepository = {
+      findByIds: jest.fn().mockResolvedValue([model({ id: 3, name: 'Jardin' })]),
+    };
+    audit.findByEntity.mockResolvedValue([
+      model({
+        id: 9,
+        userId: 7,
+        uuid: '22222222-2222-4222-8222-222222222222',
+        oldValues: { name: 'Tondeuse', manufacturerId: 2, purchasePrice: '25.50' },
+        newValues: {
+          name: 'Tondeuse pro',
+          brandId: 2,
+          categoryId: 3,
+          purchasePrice: 25.5,
+        },
+      }),
+    ]);
+
+    await expect(service.getHistory(material.uuid)).resolves.toEqual([
+      {
+        uuid: '22222222-2222-4222-8222-222222222222',
+        oldValues: { name: 'Tondeuse', purchasePrice: 25.5, manufacturer: 'Green' },
+        newValues: {
+          name: 'Tondeuse pro',
+          purchasePrice: 25.5,
+          manufacturer: 'Green',
+          category: 'Jardin',
+        },
+      },
+    ]);
+  });
+
   it('rejects a duplicate serial number before persistence', async () => {
     const { repository, service } = createService({
       findBySerialNumber: jest

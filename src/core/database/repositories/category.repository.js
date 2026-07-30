@@ -12,6 +12,14 @@ export default class CategoryRepository {
   async findByUuid(uuid) {
     return Category.findOne({ where: { uuid } });
   }
+  async findByIds(ids) {
+    if (!ids.length) return [];
+    return Category.findAll({
+      attributes: ['id', 'name'],
+      where: { id: { [Op.in]: ids } },
+      paranoid: false,
+    });
+  }
   async findByName(name, { withDeleted = false } = {}) {
     return Category.findOne({ where: { name }, paranoid: !withDeleted });
   }

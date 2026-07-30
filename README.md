@@ -29,7 +29,7 @@ La documentation Swagger UI est servie sur `/docs` et le document OpenAPI brut s
 
 Un matériel contient son UUID public, nom, fabricant, modèle, catégorie, numéro de série, dates, prix d’achat et notes. Les relations sont exclusivement transmises et renvoyées avec des UUID publics. La liste supporte la recherche, les filtres par statut, fabricant et catégorie, le tri et la pagination.
 
-Les photos (JPEG, PNG, WebP) et documents PDF sont stockés sous `uploads/materials`, sans exposition statique du dossier. Les photos sont consultées via une route authentifiée inline ; les documents sont téléchargés en pièce jointe via une route authentifiée. Chaque fichier est limité à 10 Mo et chaque matériel à 10 photos. Les fichiers reçoivent un nom UUID dérivé de leur MIME autorisé, jamais de leur nom client. L’historique de chaque modification est disponible sur la fiche matériel.
+Les photos (JPEG, PNG, WebP) et documents PDF sont stockés sous `uploads/materials`, sans exposition statique du dossier. Les photos sont consultées via une route authentifiée inline ; les documents sont téléchargés en pièce jointe via une route authentifiée. Chaque fichier est limité à 10 Mo et chaque matériel à 10 photos. Les fichiers reçoivent un nom UUID dérivé de leur MIME autorisé, jamais de leur nom client. La fiche matériel présente les informations, les documents, la maintenance et l’historique sous forme de tableaux. L’historique utilise des libellés métier, remplace les identifiants internes du fabricant et de la catégorie par leurs noms et ignore les différences purement décimales d’un prix inchangé.
 
 Chaque fabricant peut recevoir un logo JPEG, PNG ou WebP de 2 Mo maximum. Les logos sont stockés sous `uploads/manufacturers` avec un nom serveur UUID et sont affichés via une route authentifiée. Les anciennes marques sont migrées dans ce référentiel avec leurs logos et leurs matériels.
 
@@ -47,6 +47,8 @@ Chaque fabricant peut recevoir un logo JPEG, PNG ou WebP de 2 Mo maximum. Les lo
 ## Sprint 6 : maintenance préventive
 
 Chaque matériel peut recevoir plusieurs plans de maintenance : préventif, inspection, remplacement, lubrification, nettoyage ou personnalisé. Un plan possède un intervalle en jours, une priorité et la date du dernier entretien. La prochaine échéance est recalculée à la création, à la modification et lors de l’exécution d’un entretien. L’API expose `GET|POST /api/v1/maintenance`, `GET|PUT|DELETE /api/v1/maintenance/:uuid`, `PATCH /api/v1/maintenance/:uuid/status`, `POST /api/v1/maintenance/:uuid/execute` et `GET /api/v1/maintenance/:uuid/history`.
+
+La liste des plans accepte une recherche sur le nom, la description, les notes, le matériel et l’opération, ainsi que des filtres par matériel, priorité, type, échéance et activité. Dans l’interface, ces contrôles utilisent une grille responsive à trois, deux ou une colonne selon la largeur disponible.
 
 Une tâche est à faire aujourd’hui lorsque sa prochaine date correspond à la date du jour, en retard lorsque cette date est dépassée, et à prévoir lorsqu’elle tombe dans les 30 prochains jours. Les dates métier sont des valeurs UTC `YYYY-MM-DD`, sans heure. L’exécution met à jour transactionnellement la tâche et son historique.
 

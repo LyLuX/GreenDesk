@@ -24,6 +24,7 @@ describe('list filter validation', () => {
   it('accepts every cleared maintenance filter', async () => {
     await expect(
       validate(maintenanceListValidator, {
+        search: '',
         materialUuid: '',
         priority: '',
         maintenanceType: '',

@@ -129,6 +129,30 @@ describe('MaintenancePage', () => {
     );
   });
 
+  it('uses the shared filter grid and searches across maintenance plans', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await screen.findByText('12 jours');
+    const searchInput = screen.getByLabelText('Rechercher un plan de maintenance');
+    expect(searchInput.closest('.reference-filters')).toBeInTheDocument();
+    expect(screen.getByLabelText('Filtrer par matériel').closest('label')).toHaveTextContent(
+      /^Matériel/,
+    );
+    expect(screen.getByLabelText('Filtrer par activité').closest('label')).toHaveTextContent(
+      /^Activité/,
+    );
+
+    await user.type(searchInput, 'tondeuse');
+
+    await waitFor(() =>
+      expect(mocks.listMaintenance).toHaveBeenLastCalledWith(
+        { page: 1, limit: 5, search: 'tondeuse' },
+        expect.any(AbortSignal),
+      ),
+    );
+  });
+
   it('uses compact outline buttons for table actions', async () => {
     renderPage();
 
@@ -202,12 +226,13 @@ describe('MaintenancePage', () => {
     renderPage();
 
     await user.click(await screen.findByRole('button', { name: 'Créer un plan' }));
-    await user.selectOptions(screen.getByLabelText('Matériel'), 'material-uuid');
-    await user.selectOptions(screen.getByLabelText('Opération'), 'operation-uuid');
-    await user.type(screen.getByLabelText('Intervalle (jours)'), '365');
-    await user.type(screen.getByLabelText('Dernier entretien'), '2026-07-01');
-    await user.click(screen.getByRole('checkbox', { name: 'Bougie — BPMR8Y' }));
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    const dialog = screen.getByRole('dialog', { name: 'Créer un plan' });
+    await user.selectOptions(within(dialog).getByLabelText('Matériel'), 'material-uuid');
+    await user.selectOptions(within(dialog).getByLabelText('Opération'), 'operation-uuid');
+    await user.type(within(dialog).getByLabelText('Intervalle (jours)'), '365');
+    await user.type(within(dialog).getByLabelText('Dernier entretien'), '2026-07-01');
+    await user.click(within(dialog).getByRole('checkbox', { name: 'Bougie — BPMR8Y' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
 
     await waitFor(() =>
       expect(mocks.createMaintenance).toHaveBeenCalledWith(

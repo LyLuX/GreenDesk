@@ -547,7 +547,8 @@ export const openApiPaths = {
       operationId: 'getMaterialHistory',
       tags: ['Materials'],
       summary: 'Retourne le journal d’audit d’un matériel.',
-      description: 'Nécessite `materials.read`.',
+      description:
+        'Nécessite `materials.read`. Les identifiants relationnels internes sont remplacés par les noms du fabricant et de la catégorie.',
       security: secure,
       responses: {
         200: jsonResponse('AuditLogListResponse', 'Historique retourné.'),
@@ -849,6 +850,11 @@ export const openApiPaths = {
       description: 'Nécessite `maintenance.read`. Alias historique déprécié : `/api/maintenance`.',
       security: secure,
       parameters: [
+        {
+          ...searchParameter,
+          description:
+            'Recherche dans le nom du plan, sa description, ses notes, le matériel et l’opération.',
+        },
         {
           name: 'materialUuid',
           in: 'query',

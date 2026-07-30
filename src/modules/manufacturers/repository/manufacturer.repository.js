@@ -18,6 +18,14 @@ export default class ManufacturerRepository {
       transaction,
     });
   }
+  async findByIds(ids) {
+    if (!ids.length) return [];
+    return PartManufacturer.findAll({
+      attributes: ['id', 'name'],
+      where: { id: { [Op.in]: ids } },
+      paranoid: false,
+    });
+  }
   async findByName(name, { transaction, withDeleted = false } = {}) {
     return PartManufacturer.findOne({
       where: { name },

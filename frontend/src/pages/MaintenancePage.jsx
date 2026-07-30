@@ -21,6 +21,7 @@ import Loader from '../components/Loader.jsx';
 import MaintenanceOrderListModal from '../components/MaintenanceOrderListModal.jsx';
 import Modal from '../components/Modal.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
+import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import useNotification from '../notifications/useNotification.js';
 import normalizeFormValues from '../utils/normalize-form-values.js';
 import {
@@ -70,6 +71,8 @@ export default function MaintenancePage() {
   const [operations, setOperations] = useState([]);
   const [parts, setParts] = useState([]);
   const [filters, setFilters] = useState({ page: 1, limit: 5 });
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [pagination, setPagination] = useState(null);
   const [dialog, setDialog] = useState(null);
   const [history, setHistory] = useState([]);
@@ -85,7 +88,13 @@ export default function MaintenancePage() {
       setIsLoading(true);
       try {
         const [tasks, materialList, operationList, partList] = await Promise.all([
-          listMaintenance(filters, signal),
+          listMaintenance(
+            {
+              ...filters,
+              ...(debouncedSearch ? { search: debouncedSearch } : {}),
+            },
+            signal,
+          ),
           createReferenceApi('materials').list({ limit: 'all' }, signal),
           listMaintenanceOperations(signal),
           listMaintenanceParts(signal),
@@ -102,7 +111,7 @@ export default function MaintenancePage() {
         if (!signal?.aborted) setIsLoading(false);
       }
     },
-    [filters],
+    [debouncedSearch, filters],
   );
   useEffect(() => {
     const controller = new AbortController();
@@ -263,69 +272,98 @@ export default function MaintenancePage() {
           )}
         </div>
       </div>
-      <div className="surface mb-4 grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-5">
-        <select
-          aria-label="Filtrer par matériel"
-          className="form-select"
-          value={filters.materialUuid ?? ''}
-          onChange={(event) => setFilter('materialUuid', event.target.value)}
-        >
-          <option value="">Tous matériels</option>
-          {materials.map((item) => (
-            <option key={item.uuid} value={item.uuid}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-        <select
-          aria-label="Filtrer par priorité"
-          className="form-select"
-          value={filters.priority ?? ''}
-          onChange={(event) => setFilter('priority', event.target.value)}
-        >
-          <option value="">Toutes priorités</option>
-          {priorities.map((value) => (
-            <option key={value} value={value}>
-              {maintenancePriorityLabels[value]}
-            </option>
-          ))}
-        </select>
-        <select
-          aria-label="Filtrer par type"
-          className="form-select"
-          value={filters.maintenanceType ?? ''}
-          onChange={(event) => setFilter('maintenanceType', event.target.value)}
-        >
-          <option value="">Tous types</option>
-          {types.map((value) => (
-            <option key={value} value={value}>
-              {maintenanceTypeLabels[value]}
-            </option>
-          ))}
-        </select>
-        <select
-          aria-label="Filtrer par statut"
-          className="form-select"
-          value={filters.status ?? ''}
-          onChange={(event) => setFilter('status', event.target.value)}
-        >
-          <option value="">Tous statuts</option>
-          {Object.entries(maintenanceStatusLabels).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <select
-          aria-label="Filtrer par activité"
-          className="form-select"
-          value={filters.active ?? ''}
-          onChange={(event) => setFilter('active', event.target.value)}
-        >
-          <option value="">Actifs et inactifs</option>
-          <option value="true">Actifs</option>
-          <option value="false">Inactifs</option>
-        </select>
+      <div className="reference-filters surface mb-4 p-3">
+        <label className="form-label mb-0 text-body-secondary">
+          Recherche
+          <input
+            aria-label="Rechercher un plan de maintenance"
+            className="form-control"
+            type="search"
+            placeholder="Plan, matériel ou opération"
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setFilters((current) => ({ ...current, page: 1 }));
+            }}
+          />
+        </label>
+        <label className="form-label mb-0 text-body-secondary">
+          Matériel
+          <select
+            aria-label="Filtrer par matériel"
+            className="form-select"
+            value={filters.materialUuid ?? ''}
+            onChange={(event) => setFilter('materialUuid', event.target.value)}
+          >
+            <option value="">Tous matériels</option>
+            {materials.map((item) => (
+              <option key={item.uuid} value={item.uuid}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="form-label mb-0 text-body-secondary">
+          Priorité
+          <select
+            aria-label="Filtrer par priorité"
+            className="form-select"
+            value={filters.priority ?? ''}
+            onChange={(event) => setFilter('priority', event.target.value)}
+          >
+            <option value="">Toutes priorités</option>
+            {priorities.map((value) => (
+              <option key={value} value={value}>
+                {maintenancePriorityLabels[value]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="form-label mb-0 text-body-secondary">
+          Type
+          <select
+            aria-label="Filtrer par type"
+            className="form-select"
+            value={filters.maintenanceType ?? ''}
+            onChange={(event) => setFilter('maintenanceType', event.target.value)}
+          >
+            <option value="">Tous types</option>
+            {types.map((value) => (
+              <option key={value} value={value}>
+                {maintenanceTypeLabels[value]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="form-label mb-0 text-body-secondary">
+          Statut
+          <select
+            aria-label="Filtrer par statut"
+            className="form-select"
+            value={filters.status ?? ''}
+            onChange={(event) => setFilter('status', event.target.value)}
+          >
+            <option value="">Tous statuts</option>
+            {Object.entries(maintenanceStatusLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="form-label mb-0 text-body-secondary">
+          Activité
+          <select
+            aria-label="Filtrer par activité"
+            className="form-select"
+            value={filters.active ?? ''}
+            onChange={(event) => setFilter('active', event.target.value)}
+          >
+            <option value="">Actifs et inactifs</option>
+            <option value="true">Actifs</option>
+            <option value="false">Inactifs</option>
+          </select>
+        </label>
       </div>
       {error && (
         <div
@@ -389,9 +427,7 @@ export default function MaintenancePage() {
                     <td>
                       <span
                         className={`status-badge ${
-                          item.active
-                            ? (maintenanceStatusClasses[item.status] ?? 'maintenance-up-to-date')
-                            : 'inactive'
+                          item.active ? (maintenanceStatusClasses[item.status] ?? '') : 'inactive'
                         }`}
                       >
                         {maintenanceStatusLabels[item.status]}

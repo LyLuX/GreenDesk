@@ -25,6 +25,7 @@ const fields = [
   body('parts.*.quantity').isInt({ min: 1, max: 100000 }).toInt(),
 ];
 export const listValidator = [
+  query('search').optional({ values: 'falsy' }).trim().isLength({ max: 150 }),
   query('materialUuid').optional({ values: 'falsy' }).isUUID(),
   query('priority').optional({ values: 'falsy' }).isIn(MAINTENANCE_PRIORITIES),
   query('maintenanceType').optional({ values: 'falsy' }).isIn(MAINTENANCE_TYPES),

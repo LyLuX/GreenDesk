@@ -1,5 +1,6 @@
 import { Op, Sequelize } from 'sequelize';
 import sequelize from '../../../config/database.js';
+import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 import Material from '../../materials/model/material.model.js';
 import MaintenanceHistory from '../model/maintenance-history.model.js';
 import MaintenanceOperation from '../model/maintenance-operation.model.js';
@@ -64,6 +65,7 @@ const getStatusConditions = ({ taskAlias = 'MaintenanceTask', today, upcoming })
 
 export default class MaintenanceRepository {
   async findAll({
+    search,
     materialUuid,
     priority,
     maintenanceType,
@@ -73,9 +75,28 @@ export default class MaintenanceRepository {
     limit = 5,
   } = {}) {
     const where = {};
+    if (search) {
+      const pattern = `%${search}%`;
+      const matchingTasks = await MaintenanceTask.findAll({
+        attributes: ['id'],
+        include: [materialInclude, operationInclude],
+        where: {
+          [Op.or]: [
+            { title: { [Op.like]: pattern } },
+            { description: { [Op.like]: pattern } },
+            { notes: { [Op.like]: pattern } },
+            { '$material.name$': { [Op.like]: pattern } },
+            { '$operation.name$': { [Op.like]: pattern } },
+          ],
+        },
+        subQuery: false,
+      });
+      where.id = { [Op.in]: matchingTasks.map((task) => task.id) };
+    }
     if (priority) where.priority = priority;
     if (maintenanceType) where.maintenanceType = maintenanceType;
-    if (active !== undefined && active !== '') where.active = active;
+    const normalizedActive = normalizeBooleanFilter(active);
+    if (normalizedActive !== undefined) where.active = normalizedActive;
     const today = new Date().toISOString().slice(0, 10);
     const next = new Date();
     next.setUTCDate(next.getUTCDate() + 30);

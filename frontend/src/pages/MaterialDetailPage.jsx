@@ -23,16 +23,88 @@ import {
 import { formatCurrency } from '../utils/formatters.js';
 
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp'];
+const documentTypeLabels = Object.freeze({
+  invoice: 'Facture',
+  manual: 'Notice',
+  certificate: 'Certificat',
+  other: 'Autre',
+});
+const auditActionLabels = Object.freeze({
+  CREATE: 'Création',
+  UPDATE: 'Modification',
+  RESTORE: 'Restauration',
+  DELETE: 'Suppression',
+});
+const auditFieldLabels = Object.freeze({
+  name: 'Nom',
+  description: 'Description',
+  unit: 'Unité',
+  purchasePrice: 'Prix d’achat',
+  manufacturer: 'Fabricant',
+  category: 'Catégorie',
+  model: 'Modèle',
+  serialNumber: 'Numéro de série',
+  purchaseDate: 'Date d’achat',
+  commissionedAt: 'Mise en service',
+  retiredAt: 'Sortie de service',
+  notes: 'Notes',
+  active: 'Statut',
+});
+const hiddenAuditFields = new Set([
+  'id',
+  'uuid',
+  'brandId',
+  'manufacturerId',
+  'categoryId',
+  'createdAt',
+  'updatedAt',
+  'deletedAt',
+  'createdBy',
+  'updatedBy',
+]);
 const Field = ({ label, value }) => (
-  <div>
-    <dt>{label}</dt>
-    <dd>{value ?? '—'}</dd>
-  </div>
+  <tr>
+    <th scope="row">{label}</th>
+    <td>{value ?? '—'}</td>
+  </tr>
 );
 const formatDate = (value) =>
   value ? new Intl.DateTimeFormat('fr-FR').format(new Date(`${value}T00:00:00Z`)) : '—';
-const displayValue = (value) =>
-  value === null || value === undefined || value === '' ? '—' : String(value);
+const formatDateTime = (value) =>
+  value
+    ? new Intl.DateTimeFormat('fr-FR', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+      }).format(new Date(value))
+    : '—';
+const auditValuesAreEqual = (key, before, after) => {
+  if (key === 'purchasePrice' && before !== null && after !== null) {
+    return Number(before) === Number(after);
+  }
+  return JSON.stringify(before) === JSON.stringify(after);
+};
+const displayAuditValue = (key, value) => {
+  if (value === null || value === undefined || value === '') return '—';
+  if (key === 'active') return value ? 'Actif' : 'Inactif';
+  if (key === 'purchasePrice') return formatCurrency(value);
+  if (['purchaseDate', 'commissionedAt', 'retiredAt'].includes(key)) return formatDate(value);
+  if (typeof value === 'object') return value.name ?? JSON.stringify(value);
+  return String(value);
+};
+const eventChanges = (event) => {
+  const before = event.oldValues ?? {};
+  const after = event.newValues ?? {};
+  return [...new Set([...Object.keys(before), ...Object.keys(after)])]
+    .filter(
+      (key) => !hiddenAuditFields.has(key) && !auditValuesAreEqual(key, before[key], after[key]),
+    )
+    .map((key) => ({
+      key,
+      label: auditFieldLabels[key] ?? key,
+      before: displayAuditValue(key, before[key]),
+      after: displayAuditValue(key, after[key]),
+    }));
+};
 
 /** Detailed material lifecycle view, including protected files and audit history. */
 export default function MaterialDetailPage() {
@@ -47,9 +119,13 @@ export default function MaterialDetailPage() {
   const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [documentFile, setDocumentFile] = useState(null);
   const [documentType, setDocumentType] = useState('other');
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
   const [fileToDelete, setFileToDelete] = useState(null);
   const [removingFileUuid, setRemovingFileUuid] = useState(null);
   const previewsRef = useRef([]);
+  const photoSequenceRef = useRef(0);
+  const documentInputRef = useRef(null);
 
   const load = useCallback(async () => {
     try {
@@ -106,10 +182,11 @@ export default function MaterialDetailPage() {
     );
     if (invalid) {
       setError('Les photos doivent être au format JPEG, PNG ou WebP et ne pas dépasser 10 Mo.');
+      event.target.value = '';
       return;
     }
     const items = files.map((file) => ({
-      localId: crypto.randomUUID(),
+      localId: `${Date.now()}-${photoSequenceRef.current++}`,
       file,
       previewUrl: URL.createObjectURL(file),
       progress: 0,
@@ -119,6 +196,8 @@ export default function MaterialDetailPage() {
     selectedPhotos.forEach((item) => URL.revokeObjectURL(item.previewUrl));
     previewsRef.current = items.map((item) => item.previewUrl);
     setSelectedPhotos(items);
+    setError('');
+    event.target.value = '';
   };
   const removeQueuedPhoto = (localId) =>
     setSelectedPhotos((items) => {
@@ -128,41 +207,51 @@ export default function MaterialDetailPage() {
       return items.filter((current) => current.localId !== localId);
     });
   const uploadPhotos = async () => {
+    if (uploadingPhotos) return;
     if (photos.length + selectedPhotos.length > 10) {
       setError('Un matériel est limité à 10 photos.');
       return;
     }
-    for (const item of selectedPhotos.filter((photo) => photo.status !== 'success')) {
-      setQueuedPhoto(item.localId, { status: 'uploading', error: '', progress: 0 });
-      try {
-        await upload(item.file, false, (event) =>
-          setQueuedPhoto(item.localId, {
-            progress: Math.round((event.loaded * 100) / (event.total || 1)),
-          }),
-        );
-        setQueuedPhoto(item.localId, { status: 'success', progress: 100 });
-      } catch (err) {
-        setQueuedPhoto(item.localId, { status: 'error', error: getApiErrorMessage(err) });
+    setUploadingPhotos(true);
+    try {
+      for (const item of selectedPhotos.filter((photo) => photo.status !== 'success')) {
+        setQueuedPhoto(item.localId, { status: 'uploading', error: '', progress: 0 });
+        try {
+          await upload(item.file, false, (event) =>
+            setQueuedPhoto(item.localId, {
+              progress: Math.round((event.loaded * 100) / (event.total || 1)),
+            }),
+          );
+          setQueuedPhoto(item.localId, { status: 'success', progress: 100 });
+        } catch (err) {
+          setQueuedPhoto(item.localId, { status: 'error', error: getApiErrorMessage(err) });
+        }
       }
+      await load();
+      setSelectedPhotos((items) => {
+        items
+          .filter((item) => item.status === 'success')
+          .forEach((item) => URL.revokeObjectURL(item.previewUrl));
+        const remaining = items.filter((item) => item.status !== 'success');
+        previewsRef.current = remaining.map((item) => item.previewUrl);
+        return remaining;
+      });
+    } finally {
+      setUploadingPhotos(false);
     }
-    await load();
-    setSelectedPhotos((items) => {
-      items
-        .filter((item) => item.status === 'success')
-        .forEach((item) => URL.revokeObjectURL(item.previewUrl));
-      const remaining = items.filter((item) => item.status !== 'success');
-      previewsRef.current = remaining.map((item) => item.previewUrl);
-      return remaining;
-    });
   };
   const uploadDocument = async () => {
-    if (!documentFile) return;
+    if (!documentFile || uploadingDocument) return;
+    setUploadingDocument(true);
     try {
       await upload(documentFile, true);
       setDocumentFile(null);
+      if (documentInputRef.current) documentInputRef.current.value = '';
       await load();
     } catch (err) {
       setError(getApiErrorMessage(err));
+    } finally {
+      setUploadingDocument(false);
     }
   };
   const removeFile = async (file) => {
@@ -191,21 +280,6 @@ export default function MaterialDetailPage() {
     } catch (err) {
       setError(getApiErrorMessage(err));
     }
-  };
-  const changes = (event) => {
-    const before = event.oldValues ?? {};
-    const after = event.newValues ?? {};
-    return Object.keys(after)
-      .filter(
-        (key) =>
-          !['updatedAt', 'createdAt', 'id'].includes(key) &&
-          JSON.stringify(before[key]) !== JSON.stringify(after[key]),
-      )
-      .map((key) => (
-        <li key={key}>
-          <strong>{key}</strong> : {displayValue(before[key])} → {displayValue(after[key])}
-        </li>
-      ));
   };
   if (error && !material)
     return (
@@ -243,9 +317,10 @@ export default function MaterialDetailPage() {
           {error}
         </p>
       )}
-      <div className="detail-tabs mt-5 d-flex flex-wrap gap-2">
+      <div className="detail-tabs mt-4 d-flex flex-wrap gap-2" role="tablist">
         <button
-          className="mr-4 p-2"
+          className="p-2"
+          role="tab"
           aria-pressed={activeTab === 'details'}
           onClick={() => setActiveTab('details')}
         >
@@ -253,6 +328,7 @@ export default function MaterialDetailPage() {
         </button>
         <button
           className="p-2"
+          role="tab"
           aria-pressed={activeTab === 'history'}
           onClick={() => setActiveTab('history')}
         >
@@ -260,7 +336,8 @@ export default function MaterialDetailPage() {
         </button>
         {hasPermission('maintenance.read') && (
           <button
-            className="ml-4 p-2"
+            className="p-2"
+            role="tab"
             aria-pressed={activeTab === 'maintenance'}
             onClick={() => setActiveTab('maintenance')}
           >
@@ -270,61 +347,83 @@ export default function MaterialDetailPage() {
       </div>
       {activeTab === 'details' ? (
         <>
-          <section className="detail-grid mt-5 grid gap-5 p-5 sm:grid-cols-2">
-            <Field
-              label="Fabricant"
-              value={
-                material.manufacturer ? (
-                  <ManufacturerLogo manufacturer={material.manufacturer} />
-                ) : null
-              }
-            />
-            <Field label="Modèle" value={material.model} />
-            <Field label="Numéro de série" value={material.serialNumber} />
-            <Field label="Catégorie" value={material.category?.name} />
-            <Field label="Prix d’achat" value={formatCurrency(material.purchasePrice)} />
-            <Field label="Date d’achat" value={formatDate(material.purchaseDate)} />
-            <Field label="Mise en service" value={formatDate(material.commissionedAt)} />
-            <Field label="Sortie de service" value={formatDate(material.retiredAt)} />
-            <Field label="Notes" value={material.notes} />
+          <section className="mt-4" aria-labelledby="material-information-title">
+            <h2 className="h4 mb-3" id="material-information-title">
+              Informations
+            </h2>
+            <div className="table-shell table-responsive">
+              <table className="table detail-table align-middle">
+                <tbody>
+                  <Field
+                    label="Fabricant"
+                    value={
+                      material.manufacturer ? (
+                        <ManufacturerLogo manufacturer={material.manufacturer} />
+                      ) : null
+                    }
+                  />
+                  <Field label="Modèle" value={material.model} />
+                  <Field label="Numéro de série" value={material.serialNumber} />
+                  <Field label="Catégorie" value={material.category?.name} />
+                  <Field label="Unité" value={material.unit} />
+                  <Field label="Prix d’achat" value={formatCurrency(material.purchasePrice)} />
+                  <Field label="Date d’achat" value={formatDate(material.purchaseDate)} />
+                  <Field label="Mise en service" value={formatDate(material.commissionedAt)} />
+                  <Field label="Sortie de service" value={formatDate(material.retiredAt)} />
+                  <Field label="Notes" value={material.notes} />
+                </tbody>
+              </table>
+            </div>
           </section>
           <section className="surface mt-5 p-4">
             <h2 className="h4 mb-3">Photos</h2>
             {hasPermission('materials.update') && (
-              <>
+              <div className="material-file-upload">
                 <input
-                  className="form-control mt-3"
+                  className="form-control"
                   aria-label="Ajouter des photos"
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   multiple
                   onChange={queuePhotos}
                 />
-                <div className="mt-3 flex flex-wrap gap-3">
-                  {selectedPhotos.map((item) => (
-                    <article className="surface w-32 p-2" key={item.localId}>
-                      <img
-                        className="h-24 w-full object-cover"
-                        src={item.previewUrl}
-                        alt={`Aperçu ${item.file.name}`}
-                      />
-                      <p className="truncate text-xs">{item.file.name}</p>
-                      {item.status === 'uploading' && (
-                        <progress className="w-full" value={item.progress} max="100" />
-                      )}
-                      {item.error && (
-                        <p role="alert" className="text-xs text-red-700">
-                          {item.error}
-                        </p>
-                      )}
-                      <Button onClick={() => removeQueuedPhoto(item.localId)}>Retirer</Button>
-                    </article>
-                  ))}
-                </div>
-                <Button disabled={!selectedPhotos.length} onClick={uploadPhotos}>
-                  Envoyer les photos
+                {selectedPhotos.length > 0 && (
+                  <div className="flex flex-wrap gap-3">
+                    {selectedPhotos.map((item) => (
+                      <article className="surface w-32 p-2" key={item.localId}>
+                        <img
+                          className="h-24 w-full object-cover"
+                          src={item.previewUrl}
+                          alt={`Aperçu ${item.file.name}`}
+                        />
+                        <p className="truncate text-xs">{item.file.name}</p>
+                        {item.status === 'uploading' && (
+                          <progress className="w-full" value={item.progress} max="100" />
+                        )}
+                        {item.error && (
+                          <p role="alert" className="text-xs text-red-700">
+                            {item.error}
+                          </p>
+                        )}
+                        <Button
+                          type="button"
+                          disabled={uploadingPhotos}
+                          onClick={() => removeQueuedPhoto(item.localId)}
+                        >
+                          Retirer
+                        </Button>
+                      </article>
+                    ))}
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  disabled={!selectedPhotos.length || uploadingPhotos}
+                  onClick={uploadPhotos}
+                >
+                  {uploadingPhotos ? 'Envoi en cours…' : 'Envoyer les photos'}
                 </Button>
-              </>
+              </div>
             )}
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {photos.map((file) => (
@@ -341,6 +440,7 @@ export default function MaterialDetailPage() {
                   {hasPermission('materials.update') && (
                     <div className="mt-2 space-x-2">
                       <Button
+                        type="button"
                         disabled={file.isPrimary}
                         onClick={async () => {
                           await setPrimaryMaterialPhoto(file.uuid);
@@ -350,6 +450,7 @@ export default function MaterialDetailPage() {
                         Principale
                       </Button>
                       <Button
+                        type="button"
                         disabled={removingFileUuid === file.uuid}
                         onClick={() => setFileToDelete(file)}
                       >
@@ -364,16 +465,28 @@ export default function MaterialDetailPage() {
           <section className="surface mt-5 p-4">
             <h2 className="h4 mb-3">Documents</h2>
             {hasPermission('materials.update') && (
-              <div className="mt-3 flex flex-wrap gap-3">
+              <div className="material-file-upload">
                 <input
+                  ref={documentInputRef}
                   aria-label="Ajouter un document"
                   className="form-control"
                   type="file"
                   accept="application/pdf"
-                  onChange={(event) => setDocumentFile(event.target.files?.[0] ?? null)}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null;
+                    if (file && (file.type !== 'application/pdf' || file.size > 10 * 1024 * 1024)) {
+                      setDocumentFile(null);
+                      setError('Le document doit être un fichier PDF de 10 Mo maximum.');
+                      event.target.value = '';
+                      return;
+                    }
+                    setDocumentFile(file);
+                    setError('');
+                  }}
                 />
                 <select
                   className="form-select"
+                  aria-label="Type de document"
                   value={documentType}
                   onChange={(event) => setDocumentType(event.target.value)}
                 >
@@ -382,74 +495,156 @@ export default function MaterialDetailPage() {
                   <option value="certificate">Certificat</option>
                   <option value="other">Autre</option>
                 </select>
-                <Button disabled={!documentFile} onClick={uploadDocument}>
-                  Envoyer
+                {documentFile && (
+                  <small className="text-body-secondary">
+                    Fichier sélectionné : {documentFile.name}
+                  </small>
+                )}
+                <Button
+                  type="button"
+                  disabled={!documentFile || uploadingDocument}
+                  onClick={uploadDocument}
+                >
+                  {uploadingDocument ? 'Envoi en cours…' : 'Envoyer le document'}
                 </Button>
               </div>
             )}
-            <ul className="mt-3">
-              {documents.map((file) => (
-                <li className="flex gap-3 py-2" key={file.uuid}>
-                  <span>
-                    {file.originalName} ({file.documentType})
-                  </span>
-                  <Button onClick={() => download(file)}>Télécharger</Button>
-                  {hasPermission('materials.update') && (
-                    <Button
-                      disabled={removingFileUuid === file.uuid}
-                      onClick={() => setFileToDelete(file)}
-                    >
-                      Supprimer
-                    </Button>
-                  )}
-                </li>
-              ))}
-            </ul>
+            {documents.length > 0 ? (
+              <div className="table-shell table-responsive mt-4">
+                <table className="table table-hover align-middle">
+                  <thead>
+                    <tr>
+                      <th>Document</th>
+                      <th>Type</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {documents.map((file) => (
+                      <tr key={file.uuid}>
+                        <td>{file.originalName}</td>
+                        <td>{documentTypeLabels[file.documentType] ?? 'Autre'}</td>
+                        <td>
+                          <div className="d-flex flex-wrap gap-2">
+                            <Button type="button" onClick={() => download(file)}>
+                              Télécharger
+                            </Button>
+                            {hasPermission('materials.update') && (
+                              <Button
+                                type="button"
+                                disabled={removingFileUuid === file.uuid}
+                                onClick={() => setFileToDelete(file)}
+                              >
+                                Supprimer
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="mb-0 mt-4 text-body-secondary">Aucun document ajouté.</p>
+            )}
           </section>
         </>
       ) : activeTab === 'maintenance' ? (
-        <section className="surface mt-5 p-4">
+        <section className="mt-4">
           <h2 className="h4 mb-3">Maintenance</h2>
           {maintenance.length === 0 ? (
-            <p>Aucun plan d’entretien actif.</p>
+            <div className="surface p-4">
+              <p className="mb-0 text-body-secondary">Aucun plan d’entretien actif.</p>
+            </div>
           ) : (
-            <ul className="list-group">
-              {maintenance.map((task) => (
-                <li className="list-group-item" key={task.uuid}>
-                  <strong>{task.title}</strong>{' '}
-                  <span
-                    className={`status-badge ${
-                      maintenanceStatusClasses[task.status] ?? 'maintenance-up-to-date'
-                    }`}
-                  >
-                    {maintenanceStatusLabels[task.status] ?? maintenanceStatusLabels.upToDate}
-                  </span>
-                  <span className="ml-3">Échéance : {task.nextMaintenanceDate ?? '—'}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="table-shell table-responsive">
+              <table className="table table-hover align-middle">
+                <thead>
+                  <tr>
+                    <th>Plan</th>
+                    <th>Échéance</th>
+                    <th>État</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {maintenance.map((task) => (
+                    <tr key={task.uuid}>
+                      <td>{task.title}</td>
+                      <td>{formatDate(task.nextMaintenanceDate)}</td>
+                      <td>
+                        <span
+                          className={`status-badge ${maintenanceStatusClasses[task.status] ?? ''}`}
+                        >
+                          {maintenanceStatusLabels[task.status] ?? maintenanceStatusLabels.upToDate}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
           <Link className="btn btn-outline-brand mt-3" to="/maintenance">
             Voir la maintenance
           </Link>
         </section>
       ) : (
-        <section className="surface mt-5 p-4">
+        <section className="mt-4">
           <h2 className="h4 mb-3">Historique</h2>
           {history.length === 0 ? (
-            <p>Aucune modification enregistrée.</p>
+            <div className="surface p-4">
+              <p className="mb-0 text-body-secondary">Aucune modification enregistrée.</p>
+            </div>
           ) : (
-            <ul className="list-group">
-              {history.map((event) => (
-                <li className="list-group-item" key={event.uuid}>
-                  <p>
-                    <strong>{event.action}</strong> · {formatDate(event.createdAt?.slice(0, 10))} ·{' '}
-                    {event.user ? `${event.user.firstName} ${event.user.lastName}` : 'Système'}
-                  </p>
-                  <ul>{changes(event)}</ul>
-                </li>
-              ))}
-            </ul>
+            <div className="table-shell table-responsive">
+              <table className="table history-table align-middle">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Action</th>
+                    <th>Utilisateur</th>
+                    <th>Modifications</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.map((event) => {
+                    const changes = eventChanges(event);
+                    return (
+                      <tr key={event.uuid}>
+                        <td className="text-nowrap">{formatDateTime(event.createdAt)}</td>
+                        <td>
+                          <span className="status-badge">
+                            {auditActionLabels[event.action] ?? event.action}
+                          </span>
+                        </td>
+                        <td>
+                          {event.user
+                            ? `${event.user.firstName} ${event.user.lastName}`
+                            : 'Système'}
+                        </td>
+                        <td>
+                          {changes.length > 0 ? (
+                            <ul className="history-changes">
+                              {changes.map((change) => (
+                                <li key={change.key}>
+                                  <strong>{change.label}</strong>
+                                  <span>{change.before}</span>
+                                  <span aria-hidden="true">→</span>
+                                  <span>{change.after}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <span className="text-body-secondary">Aucun changement de valeur</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
       )}

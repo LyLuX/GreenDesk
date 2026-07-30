@@ -13,7 +13,7 @@ describe('maintenance priority badge classes', () => {
 
   it('associates every deadline status with its visual variant', () => {
     expect(maintenanceStatusClasses).toEqual({
-      upToDate: 'maintenance-up-to-date',
+      upToDate: '',
       upcoming: 'maintenance-upcoming',
       dueToday: 'maintenance-due-today',
       overdue: 'maintenance-overdue',
