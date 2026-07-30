@@ -9,3 +9,7 @@
 - Update `src/config/openapi-paths.js` and `src/config/openapi-components.js` in the same change as
   the affected API code.
 - Run `npm run docs:check` before committing. Do not merge an API change while this check fails.
+- Whenever a change affects the database schema, reference data, permissions, or persisted data,
+  verify that the required migration exists and correctly covers existing databases. Run
+  `npm run db:migrate:status`, execute pending migrations with `npm run db:migrate`, then verify
+  both the final migration status and the resulting schema or data before finishing the change.
