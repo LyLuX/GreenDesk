@@ -1203,6 +1203,12 @@ a:hover {
     background: #edf3e9;
   }
 
+  .maintenance-order-print-manufacturer {
+    color: var(--muted);
+    font-size: 8.5pt;
+    font-weight: 400;
+  }
+
   .maintenance-order-list-printable .table-shell {
     border-color: var(--border);
     box-shadow: none;

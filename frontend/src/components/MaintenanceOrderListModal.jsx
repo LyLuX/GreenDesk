@@ -57,7 +57,13 @@ export const paginateSupplierGroups = (groups = [], partsPerPage = 10) =>
     }));
   });
 
-function OrderPartsTable({ parts, manufacturerByUuid, showSupplier = true, showPlans = true }) {
+function OrderPartsTable({
+  parts,
+  manufacturerByUuid,
+  showSupplier = true,
+  showPlans = true,
+  showManufacturerLogo = true,
+}) {
   return (
     <div className="table-shell">
       <div className="table-responsive">
@@ -71,40 +77,48 @@ function OrderPartsTable({ parts, manufacturerByUuid, showSupplier = true, showP
             </tr>
           </thead>
           <tbody>
-            {parts.map((part) => (
-              <tr key={part.uuid}>
-                <td>
-                  <strong>{part.name}</strong>
-                  {(part.manufacturer || part.manufacturerUuid) && (
-                    <span className="mt-1 d-block">
-                      <ManufacturerLogo
-                        manufacturer={manufacturerByUuid.get(part.manufacturerUuid)}
-                      />
-                    </span>
-                  )}
-                </td>
-                <td>
-                  {showSupplier && part.supplier ? (
-                    <span className="d-block">{part.supplier}</span>
-                  ) : null}
-                  <small className="text-body-secondary">
-                    {part.supplierReference || part.reference}
-                  </small>
-                </td>
-                <td>{formatOrderQuantity(part.quantity, part.unit)}</td>
-                {showPlans ? (
+            {parts.map((part) => {
+              const manufacturer = manufacturerByUuid.get(part.manufacturerUuid);
+              const manufacturerName = part.manufacturer || manufacturer?.name;
+
+              return (
+                <tr key={part.uuid}>
                   <td>
-                    <ul className="mb-0 ps-3">
-                      {part.plans.map((plan) => (
-                        <li key={plan.maintenanceUuid}>
-                          {plan.material?.name} — {plan.quantity}
-                        </li>
-                      ))}
-                    </ul>
+                    <strong>{part.name}</strong>
+                    {showManufacturerLogo && (manufacturerName || part.manufacturerUuid) ? (
+                      <span className="mt-1 d-block">
+                        <ManufacturerLogo manufacturer={manufacturer} />
+                      </span>
+                    ) : null}
+                    {!showManufacturerLogo && manufacturerName ? (
+                      <small className="maintenance-order-print-manufacturer d-block mt-1">
+                        {manufacturerName}
+                      </small>
+                    ) : null}
                   </td>
-                ) : null}
-              </tr>
-            ))}
+                  <td>
+                    {showSupplier && part.supplier ? (
+                      <span className="d-block">{part.supplier}</span>
+                    ) : null}
+                    <small className="text-body-secondary">
+                      {part.supplierReference || part.reference}
+                    </small>
+                  </td>
+                  <td>{formatOrderQuantity(part.quantity, part.unit)}</td>
+                  {showPlans ? (
+                    <td>
+                      <ul className="mb-0 ps-3">
+                        {part.plans.map((plan) => (
+                          <li key={plan.maintenanceUuid}>
+                            {plan.material?.name} — {plan.quantity}
+                          </li>
+                        ))}
+                      </ul>
+                    </td>
+                  ) : null}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -148,6 +162,7 @@ function MaintenanceOrderPrintPages({ supplierPages, manufacturerByUuid }) {
               manufacturerByUuid={manufacturerByUuid}
               showSupplier={false}
               showPlans={false}
+              showManufacturerLogo={false}
             />
           </main>
           <div className="maintenance-order-print-footer">

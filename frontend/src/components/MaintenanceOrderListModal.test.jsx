@@ -62,11 +62,18 @@ describe('MaintenanceOrderListModal', () => {
     });
   });
 
-  it('shows the manufacturer logo instead of its name', async () => {
+  it('shows the manufacturer logo on screen and its name as secondary print information', async () => {
     render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
 
-    expect(await screen.findByRole('img', { name: 'Logo NGK' })).toBeVisible();
-    expect(screen.queryByText('NGK')).not.toBeInTheDocument();
+    const dialog = screen.getByRole('dialog');
+    expect(await within(dialog).findByRole('img', { name: 'Logo NGK' })).toBeVisible();
+    expect(within(dialog).queryByText('NGK')).not.toBeInTheDocument();
+
+    const printPage = document.querySelector('.maintenance-order-print-page');
+    expect(printPage.querySelector('img[alt="Logo NGK"]')).toBeNull();
+    expect(printPage.querySelector('.maintenance-order-print-manufacturer')).toHaveTextContent(
+      'NGK',
+    );
   });
 
   it('pluralizes the default part unit according to the ordered quantity', () => {
