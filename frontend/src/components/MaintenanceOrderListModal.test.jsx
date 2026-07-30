@@ -117,10 +117,10 @@ describe('MaintenanceOrderListModal', () => {
       { key: 'supplier-1', supplier: 'Coché Motoculture', parts },
     ]);
 
-    expect(pages).toHaveLength(3);
-    expect(pages.map((page) => page.parts.length)).toEqual([10, 10, 3]);
-    expect(pages.map((page) => page.pageNumber)).toEqual([1, 2, 3]);
-    expect(pages.every((page) => page.pageCount === 3)).toBe(true);
+    expect(pages).toHaveLength(2);
+    expect(pages.map((page) => page.parts.length)).toEqual([13, 10]);
+    expect(pages.map((page) => page.pageNumber)).toEqual([1, 2]);
+    expect(pages.every((page) => page.pageCount === 2)).toBe(true);
     expect(pages.flatMap((page) => page.parts.map((part) => part.uuid))).toEqual(
       parts.map((part) => part.uuid),
     );

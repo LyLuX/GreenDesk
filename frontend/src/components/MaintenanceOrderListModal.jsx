@@ -45,7 +45,7 @@ export const groupOrderPartsBySupplier = (parts = []) => {
 };
 
 /** Splits each supplier into complete A4-sized batches without dropping any part. */
-export const paginateSupplierGroups = (groups = [], partsPerPage = 10) =>
+export const paginateSupplierGroups = (groups = [], partsPerPage = 13) =>
   groups.flatMap((group) => {
     const pageCount = Math.ceil(group.parts.length / partsPerPage);
     return Array.from({ length: pageCount }, (_, pageIndex) => ({
