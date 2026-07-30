@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { navigationItems } from './navigation.js';
+import { navigationItems, navigationSections } from './navigation.js';
 import client from './api/client.js';
 
 describe('frontend reference navigation', () => {
@@ -7,16 +7,30 @@ describe('frontend reference navigation', () => {
     expect(navigationItems.map((item) => item.path)).toEqual([
       '/dashboard',
       '/materials',
-      '/maintenance',
-      '/maintenance/operations',
-      '/maintenance/parts',
       '/categories',
       '/manufacturers',
       '/suppliers',
+      '/maintenance',
+      '/maintenance/operations',
+      '/maintenance/parts',
       '/users',
       '/roles',
       '/permissions',
     ]);
+  });
+
+  it('groups the sidebar into fleet, maintenance and administration dropdowns', () => {
+    expect(navigationSections.map((section) => section.item?.label ?? section.label)).toEqual([
+      'Tableau de bord',
+      'Gestion du parc',
+      'Maintenance',
+      'Administration',
+    ]);
+    expect(
+      navigationSections
+        .find((section) => section.key === 'maintenance')
+        .items.map((item) => item.label),
+    ).toEqual(['Plans de maintenance', 'Opérations', 'Pièces']);
   });
 
   it('uses the centralized API prefix', () => {
