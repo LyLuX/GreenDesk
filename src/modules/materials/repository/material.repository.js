@@ -1,9 +1,11 @@
 import { Op } from 'sequelize';
 
+import sequelize from '../../../config/database.js';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 import Material from '../model/material.model.js';
 import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
 import Category from '../../categories/model/category.model.js';
+import MaintenanceTask from '../../maintenance/model/maintenance-task.model.js';
 
 const include = [
   {
@@ -61,8 +63,13 @@ export default class MaterialRepository {
     });
   }
 
-  async findByUuid(uuid) {
-    return Material.findOne({ where: { uuid }, include: [...include, { association: 'files' }] });
+  async findByUuid(uuid, options = {}) {
+    return Material.findOne({
+      where: { uuid },
+      include: [...include, { association: 'files' }],
+      transaction: options.transaction,
+      lock: options.lock ? options.transaction?.LOCK.UPDATE : undefined,
+    });
   }
 
   async findByName(name, { withDeleted = false } = {}) {
@@ -79,15 +86,62 @@ export default class MaterialRepository {
     return Material.create(values);
   }
 
-  async update(material, values) {
-    return material.update(values);
+  async update(material, values, options = {}) {
+    return material.update(values, options);
   }
 
-  async delete(material) {
-    return material.destroy();
+  async delete(material, options = {}) {
+    return material.destroy(options);
   }
 
   async restore(material) {
     return material.restore();
+  }
+
+  async countMaintenanceTasks(materialId, options = {}) {
+    return MaintenanceTask.count({
+      where: { materialId },
+      paranoid: false,
+      transaction: options.transaction,
+    });
+  }
+
+  async deactivateMaintenanceTasks(materialId, updatedAt, userId, options = {}) {
+    return MaintenanceTask.update(
+      { active: false, updatedBy: userId, updatedAt },
+      {
+        where: { materialId, active: true },
+        transaction: options.transaction,
+        silent: true,
+      },
+    );
+  }
+
+  async reactivateMaintenanceTasks(materialId, deactivatedAt, userId, options = {}) {
+    const timestamps = [
+      ...new Map(
+        deactivatedAt
+          .filter(Boolean)
+          .map((value) => new Date(value))
+          .filter((value) => !Number.isNaN(value.getTime()))
+          .map((value) => [value.getTime(), value]),
+      ).values(),
+    ];
+    if (!timestamps.length) return [0];
+    return MaintenanceTask.update(
+      { active: true, updatedBy: userId },
+      {
+        where: {
+          materialId,
+          active: false,
+          updatedAt: { [Op.in]: timestamps },
+        },
+        transaction: options.transaction,
+      },
+    );
+  }
+
+  async withTransaction(callback) {
+    return sequelize.transaction(callback);
   }
 }

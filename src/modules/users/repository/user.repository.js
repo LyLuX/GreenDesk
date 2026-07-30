@@ -34,6 +34,15 @@ export default class UserRepository {
   async findByEmailWithPassword(email) {
     return User.scope('withPassword').findOne({ where: { email }, include: roleInclude });
   }
+  async isActiveByClaims(id, uuid) {
+    if (!id || !uuid) return false;
+    return Boolean(
+      await User.findOne({
+        where: { id, uuid, isActive: true },
+        attributes: ['id'],
+      }),
+    );
+  }
   async create(values) {
     return User.create(values);
   }

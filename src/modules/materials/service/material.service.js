@@ -25,6 +25,10 @@ const nameMap = (items = []) =>
     }),
   );
 
+const has = (object, key) => Object.hasOwn(object, key);
+
+const auditValue = (event) => (typeof event.toJSON === 'function' ? event.toJSON() : event);
+
 const publicAuditSnapshot = (snapshot, manufacturerNames, categoryNames) => {
   if (!snapshot) return snapshot;
   const values = { ...snapshot };
@@ -100,8 +104,8 @@ export default class MaterialService {
   async getByUuid(uuid) {
     return this.toPublic(await this.getEntityByUuid(uuid));
   }
-  async getEntityByUuid(uuid) {
-    const item = await this.materialRepository.findByUuid(uuid);
+  async getEntityByUuid(uuid, options = {}) {
+    const item = await this.materialRepository.findByUuid(uuid, options);
     if (!item) throw new AppError('Material not found', HTTP_STATUS.NOT_FOUND);
     return item;
   }
@@ -137,12 +141,35 @@ export default class MaterialService {
     return this.toPublic(item);
   }
   async update(uuid, values, userId) {
-    const item = await this.getEntityByUuid(uuid);
-    const oldValues = item.toJSON();
+    let item = await this.getEntityByUuid(uuid);
+    let oldValues;
     await this.ensureAvailable(values, item.uuid);
     this.ensureDatesAreCoherent(values, item);
     values = await this.resolveRelations(values);
-    await this.materialRepository.update(item, { ...values, updatedBy: userId });
+    await this.materialRepository.withTransaction(async (transaction) => {
+      item = await this.getEntityByUuid(uuid, { transaction, lock: true });
+      oldValues = item.toJSON();
+      this.ensureDatesAreCoherent(values, item);
+      const changesActiveState = has(values, 'active') && values.active !== item.active;
+      const reactivatesMaterial = changesActiveState && values.active === true;
+      const deactivationTimestamps = reactivatesMaterial
+        ? await this.findDeactivationTimestamps(item)
+        : [];
+      await this.materialRepository.update(item, { ...values, updatedBy: userId }, { transaction });
+      if (changesActiveState && values.active === false) {
+        await this.materialRepository.deactivateMaintenanceTasks(item.id, item.updatedAt, userId, {
+          transaction,
+        });
+      }
+      if (reactivatesMaterial) {
+        await this.materialRepository.reactivateMaintenanceTasks(
+          item.id,
+          deactivationTimestamps,
+          userId,
+          { transaction },
+        );
+      }
+    });
     await this.auditService.record({
       userId,
       action: 'UPDATE',
@@ -154,9 +181,19 @@ export default class MaterialService {
     return this.toPublic(item);
   }
   async remove(uuid, userId) {
-    const item = await this.getEntityByUuid(uuid);
-    const oldValues = item.toJSON();
-    await this.materialRepository.delete(item);
+    let item;
+    let oldValues;
+    await this.materialRepository.withTransaction(async (transaction) => {
+      item = await this.getEntityByUuid(uuid, { transaction, lock: true });
+      if (await this.materialRepository.countMaintenanceTasks(item.id, { transaction })) {
+        throw new AppError(
+          'Ce matériel ne peut pas être supprimé tant que des plans de maintenance lui sont associés.',
+          HTTP_STATUS.CONFLICT,
+        );
+      }
+      oldValues = item.toJSON();
+      await this.materialRepository.delete(item, { transaction });
+    });
     await this.auditService.record({
       userId,
       action: 'DELETE',
@@ -164,6 +201,18 @@ export default class MaterialService {
       entityUuid: item.uuid,
       oldValues,
     });
+  }
+  async findDeactivationTimestamps(item) {
+    const events = await this.auditService.findByEntity('MATERIAL', item.uuid);
+    const event = events
+      .map(auditValue)
+      .find(
+        (value) =>
+          value.newValues?.active === false &&
+          value.oldValues?.active !== false &&
+          value.newValues?.updatedAt,
+      );
+    return [event?.newValues?.updatedAt, item.updatedAt].filter(Boolean);
   }
   async getHistory(uuid) {
     await this.getEntityByUuid(uuid);

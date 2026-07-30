@@ -98,7 +98,7 @@ describe('MaintenanceService', () => {
     const auditService = { record: jest.fn() };
     const service = new MaintenanceService(
       repository,
-      { getEntityByUuid: jest.fn().mockResolvedValue({ id: 7 }) },
+      { getEntityByUuid: jest.fn().mockResolvedValue({ id: 7, active: true }) },
       auditService,
       catalogRepository,
     );
@@ -184,12 +184,14 @@ describe('MaintenanceService', () => {
     const task = {
       id: 1,
       uuid: '11111111-1111-4111-8111-111111111111',
+      active: true,
       intervalDays: 30,
       lastMaintenanceDate: addDaysDateOnly(today, -30),
       nextMaintenanceDate: today,
       material: {
         uuid: '22222222-2222-4222-8222-222222222222',
         name: 'Tondeuse',
+        active: true,
       },
       toJSON() {
         return {
@@ -235,5 +237,50 @@ describe('MaintenanceService', () => {
       },
       { transaction: { id: 'transaction' } },
     );
+  });
+
+  it('refuses to create a plan for an inactive material', async () => {
+    const repository = {
+      create: jest.fn(),
+      withTransaction: jest.fn((callback) => callback({ id: 'transaction' })),
+    };
+    const service = new MaintenanceService(
+      repository,
+      { getEntityByUuid: jest.fn().mockResolvedValue({ id: 7, active: false }) },
+      {},
+      {},
+    );
+
+    await expect(
+      service.create(
+        {
+          materialUuid: '77777777-7777-4777-8777-777777777777',
+          intervalDays: 30,
+          lastMaintenanceDate: '2026-07-01',
+        },
+        42,
+      ),
+    ).rejects.toMatchObject({ statusCode: 400 });
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses to reactivate a plan while its material is inactive', async () => {
+    const task = {
+      uuid: '11111111-1111-4111-8111-111111111111',
+      active: false,
+      material: { active: false },
+      toJSON: () => ({ active: false }),
+    };
+    const repository = {
+      findByUuid: jest.fn().mockResolvedValue(task),
+      update: jest.fn(),
+      withTransaction: jest.fn((callback) => callback({ id: 'transaction' })),
+    };
+    const service = new MaintenanceService(repository, {}, {}, {});
+
+    await expect(service.changeStatus(task.uuid, true, 42)).rejects.toMatchObject({
+      statusCode: 409,
+    });
+    expect(repository.update).not.toHaveBeenCalled();
   });
 });

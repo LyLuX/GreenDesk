@@ -14,7 +14,7 @@ import User from '../../users/model/user.model.js';
 const materialInclude = {
   model: Material,
   as: 'material',
-  attributes: ['uuid', 'name'],
+  attributes: ['uuid', 'name', 'active'],
 };
 const operationInclude = {
   model: MaintenanceOperation,

@@ -14,6 +14,9 @@ export default class AuthRepository {
   async update(user, values) {
     return this.userRepository.update(user, values);
   }
+  async isActiveUser(userId, uuid) {
+    return this.userRepository.isActiveByClaims(userId, uuid);
+  }
 
   /** Persists a revoked access-token identifier until it naturally expires. */
   async revokeAccessToken(tokenId, expiresAt) {

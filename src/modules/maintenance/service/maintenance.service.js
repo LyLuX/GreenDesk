@@ -66,7 +66,6 @@ export default class MaintenanceService {
     };
   }
   async create(values, userId) {
-    const material = await this.materialService.getEntityByUuid(values.materialUuid);
     const deadlines = this.calculateDeadlines(values);
     const { operationUuid, parts = [] } = values;
     const planValues = { ...values };
@@ -74,6 +73,16 @@ export default class MaintenanceService {
     delete planValues.operationUuid;
     delete planValues.parts;
     const task = await this.repository.withTransaction(async (transaction) => {
+      const material = await this.materialService.getEntityByUuid(values.materialUuid, {
+        transaction,
+        lock: true,
+      });
+      if (!material.active) {
+        throw new AppError(
+          'Un plan de maintenance ne peut pas être créé pour un matériel inactif.',
+          HTTP_STATUS.BAD_REQUEST,
+        );
+      }
       const operation = operationUuid
         ? await this.resolveOperation(operationUuid, transaction)
         : null;
@@ -155,9 +164,20 @@ export default class MaintenanceService {
     return this.toPublic(await this.repository.findByUuid(task.uuid));
   }
   async changeStatus(uuid, active, userId) {
-    const task = await this.getEntityByUuid(uuid);
-    const oldValues = task.toJSON();
-    await this.repository.update(task, { active, updatedBy: userId });
+    let task;
+    let oldValues;
+    await this.repository.withTransaction(async (transaction) => {
+      task = await this.repository.findByUuid(uuid, { transaction, lock: true });
+      if (!task) throw new AppError('Tâche de maintenance introuvable.', HTTP_STATUS.NOT_FOUND);
+      if (active && !task.material?.active) {
+        throw new AppError(
+          'Ce plan ne peut pas être activé tant que son matériel est inactif.',
+          HTTP_STATUS.CONFLICT,
+        );
+      }
+      oldValues = task.toJSON();
+      await this.repository.update(task, { active, updatedBy: userId }, { transaction });
+    });
     await this.auditService.record({
       userId,
       action: 'STATUS_CHANGE',
@@ -184,6 +204,12 @@ export default class MaintenanceService {
     const result = await this.repository.withTransaction(async (transaction) => {
       const task = await this.repository.findByUuid(uuid, { transaction, lock: true });
       if (!task) throw new AppError('Tâche de maintenance introuvable.', HTTP_STATUS.NOT_FOUND);
+      if (!task.active || !task.material?.active) {
+        throw new AppError(
+          'Un entretien ne peut pas être exécuté sur un plan ou un matériel inactif.',
+          HTTP_STATUS.CONFLICT,
+        );
+      }
       const oldValues = task.toJSON();
       const performedAt = values.performedAt ?? todayDateOnly();
       const date = parseDateOnly(performedAt);

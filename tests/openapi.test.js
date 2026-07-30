@@ -158,9 +158,18 @@ describe('OpenAPI contract', () => {
       'ManufacturerUpdateRequest',
       'SupplierUpdateRequest',
     ]) {
-      expect(swaggerSpec.components.schemas[schemaName].properties.active).toEqual({
+      expect(swaggerSpec.components.schemas[schemaName].properties.active).toMatchObject({
         type: 'boolean',
       });
     }
+  });
+
+  it('documents lifecycle conflicts between materials and maintenance plans', () => {
+    expect(swaggerSpec.paths['/materials/{uuid}'].put.description).toContain(
+      'plans actifs associés',
+    );
+    expect(swaggerSpec.paths['/materials/{uuid}'].delete.responses).toHaveProperty('409');
+    expect(swaggerSpec.paths['/maintenance/{uuid}/status'].patch.responses).toHaveProperty('409');
+    expect(swaggerSpec.paths['/maintenance/{uuid}/execute'].post.responses).toHaveProperty('409');
   });
 });

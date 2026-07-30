@@ -525,7 +525,8 @@ export const openApiPaths = {
       operationId: 'updateMaterial',
       tags: ['Materials'],
       summary: 'Met à jour un matériel, y compris son statut actif ou inactif.',
-      description: 'Nécessite `materials.update`.',
+      description:
+        'Nécessite `materials.update`. La désactivation rend inactifs les plans actifs associés. La réactivation restaure uniquement les plans désactivés au même instant que le matériel.',
       security: secure,
       requestBody: jsonBody('MaterialUpdateRequest'),
       responses: {
@@ -537,9 +538,10 @@ export const openApiPaths = {
       operationId: 'deleteMaterial',
       tags: ['Materials'],
       summary: 'Supprime logiquement un matériel.',
-      description: 'Nécessite `materials.delete`.',
+      description:
+        'Nécessite `materials.delete`. La suppression est refusée si un plan de maintenance, y compris supprimé logiquement, est encore associé au matériel.',
       security: secure,
-      responses: { 204: noContent, ...resourceErrors },
+      responses: { 204: noContent, ...writeErrors },
     },
   },
   '/materials/{uuid}/history': {
@@ -898,7 +900,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Crée un plan depuis une opération et calcule sa prochaine échéance.',
       description:
-        'Nécessite `maintenance.create`. Le payload historique avec intitulé libre reste accepté pour compatibilité.',
+        'Nécessite `maintenance.create`. Le matériel associé doit être actif. Le payload historique avec intitulé libre reste accepté pour compatibilité.',
       security: secure,
       requestBody: jsonBody('MaintenanceCreateRequest'),
       responses: {
@@ -947,12 +949,13 @@ export const openApiPaths = {
       operationId: 'setMaintenanceTaskStatus',
       tags: ['Maintenance'],
       summary: 'Active ou désactive un plan.',
-      description: 'Nécessite `maintenance.update`.',
+      description:
+        'Nécessite `maintenance.update`. Un plan ne peut pas être activé tant que son matériel est inactif.',
       security: secure,
       requestBody: jsonBody('MaintenanceStatusRequest'),
       responses: {
         200: jsonResponse('MaintenanceResponse', 'Statut du plan mis à jour.'),
-        ...resourceErrors,
+        ...writeErrors,
       },
     },
   },
@@ -962,12 +965,13 @@ export const openApiPaths = {
       operationId: 'executeMaintenanceTask',
       tags: ['Maintenance'],
       summary: 'Enregistre un entretien réalisé et recalcule l’échéance.',
-      description: 'Nécessite `maintenance.execute`. La date du jour est utilisée par défaut.',
+      description:
+        'Nécessite `maintenance.execute`. Le plan et son matériel doivent être actifs. La date du jour est utilisée par défaut.',
       security: secure,
       requestBody: jsonBody('MaintenanceExecuteRequest', false),
       responses: {
         200: jsonResponse('MaintenanceExecutionResponse', 'Entretien enregistré.'),
-        ...resourceErrors,
+        ...writeErrors,
       },
     },
   },

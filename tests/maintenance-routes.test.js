@@ -72,6 +72,7 @@ jest.unstable_mockModule('../src/modules/suppliers/controller/supplier.controlle
 
 const { default: app } = await import('../src/app.js');
 const { default: env } = await import('../src/config/env.js');
+const { default: User } = await import('../src/modules/users/model/user.model.js');
 
 const tokenFor = (permissions) =>
   jwt.sign(
@@ -82,6 +83,14 @@ const authorization = (permissions) => `Bearer ${tokenFor(permissions)}`;
 const uuid = 'f75ce638-18d2-4e29-9958-2afaa4ae5151';
 
 describe('maintenance catalogue route permissions', () => {
+  beforeAll(() => {
+    jest.spyOn(User, 'findOne').mockResolvedValue({ id: 1 });
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
   it.each(['/api/v1/manufacturers', '/api/v1/suppliers'])(
     'allows part readers to load the %s dependency',
     async (path) => {

@@ -1,8 +1,10 @@
+import { jest } from '@jest/globals';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
 
 import app from '../src/app.js';
 import env from '../src/config/env.js';
+import User from '../src/modules/users/model/user.model.js';
 
 const tokenFor = (permissions) =>
   jwt.sign(
@@ -11,6 +13,14 @@ const tokenFor = (permissions) =>
   );
 
 describe('reference routes authorization and validation', () => {
+  beforeAll(() => {
+    jest.spyOn(User, 'findOne').mockResolvedValue({ id: 1 });
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
   it('rejects an unauthenticated categories request', async () => {
     await request(app).get('/api/categories').expect(401);
   });

@@ -524,7 +524,11 @@ export const openApiSchemas = {
     type: 'object',
     properties: {
       ...materialWriteProperties,
-      active: { type: 'boolean' },
+      active: {
+        type: 'boolean',
+        description:
+          'Désactiver le matériel désactive ses plans actifs. Le réactiver ne réactive que les plans désactivés par le même changement de statut.',
+      },
     },
   },
   MaintenanceCreateRequest: {
@@ -546,7 +550,12 @@ export const openApiSchemas = {
   MaintenanceStatusRequest: {
     type: 'object',
     required: ['active'],
-    properties: { active: { type: 'boolean' } },
+    properties: {
+      active: {
+        type: 'boolean',
+        description: 'Un plan ne peut pas être activé si son matériel est inactif.',
+      },
+    },
   },
   MaintenanceExecuteRequest: {
     type: 'object',

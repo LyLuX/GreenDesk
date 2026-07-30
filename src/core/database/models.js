@@ -61,10 +61,27 @@ export function initializeModels() {
     as: 'materials',
   });
   Material.belongsTo(Category, { foreignKey: 'category_id', as: 'category', onDelete: 'SET NULL' });
-  Material.hasMany(MaterialFile, { foreignKey: 'material_id', as: 'files' });
-  MaterialFile.belongsTo(Material, { foreignKey: 'material_id', as: 'material' });
-  Material.hasMany(MaintenanceTask, { foreignKey: 'materialId', as: 'maintenanceTasks' });
-  MaintenanceTask.belongsTo(Material, { foreignKey: 'materialId', as: 'material' });
+  Category.hasMany(Material, { foreignKey: 'category_id', as: 'materials' });
+  Material.hasMany(MaterialFile, {
+    foreignKey: 'material_id',
+    as: 'files',
+    onDelete: 'CASCADE',
+  });
+  MaterialFile.belongsTo(Material, {
+    foreignKey: 'material_id',
+    as: 'material',
+    onDelete: 'CASCADE',
+  });
+  Material.hasMany(MaintenanceTask, {
+    foreignKey: 'materialId',
+    as: 'maintenanceTasks',
+    onDelete: 'CASCADE',
+  });
+  MaintenanceTask.belongsTo(Material, {
+    foreignKey: 'materialId',
+    as: 'material',
+    onDelete: 'CASCADE',
+  });
   MaintenanceOperation.hasMany(MaintenanceTask, {
     foreignKey: 'operationId',
     as: 'maintenanceTasks',
@@ -101,8 +118,16 @@ export function initializeModels() {
     foreignKey: 'supplierId',
     as: 'supplierDirectory',
   });
-  MaintenanceTask.hasMany(MaintenanceHistory, { foreignKey: 'maintenance_task_id', as: 'history' });
-  MaintenanceHistory.belongsTo(MaintenanceTask, { foreignKey: 'maintenance_task_id', as: 'task' });
+  MaintenanceTask.hasMany(MaintenanceHistory, {
+    foreignKey: 'maintenance_task_id',
+    as: 'history',
+    onDelete: 'CASCADE',
+  });
+  MaintenanceHistory.belongsTo(MaintenanceTask, {
+    foreignKey: 'maintenance_task_id',
+    as: 'task',
+    onDelete: 'CASCADE',
+  });
   MaintenanceHistory.belongsTo(User, { foreignKey: 'performed_by', as: 'performedByUser' });
 
   initialized = true;

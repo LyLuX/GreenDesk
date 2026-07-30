@@ -4,7 +4,15 @@ import MaterialService, {
   parseDateOnly,
 } from '../src/modules/materials/service/material.service.js';
 
-const model = (values) => ({ ...values, toJSON: () => ({ ...values }) });
+const model = (values) => {
+  const item = { ...values };
+  item.toJSON = () => {
+    const publicItem = { ...item };
+    delete publicItem.toJSON;
+    return publicItem;
+  };
+  return item;
+};
 
 describe('MaterialService', () => {
   const createService = (overrides = {}) => {
@@ -14,9 +22,16 @@ describe('MaterialService', () => {
       findByName: jest.fn().mockResolvedValue(null),
       findBySerialNumber: jest.fn().mockResolvedValue(null),
       create: jest.fn(),
-      update: jest.fn(),
+      update: jest.fn((item, values) => {
+        Object.assign(item, values);
+        return item;
+      }),
       delete: jest.fn(),
       restore: jest.fn(),
+      countMaintenanceTasks: jest.fn().mockResolvedValue(0),
+      deactivateMaintenanceTasks: jest.fn(),
+      reactivateMaintenanceTasks: jest.fn(),
+      withTransaction: jest.fn((callback) => callback({ id: 'transaction' })),
       ...overrides,
     };
     const audit = { record: jest.fn(), findByEntity: jest.fn().mockResolvedValue([]) };
@@ -155,7 +170,9 @@ describe('MaterialService', () => {
 
     await service.remove(material.uuid, 7);
 
-    expect(repository.delete).toHaveBeenCalledWith(material);
+    expect(repository.delete).toHaveBeenCalledWith(material, {
+      transaction: { id: 'transaction' },
+    });
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 7,
@@ -164,6 +181,79 @@ describe('MaterialService', () => {
         entityUuid: material.uuid,
       }),
     );
+  });
+
+  it('deactivates active maintenance plans with the material timestamp', async () => {
+    const deactivatedAt = new Date('2026-07-30T12:00:00.000Z');
+    const material = model({
+      id: 5,
+      uuid: '11111111-1111-4111-8111-111111111111',
+      name: 'Tondeuse',
+      active: true,
+    });
+    const { repository, service } = createService({
+      findByUuid: jest.fn().mockResolvedValue(material),
+      update: jest.fn((item, values) => {
+        Object.assign(item, values, { updatedAt: deactivatedAt });
+        return item;
+      }),
+    });
+
+    await service.update(material.uuid, { active: false }, 7);
+
+    expect(repository.deactivateMaintenanceTasks).toHaveBeenCalledWith(
+      material.id,
+      deactivatedAt,
+      7,
+      { transaction: { id: 'transaction' } },
+    );
+    expect(repository.reactivateMaintenanceTasks).not.toHaveBeenCalled();
+  });
+
+  it('reactivates only plans carrying the material deactivation timestamp', async () => {
+    const deactivatedAt = '2026-07-29T08:00:00.000Z';
+    const currentUpdatedAt = new Date('2026-07-30T10:00:00.000Z');
+    const material = model({
+      id: 5,
+      uuid: '11111111-1111-4111-8111-111111111111',
+      name: 'Tondeuse',
+      active: false,
+      updatedAt: currentUpdatedAt,
+    });
+    const { repository, audit, service } = createService({
+      findByUuid: jest.fn().mockResolvedValue(material),
+    });
+    audit.findByEntity.mockResolvedValue([
+      model({
+        oldValues: { active: true },
+        newValues: { active: false, updatedAt: deactivatedAt },
+      }),
+    ]);
+
+    await service.update(material.uuid, { active: true }, 7);
+
+    expect(repository.reactivateMaintenanceTasks).toHaveBeenCalledWith(
+      material.id,
+      [deactivatedAt, currentUpdatedAt],
+      7,
+      { transaction: { id: 'transaction' } },
+    );
+    expect(repository.deactivateMaintenanceTasks).not.toHaveBeenCalled();
+  });
+
+  it('refuses to delete a material that still has maintenance plans', async () => {
+    const material = model({
+      id: 5,
+      uuid: '11111111-1111-4111-8111-111111111111',
+      name: 'Tondeuse',
+    });
+    const { repository, service } = createService({
+      findByUuid: jest.fn().mockResolvedValue(material),
+      countMaintenanceTasks: jest.fn().mockResolvedValue(1),
+    });
+
+    await expect(service.remove(material.uuid, 7)).rejects.toMatchObject({ statusCode: 409 });
+    expect(repository.delete).not.toHaveBeenCalled();
   });
 
   it('restores a soft-deleted material with the same name', async () => {
