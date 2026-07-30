@@ -6,9 +6,11 @@ import AutocompleteField from '../components/AutocompleteField.jsx';
 import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import DataTable from '../components/DataTable.jsx';
+import FilterPanel from '../components/FilterPanel.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
+import { activityStatusFilter } from '../filters/filter-options.js';
 import useNotification from '../notifications/useNotification.js';
 import normalizeFormValues from '../utils/normalize-form-values.js';
 
@@ -30,6 +32,7 @@ export default function MaintenanceCatalogPage({
   const { notify } = useNotification();
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState('');
+  const [active, setActive] = useState('');
   const [editing, setEditing] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,15 +68,18 @@ export default function MaintenanceCatalogPage({
 
   const filteredRows = useMemo(() => {
     const term = search.trim().toLocaleLowerCase('fr');
-    if (!term) return rows;
-    return rows.filter((row) =>
-      fields.some((field) =>
-        String(row[field.name] ?? '')
-          .toLocaleLowerCase('fr')
-          .includes(term),
-      ),
-    );
-  }, [fields, rows, search]);
+    return rows.filter((row) => {
+      const matchesSearch =
+        !term ||
+        fields.some((field) =>
+          String(row[field.name] ?? '')
+            .toLocaleLowerCase('fr')
+            .includes(term),
+        );
+      const matchesStatus = active === '' || String(row.active) === active;
+      return matchesSearch && matchesStatus;
+    });
+  }, [active, fields, rows, search]);
 
   const save = async (event) => {
     event.preventDefault();
@@ -141,12 +147,25 @@ export default function MaintenanceCatalogPage({
         )}
       </div>
 
-      <input
-        aria-label={`Rechercher dans ${title.toLocaleLowerCase('fr')}`}
-        className="form-control mb-4"
-        placeholder="Rechercher"
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
+      <FilterPanel
+        fields={[
+          {
+            name: 'search',
+            type: 'search',
+            ariaLabel: `Rechercher dans ${title.toLocaleLowerCase('fr')}`,
+            placeholder: 'Rechercher',
+            value: search,
+            onChange: setSearch,
+          },
+          {
+            name: 'active',
+            type: 'select',
+            ...activityStatusFilter,
+            ariaLabel: 'Filtrer par statut',
+            value: active,
+            onChange: setActive,
+          },
+        ]}
       />
 
       {loadError && (
@@ -170,8 +189,8 @@ export default function MaintenanceCatalogPage({
           columns={columns}
           rows={filteredRows}
           emptyMessage={
-            search.trim()
-              ? `Aucun résultat pour « ${search.trim()} ».`
+            search.trim() || active
+              ? 'Aucun élément ne correspond aux filtres.'
               : 'Aucun élément enregistré.'
           }
           actionLoadingId={busy ? confirmation?.row.uuid : null}

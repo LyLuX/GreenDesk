@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **1.1.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **1.2.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -17,6 +17,8 @@ Chaque modification livrée doit mettre à jour tous les emplacements de version
 ## Modules disponibles
 
 Authentification, utilisateurs, rôles, permissions, audit, catégories, fabricants, fournisseurs et matériels.
+
+Les pages de listes utilisent un panneau de recherche et de filtres commun. Il conserve les mêmes libellés pour une même fonction, s’adapte sur une, deux ou trois colonnes et accepte au maximum six champs : une recherche et cinq filtres. Les catalogues affichant un état actif/inactif utilisent tous le libellé `Statut`. Les pages d’administration permettent également de filtrer les utilisateurs par statut et rôle, et les rôles par permission.
 
 ## API
 
@@ -60,7 +62,7 @@ Chaque fabricant peut recevoir un logo JPEG, PNG ou WebP de 2 Mo maximum. Les lo
 
 Chaque matériel peut recevoir plusieurs plans de maintenance : préventif, inspection, remplacement, lubrification, nettoyage ou personnalisé. Un plan possède un intervalle en jours, une priorité et la date du dernier entretien. La prochaine échéance est recalculée à la création, à la modification et lors de l’exécution d’un entretien. L’API expose `GET|POST /api/v1/maintenance`, `GET|PUT|DELETE /api/v1/maintenance/:uuid`, `PATCH /api/v1/maintenance/:uuid/status`, `POST /api/v1/maintenance/:uuid/execute` et `GET /api/v1/maintenance/:uuid/history`.
 
-La liste des plans accepte une recherche sur le nom, la description, les notes, le matériel et l’opération, ainsi que des filtres par matériel, priorité, type, échéance et activité. Dans l’interface, ces contrôles utilisent une grille responsive à trois, deux ou une colonne selon la largeur disponible.
+La liste des plans accepte une recherche sur le nom, la description, les notes, le matériel et l’opération, ainsi que des filtres par matériel, priorité, type, échéance et statut d’activation. Dans l’interface, ces contrôles utilisent le panneau de filtres partagé.
 
 Une tâche est à faire aujourd’hui lorsque sa prochaine date correspond à la date du jour, en retard lorsque cette date est dépassée, et à prévoir lorsqu’elle tombe dans les 30 prochains jours. Les dates métier sont des valeurs UTC `YYYY-MM-DD`, sans heure. L’exécution met à jour transactionnellement la tâche et son historique.
 

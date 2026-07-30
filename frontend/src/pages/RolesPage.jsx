@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import FilterPanel from '../components/FilterPanel.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
@@ -29,6 +30,8 @@ export default function RolesPage() {
   const [roleToDelete, setRoleToDelete] = useState(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(5);
+  const [search, setSearch] = useState('');
+  const [permissionUuid, setPermissionUuid] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -118,7 +121,21 @@ export default function RolesPage() {
       setRemoving(null);
     }
   };
-  const rolePage = paginateItems(roles, page, limit);
+  const filteredRoles = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase('fr');
+    return roles.filter((role) => {
+      const matchesSearch =
+        !term ||
+        [role.name, role.description]
+          .filter(Boolean)
+          .some((value) => value.toLocaleLowerCase('fr').includes(term));
+      const matchesPermission =
+        permissionUuid === '' ||
+        role.permissions?.some((permission) => permission.uuid === permissionUuid) === true;
+      return matchesSearch && matchesPermission;
+    });
+  }, [permissionUuid, roles, search]);
+  const rolePage = paginateItems(filteredRoles, page, limit);
 
   return (
     <main className="app-page">
@@ -129,6 +146,37 @@ export default function RolesPage() {
         </div>
         <Button onClick={openCreate}>Créer un rôle</Button>
       </div>
+      <FilterPanel
+        fields={[
+          {
+            name: 'search',
+            type: 'search',
+            ariaLabel: 'Rechercher un rôle',
+            placeholder: 'Nom ou description',
+            value: search,
+            onChange: (value) => {
+              setSearch(value);
+              setPage(1);
+            },
+          },
+          {
+            name: 'permissionUuid',
+            type: 'select',
+            label: 'Permission',
+            ariaLabel: 'Filtrer par permission',
+            emptyLabel: 'Toutes les permissions',
+            options: permissions.map((permission) => ({
+              value: permission.uuid,
+              label: permission.name,
+            })),
+            value: permissionUuid,
+            onChange: (value) => {
+              setPermissionUuid(value);
+              setPage(1);
+            },
+          },
+        ]}
+      />
       {error && (
         <p className="alert alert-danger" role="alert">
           {error}
@@ -152,7 +200,9 @@ export default function RolesPage() {
               {rolePage.pagination.total === 0 ? (
                 <tr>
                   <td className="py-5 text-center text-body-secondary" colSpan="3">
-                    Aucun rôle.
+                    {search.trim() || permissionUuid
+                      ? 'Aucun rôle ne correspond aux filtres.'
+                      : 'Aucun rôle.'}
                   </td>
                 </tr>
               ) : (

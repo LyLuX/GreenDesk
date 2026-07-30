@@ -1,13 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import { createUser, deleteUser, listUsers, updateUser } from '../api/users.api.js';
 import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import FilterPanel from '../components/FilterPanel.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
+import { activityStatusFilter } from '../filters/filter-options.js';
 import useNotification from '../notifications/useNotification.js';
 import { paginateItems } from '../utils/pagination.js';
 
@@ -42,6 +44,9 @@ export default function UsersPage() {
   const [userToDelete, setUserToDelete] = useState(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(5);
+  const [search, setSearch] = useState('');
+  const [active, setActive] = useState('');
+  const [roleUuid, setRoleUuid] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -151,7 +156,21 @@ export default function UsersPage() {
       setRemoving(null);
     }
   };
-  const userPage = paginateItems(users, page, limit);
+  const filteredUsers = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase('fr');
+    return users.filter((user) => {
+      const matchesSearch =
+        !term ||
+        [user.firstName, user.lastName, user.email]
+          .filter(Boolean)
+          .some((value) => value.toLocaleLowerCase('fr').includes(term));
+      const matchesStatus = active === '' || String(user.isActive) === active;
+      const matchesRole =
+        roleUuid === '' || user.roles?.some((role) => role.uuid === roleUuid) === true;
+      return matchesSearch && matchesStatus && matchesRole;
+    });
+  }, [active, roleUuid, search, users]);
+  const userPage = paginateItems(filteredUsers, page, limit);
 
   return (
     <main className="app-page">
@@ -162,6 +181,45 @@ export default function UsersPage() {
         </div>
         <Button onClick={openCreate}>Créer un utilisateur</Button>
       </div>
+      <FilterPanel
+        fields={[
+          {
+            name: 'search',
+            type: 'search',
+            ariaLabel: 'Rechercher un utilisateur',
+            placeholder: 'Nom, prénom ou email',
+            value: search,
+            onChange: (value) => {
+              setSearch(value);
+              setPage(1);
+            },
+          },
+          {
+            name: 'active',
+            type: 'select',
+            ...activityStatusFilter,
+            ariaLabel: 'Filtrer par statut',
+            value: active,
+            onChange: (value) => {
+              setActive(value);
+              setPage(1);
+            },
+          },
+          {
+            name: 'roleUuid',
+            type: 'select',
+            label: 'Rôle',
+            ariaLabel: 'Filtrer par rôle',
+            emptyLabel: 'Tous les rôles',
+            options: roles.map((role) => ({ value: role.uuid, label: role.name })),
+            value: roleUuid,
+            onChange: (value) => {
+              setRoleUuid(value);
+              setPage(1);
+            },
+          },
+        ]}
+      />
       {error && (
         <p className="alert alert-danger" role="alert">
           {error}
@@ -187,7 +245,9 @@ export default function UsersPage() {
               {userPage.pagination.total === 0 ? (
                 <tr>
                   <td className="py-5 text-center text-body-secondary" colSpan="5">
-                    Aucun utilisateur.
+                    {search.trim() || active || roleUuid
+                      ? 'Aucun utilisateur ne correspond aux filtres.'
+                      : 'Aucun utilisateur.'}
                   </td>
                 </tr>
               ) : (

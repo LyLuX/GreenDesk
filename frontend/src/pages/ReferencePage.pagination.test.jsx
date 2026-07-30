@@ -60,4 +60,52 @@ describe('ReferencePage pagination', () => {
 
     await waitFor(() => expect(screen.getByText('Élément 6')).toBeInTheDocument());
   });
+
+  it('applies a client-side status filter inside the shared panel', async () => {
+    api.list.mockResolvedValue({
+      data: {
+        data: [
+          { uuid: 'active', name: 'Actif', active: true },
+          { uuid: 'inactive', name: 'Inactif', active: false },
+        ],
+      },
+    });
+    createReferenceApi.mockReturnValue(api);
+    const user = userEvent.setup();
+
+    render(
+      <ReferencePage
+        title="Éléments"
+        resource="elements"
+        createPermission="elements.create"
+        updatePermission="elements.update"
+        deletePermission="elements.delete"
+        fields={[{ name: 'name', label: 'Nom' }]}
+        columns={[{ key: 'name', label: 'Nom' }]}
+        filters={[
+          {
+            name: 'active',
+            label: 'Statut',
+            emptyLabel: 'Tous les statuts',
+            options: [
+              { value: 'true', label: 'Actifs' },
+              { value: 'false', label: 'Inactifs' },
+            ],
+            clientSide: true,
+          },
+        ]}
+      />,
+    );
+
+    expect(await screen.findByText('Actif')).toBeVisible();
+    expect(screen.getByText('Inactif')).toBeVisible();
+    await user.selectOptions(screen.getByLabelText('Filtrer par statut'), 'false');
+
+    await waitFor(() => expect(screen.queryByText('Actif')).not.toBeInTheDocument());
+    expect(screen.getByText('Inactif')).toBeVisible();
+    expect(api.list).toHaveBeenLastCalledWith(
+      expect.not.objectContaining({ active: 'false' }),
+      expect.any(AbortSignal),
+    );
+  });
 });

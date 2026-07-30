@@ -1,3 +1,4 @@
+import { activityStatusFilter } from '../filters/filter-options.js';
 import ReferencePage from './ReferencePage.jsx';
 
 export default function SuppliersPage() {
@@ -30,6 +31,7 @@ export default function SuppliersPage() {
           ),
         },
       ]}
+      filters={[{ name: 'active', ...activityStatusFilter, clientSide: true }]}
     />
   );
 }

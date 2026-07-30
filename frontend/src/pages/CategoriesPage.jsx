@@ -1,4 +1,5 @@
 import ReferencePage from './ReferencePage.jsx';
+import { activityStatusFilter } from '../filters/filter-options.js';
 
 /** Category reference-data page. */
 export default function CategoriesPage() {
@@ -26,6 +27,7 @@ export default function CategoriesPage() {
           ),
         },
       ]}
+      filters={[{ name: 'active', ...activityStatusFilter, clientSide: true }]}
     />
   );
 }

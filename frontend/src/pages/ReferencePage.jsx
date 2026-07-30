@@ -6,6 +6,7 @@ import useAuth from '../auth/useAuth.js';
 import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import DataTable from '../components/DataTable.jsx';
+import FilterPanel from '../components/FilterPanel.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
@@ -57,22 +58,35 @@ export default function ReferencePage({
     async (signal) => {
       setIsLoading(true);
       try {
+        const apiFilterValues = Object.fromEntries(
+          Object.entries(filterValues).filter(
+            ([name]) => !filters.find((filter) => filter.name === name)?.clientSide,
+          ),
+        );
         const response = await api.list(
           {
             ...(debouncedSearch ? { search: debouncedSearch } : {}),
-            ...filterValues,
+            ...apiFilterValues,
             ...(pagination ? { page, limit, sort, direction } : {}),
           },
           signal,
         );
         const payload = response.data.data ?? [];
         if (Array.isArray(payload)) {
+          const filteredPayload = payload.filter((row) =>
+            filters.every(
+              (filter) =>
+                !filter.clientSide ||
+                !filterValues[filter.name] ||
+                String(row[filter.name]) === filterValues[filter.name],
+            ),
+          );
           if (pagination) {
-            const localPage = paginateItems(payload, page, limit);
+            const localPage = paginateItems(filteredPayload, page, limit);
             setRows(localPage.items);
             setPaginationData(localPage.pagination);
           } else {
-            setRows(payload);
+            setRows(filteredPayload);
             setPaginationData(null);
           }
         } else {
@@ -232,65 +246,72 @@ export default function ReferencePage({
           </Button>
         )}
       </div>
-      <input
-        aria-label="Rechercher"
-        className="form-control mb-4"
-        placeholder="Rechercher"
-        value={search}
-        onChange={(event) => {
-          setSearch(event.target.value);
-          resetPage();
-        }}
+      <FilterPanel
+        fields={[
+          {
+            name: 'search',
+            type: 'search',
+            ariaLabel: `Rechercher dans ${title.toLocaleLowerCase('fr')}`,
+            placeholder: 'Rechercher',
+            value: search,
+            onChange: (value) => {
+              setSearch(value);
+              resetPage();
+            },
+          },
+          ...filters.map((filter) => ({
+            name: filter.name,
+            type: 'select',
+            label: filter.label,
+            ariaLabel: filter.ariaLabel ?? `Filtrer par ${filter.label.toLocaleLowerCase('fr')}`,
+            emptyLabel: filter.emptyLabel ?? 'Tous',
+            options: selectOptions(filter),
+            value: filterValues[filter.name] ?? '',
+            onChange: (value) => {
+              setFilterValues((current) => ({ ...current, [filter.name]: value }));
+              resetPage();
+            },
+          })),
+        ]}
       />
-      {filters.length > 0 && (
-        <div className="reference-filters surface mb-4 p-3">
-          {filters.map((filter) => (
-            <FormField
-              key={filter.name}
-              label={filter.label}
-              name={filter.name}
-              options={selectOptions(filter)}
-              defaultValue={filterValues[filter.name] ?? ''}
-              onChange={(event) => {
-                setFilterValues((current) => ({ ...current, [filter.name]: event.target.value }));
-                resetPage();
-              }}
-            />
-          ))}
-        </div>
-      )}
       {pagination && resource === 'materials' && (
-        <div className="reference-sort-controls surface mb-4 p-3 text-sm">
-          <label className="form-label mb-0 text-body-secondary">
-            Trier par
-            <select
-              className="form-select"
-              value={sort}
-              onChange={(event) => {
-                setSort(event.target.value);
+        <FilterPanel
+          ariaLabel="Tri"
+          className="text-sm"
+          fields={[
+            {
+              name: 'sort',
+              type: 'select',
+              label: 'Trier par',
+              ariaLabel: 'Trier les matériels par',
+              options: [
+                { value: 'name', label: 'Nom' },
+                { value: 'purchasePrice', label: 'Prix d’achat' },
+                { value: 'purchaseDate', label: 'Date d’achat' },
+              ],
+              value: sort,
+              onChange: (value) => {
+                setSort(value);
                 resetPage();
-              }}
-            >
-              <option value="name">Nom</option>
-              <option value="purchasePrice">Prix d’achat</option>
-              <option value="purchaseDate">Date d’achat</option>
-            </select>
-          </label>
-          <label className="form-label mb-0 text-body-secondary">
-            Ordre
-            <select
-              className="form-select"
-              value={direction}
-              onChange={(event) => {
-                setDirection(event.target.value);
+              },
+            },
+            {
+              name: 'direction',
+              type: 'select',
+              label: 'Ordre',
+              ariaLabel: 'Choisir l’ordre de tri des matériels',
+              options: [
+                { value: 'ASC', label: 'Croissant' },
+                { value: 'DESC', label: 'Décroissant' },
+              ],
+              value: direction,
+              onChange: (value) => {
+                setDirection(value);
                 resetPage();
-              }}
-            >
-              <option value="ASC">Croissant</option>
-              <option value="DESC">Décroissant</option>
-            </select>
-          </label>
-        </div>
+              },
+            },
+          ]}
+        />
       )}
       {isLoading && <Loader label={`Chargement des ${title.toLowerCase()}`} />}
       {loadError && (

@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => {
     uuid: `role-${index + 1}`,
     name: `Rôle ${index + 1}`,
     description: '',
-    permissions: [],
+    permissions: index === 5 ? [{ uuid: 'permission-admin', name: 'ADMIN', description: '' }] : [],
   }));
   return {
     users: Array.from({ length: 6 }, (_value, index) => ({
@@ -15,14 +15,20 @@ const mocks = vi.hoisted(() => {
       firstName: 'Utilisateur',
       lastName: String(index + 1),
       email: `user${index + 1}@example.test`,
-      isActive: true,
-      roles: [],
+      isActive: index !== 5,
+      roles: index === 5 ? [roles[5]] : [],
       lastLoginAt: null,
     })),
     roles,
     referenceApis: {
       roles: { list: vi.fn().mockResolvedValue({ data: { data: roles } }) },
-      permissions: { list: vi.fn().mockResolvedValue({ data: { data: [] } }) },
+      permissions: {
+        list: vi.fn().mockResolvedValue({
+          data: {
+            data: [{ uuid: 'permission-admin', name: 'ADMIN', description: '' }],
+          },
+        }),
+      },
     },
   };
 });
@@ -72,5 +78,34 @@ describe('administrator table pagination', () => {
     await user.selectOptions(screen.getByLabelText('Nombre d’éléments par page'), 'all');
 
     expect(screen.getByText('Rôle 6')).toBeInTheDocument();
+  });
+
+  it('filters users with the shared search, status and role controls', async () => {
+    const user = userEvent.setup();
+    render(<UsersPage />);
+
+    await screen.findByText('user5@example.test');
+    expect(
+      screen.getByLabelText('Rechercher un utilisateur').closest('.filter-panel'),
+    ).toBeVisible();
+
+    await user.selectOptions(screen.getByLabelText('Filtrer par statut'), 'false');
+    expect(screen.getByText('user6@example.test')).toBeVisible();
+    expect(screen.queryByText('user5@example.test')).not.toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText('Filtrer par rôle'), 'role-6');
+    expect(screen.getByText('user6@example.test')).toBeVisible();
+  });
+
+  it('filters roles by search and permission', async () => {
+    const user = userEvent.setup();
+    render(<RolesPage />);
+
+    await screen.findByText('Rôle 5');
+    expect(screen.getByLabelText('Rechercher un rôle').closest('.filter-panel')).toBeVisible();
+
+    await user.selectOptions(screen.getByLabelText('Filtrer par permission'), 'permission-admin');
+    expect(screen.getByText('Rôle 6')).toBeVisible();
+    expect(screen.queryByText('Rôle 5')).not.toBeInTheDocument();
   });
 });

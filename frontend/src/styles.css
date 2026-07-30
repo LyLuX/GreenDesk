@@ -360,15 +360,13 @@ a:hover {
   text-transform: uppercase;
 }
 
-.reference-filters,
-.reference-sort-controls {
+.filter-panel {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.25rem 2rem;
 }
 
-.reference-filters .form-label,
-.reference-sort-controls .form-label {
+.filter-panel .form-label {
   min-width: 0;
 }
 
@@ -709,14 +707,17 @@ a:hover {
 }
 
 @media (min-width: 576px) {
-  .reference-filters,
-  .reference-sort-controls {
+  .filter-panel {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filter-panel--1-columns {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (min-width: 576px) and (max-width: 991.98px) {
-  .reference-filters > :last-child:nth-child(odd) {
+  .filter-panel:not(.filter-panel--1-columns) > :last-child:nth-child(odd) {
     grid-column: 1 / -1;
     width: calc((100% - 2rem) / 2);
     justify-self: center;
@@ -724,7 +725,15 @@ a:hover {
 }
 
 @media (min-width: 992px) {
-  .reference-filters {
+  .filter-panel {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .filter-panel--1-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-panel--2-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

@@ -16,6 +16,7 @@ import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
 import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import FilterPanel from '../components/FilterPanel.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
 import MaintenanceOrderListModal from '../components/MaintenanceOrderListModal.jsx';
@@ -24,6 +25,7 @@ import PaginationControls from '../components/PaginationControls.jsx';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import useNotification from '../notifications/useNotification.js';
 import normalizeFormValues from '../utils/normalize-form-values.js';
+import { activityStatusFilter } from '../filters/filter-options.js';
 import {
   maintenancePriorityBadgeClasses,
   maintenancePriorityLabels,
@@ -272,99 +274,75 @@ export default function MaintenancePage() {
           )}
         </div>
       </div>
-      <div className="reference-filters surface mb-4 p-3">
-        <label className="form-label mb-0 text-body-secondary">
-          Recherche
-          <input
-            aria-label="Rechercher un plan de maintenance"
-            className="form-control"
-            type="search"
-            placeholder="Plan, matériel ou opération"
-            value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
+      <FilterPanel
+        fields={[
+          {
+            name: 'search',
+            type: 'search',
+            ariaLabel: 'Rechercher un plan de maintenance',
+            placeholder: 'Plan, matériel ou opération',
+            value: search,
+            onChange: (value) => {
+              setSearch(value);
               setFilters((current) => ({ ...current, page: 1 }));
-            }}
-          />
-        </label>
-        <label className="form-label mb-0 text-body-secondary">
-          Matériel
-          <select
-            aria-label="Filtrer par matériel"
-            className="form-select"
-            value={filters.materialUuid ?? ''}
-            onChange={(event) => setFilter('materialUuid', event.target.value)}
-          >
-            <option value="">Tous matériels</option>
-            {materials.map((item) => (
-              <option key={item.uuid} value={item.uuid}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="form-label mb-0 text-body-secondary">
-          Priorité
-          <select
-            aria-label="Filtrer par priorité"
-            className="form-select"
-            value={filters.priority ?? ''}
-            onChange={(event) => setFilter('priority', event.target.value)}
-          >
-            <option value="">Toutes priorités</option>
-            {priorities.map((value) => (
-              <option key={value} value={value}>
-                {maintenancePriorityLabels[value]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="form-label mb-0 text-body-secondary">
-          Type
-          <select
-            aria-label="Filtrer par type"
-            className="form-select"
-            value={filters.maintenanceType ?? ''}
-            onChange={(event) => setFilter('maintenanceType', event.target.value)}
-          >
-            <option value="">Tous types</option>
-            {types.map((value) => (
-              <option key={value} value={value}>
-                {maintenanceTypeLabels[value]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="form-label mb-0 text-body-secondary">
-          Statut
-          <select
-            aria-label="Filtrer par statut"
-            className="form-select"
-            value={filters.status ?? ''}
-            onChange={(event) => setFilter('status', event.target.value)}
-          >
-            <option value="">Tous statuts</option>
-            {Object.entries(maintenanceStatusLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="form-label mb-0 text-body-secondary">
-          Activité
-          <select
-            aria-label="Filtrer par activité"
-            className="form-select"
-            value={filters.active ?? ''}
-            onChange={(event) => setFilter('active', event.target.value)}
-          >
-            <option value="">Actifs et inactifs</option>
-            <option value="true">Actifs</option>
-            <option value="false">Inactifs</option>
-          </select>
-        </label>
-      </div>
+            },
+          },
+          {
+            name: 'materialUuid',
+            type: 'select',
+            label: 'Matériel',
+            ariaLabel: 'Filtrer par matériel',
+            emptyLabel: 'Tous les matériels',
+            options: materials.map((item) => ({ value: item.uuid, label: item.name })),
+            value: filters.materialUuid ?? '',
+            onChange: (value) => setFilter('materialUuid', value),
+          },
+          {
+            name: 'priority',
+            type: 'select',
+            label: 'Priorité',
+            ariaLabel: 'Filtrer par priorité',
+            emptyLabel: 'Toutes les priorités',
+            options: priorities.map((value) => ({
+              value,
+              label: maintenancePriorityLabels[value],
+            })),
+            value: filters.priority ?? '',
+            onChange: (value) => setFilter('priority', value),
+          },
+          {
+            name: 'maintenanceType',
+            type: 'select',
+            label: 'Type',
+            ariaLabel: 'Filtrer par type',
+            emptyLabel: 'Tous les types',
+            options: types.map((value) => ({ value, label: maintenanceTypeLabels[value] })),
+            value: filters.maintenanceType ?? '',
+            onChange: (value) => setFilter('maintenanceType', value),
+          },
+          {
+            name: 'status',
+            type: 'select',
+            label: 'Échéance',
+            ariaLabel: 'Filtrer par échéance',
+            emptyLabel: 'Toutes les échéances',
+            options: Object.entries(maintenanceStatusLabels).map(([value, label]) => ({
+              value,
+              label,
+            })),
+            value: filters.status ?? '',
+            onChange: (value) => setFilter('status', value),
+          },
+          {
+            name: 'active',
+            type: 'select',
+            ...activityStatusFilter,
+            ariaLabel: 'Filtrer par statut',
+            value: filters.active ?? '',
+            onChange: (value) => setFilter('active', value),
+          },
+        ]}
+      />
       {error && (
         <div
           role="alert"

@@ -4,6 +4,7 @@ import PermissionRoute from './auth/PermissionRoute.jsx';
 import ProtectedRoute from './auth/ProtectedRoute.jsx';
 import AdminRoute from './auth/AdminRoute.jsx';
 import MaterialManufacturerCell from './components/MaterialManufacturerCell.jsx';
+import { activityStatusFilter } from './filters/filter-options.js';
 import AppLayout from './layouts/AppLayout.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import ForbiddenPage from './pages/ForbiddenPage.jsx';
@@ -143,18 +144,20 @@ export default function App() {
                   filters={[
                     {
                       name: 'active',
-                      label: 'Statut',
-                      options: [
-                        { value: 'true', label: 'Actif' },
-                        { value: 'false', label: 'Inactif' },
-                      ],
+                      ...activityStatusFilter,
                     },
                     {
                       name: 'manufacturerUuid',
                       label: 'Fabricant',
+                      emptyLabel: 'Tous les fabricants',
                       optionsResource: 'manufacturers',
                     },
-                    { name: 'categoryUuid', label: 'Catégorie', optionsResource: 'categories' },
+                    {
+                      name: 'categoryUuid',
+                      label: 'Catégorie',
+                      emptyLabel: 'Toutes les catégories',
+                      optionsResource: 'categories',
+                    },
                   ]}
                   pagination
                   detailPath={(row) => `/materials/${row.uuid}`}

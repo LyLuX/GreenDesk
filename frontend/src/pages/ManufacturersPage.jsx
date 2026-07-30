@@ -1,5 +1,6 @@
 import { deleteManufacturerLogo, uploadManufacturerLogo } from '../api/manufacturer-logo.api.js';
 import ManufacturerLogo from '../components/ManufacturerLogo.jsx';
+import { activityStatusFilter } from '../filters/filter-options.js';
 import ReferencePage from './ReferencePage.jsx';
 export default function ManufacturersPage() {
   return (
@@ -39,6 +40,7 @@ export default function ManufacturersPage() {
           ),
         },
       ]}
+      filters={[{ name: 'active', ...activityStatusFilter, clientSide: true }]}
     />
   );
 }

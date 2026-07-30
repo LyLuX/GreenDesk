@@ -135,12 +135,15 @@ describe('MaintenancePage', () => {
 
     await screen.findByText('12 jours');
     const searchInput = screen.getByLabelText('Rechercher un plan de maintenance');
-    expect(searchInput.closest('.reference-filters')).toBeInTheDocument();
+    expect(searchInput.closest('.filter-panel')).toBeInTheDocument();
     expect(screen.getByLabelText('Filtrer par matériel').closest('label')).toHaveTextContent(
       /^Matériel/,
     );
-    expect(screen.getByLabelText('Filtrer par activité').closest('label')).toHaveTextContent(
-      /^Activité/,
+    expect(screen.getByLabelText('Filtrer par statut').closest('label')).toHaveTextContent(
+      /^Statut/,
+    );
+    expect(screen.getByLabelText('Filtrer par échéance').closest('label')).toHaveTextContent(
+      /^Échéance/,
     );
 
     await user.type(searchInput, 'tondeuse');

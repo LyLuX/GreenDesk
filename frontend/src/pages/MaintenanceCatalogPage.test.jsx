@@ -59,6 +59,13 @@ describe('dedicated maintenance catalogue pages', () => {
             description: 'Remplacement de l’huile',
             active: true,
           },
+          {
+            uuid: 'inactive-operation-uuid',
+            name: 'Contrôle',
+            maintenanceType: 'inspection',
+            description: 'Contrôle visuel',
+            active: false,
+          },
         ],
       },
     });
@@ -181,5 +188,19 @@ describe('dedicated maintenance catalogue pages', () => {
     await user.type(screen.getByLabelText('Désignation'), 'Gra');
 
     expect(screen.getByText('Aucune proposition')).toBeVisible();
+  });
+
+  it('uses the shared panel to filter a maintenance catalogue by status', async () => {
+    const user = userEvent.setup();
+    render(<MaintenanceOperationsPage />);
+
+    expect(await screen.findByText('Vidange')).toBeVisible();
+    expect(screen.getByText('Contrôle')).toBeVisible();
+    expect(screen.getByLabelText('Rechercher dans opérations de maintenance')).toHaveValue('');
+
+    await user.selectOptions(screen.getByLabelText('Filtrer par statut'), 'false');
+
+    expect(screen.getByText('Contrôle')).toBeVisible();
+    expect(screen.queryByText('Vidange')).not.toBeInTheDocument();
   });
 });
