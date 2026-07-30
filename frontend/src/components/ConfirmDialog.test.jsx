@@ -27,4 +27,20 @@ describe('ConfirmDialog', () => {
     await user.click(screen.getByRole('button', { name: 'Supprimer' }));
     expect(onConfirm).toHaveBeenCalledOnce();
   });
+
+  it('uses the blue outline style for a non-destructive activation', () => {
+    render(
+      <ConfirmDialog
+        open
+        title="Activer le plan"
+        description="Le plan sera de nouveau actif."
+        confirmLabel="Activer"
+        onConfirm={vi.fn()}
+        onClose={vi.fn()}
+        destructive={false}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Activer' })).toHaveClass('btn-outline-primary');
+  });
 });

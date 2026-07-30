@@ -26,6 +26,7 @@ vi.mock('react-router-dom', () => ({
 }));
 
 import ReferencePage from './ReferencePage.jsx';
+import { activityStatusFilter } from '../filters/filter-options.js';
 
 describe('ReferencePage pagination', () => {
   beforeEach(() => {
@@ -88,15 +89,11 @@ describe('ReferencePage pagination', () => {
         deletePermission="elements.delete"
         fields={[{ name: 'name', label: 'Nom' }]}
         columns={[{ key: 'name', label: 'Nom' }]}
+        statusAction
         filters={[
           {
             name: 'active',
-            label: 'Statut',
-            emptyLabel: 'Tous les statuts',
-            options: [
-              { value: 'true', label: 'Actifs' },
-              { value: 'false', label: 'Inactifs' },
-            ],
+            ...activityStatusFilter,
             clientSide: true,
           },
         ]}
@@ -104,15 +101,51 @@ describe('ReferencePage pagination', () => {
     );
 
     expect(await screen.findByText('Actif')).toBeVisible();
-    expect(screen.getByText('Inactif')).toBeVisible();
+    expect(screen.getByLabelText('Filtrer par statut')).toHaveValue('true');
+    expect(screen.queryByText('Inactif')).not.toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText('Filtrer par statut'), 'false');
 
     await waitFor(() => expect(screen.queryByText('Actif')).not.toBeInTheDocument());
     expect(screen.getByText('Inactif')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Activer Inactif' })).toHaveClass(
+      'btn-outline-primary',
+    );
     expect(api.list).toHaveBeenLastCalledWith(
       expect.not.objectContaining({ active: 'false' }),
       expect.any(AbortSignal),
     );
+  });
+
+  it('sends the default active status to server-side status filters', async () => {
+    api.list.mockResolvedValue({
+      data: {
+        data: {
+          items: [],
+          pagination: { page: 1, limit: 5, total: 0, totalPages: 1 },
+        },
+      },
+    });
+
+    render(
+      <ReferencePage
+        title="Matériels"
+        resource="materials"
+        createPermission="materials.create"
+        updatePermission="materials.update"
+        deletePermission="materials.delete"
+        fields={[{ name: 'name', label: 'Nom' }]}
+        columns={[{ key: 'name', label: 'Nom' }]}
+        filters={[{ name: 'active', ...activityStatusFilter }]}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(api.list).toHaveBeenCalledWith(
+        expect.objectContaining({ active: 'true' }),
+        expect.any(AbortSignal),
+      ),
+    );
+    expect(screen.getByLabelText('Filtrer par statut')).toHaveValue('true');
   });
 
   it('uses the update permission and endpoint to change an active status', async () => {

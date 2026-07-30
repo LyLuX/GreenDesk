@@ -115,7 +115,7 @@ describe('MaintenancePage', () => {
 
     expect(await screen.findByText('12 jours')).toBeInTheDocument();
     expect(mocks.listMaintenance).toHaveBeenCalledWith(
-      { page: 1, limit: 5 },
+      { page: 1, limit: 5, active: 'true' },
       expect.any(AbortSignal),
     );
     expect(mocks.listMaterials).toHaveBeenCalledWith({ limit: 'all' }, expect.any(AbortSignal));
@@ -152,7 +152,7 @@ describe('MaintenancePage', () => {
 
     await waitFor(() =>
       expect(mocks.listMaintenance).toHaveBeenLastCalledWith(
-        { page: 1, limit: 5, search: 'tondeuse' },
+        { page: 1, limit: 5, active: 'true', search: 'tondeuse' },
         expect.any(AbortSignal),
       ),
     );
@@ -166,7 +166,7 @@ describe('MaintenancePage', () => {
     expect(screen.getByLabelText('Filtrer par matériel')).toHaveValue('material-uuid');
     expect(screen.getByLabelText('Nombre d’éléments par page')).toHaveValue('all');
     expect(mocks.listMaintenance).toHaveBeenCalledWith(
-      { page: 1, limit: 'all', materialUuid: 'material-uuid' },
+      { page: 1, limit: 'all', active: 'true', materialUuid: 'material-uuid' },
       expect.any(AbortSignal),
     );
   });
@@ -178,7 +178,7 @@ describe('MaintenancePage', () => {
 
     expect(screen.getByLabelText('Filtrer par échéance')).toHaveValue('overdue');
     expect(mocks.listMaintenance).toHaveBeenCalledWith(
-      { page: 1, limit: 5, status: 'overdue' },
+      { page: 1, limit: 5, active: 'true', status: 'overdue' },
       expect.any(AbortSignal),
     );
   });
@@ -197,6 +197,9 @@ describe('MaintenancePage', () => {
     expect(editButton).toHaveClass('flex-fill');
     expect(editButton).not.toHaveClass('btn-brand');
     expect(deleteButton).toHaveClass('btn-sm', 'btn-outline-danger');
+    expect(screen.getByRole('button', { name: 'Désactiver Vidange annuelle' })).toHaveClass(
+      'btn-outline-secondary',
+    );
     expect(editButton.parentElement).toHaveClass(
       'd-flex',
       'h-100',
@@ -204,6 +207,42 @@ describe('MaintenancePage', () => {
       'flex-wrap',
       'align-items-center',
       'justify-content-center',
+    );
+  });
+
+  it('uses blue buttons to activate an inactive maintenance plan', async () => {
+    const user = userEvent.setup();
+    mocks.listMaintenance.mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'maintenance-uuid',
+              title: 'Vidange annuelle',
+              active: false,
+              maintenanceType: 'preventive',
+              priority: 'normal',
+              status: 'upcoming',
+              material: { name: 'Tondeuse' },
+              nextMaintenanceDate: '2026-08-05',
+              remainingDays: 12,
+            },
+          ],
+          pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
+        },
+      },
+    });
+
+    renderPage();
+
+    const activateButton = await screen.findByRole('button', {
+      name: 'Activer Vidange annuelle',
+    });
+    expect(activateButton).toHaveClass('btn-outline-primary');
+
+    await user.click(activateButton);
+    expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Activer' })).toHaveClass(
+      'btn-outline-primary',
     );
   });
 

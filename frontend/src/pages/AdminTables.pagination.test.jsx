@@ -56,11 +56,15 @@ import UsersPage from './UsersPage.jsx';
 describe('administrator table pagination', () => {
   afterEach(cleanup);
 
-  it('paginates users at five items by default', async () => {
+  it('shows active users by default and paginates all users after clearing the status', async () => {
     const user = userEvent.setup();
     render(<UsersPage />);
 
     expect(await screen.findByText('user5@example.test')).toBeInTheDocument();
+    expect(screen.queryByText('user6@example.test')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Filtrer par statut')).toHaveValue('true');
+
+    await user.selectOptions(screen.getByLabelText('Filtrer par statut'), '');
     expect(screen.queryByText('user6@example.test')).not.toBeInTheDocument();
 
     await user.selectOptions(screen.getByLabelText('Nombre d’éléments par page'), 'all');
@@ -88,6 +92,8 @@ describe('administrator table pagination', () => {
     expect(
       screen.getByLabelText('Rechercher un utilisateur').closest('.filter-panel'),
     ).toBeVisible();
+    expect(screen.getByLabelText('Filtrer par statut')).toHaveValue('true');
+    expect(screen.queryByText('user6@example.test')).not.toBeInTheDocument();
 
     await user.selectOptions(screen.getByLabelText('Filtrer par statut'), 'false');
     expect(screen.getByText('user6@example.test')).toBeVisible();

@@ -185,7 +185,7 @@ describe('dedicated maintenance catalogue pages', () => {
     mocks.listOperations.mockResolvedValue({ data: { data: [] } });
     render(<MaintenanceOperationsPage />);
 
-    expect(await screen.findByText('Aucun élément enregistré.')).toBeVisible();
+    expect(await screen.findByText('Aucun élément ne correspond aux filtres.')).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Créer' }));
     await user.type(screen.getByLabelText('Désignation'), 'Gra');
 
@@ -197,13 +197,19 @@ describe('dedicated maintenance catalogue pages', () => {
     render(<MaintenanceOperationsPage />);
 
     expect(await screen.findByText('Vidange')).toBeVisible();
-    expect(screen.getByText('Contrôle')).toBeVisible();
+    expect(screen.queryByText('Contrôle')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Rechercher dans opérations de maintenance')).toHaveValue('');
+    expect(screen.getByLabelText('Filtrer par statut')).toHaveValue('true');
 
     await user.selectOptions(screen.getByLabelText('Filtrer par statut'), 'false');
 
     expect(screen.getByText('Contrôle')).toBeVisible();
     expect(screen.queryByText('Vidange')).not.toBeInTheDocument();
+    const activateButton = screen.getByRole('button', { name: 'Activer Contrôle' });
+    expect(activateButton).toHaveClass('btn-outline-primary');
+
+    await user.click(activateButton);
+    expect(screen.getByRole('button', { name: 'Réactiver' })).toHaveClass('btn-outline-primary');
   });
 
   it('filters operation actions with operation-specific permissions', async () => {

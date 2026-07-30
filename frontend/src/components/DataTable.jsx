@@ -1,3 +1,5 @@
+import { getStatusActionButtonClass } from '../utils/status-action.js';
+
 export default function DataTable({
   columns = [],
   rows = [],
@@ -66,7 +68,7 @@ export default function DataTable({
                   {onStatus && (
                     <button
                       aria-label={`${row.active ? 'Désactiver' : 'Activer'} ${row.name ?? 'l’élément'}`}
-                      className="btn btn-sm btn-outline-secondary ms-1 me-1"
+                      className={`btn btn-sm ${getStatusActionButtonClass(row.active)} ms-1 me-1`}
                       type="button"
                       onClick={() => onStatus(row)}
                       disabled={actionLoadingId === row.uuid}

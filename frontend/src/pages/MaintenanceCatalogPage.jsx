@@ -33,7 +33,7 @@ export default function MaintenanceCatalogPage({
   const { notify } = useNotification();
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState('');
-  const [active, setActive] = useState('');
+  const [active, setActive] = useState(activityStatusFilter.defaultValue);
   const [editing, setEditing] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
   const [isLoading, setIsLoading] = useState(true);

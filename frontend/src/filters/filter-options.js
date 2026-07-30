@@ -7,4 +7,5 @@ export const activityStatusFilter = {
   label: 'Statut',
   emptyLabel: 'Tous les statuts',
   options: activityStatusOptions,
+  defaultValue: 'true',
 };

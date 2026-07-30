@@ -45,7 +45,7 @@ export default function UsersPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(5);
   const [search, setSearch] = useState('');
-  const [active, setActive] = useState('');
+  const [active, setActive] = useState(activityStatusFilter.defaultValue);
   const [roleUuid, setRoleUuid] = useState('');
 
   const load = useCallback(async () => {

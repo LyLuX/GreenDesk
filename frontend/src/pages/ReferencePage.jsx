@@ -38,7 +38,13 @@ export default function ReferencePage({
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search, 300);
-  const [filterValues, setFilterValues] = useState({});
+  const [filterValues, setFilterValues] = useState(() =>
+    Object.fromEntries(
+      filters
+        .filter((filter) => filter.defaultValue !== undefined)
+        .map((filter) => [filter.name, filter.defaultValue]),
+    ),
+  );
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(5);
   const [sort, setSort] = useState('name');
@@ -266,7 +272,7 @@ export default function ReferencePage({
             ariaLabel: filter.ariaLabel ?? `Filtrer par ${filter.label.toLocaleLowerCase('fr')}`,
             emptyLabel: filter.emptyLabel ?? 'Tous',
             options: selectOptions(filter),
-            value: filterValues[filter.name] ?? '',
+            value: filterValues[filter.name] ?? filter.defaultValue ?? '',
             onChange: (value) => {
               setFilterValues((current) => ({ ...current, [filter.name]: value }));
               resetPage();

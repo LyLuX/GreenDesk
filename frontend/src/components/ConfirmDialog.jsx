@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { getStatusActionButtonClass } from '../utils/status-action.js';
 import Modal from './Modal.jsx';
 
 /**
@@ -42,7 +43,7 @@ export default function ConfirmDialog({
           Annuler
         </button>
         <button
-          className={`btn ${destructive ? 'btn-danger' : 'btn-brand'}`}
+          className={`btn ${destructive ? 'btn-danger' : getStatusActionButtonClass(false)}`}
           type="button"
           onClick={onConfirm}
           disabled={busy}

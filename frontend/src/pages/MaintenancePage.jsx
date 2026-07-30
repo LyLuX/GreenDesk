@@ -34,6 +34,7 @@ import {
   maintenanceTypeLabels,
 } from '../maintenance/maintenance.labels.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
+import { getStatusActionButtonClass } from '../utils/status-action.js';
 
 const types = Object.keys(maintenanceTypeLabels);
 const priorities = Object.keys(maintenancePriorityLabels);
@@ -81,6 +82,7 @@ export default function MaintenancePage() {
     return {
       page: 1,
       limit: searchParams.get('limit') === 'all' ? 'all' : 5,
+      active: activityStatusFilter.defaultValue,
       ...(materialUuid ? { materialUuid } : {}),
       ...(deadlineStatuses.has(status) ? { status } : {}),
     };
@@ -444,7 +446,9 @@ export default function MaintenancePage() {
                         {hasPermission(maintenancePermissions.plans.update) && (
                           <button
                             aria-label={`${item.active ? 'Désactiver' : 'Activer'} ${item.title}`}
-                            className="btn btn-sm btn-outline-secondary flex-fill"
+                            className={`btn btn-sm ${getStatusActionButtonClass(
+                              item.active,
+                            )} flex-fill`}
                             type="button"
                             disabled={busy}
                             onClick={() => setConfirmation({ action: 'status', item })}
