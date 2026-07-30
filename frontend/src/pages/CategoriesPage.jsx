@@ -10,6 +10,7 @@ export default function CategoriesPage() {
       createPermission="categories.create"
       updatePermission="categories.update"
       deletePermission="categories.delete"
+      statusAction
       fields={[
         { name: 'name', label: 'Nom', required: true },
         { name: 'description', label: 'Description' },

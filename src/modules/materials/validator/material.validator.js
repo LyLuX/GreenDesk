@@ -123,4 +123,5 @@ export const updateValidator = [
     .isISO8601()
     .withMessage('La date de sortie de service est invalide.'),
   body('notes').optional({ nullable: true }).trim(),
+  body('active').optional().isBoolean().toBoolean(),
 ];

@@ -24,8 +24,8 @@ export default function ReferencePage({
   columns,
   createPermission,
   updatePermission,
-  disablePermission,
   deletePermission,
+  statusAction = false,
   filters = [],
   pagination = true,
   detailPath,
@@ -182,8 +182,8 @@ export default function ReferencePage({
     setStatusActionId(row.uuid);
     setStatusError('');
     try {
-      await api.setStatus(row.uuid, !row.active);
-      notify('success', `${title.slice(0, -1)} ${row.active ? 'désactivée' : 'réactivée'}.`);
+      await api.update(row.uuid, { active: !row.active });
+      notify('success', `Statut de « ${row.name} » mis à jour.`);
       await load();
       return true;
     } catch (error) {
@@ -334,9 +334,7 @@ export default function ReferencePage({
         emptyMessage={emptyMessage}
         actionLoadingId={statusActionId}
         onEdit={hasPermission(updatePermission) ? setEditing : undefined}
-        onStatus={
-          disablePermission && hasPermission(disablePermission) ? requestStatusChange : undefined
-        }
+        onStatus={statusAction && hasPermission(updatePermission) ? requestStatusChange : undefined}
         onDelete={
           deletePermission && hasPermission(deletePermission)
             ? (row) => setConfirmation({ action: 'delete', row })

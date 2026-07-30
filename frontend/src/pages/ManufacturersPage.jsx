@@ -10,6 +10,7 @@ export default function ManufacturersPage() {
       createPermission="manufacturers.create"
       updatePermission="manufacturers.update"
       deletePermission="manufacturers.delete"
+      statusAction
       fields={[{ name: 'name', label: 'Nom', required: true }]}
       fileField={{
         name: 'logo',

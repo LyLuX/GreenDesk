@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **1.10.2**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **1.11.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -68,6 +68,9 @@ Chaque fabricant peut recevoir un logo JPEG, PNG ou WebP de 2 Mo maximum. Les lo
 | Plans de maintenance      | `maintenance.read`, `maintenance.create`, `maintenance.update`, `maintenance.delete`, `maintenance.execute`                      |
 | Opérations de maintenance | `maintenance.operations.read`, `maintenance.operations.create`, `maintenance.operations.update`, `maintenance.operations.delete` |
 | Pièces de maintenance     | `maintenance.parts.read`, `maintenance.parts.create`, `maintenance.parts.update`, `maintenance.parts.delete`                     |
+
+L’activation et la désactivation des matériels, catégories, fabricants et fournisseurs utilisent
+la permission `update` de leur domaine ; aucune permission de statut supplémentaire n’est requise.
 
 `/api/v1` est le préfixe à utiliser pour les nouveaux appels. Les chemins historiques `/api/categories`, `/api/materials`, `/api/brands`, `/api/dashboard`, `/api/maintenance`, `/api/v1/brands`, `/api/v1/maintenance/manufacturers` et `/api/v1/maintenance/suppliers` restent des alias de compatibilité dépréciés.
 

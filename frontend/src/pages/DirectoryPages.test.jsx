@@ -22,6 +22,7 @@ describe('global business directory pages', () => {
         createPermission: 'manufacturers.create',
         updatePermission: 'manufacturers.update',
         deletePermission: 'manufacturers.delete',
+        statusAction: true,
         fields: [{ name: 'name', label: 'Nom', required: true }],
       }),
       undefined,
@@ -39,6 +40,7 @@ describe('global business directory pages', () => {
         createPermission: 'suppliers.create',
         updatePermission: 'suppliers.update',
         deletePermission: 'suppliers.delete',
+        statusAction: true,
       }),
       undefined,
     );

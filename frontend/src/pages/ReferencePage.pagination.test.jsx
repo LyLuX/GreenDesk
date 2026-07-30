@@ -1,24 +1,25 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { api, createReferenceApi } = vi.hoisted(() => ({
+const { api, createReferenceApi, hasPermission, notify } = vi.hoisted(() => ({
   api: {
     list: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     remove: vi.fn(),
-    setStatus: vi.fn(),
   },
   createReferenceApi: vi.fn(),
+  hasPermission: vi.fn(),
+  notify: vi.fn(),
 }));
 
 vi.mock('../api/reference.api.js', () => ({ createReferenceApi }));
 vi.mock('../auth/useAuth.js', () => ({
-  default: () => ({ hasPermission: () => true }),
+  default: () => ({ hasPermission }),
 }));
 vi.mock('../notifications/useNotification.js', () => ({
-  default: () => ({ notify: vi.fn() }),
+  default: () => ({ notify }),
 }));
 vi.mock('react-router-dom', () => ({
   useNavigate: () => vi.fn(),
@@ -27,6 +28,13 @@ vi.mock('react-router-dom', () => ({
 import ReferencePage from './ReferencePage.jsx';
 
 describe('ReferencePage pagination', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    hasPermission.mockReturnValue(true);
+    createReferenceApi.mockReturnValue(api);
+    api.update.mockResolvedValue({ data: { data: {} } });
+  });
+
   afterEach(cleanup);
 
   it('shows five rows by default and can display the complete database list', async () => {
@@ -35,7 +43,6 @@ describe('ReferencePage pagination', () => {
       name: `Élément ${index + 1}`,
     }));
     api.list.mockResolvedValue({ data: { data: rows } });
-    createReferenceApi.mockReturnValue(api);
     const user = userEvent.setup();
 
     render(
@@ -70,7 +77,6 @@ describe('ReferencePage pagination', () => {
         ],
       },
     });
-    createReferenceApi.mockReturnValue(api);
     const user = userEvent.setup();
 
     render(
@@ -107,5 +113,36 @@ describe('ReferencePage pagination', () => {
       expect.not.objectContaining({ active: 'false' }),
       expect.any(AbortSignal),
     );
+  });
+
+  it('uses the update permission and endpoint to change an active status', async () => {
+    api.list.mockResolvedValue({
+      data: { data: [{ uuid: 'material-uuid', name: 'Tondeuse', active: true }] },
+    });
+    const user = userEvent.setup();
+
+    render(
+      <ReferencePage
+        title="Matériels"
+        resource="materials"
+        createPermission="materials.create"
+        updatePermission="materials.update"
+        deletePermission="materials.delete"
+        statusAction
+        fields={[{ name: 'name', label: 'Nom' }]}
+        columns={[{ key: 'name', label: 'Nom' }]}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Désactiver Tondeuse' }));
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Désactiver' }),
+    );
+
+    await waitFor(() =>
+      expect(api.update).toHaveBeenCalledWith('material-uuid', { active: false }),
+    );
+    expect(hasPermission).toHaveBeenCalledWith('materials.update');
+    expect(notify).toHaveBeenCalledWith('success', 'Statut de « Tondeuse » mis à jour.');
   });
 });

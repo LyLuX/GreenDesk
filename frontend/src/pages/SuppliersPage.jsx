@@ -9,6 +9,7 @@ export default function SuppliersPage() {
       createPermission="suppliers.create"
       updatePermission="suppliers.update"
       deletePermission="suppliers.delete"
+      statusAction
       fields={[
         { name: 'name', label: 'Nom', required: true },
         { name: 'contactName', label: 'Contact' },

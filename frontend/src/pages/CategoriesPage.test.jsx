@@ -20,6 +20,7 @@ describe('CategoriesPage', () => {
         createPermission: 'categories.create',
         updatePermission: 'categories.update',
         deletePermission: 'categories.delete',
+        statusAction: true,
       }),
       undefined,
     );

@@ -497,7 +497,11 @@ export const openApiSchemas = {
   },
   CategoryUpdateRequest: {
     type: 'object',
-    properties: { name: writeText(150), description: { type: 'string' } },
+    properties: {
+      name: writeText(150),
+      description: { type: 'string' },
+      active: { type: 'boolean' },
+    },
   },
   ManufacturerCreateRequest: {
     type: 'object',
@@ -518,7 +522,10 @@ export const openApiSchemas = {
   },
   MaterialUpdateRequest: {
     type: 'object',
-    properties: materialWriteProperties,
+    properties: {
+      ...materialWriteProperties,
+      active: { type: 'boolean' },
+    },
   },
   MaintenanceCreateRequest: {
     type: 'object',

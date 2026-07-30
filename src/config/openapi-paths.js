@@ -330,7 +330,7 @@ export const openApiPaths = {
     put: {
       operationId: 'updateCategory',
       tags: ['Categories'],
-      summary: 'Met à jour une catégorie.',
+      summary: 'Met à jour une catégorie, y compris son statut actif ou inactif.',
       description: 'Nécessite `categories.update`.',
       security: secure,
       requestBody: jsonBody('CategoryUpdateRequest'),
@@ -380,7 +380,7 @@ export const openApiPaths = {
     put: {
       operationId: 'updateManufacturer',
       tags: ['Manufacturers'],
-      summary: 'Met à jour un fabricant.',
+      summary: 'Met à jour un fabricant, y compris son statut actif ou inactif.',
       description: 'Nécessite `manufacturers.update`.',
       security: secure,
       requestBody: jsonBody('ManufacturerUpdateRequest'),
@@ -524,7 +524,7 @@ export const openApiPaths = {
     put: {
       operationId: 'updateMaterial',
       tags: ['Materials'],
-      summary: 'Met à jour les données modifiables d’un matériel.',
+      summary: 'Met à jour un matériel, y compris son statut actif ou inactif.',
       description: 'Nécessite `materials.update`.',
       security: secure,
       requestBody: jsonBody('MaterialUpdateRequest'),
@@ -752,7 +752,8 @@ export const openApiPaths = {
     put: {
       operationId: 'updateSupplier',
       tags: ['Suppliers'],
-      summary: 'Met à jour un fournisseur et le nom conservé sur ses pièces.',
+      summary:
+        'Met à jour un fournisseur, son statut actif ou inactif et le nom conservé sur ses pièces.',
       description: 'Nécessite `suppliers.update`.',
       security: secure,
       requestBody: jsonBody('SupplierUpdateRequest'),

@@ -150,4 +150,17 @@ describe('OpenAPI contract', () => {
     expect(manufacturer).not.toHaveProperty('notes');
     expect(createRequest).toEqual({ name: expect.any(Object) });
   });
+
+  it('documents active-status updates through the existing update requests', () => {
+    for (const schemaName of [
+      'MaterialUpdateRequest',
+      'CategoryUpdateRequest',
+      'ManufacturerUpdateRequest',
+      'SupplierUpdateRequest',
+    ]) {
+      expect(swaggerSpec.components.schemas[schemaName].properties.active).toEqual({
+        type: 'boolean',
+      });
+    }
+  });
 });

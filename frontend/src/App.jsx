@@ -102,6 +102,7 @@ export default function App() {
                   createPermission="materials.create"
                   updatePermission="materials.update"
                   deletePermission="materials.delete"
+                  statusAction
                   fields={[
                     { name: 'name', label: 'Nom', required: true },
                     {

@@ -101,4 +101,26 @@ describe('reference routes authorization and validation', () => {
       .set('Authorization', `Bearer ${tokenFor(['materials.update'])}`)
       .expect(403);
   });
+
+  it.each([
+    ['materials', 'materials.read', 'materials.update'],
+    ['categories', 'categories.read', 'categories.update'],
+    ['manufacturers', 'manufacturers.read', 'manufacturers.update'],
+    ['suppliers', 'suppliers.read', 'suppliers.update'],
+  ])(
+    'uses %s.update to change the active status',
+    async (resource, readPermission, updatePermission) => {
+      const uuid = 'f75ce638-18d2-4e29-9958-2afaa4ae5151';
+      await request(app)
+        .put(`/api/v1/${resource}/${uuid}`)
+        .set('Authorization', `Bearer ${tokenFor([readPermission])}`)
+        .send({ active: false })
+        .expect(403);
+      await request(app)
+        .put(`/api/v1/${resource}/${uuid}`)
+        .set('Authorization', `Bearer ${tokenFor([updatePermission])}`)
+        .send({ active: 'invalid' })
+        .expect(400);
+    },
+  );
 });
