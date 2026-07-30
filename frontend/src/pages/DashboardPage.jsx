@@ -101,7 +101,7 @@ export default function DashboardPage() {
       label: 'Valeur du parc',
       cards: [
         ['Valeur du parc', formatCurrency(fleet.totalPurchaseValue)],
-        ['Coût moyen', formatCurrency(fleet.averageCost)],
+        ['Valeur moyennne', formatCurrency(fleet.averageCost)],
         ['Âge moyen', `${Number(fleet.averageAge ?? 0).toFixed(1)} ans`],
       ],
     },
