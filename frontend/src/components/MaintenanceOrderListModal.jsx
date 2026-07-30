@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import { getMaintenanceOrderList } from '../api/maintenance.api.js';
 import { createReferenceApi } from '../api/reference.api.js';
+import AppFooter from './AppFooter.jsx';
 import Button from './Button.jsx';
 import Loader from './Loader.jsx';
 import ManufacturerLogo from './ManufacturerLogo.jsx';
@@ -67,9 +68,6 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
   const manufacturerByUuid = new Map(
     manufacturers.map((manufacturer) => [manufacturer.uuid, manufacturer]),
   );
-  const horizonLabel =
-    horizonOptions.find((option) => option.value === filters.horizonDays)?.label ?? '';
-
   return (
     <Modal
       open={open}
@@ -80,11 +78,13 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
     >
       <div className="maintenance-order-list-printable">
         <header className="maintenance-order-print-header">
-          <h1>Pièces à commander</h1>
-          <p>
-            Échéance : {horizonLabel}
-            {filters.includeOverdue ? ' — plans en retard inclus' : ''}
-          </p>
+          <div className="maintenance-order-print-brand">
+            <img className="brand-logo" src="/brand-logo.jpg" alt="EI BOURNAZEL Paul" />
+            <span>
+              <span className="brand-name d-block">GreenDesk</span>
+              <span className="brand-company d-block">EI BOURNAZEL Paul</span>
+            </span>
+          </div>
         </header>
         <div className="maintenance-order-list-controls mb-3 d-flex flex-wrap align-items-end gap-3">
           <label className="form-label mb-0 text-body-secondary">
@@ -133,49 +133,51 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
           {loading && !data ? (
             <Loader label="Calcul de la liste de commande" />
           ) : data?.items?.length ? (
-            <div className="table-responsive">
-              <table className="table table-hover align-middle">
-                <thead>
-                  <tr>
-                    <th>Pièce</th>
-                    <th>Fournisseur / référence</th>
-                    <th>Quantité</th>
-                    <th>Plans concernés</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.items.map((part) => (
-                    <tr key={part.uuid}>
-                      <td>
-                        <strong>{part.name}</strong>
-                        {(part.manufacturer || part.manufacturerUuid) && (
-                          <span className="mt-1 d-block">
-                            <ManufacturerLogo
-                              manufacturer={manufacturerByUuid.get(part.manufacturerUuid)}
-                            />
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        {part.supplier && <span className="d-block">{part.supplier}</span>}
-                        <small className="text-body-secondary">
-                          {part.supplierReference || part.reference}
-                        </small>
-                      </td>
-                      <td>{formatOrderQuantity(part.quantity, part.unit)}</td>
-                      <td>
-                        <ul className="mb-0 ps-3">
-                          {part.plans.map((plan) => (
-                            <li key={plan.maintenanceUuid}>
-                              {plan.material?.name} — {plan.quantity}
-                            </li>
-                          ))}
-                        </ul>
-                      </td>
+            <div className="table-shell">
+              <div className="table-responsive">
+                <table className="table table-hover align-middle">
+                  <thead>
+                    <tr>
+                      <th>Pièce</th>
+                      <th>Fournisseur / référence</th>
+                      <th>Quantité</th>
+                      <th>Plans concernés</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {data.items.map((part) => (
+                      <tr key={part.uuid}>
+                        <td>
+                          <strong>{part.name}</strong>
+                          {(part.manufacturer || part.manufacturerUuid) && (
+                            <span className="mt-1 d-block">
+                              <ManufacturerLogo
+                                manufacturer={manufacturerByUuid.get(part.manufacturerUuid)}
+                              />
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          {part.supplier && <span className="d-block">{part.supplier}</span>}
+                          <small className="text-body-secondary">
+                            {part.supplierReference || part.reference}
+                          </small>
+                        </td>
+                        <td>{formatOrderQuantity(part.quantity, part.unit)}</td>
+                        <td>
+                          <ul className="mb-0 ps-3">
+                            {part.plans.map((plan) => (
+                              <li key={plan.maintenanceUuid}>
+                                {plan.material?.name} — {plan.quantity}
+                              </li>
+                            ))}
+                          </ul>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : (
             <p className="mb-0">Aucune pièce à commander sur cette période.</p>
@@ -188,6 +190,9 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
             </Button>
           </div>
         ) : null}
+        <div className="maintenance-order-print-footer">
+          <AppFooter />
+        </div>
       </div>
     </Modal>
   );

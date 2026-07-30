@@ -572,7 +572,8 @@ a:hover {
   text-transform: uppercase;
 }
 
-.maintenance-order-print-header {
+.maintenance-order-print-header,
+.maintenance-order-print-footer {
   display: none;
 }
 
@@ -1080,7 +1081,7 @@ a:hover {
 
 @media print {
   @page {
-    margin: 12mm;
+    margin: 1cm 0.5cm;
   }
 
   html,
@@ -1113,6 +1114,8 @@ a:hover {
     width: 100%;
     color: #000;
     background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .modal-surface.maintenance-order-list-modal {
@@ -1122,13 +1125,37 @@ a:hover {
   }
 
   .maintenance-order-print-header {
-    display: block;
-    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2cm;
+    margin-bottom: 0.5cm;
+    padding: 0.2cm 0.5cm;
+    background: var(--brand-forest);
+    border-bottom: 0.08cm solid var(--brand-sun);
   }
 
-  .maintenance-order-print-header h1 {
-    margin-bottom: 0.35rem;
-    font-size: 20pt;
+  .maintenance-order-print-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3cm;
+    color: #fff;
+    text-align: left;
+  }
+
+  .maintenance-order-print-brand .brand-logo {
+    width: 1.35cm;
+    height: 1.35cm;
+  }
+
+  .maintenance-order-print-brand .brand-name {
+    font-size: 12pt;
+  }
+
+  .maintenance-order-print-brand .brand-company {
+    color: #dbe8d7;
+    font-size: 8pt;
   }
 
   .maintenance-order-list-controls,
@@ -1146,12 +1173,35 @@ a:hover {
 
   .maintenance-order-list-printable .table {
     width: 100%;
+    margin-bottom: 0;
     font-size: 10pt;
   }
 
   .maintenance-order-list-printable .table th,
   .maintenance-order-list-printable .table td {
-    color: #000;
-    border-color: #999;
+    color: #24362b;
+    border-color: var(--border);
+  }
+
+  .maintenance-order-list-printable .table thead th {
+    color: #3a5142;
+    background: #edf3e9;
+  }
+
+  .maintenance-order-list-printable .table-shell {
+    border-color: var(--border);
+    box-shadow: none;
+  }
+
+  .maintenance-order-print-footer {
+    display: block;
+    margin-top: 0.5cm;
+  }
+
+  .maintenance-order-print-footer .app-footer {
+    padding: 0.2cm 0.4cm;
+    color: var(--muted);
+    background: #fff;
+    border-top-color: var(--border);
   }
 }

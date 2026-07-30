@@ -80,6 +80,13 @@ describe('MaintenanceOrderListModal', () => {
     expect(printButton.parentElement).toHaveClass('justify-content-end');
     expect(screen.getByRole('dialog')).toHaveClass('maintenance-order-list-modal');
     expect(screen.getByRole('table').closest('.maintenance-order-list-scroll')).not.toBeNull();
+    expect(screen.getByRole('table').closest('.table-shell')).not.toBeNull();
+    const printHeader = document.querySelector('.maintenance-order-print-header');
+    expect(printHeader).toHaveTextContent('GreenDesk');
+    expect(printHeader).toHaveTextContent('EI BOURNAZEL Paul');
+    expect(printHeader).not.toHaveTextContent('Échéance');
+    expect(screen.getByRole('contentinfo')).toHaveTextContent('EI BOURNAZEL Paul');
+    expect(screen.getByRole('contentinfo')).toHaveTextContent('GreenDesk · version');
 
     await user.click(printButton);
 
