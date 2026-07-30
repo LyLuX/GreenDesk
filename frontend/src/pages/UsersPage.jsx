@@ -13,6 +13,7 @@ import PasswordInput from '../components/PasswordInput.jsx';
 import { activityStatusFilter } from '../filters/filter-options.js';
 import useNotification from '../notifications/useNotification.js';
 import { paginateItems } from '../utils/pagination.js';
+import { getStatusActionButtonClass } from '../utils/status-action.js';
 
 const emptyUser = () => ({
   firstName: '',
@@ -42,7 +43,8 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(null);
-  const [userToDelete, setUserToDelete] = useState(null);
+  const [changingStatus, setChangingStatus] = useState(null);
+  const [confirmation, setConfirmation] = useState(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(5);
   const [search, setSearch] = useState('');
@@ -157,6 +159,32 @@ export default function UsersPage() {
       setRemoving(null);
     }
   };
+
+  const toggleStatus = async (user) => {
+    if (changingStatus) return false;
+    setChangingStatus(user.uuid);
+    try {
+      await updateUser(user.uuid, { isActive: !user.isActive });
+      notify('success', `Utilisateur ${user.isActive ? 'désactivé' : 'réactivé'} avec succès.`);
+      await load();
+      return true;
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError));
+      return false;
+    } finally {
+      setChangingStatus(null);
+    }
+  };
+
+  const confirmAction = async () => {
+    if (!confirmation) return;
+    const completed =
+      confirmation.action === 'delete'
+        ? await remove(confirmation.user)
+        : await toggleStatus(confirmation.user);
+    if (completed) setConfirmation(null);
+  };
+
   const filteredUsers = useMemo(() => {
     const term = search.trim().toLocaleLowerCase('fr');
     return users.filter((user) => {
@@ -267,22 +295,40 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td>{formatDate(user.lastLoginAt)}</td>
-                    <td className="text-nowrap">
-                      <button
-                        className="btn btn-sm btn-outline-brand me-2"
-                        type="button"
-                        onClick={() => openEdit(user)}
-                      >
-                        Modifier
-                      </button>
-                      <button
-                        className="btn btn-sm btn-outline-danger"
-                        type="button"
-                        disabled={removing === user.uuid}
-                        onClick={() => setUserToDelete(user)}
-                      >
-                        {removing === user.uuid ? 'Suppression…' : 'Supprimer'}
-                      </button>
+                    <td>
+                      <div className="d-flex h-100 w-100 flex-wrap align-items-center justify-content-center gap-1">
+                        <button
+                          aria-label={`Modifier ${user.firstName} ${user.lastName}`}
+                          className="btn btn-sm btn-outline-brand flex-fill"
+                          type="button"
+                          disabled={Boolean(removing || changingStatus)}
+                          onClick={() => openEdit(user)}
+                        >
+                          Modifier
+                        </button>
+                        <button
+                          aria-label={`${user.isActive ? 'Désactiver' : 'Activer'} ${
+                            user.firstName
+                          } ${user.lastName}`}
+                          className={`btn btn-sm ${getStatusActionButtonClass(
+                            user.isActive,
+                          )} flex-fill`}
+                          type="button"
+                          disabled={Boolean(removing || changingStatus)}
+                          onClick={() => setConfirmation({ action: 'status', user })}
+                        >
+                          {user.isActive ? 'Désactiver' : 'Activer'}
+                        </button>
+                        <button
+                          aria-label={`Supprimer ${user.firstName} ${user.lastName}`}
+                          className="btn btn-sm btn-outline-danger flex-fill"
+                          type="button"
+                          disabled={Boolean(removing || changingStatus)}
+                          onClick={() => setConfirmation({ action: 'delete', user })}
+                        >
+                          {removing === user.uuid ? 'Suppression…' : 'Supprimer'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -392,15 +438,36 @@ export default function UsersPage() {
         </form>
       </Modal>
       <ConfirmDialog
-        open={Boolean(userToDelete)}
-        title="Supprimer l’utilisateur"
-        description={`Le compte de « ${userToDelete?.firstName ?? ''} ${userToDelete?.lastName ?? ''} » sera supprimé de la liste.`}
-        confirmLabel="Supprimer"
-        onClose={() => !removing && setUserToDelete(null)}
-        onConfirm={async () => {
-          if (userToDelete && (await remove(userToDelete))) setUserToDelete(null);
-        }}
-        busy={Boolean(removing)}
+        open={Boolean(confirmation)}
+        title={
+          confirmation?.action === 'delete'
+            ? 'Supprimer l’utilisateur'
+            : `${confirmation?.user.isActive ? 'Désactiver' : 'Activer'} l’utilisateur`
+        }
+        description={
+          confirmation?.action === 'delete'
+            ? `Le compte de « ${confirmation?.user.firstName ?? ''} ${
+                confirmation?.user.lastName ?? ''
+              } » sera supprimé de la liste.`
+            : confirmation?.user.isActive
+              ? `Le compte de « ${confirmation?.user.firstName ?? ''} ${
+                  confirmation?.user.lastName ?? ''
+                } » ne pourra plus se connecter.`
+              : `Le compte de « ${confirmation?.user.firstName ?? ''} ${
+                  confirmation?.user.lastName ?? ''
+                } » pourra de nouveau se connecter.`
+        }
+        confirmLabel={
+          confirmation?.action === 'delete'
+            ? 'Supprimer'
+            : confirmation?.user.isActive
+              ? 'Désactiver'
+              : 'Activer'
+        }
+        onClose={() => !removing && !changingStatus && setConfirmation(null)}
+        onConfirm={confirmAction}
+        busy={Boolean(removing || changingStatus)}
+        destructive={confirmation?.action === 'delete' || confirmation?.user.isActive}
       />
     </main>
   );

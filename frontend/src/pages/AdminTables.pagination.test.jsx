@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => {
       lastLoginAt: null,
     })),
     roles,
+    updateUser: vi.fn(),
     referenceApis: {
       roles: { list: vi.fn().mockResolvedValue({ data: { data: roles } }) },
       permissions: {
@@ -40,7 +41,7 @@ vi.mock('../api/users.api.js', () => ({
     }),
   ),
   createUser: vi.fn(),
-  updateUser: vi.fn(),
+  updateUser: mocks.updateUser,
   deleteUser: vi.fn(),
 }));
 vi.mock('../api/reference.api.js', () => ({
@@ -122,6 +123,41 @@ describe('administrator table pagination', () => {
 
     expect(password).toHaveAttribute('type', 'text');
     expect(dialog.getByRole('button', { name: 'Masquer le mot de passe' })).toBeVisible();
+  });
+
+  it('deactivates and reactivates users with the shared status actions', async () => {
+    const user = userEvent.setup();
+    render(<UsersPage />);
+
+    await screen.findByText('user5@example.test');
+    const deactivateButton = screen.getByRole('button', {
+      name: 'Désactiver Utilisateur 1',
+    });
+    expect(deactivateButton).toHaveClass('btn-outline-secondary', 'flex-fill');
+
+    await user.click(deactivateButton);
+
+    let dialog = within(screen.getByRole('dialog', { name: 'Désactiver l’utilisateur' }));
+    expect(dialog.getByText(/ne pourra plus se connecter/)).toBeVisible();
+    expect(dialog.getByRole('button', { name: 'Désactiver' })).toHaveClass('btn-danger');
+    await user.click(dialog.getByRole('button', { name: 'Désactiver' }));
+
+    expect(mocks.updateUser).toHaveBeenCalledWith('user-1', { isActive: false });
+
+    await user.selectOptions(screen.getByLabelText('Filtrer par statut'), 'false');
+    const activateButton = screen.getByRole('button', {
+      name: 'Activer Utilisateur 6',
+    });
+    expect(activateButton).toHaveClass('btn-outline-activation', 'flex-fill');
+
+    await user.click(activateButton);
+
+    dialog = within(screen.getByRole('dialog', { name: 'Activer l’utilisateur' }));
+    expect(dialog.getByText(/pourra de nouveau se connecter/)).toBeVisible();
+    expect(dialog.getByRole('button', { name: 'Activer' })).toHaveClass('btn-outline-activation');
+    await user.click(dialog.getByRole('button', { name: 'Activer' }));
+
+    expect(mocks.updateUser).toHaveBeenCalledWith('user-6', { isActive: true });
   });
 
   it('filters roles by search and permission', async () => {

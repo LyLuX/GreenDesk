@@ -4,6 +4,10 @@
   features that are unrelated to the requested outcome.
 - Prefer reusable, readable, and maintainable code. Extract shared components or helpers when they
   reduce duplication without expanding the requested scope.
+- Keep visual formatting and interaction patterns consistent across the entire application for
+  every change. Reuse the existing shared components, Bootstrap structures, labels, action colors,
+  spacing, confirmation dialogs, and responsive behavior whenever an equivalent pattern already
+  exists.
 - Increment GreenDesk's semantic version for every delivered change before committing and pushing:
   use `PATCH` for a backward-compatible fix, `MINOR` for a backward-compatible feature, and `MAJOR`
   for a breaking change. Never leave a delivered commit on the previous version.
