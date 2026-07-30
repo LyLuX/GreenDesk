@@ -477,7 +477,7 @@ a:hover {
 }
 
 .maintenance-plan-parts {
-  max-height: min(22rem, 40vh);
+  max-height: min(18rem, 16vh);
   overflow: auto;
   padding: 0.15rem 0.35rem 0.15rem 0.15rem;
   scrollbar-gutter: stable;
