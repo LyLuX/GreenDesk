@@ -78,6 +78,8 @@ describe('MaintenanceOrderListModal', () => {
     const printButton = screen.getByRole('button', { name: 'Imprimer la liste' });
     expect(printButton).toHaveClass('btn', 'btn-brand');
     expect(printButton.parentElement).toHaveClass('justify-content-end');
+    expect(screen.getByRole('dialog')).toHaveClass('maintenance-order-list-modal');
+    expect(screen.getByRole('table').closest('.maintenance-order-list-scroll')).not.toBeNull();
 
     await user.click(printButton);
 

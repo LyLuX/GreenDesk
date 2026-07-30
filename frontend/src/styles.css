@@ -699,6 +699,35 @@ a:hover {
   max-width: min(64rem, calc(100vw - 3rem));
 }
 
+.modal-surface.maintenance-order-list-modal {
+  display: flex;
+  flex-direction: column;
+  height: calc(90vh - 3rem);
+  overflow: hidden;
+}
+
+.maintenance-order-list-modal > :first-child {
+  flex: 0 0 auto;
+}
+
+.maintenance-order-list-printable {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.maintenance-order-list-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.maintenance-order-list-actions {
+  flex: 0 0 auto;
+}
+
 .maintenance-plan-parts {
   max-height: min(18rem, 16vh);
   overflow: auto;
@@ -1080,9 +1109,16 @@ a:hover {
   .maintenance-order-list-printable {
     position: fixed;
     inset: 0;
+    display: block;
     width: 100%;
     color: #000;
     background: #fff;
+  }
+
+  .modal-surface.maintenance-order-list-modal {
+    height: auto;
+    max-height: none;
+    overflow: visible;
   }
 
   .maintenance-order-print-header {
@@ -1101,6 +1137,10 @@ a:hover {
   }
 
   .maintenance-order-list-printable .table-responsive {
+    overflow: visible;
+  }
+
+  .maintenance-order-list-scroll {
     overflow: visible;
   }
 

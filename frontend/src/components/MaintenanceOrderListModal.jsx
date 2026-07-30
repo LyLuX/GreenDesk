@@ -71,7 +71,13 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
     horizonOptions.find((option) => option.value === filters.horizonDays)?.label ?? '';
 
   return (
-    <Modal open={open} title="Pièces à commander" onClose={onClose} busy={loading}>
+    <Modal
+      open={open}
+      title="Pièces à commander"
+      onClose={onClose}
+      busy={loading}
+      className="maintenance-order-list-modal"
+    >
       <div className="maintenance-order-list-printable">
         <header className="maintenance-order-print-header">
           <h1>Pièces à commander</h1>
@@ -123,10 +129,10 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
             {error}
           </p>
         )}
-        {loading && !data ? (
-          <Loader label="Calcul de la liste de commande" />
-        ) : data?.items?.length ? (
-          <>
+        <div className="maintenance-order-list-scroll">
+          {loading && !data ? (
+            <Loader label="Calcul de la liste de commande" />
+          ) : data?.items?.length ? (
             <div className="table-responsive">
               <table className="table table-hover align-middle">
                 <thead>
@@ -171,15 +177,17 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
                 </tbody>
               </table>
             </div>
-            <div className="maintenance-order-list-actions mt-3 d-flex justify-content-end">
-              <Button type="button" disabled={loading} onClick={() => window.print()}>
-                Imprimer la liste
-              </Button>
-            </div>
-          </>
-        ) : (
-          <p className="mb-0">Aucune pièce à commander sur cette période.</p>
-        )}
+          ) : (
+            <p className="mb-0">Aucune pièce à commander sur cette période.</p>
+          )}
+        </div>
+        {data?.items?.length ? (
+          <div className="maintenance-order-list-actions mt-3 d-flex justify-content-end">
+            <Button type="button" disabled={loading} onClick={() => window.print()}>
+              Imprimer la liste
+            </Button>
+          </div>
+        ) : null}
       </div>
     </Modal>
   );
