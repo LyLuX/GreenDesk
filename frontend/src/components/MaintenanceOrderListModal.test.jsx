@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -17,7 +17,10 @@ vi.mock('./ManufacturerLogo.jsx', () => ({
   default: ({ manufacturer }) => <img alt={`Logo ${manufacturer?.name ?? 'indisponible'}`} />,
 }));
 
-import MaintenanceOrderListModal, { formatOrderQuantity } from './MaintenanceOrderListModal.jsx';
+import MaintenanceOrderListModal, {
+  formatOrderQuantity,
+  groupOrderPartsBySupplier,
+} from './MaintenanceOrderListModal.jsx';
 
 describe('MaintenanceOrderListModal', () => {
   afterEach(cleanup);
@@ -70,26 +73,103 @@ describe('MaintenanceOrderListModal', () => {
     expect(formatOrderQuantity(2, 'pièce')).toBe('2 pièces');
   });
 
+  it('groups suppliers alphabetically and keeps missing suppliers together', () => {
+    expect(
+      groupOrderPartsBySupplier([
+        { uuid: '2', supplier: 'Pièces Pro', supplierUuid: 'supplier-2' },
+        { uuid: '1', supplier: 'Atelier Vert', supplierUuid: 'supplier-1' },
+        { uuid: '3', supplier: null },
+        { uuid: '4', supplier: null },
+      ]),
+    ).toEqual([
+      expect.objectContaining({
+        supplier: 'Atelier Vert',
+        parts: [{ uuid: '1', supplier: 'Atelier Vert', supplierUuid: 'supplier-1' }],
+      }),
+      expect.objectContaining({
+        supplier: 'Fournisseur non renseigné',
+        parts: expect.arrayContaining([
+          expect.objectContaining({ uuid: '3' }),
+          expect.objectContaining({ uuid: '4' }),
+        ]),
+      }),
+      expect.objectContaining({
+        supplier: 'Pièces Pro',
+        parts: [{ uuid: '2', supplier: 'Pièces Pro', supplierUuid: 'supplier-2' }],
+      }),
+    ]);
+  });
+
   it('prints the displayed order list from a shared GreenDesk button', async () => {
     const user = userEvent.setup();
     render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
 
-    expect(await screen.findByText('2 pièces')).toBeVisible();
+    const dialog = screen.getByRole('dialog');
+    expect(await within(dialog).findByText('2 pièces')).toBeVisible();
     const printButton = screen.getByRole('button', { name: 'Imprimer la liste' });
     expect(printButton).toHaveClass('btn', 'btn-brand');
     expect(printButton.parentElement).toHaveClass('justify-content-end');
-    expect(screen.getByRole('dialog')).toHaveClass('maintenance-order-list-modal');
-    expect(screen.getByRole('table').closest('.maintenance-order-list-scroll')).not.toBeNull();
-    expect(screen.getByRole('table').closest('.table-shell')).not.toBeNull();
+    expect(dialog).toHaveClass('maintenance-order-list-modal');
+    expect(
+      within(dialog).getByRole('table').closest('.maintenance-order-list-scroll'),
+    ).not.toBeNull();
+    expect(within(dialog).getByRole('table').closest('.table-shell')).not.toBeNull();
     const printHeader = document.querySelector('.maintenance-order-print-header');
     expect(printHeader).toHaveTextContent('GreenDesk');
     expect(printHeader).toHaveTextContent('EI BOURNAZEL Paul');
     expect(printHeader).not.toHaveTextContent('Échéance');
-    expect(screen.getByRole('contentinfo')).toHaveTextContent('EI BOURNAZEL Paul');
-    expect(screen.getByRole('contentinfo')).toHaveTextContent('GreenDesk · version');
+    const printFooter = document.querySelector('.maintenance-order-print-footer .app-footer');
+    expect(printFooter).toHaveTextContent('EI BOURNAZEL Paul');
+    expect(printFooter).toHaveTextContent('GreenDesk · version');
 
     await user.click(printButton);
 
     expect(window.print).toHaveBeenCalledOnce();
+  });
+
+  it('creates one independent print page per supplier', async () => {
+    mocks.getOrderList.mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'part-uuid',
+              name: 'Bougie',
+              supplier: 'Pièces Pro',
+              supplierUuid: 'supplier-2',
+              supplierReference: 'FOU-42',
+              quantity: 2,
+              unit: 'pièce',
+              plans: [],
+            },
+            {
+              uuid: 'filter-uuid',
+              name: 'Filtre',
+              supplier: 'Atelier Vert',
+              supplierUuid: 'supplier-1',
+              supplierReference: 'AV-10',
+              quantity: 1,
+              unit: 'pièce',
+              plans: [],
+            },
+          ],
+        },
+      },
+    });
+    render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
+
+    expect(await within(screen.getByRole('dialog')).findByText('Filtre')).toBeVisible();
+    await waitFor(() =>
+      expect(document.querySelectorAll('.maintenance-order-print-page')).toHaveLength(2),
+    );
+    const [atelierPage, piecesProPage] = document.querySelectorAll('.maintenance-order-print-page');
+    expect(atelierPage).toHaveTextContent('Fournisseur : Atelier Vert');
+    expect(atelierPage).toHaveTextContent('Filtre');
+    expect(atelierPage).not.toHaveTextContent('Bougie');
+    expect(piecesProPage).toHaveTextContent('Fournisseur : Pièces Pro');
+    expect(piecesProPage).toHaveTextContent('Bougie');
+    expect(piecesProPage).not.toHaveTextContent('Filtre');
+    expect(atelierPage.querySelector('.maintenance-order-print-footer')).not.toBeNull();
+    expect(piecesProPage.querySelector('.maintenance-order-print-footer')).not.toBeNull();
   });
 });

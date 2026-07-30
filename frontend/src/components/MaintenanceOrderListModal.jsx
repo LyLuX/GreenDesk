@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import { getMaintenanceOrderList } from '../api/maintenance.api.js';
@@ -27,6 +28,114 @@ export const formatOrderQuantity = (quantity, unit) => {
       : normalizedUnit;
   return `${numericQuantity.toLocaleString('fr-FR')} ${displayedUnit}`.trim();
 };
+
+/** Groups ordered parts by supplier for one printed page per supplier. */
+export const groupOrderPartsBySupplier = (parts = []) => {
+  const groups = new Map();
+  for (const part of parts) {
+    const supplier = String(part.supplier ?? '').trim() || 'Fournisseur non renseigné';
+    const key = part.supplierUuid || supplier.toLocaleLowerCase('fr');
+    const group = groups.get(key) ?? { key, supplier, parts: [] };
+    group.parts.push(part);
+    groups.set(key, group);
+  }
+  return [...groups.values()].sort((left, right) =>
+    left.supplier.localeCompare(right.supplier, 'fr', { sensitivity: 'base' }),
+  );
+};
+
+function OrderPartsTable({ parts, manufacturerByUuid, showSupplier = true }) {
+  return (
+    <div className="table-shell">
+      <div className="table-responsive">
+        <table className="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Pièce</th>
+              <th>{showSupplier ? 'Fournisseur / référence' : 'Référence fournisseur'}</th>
+              <th>Quantité</th>
+              <th>Plans concernés</th>
+            </tr>
+          </thead>
+          <tbody>
+            {parts.map((part) => (
+              <tr key={part.uuid}>
+                <td>
+                  <strong>{part.name}</strong>
+                  {(part.manufacturer || part.manufacturerUuid) && (
+                    <span className="mt-1 d-block">
+                      <ManufacturerLogo
+                        manufacturer={manufacturerByUuid.get(part.manufacturerUuid)}
+                      />
+                    </span>
+                  )}
+                </td>
+                <td>
+                  {showSupplier && part.supplier ? (
+                    <span className="d-block">{part.supplier}</span>
+                  ) : null}
+                  <small className="text-body-secondary">
+                    {part.supplierReference || part.reference}
+                  </small>
+                </td>
+                <td>{formatOrderQuantity(part.quantity, part.unit)}</td>
+                <td>
+                  <ul className="mb-0 ps-3">
+                    {part.plans.map((plan) => (
+                      <li key={plan.maintenanceUuid}>
+                        {plan.material?.name} — {plan.quantity}
+                      </li>
+                    ))}
+                  </ul>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function PrintBrandHeader() {
+  return (
+    <header className="maintenance-order-print-header">
+      <div className="maintenance-order-print-brand">
+        <img className="brand-logo" src="/brand-logo.jpg" alt="EI BOURNAZEL Paul" />
+        <span>
+          <span className="brand-name d-block">GreenDesk</span>
+          <span className="brand-company d-block">EI BOURNAZEL Paul</span>
+        </span>
+      </div>
+    </header>
+  );
+}
+
+function MaintenanceOrderPrintPages({ supplierGroups, manufacturerByUuid }) {
+  return (
+    <div className="maintenance-order-list-printable" aria-hidden="true">
+      {supplierGroups.map((group) => (
+        <section className="maintenance-order-print-page" key={group.key}>
+          <PrintBrandHeader />
+          <main className="maintenance-order-print-content">
+            <h1>Pièces à commander</h1>
+            <p className="maintenance-order-print-supplier">
+              Fournisseur : <strong>{group.supplier}</strong>
+            </p>
+            <OrderPartsTable
+              parts={group.parts}
+              manufacturerByUuid={manufacturerByUuid}
+              showSupplier={false}
+            />
+          </main>
+          <div className="maintenance-order-print-footer">
+            <AppFooter />
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
 
 /** Displays parts aggregated from maintenance plans due in a chosen horizon. */
 export default function MaintenanceOrderListModal({ open, onClose }) {
@@ -68,132 +177,88 @@ export default function MaintenanceOrderListModal({ open, onClose }) {
   const manufacturerByUuid = new Map(
     manufacturers.map((manufacturer) => [manufacturer.uuid, manufacturer]),
   );
+  const supplierGroups = groupOrderPartsBySupplier(data?.items);
+
   return (
-    <Modal
-      open={open}
-      title="Pièces à commander"
-      onClose={onClose}
-      busy={loading}
-      className="maintenance-order-list-modal"
-    >
-      <div className="maintenance-order-list-printable">
-        <header className="maintenance-order-print-header">
-          <div className="maintenance-order-print-brand">
-            <img className="brand-logo" src="/brand-logo.jpg" alt="EI BOURNAZEL Paul" />
-            <span>
-              <span className="brand-name d-block">GreenDesk</span>
-              <span className="brand-company d-block">EI BOURNAZEL Paul</span>
-            </span>
-          </div>
-        </header>
-        <div className="maintenance-order-list-controls mb-3 d-flex flex-wrap align-items-end gap-3">
-          <label className="form-label mb-0 text-body-secondary">
-            Échéance
-            <select
-              className="form-select"
-              value={filters.horizonDays}
-              onChange={(event) =>
-                setFilters((current) => ({
-                  ...current,
-                  horizonDays: Number(event.target.value),
-                }))
-              }
-            >
-              {horizonOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="form-check mb-2">
-            <input
-              type="checkbox"
-              className="form-check-input"
-              checked={filters.includeOverdue}
-              onChange={(event) =>
-                setFilters((current) => ({
-                  ...current,
-                  includeOverdue: event.target.checked,
-                }))
-              }
-            />
-            <span className="form-check-label">Inclure les plans en retard</span>
-          </label>
-          <Button type="button" onClick={() => load()} disabled={loading}>
-            Actualiser
-          </Button>
-        </div>
-        {error && (
-          <p role="alert" className="alert alert-danger">
-            {error}
-          </p>
-        )}
-        <div className="maintenance-order-list-scroll">
-          {loading && !data ? (
-            <Loader label="Calcul de la liste de commande" />
-          ) : data?.items?.length ? (
-            <div className="table-shell">
-              <div className="table-responsive">
-                <table className="table table-hover align-middle">
-                  <thead>
-                    <tr>
-                      <th>Pièce</th>
-                      <th>Fournisseur / référence</th>
-                      <th>Quantité</th>
-                      <th>Plans concernés</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.items.map((part) => (
-                      <tr key={part.uuid}>
-                        <td>
-                          <strong>{part.name}</strong>
-                          {(part.manufacturer || part.manufacturerUuid) && (
-                            <span className="mt-1 d-block">
-                              <ManufacturerLogo
-                                manufacturer={manufacturerByUuid.get(part.manufacturerUuid)}
-                              />
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          {part.supplier && <span className="d-block">{part.supplier}</span>}
-                          <small className="text-body-secondary">
-                            {part.supplierReference || part.reference}
-                          </small>
-                        </td>
-                        <td>{formatOrderQuantity(part.quantity, part.unit)}</td>
-                        <td>
-                          <ul className="mb-0 ps-3">
-                            {part.plans.map((plan) => (
-                              <li key={plan.maintenanceUuid}>
-                                {plan.material?.name} — {plan.quantity}
-                              </li>
-                            ))}
-                          </ul>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : (
-            <p className="mb-0">Aucune pièce à commander sur cette période.</p>
-          )}
-        </div>
-        {data?.items?.length ? (
-          <div className="maintenance-order-list-actions mt-3 d-flex justify-content-end">
-            <Button type="button" disabled={loading} onClick={() => window.print()}>
-              Imprimer la liste
+    <>
+      <Modal
+        open={open}
+        title="Pièces à commander"
+        onClose={onClose}
+        busy={loading}
+        className="maintenance-order-list-modal"
+      >
+        <div className="maintenance-order-list-screen">
+          <div className="maintenance-order-list-controls mb-3 d-flex flex-wrap align-items-end gap-3">
+            <label className="form-label mb-0 text-body-secondary">
+              Échéance
+              <select
+                className="form-select"
+                value={filters.horizonDays}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    horizonDays: Number(event.target.value),
+                  }))
+                }
+              >
+                {horizonOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="form-check mb-2">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                checked={filters.includeOverdue}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    includeOverdue: event.target.checked,
+                  }))
+                }
+              />
+              <span className="form-check-label">Inclure les plans en retard</span>
+            </label>
+            <Button type="button" onClick={() => load()} disabled={loading}>
+              Actualiser
             </Button>
           </div>
-        ) : null}
-        <div className="maintenance-order-print-footer">
-          <AppFooter />
+          {error && (
+            <p role="alert" className="alert alert-danger">
+              {error}
+            </p>
+          )}
+          <div className="maintenance-order-list-scroll">
+            {loading && !data ? (
+              <Loader label="Calcul de la liste de commande" />
+            ) : data?.items?.length ? (
+              <OrderPartsTable parts={data.items} manufacturerByUuid={manufacturerByUuid} />
+            ) : (
+              <p className="mb-0">Aucune pièce à commander sur cette période.</p>
+            )}
+          </div>
+          {data?.items?.length ? (
+            <div className="maintenance-order-list-actions mt-3 d-flex justify-content-end">
+              <Button type="button" disabled={loading} onClick={() => window.print()}>
+                Imprimer la liste
+              </Button>
+            </div>
+          ) : null}
         </div>
-      </div>
-    </Modal>
+      </Modal>
+      {open && supplierGroups.length
+        ? createPortal(
+            <MaintenanceOrderPrintPages
+              supplierGroups={supplierGroups}
+              manufacturerByUuid={manufacturerByUuid}
+            />,
+            document.body,
+          )
+        : null}
+    </>
   );
 }

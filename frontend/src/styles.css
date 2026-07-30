@@ -711,11 +711,15 @@ a:hover {
   flex: 0 0 auto;
 }
 
-.maintenance-order-list-printable {
+.maintenance-order-list-screen {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
+}
+
+.maintenance-order-list-printable {
+  display: none;
 }
 
 .maintenance-order-list-scroll {
@@ -1081,35 +1085,22 @@ a:hover {
 
 @media print {
   @page {
+    size: A4 portrait;
     margin: 1cm 0.5cm;
   }
 
   html,
-  body,
-  #root,
-  .app-shell,
-  .app-body,
-  .app-content {
-    height: auto;
-    overflow: visible;
-  }
-
   body {
+    height: auto;
+    overflow: visible !important;
     background: #fff;
   }
 
-  body * {
-    visibility: hidden;
-  }
-
-  .maintenance-order-list-printable,
-  .maintenance-order-list-printable * {
-    visibility: visible;
+  body > #root {
+    display: none !important;
   }
 
   .maintenance-order-list-printable {
-    position: fixed;
-    inset: 0;
     display: block;
     width: 100%;
     color: #000;
@@ -1118,10 +1109,19 @@ a:hover {
     print-color-adjust: exact;
   }
 
-  .modal-surface.maintenance-order-list-modal {
-    height: auto;
-    max-height: none;
-    overflow: visible;
+  .maintenance-order-print-page {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    width: 100%;
+    height: 27.7cm;
+    overflow: hidden;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .maintenance-order-print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
   }
 
   .maintenance-order-print-header {
@@ -1158,17 +1158,23 @@ a:hover {
     font-size: 8pt;
   }
 
-  .maintenance-order-list-controls,
-  .maintenance-order-list-actions {
-    display: none !important;
+  .maintenance-order-print-content {
+    min-height: 0;
+    padding-top: 0.1cm;
+    overflow: hidden;
   }
 
-  .maintenance-order-list-printable .table-responsive {
-    overflow: visible;
+  .maintenance-order-print-content h1 {
+    margin: 0 0 0.15cm;
+    color: var(--brand-forest-dark);
+    font-size: 15pt;
+    font-weight: 700;
   }
 
-  .maintenance-order-list-scroll {
-    overflow: visible;
+  .maintenance-order-print-supplier {
+    margin: 0 0 0.4cm;
+    color: #3a5142;
+    font-size: 10pt;
   }
 
   .maintenance-order-list-printable .table {
@@ -1195,7 +1201,8 @@ a:hover {
 
   .maintenance-order-print-footer {
     display: block;
-    margin-top: 0.5cm;
+    align-self: end;
+    padding-top: 0.35cm;
   }
 
   .maintenance-order-print-footer .app-footer {
