@@ -2,6 +2,7 @@ import request from 'supertest';
 import { jest } from '@jest/globals';
 
 import app from '../src/app.js';
+import appVersion from '../src/config/app-version.js';
 import sequelize from '../src/config/database.js';
 
 describe('GET /health', () => {
@@ -15,7 +16,7 @@ describe('GET /health', () => {
       expect.objectContaining({
         status: 'UP',
         database: 'UP',
-        version: '1.0.0',
+        version: appVersion,
         environment: 'test',
       }),
     );

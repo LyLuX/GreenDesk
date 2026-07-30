@@ -2,6 +2,18 @@
 
 Backend Node.js et frontend React pour la gestion de parc matériel des espaces verts.
 
+## Versionnement
+
+La version actuelle de GreenDesk est **1.1.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+
+GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
+
+- `PATCH` pour une correction rétrocompatible ;
+- `MINOR` pour une nouvelle fonctionnalité rétrocompatible ;
+- `MAJOR` pour une rupture de compatibilité.
+
+Chaque modification livrée doit mettre à jour tous les emplacements de version concernés, vérifier le README et OpenAPI, exécuter les tests et générer le build frontend avant le commit et le push.
+
 ## Modules disponibles
 
 Authentification, utilisateurs, rôles, permissions, audit, catégories, fabricants, fournisseurs et matériels.

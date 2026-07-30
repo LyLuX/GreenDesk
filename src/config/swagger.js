@@ -1,3 +1,4 @@
+import appVersion from './app-version.js';
 import { openApiParameters, openApiResponses, openApiSchemas } from './openapi-components.js';
 import { openApiPaths } from './openapi-paths.js';
 
@@ -6,7 +7,7 @@ const swaggerSpec = {
   openapi: '3.0.3',
   info: {
     title: 'GreenDesk API',
-    version: '1.0.0',
+    version: appVersion,
     description:
       'Contrat de l’API GreenDesk. Les routes sans préfixe dans cette documentation utilisent le serveur `/api/v1`. Les alias historiques sous `/api` restent disponibles pour compatibilité mais sont dépréciés.',
   },
