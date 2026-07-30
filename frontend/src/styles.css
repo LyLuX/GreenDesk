@@ -16,9 +16,15 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   margin: 0;
   min-width: 320px;
+  overflow: hidden;
   font-family:
     Inter,
     system-ui,
@@ -32,13 +38,17 @@ body {
 
 #root {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
   flex-direction: column;
+  overflow: hidden;
 }
 
 #root > *:not(.app-footer) {
   width: 100%;
-  flex: 1 0 auto;
+  min-height: 0;
+  flex: 1 1 auto;
 }
 
 a {
@@ -88,15 +98,19 @@ a:hover {
   display: flex;
   min-height: 0;
   flex-direction: column;
+  overflow: hidden;
   background: var(--brand-mist);
 }
 
 .app-body {
+  min-height: 0;
   flex: 1;
+  overflow: hidden;
 }
 
 .app-header {
   min-height: 76px;
+  flex: 0 0 auto;
   background: var(--brand-forest);
   border-bottom: 3px solid var(--brand-sun);
 }
@@ -210,8 +224,13 @@ a:hover {
   width: 245px;
   min-height: 0;
   overflow-y: auto;
+  scrollbar-width: none;
   background: #fff;
   border-right: 1px solid var(--border);
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none;
 }
 
 .sidebar-label {
@@ -312,7 +331,16 @@ a:hover {
 }
 
 .app-content {
+  height: 100%;
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: none;
+}
+
+.app-content::-webkit-scrollbar {
+  display: none;
 }
 
 .app-page {
@@ -348,7 +376,13 @@ a:hover {
 .auth-page {
   min-height: 0;
   padding: 1.5rem;
+  overflow-y: auto;
+  scrollbar-width: none;
   background: #eff4ec;
+}
+
+.auth-page::-webkit-scrollbar {
+  display: none;
 }
 
 .auth-card {
@@ -721,7 +755,14 @@ a:hover {
 .loading-page {
   min-height: 0;
   padding: 2rem;
+  overflow-y: auto;
+  scrollbar-width: none;
   background: var(--brand-mist);
+}
+
+.status-page::-webkit-scrollbar,
+.loading-page::-webkit-scrollbar {
+  display: none;
 }
 
 .app-loader {
@@ -777,6 +818,7 @@ a:hover {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
   gap: 0.25rem 1rem;
   padding: 0.4rem 1rem;
   color: var(--muted);
@@ -852,6 +894,16 @@ a:hover {
 @media print {
   @page {
     margin: 12mm;
+  }
+
+  html,
+  body,
+  #root,
+  .app-shell,
+  .app-body,
+  .app-content {
+    height: auto;
+    overflow: visible;
   }
 
   body {
