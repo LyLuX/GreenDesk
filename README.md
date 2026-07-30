@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **1.8.2**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **1.9.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -23,6 +23,8 @@ La navigation latérale regroupe les pages dans trois menus accordéon : `Gestio
 Les pages de listes utilisent un panneau de recherche et de filtres commun. Il conserve les mêmes libellés pour une même fonction, s’adapte sur une, deux ou trois colonnes et répartit uniformément toute ligne contenant moins de trois champs. Il accepte au maximum six champs : une recherche et cinq filtres. Les catalogues affichant un état actif/inactif utilisent tous le libellé `Statut`. Les pages d’administration permettent également de filtrer les utilisateurs par statut et rôle, et les rôles par permission.
 
 Le pied de page global affiche le copyright `EI BOURNAZEL Paul` ainsi que la version courante de GreenDesk, lue automatiquement depuis les métadonnées du frontend.
+
+Les pages « Accès refusé » et « Page introuvable » proposent une action permettant de retourner directement au tableau de bord.
 
 ## API
 

@@ -1,15 +1,27 @@
+import { Link } from 'react-router-dom';
+
 /**
  * Provides a consistent surface for status, error, and empty-state content.
  *
  * @param {object} props Component properties.
  * @param {React.ReactNode} props.children Content displayed in the panel.
  * @param {keyof JSX.IntrinsicElements} [props.as='section'] HTML element to render.
+ * @param {boolean} [props.showDashboardLink=false] Whether to display the dashboard return action.
  * @returns {JSX.Element} The status panel.
  */
-export default function StatusPanel({ as: Element = 'section', children }) {
+export default function StatusPanel({
+  as: Element = 'section',
+  children,
+  showDashboardLink = false,
+}) {
   return (
     <Element className="status-panel surface p-4 text-center m-auto d-flex flex-column align-items-center justify-content-center">
       {children}
+      {showDashboardLink && (
+        <Link className="btn btn-brand mt-3" to="/dashboard">
+          Retour au tableau de bord
+        </Link>
+      )}
     </Element>
   );
 }
