@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **1.21.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **2.0.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -110,6 +110,14 @@ Les migrations `20260727_zz_add_maintenance_catalogs.js` et `20260727_zzz_add_pa
 
 Créez `.env` depuis `.env.example` pour le backend et `frontend/.env` depuis `frontend/.env.example` pour l'interface. `VITE_API_URL=/api` est la valeur de développement par défaut. Aucun secret réel ne doit être committé.
 
+`NODE_ENV` est obligatoire et accepte uniquement `development`, `test` ou `production`. En production, GreenDesk refuse de démarrer si les identifiants de base de données, `CORS_ORIGIN` ou `JWT_SECRET` sont absents. L’origine CORS ne peut pas être `*` et le secret JWT doit contenir au moins 32 octets sans reprendre une valeur d’exemple. Générez un secret aléatoire avec :
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Lors d’une rotation, remplacez `JWT_SECRET` dans le gestionnaire de secrets de chaque instance, redémarrez toutes les instances avec la même nouvelle valeur, vérifiez que les anciens jetons sont refusés, puis reconnectez les utilisateurs. La rotation invalide volontairement toutes les sessions existantes. Ne journalisez, ne partagez et ne committez jamais la valeur générée.
+
 Le seeder crée un administrateur réservé au développement. Consultez le seeder local pour ses identifiants, et changez-les dans tout environnement partagé.
 
 ## Lancement
@@ -147,7 +155,7 @@ La connexion retourne un access token JWT et le profil utilisateur avec ses rôl
 
 ## Variables d’environnement
 
-Backend : `NODE_ENV`, `PORT`, `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_LOGGING`, `CORS_ORIGIN`, `JWT_SECRET`, `JWT_ACCESS_TOKEN_TTL`.
+Backend : `NODE_ENV`, `PORT`, `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_LOGGING`, `CORS_ORIGIN`, `JWT_SECRET`, `JWT_ACCESS_TOKEN_TTL`. Toutes les variables sensibles doivent être injectées par l’environnement ou un gestionnaire de secrets en production ; les valeurs du fichier `.env.example` sont exclusivement documentaires.
 
 Frontend : `VITE_API_URL`, par défaut `/api`.
 

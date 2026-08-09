@@ -3,29 +3,123 @@ import appVersion from './app-version.js';
 
 dotenv.config();
 
-/**
- * Runtime environment configuration.
- * Values are read once during startup to keep configuration predictable.
- *
- * @type {{nodeEnv: string, port: number, database: object, corsOrigin: string}}
- */
-const env = {
-  nodeEnv: process.env.NODE_ENV ?? 'development',
-  appVersion: process.env.npm_package_version ?? appVersion,
-  port: Number(process.env.PORT ?? 3000),
-  database: {
-    host: process.env.DATABASE_HOST ?? '127.0.0.1',
-    port: Number(process.env.DATABASE_PORT ?? 3306),
-    name: process.env.DATABASE_NAME ?? 'greendesk',
-    user: process.env.DATABASE_USER ?? 'root',
-    password: process.env.DATABASE_PASSWORD ?? '',
-    logging: process.env.DATABASE_LOGGING === 'true',
-  },
-  corsOrigin: process.env.CORS_ORIGIN ?? '*',
-  jwt: {
-    secret: process.env.JWT_SECRET ?? 'development-only-secret-change-me',
-    accessTokenTtl: process.env.JWT_ACCESS_TOKEN_TTL ?? '15m',
-  },
+const NODE_ENVIRONMENTS = new Set(['development', 'test', 'production']);
+const PRODUCTION_REQUIRED_DATABASE_KEYS = [
+  'DATABASE_HOST',
+  'DATABASE_NAME',
+  'DATABASE_USER',
+  'DATABASE_PASSWORD',
+];
+const UNSAFE_PRODUCTION_SECRETS = new Set([
+  'development-only-secret-change-me',
+  'replace-with-at-least-32-random-characters',
+  'changeme',
+]);
+const UNSAFE_PRODUCTION_DATABASE_PASSWORDS = new Set([
+  'replace-with-a-local-database-password',
+  'changeme',
+]);
+
+const normalizedValue = (source, key) => {
+  const value = source[key];
+  return typeof value === 'string' ? value.trim() : '';
 };
+
+const parsePort = (source, key, fallback, errors) => {
+  const rawValue = normalizedValue(source, key);
+  const value = rawValue ? Number(rawValue) : fallback;
+  if (!Number.isInteger(value) || value < 1 || value > 65535) {
+    errors.push(`${key} doit être un entier compris entre 1 et 65535.`);
+  }
+  return value;
+};
+
+const parseBoolean = (source, key, fallback, errors) => {
+  const rawValue = normalizedValue(source, key);
+  if (!rawValue) return fallback;
+  if (!['true', 'false'].includes(rawValue)) {
+    errors.push(`${key} doit valoir "true" ou "false".`);
+  }
+  return rawValue === 'true';
+};
+
+/**
+ * Builds and validates the runtime configuration before any service starts.
+ * Production deliberately has no fallback for credentials or public origins.
+ *
+ * @param {NodeJS.ProcessEnv|Record<string, string|undefined>} source Environment variables.
+ * @returns {object} Validated GreenDesk runtime configuration.
+ */
+export function createEnvironment(source = process.env) {
+  const errors = [];
+  const nodeEnv = normalizedValue(source, 'NODE_ENV');
+
+  if (!nodeEnv) errors.push('NODE_ENV est obligatoire.');
+  else if (!NODE_ENVIRONMENTS.has(nodeEnv)) {
+    errors.push('NODE_ENV doit valoir "development", "test" ou "production".');
+  }
+
+  const isProduction = nodeEnv === 'production';
+  if (isProduction) {
+    for (const key of PRODUCTION_REQUIRED_DATABASE_KEYS) {
+      if (!normalizedValue(source, key)) errors.push(`${key} est obligatoire en production.`);
+    }
+    if (
+      UNSAFE_PRODUCTION_DATABASE_PASSWORDS.has(
+        normalizedValue(source, 'DATABASE_PASSWORD').toLowerCase(),
+      )
+    ) {
+      errors.push('DATABASE_PASSWORD ne peut pas reprendre une valeur d’exemple en production.');
+    }
+  }
+
+  const jwtSecret =
+    normalizedValue(source, 'JWT_SECRET') ||
+    (nodeEnv === 'test' ? 'test-only-greendesk-secret-never-used-outside-tests' : '');
+  if (!jwtSecret) errors.push('JWT_SECRET est obligatoire hors environnement de test.');
+  if (
+    isProduction &&
+    (Buffer.byteLength(jwtSecret, 'utf8') < 32 ||
+      UNSAFE_PRODUCTION_SECRETS.has(jwtSecret.toLowerCase()))
+  ) {
+    errors.push('JWT_SECRET doit contenir au moins 32 octets et ne pas être une valeur d’exemple.');
+  }
+
+  const corsOrigin =
+    normalizedValue(source, 'CORS_ORIGIN') || (isProduction ? '' : 'http://localhost:5173');
+  if (isProduction && !corsOrigin) errors.push('CORS_ORIGIN est obligatoire en production.');
+  if (isProduction && corsOrigin === '*') {
+    errors.push('CORS_ORIGIN ne peut pas valoir "*" en production.');
+  }
+
+  const port = parsePort(source, 'PORT', 3000, errors);
+  const databasePort = parsePort(source, 'DATABASE_PORT', 3306, errors);
+  const databaseLogging = parseBoolean(source, 'DATABASE_LOGGING', false, errors);
+
+  if (errors.length > 0) {
+    throw new Error(`Configuration d’environnement invalide :\n- ${errors.join('\n- ')}`);
+  }
+
+  return {
+    nodeEnv,
+    appVersion: normalizedValue(source, 'npm_package_version') || appVersion,
+    port,
+    database: {
+      host: normalizedValue(source, 'DATABASE_HOST') || '127.0.0.1',
+      port: databasePort,
+      name: normalizedValue(source, 'DATABASE_NAME') || 'greendesk',
+      user: normalizedValue(source, 'DATABASE_USER') || 'root',
+      password: source.DATABASE_PASSWORD ?? '',
+      logging: databaseLogging,
+    },
+    corsOrigin,
+    jwt: {
+      secret: jwtSecret,
+      accessTokenTtl: normalizedValue(source, 'JWT_ACCESS_TOKEN_TTL') || '15m',
+    },
+  };
+}
+
+const env = createEnvironment();
 
 export default env;

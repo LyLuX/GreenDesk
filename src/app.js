@@ -21,7 +21,7 @@ app.disable('x-powered-by');
 app.use(helmet(helmetOptions));
 app.use(createCacheControlMiddleware(env.nodeEnv));
 app.use(compression(compressionOptions));
-app.use(cors({ origin: process.env.CORS_ORIGIN ?? '*', credentials: false }));
+app.use(cors({ origin: env.corsOrigin, credentials: false }));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(requestId);
