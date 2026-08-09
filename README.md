@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **4.0.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **4.1.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -118,6 +118,12 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 
 Lors d’une rotation, remplacez `JWT_SECRET` dans le gestionnaire de secrets de chaque instance, redémarrez toutes les instances avec la même nouvelle valeur, vérifiez que les anciens jetons sont refusés, puis reconnectez les utilisateurs. La rotation invalide volontairement toutes les sessions existantes. Ne journalisez, ne partagez et ne committez jamais la valeur générée.
 
+L’inscription publique est active par défaut en développement et désactivée par défaut en production. Pour l’activer explicitement, définissez `PUBLIC_REGISTRATION_ENABLED=true` côté backend et `VITE_PUBLIC_REGISTRATION_ENABLED=true` lors du build frontend. Le backend reste la source d’autorité si les deux valeurs divergent.
+
+Toutes les routes `/api` sont limitées à 500 requêtes par adresse IP sur 15 minutes. Les quotas renforcés sont de 10 échecs de connexion sur 15 minutes, 5 inscriptions par heure et 30 renouvellements de session par utilisateur sur 15 minutes. Ils peuvent être ajustés avec les variables `RATE_LIMIT_*_MAX` ou désactivés localement avec `RATE_LIMIT_ENABLED=false`. Les en-têtes `RateLimit`, `RateLimit-Policy` et `Retry-After` décrivent la limite appliquée. Le store mémoire convient à une instance unique ; un déploiement horizontal devra utiliser un store partagé avant sa mise en service.
+
+`TRUSTED_PROXIES` reste désactivé par défaut. Derrière un reverse proxy, renseignez exclusivement ses adresses ou sous-réseaux fiables séparés par des virgules, par exemple `loopback,10.0.0.0/8`. Les valeurs permissives `true`, `*` et `all` sont refusées afin d’empêcher l’usurpation de `X-Forwarded-For`.
+
 Le seeder est strictement réservé à une base locale en environnement `development`. Il ne crée jamais le schéma : appliquez d’abord toutes les migrations, puis confirmez explicitement la cible locale :
 
 ```bash
@@ -163,9 +169,9 @@ La connexion retourne un access token JWT et le profil utilisateur avec ses rôl
 
 ## Variables d’environnement
 
-Backend : `NODE_ENV`, `PORT`, `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_LOGGING`, `CORS_ORIGIN`, `JWT_SECRET`, `JWT_ACCESS_TOKEN_TTL`, `GREENDESK_SEED_ADMIN_EMAIL` et, uniquement au moment d’exécuter le seeder, `GREENDESK_SEED_ADMIN_PASSWORD`. Toutes les variables sensibles doivent être injectées par l’environnement ou un gestionnaire de secrets en production.
+Backend : `NODE_ENV`, `PORT`, `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_LOGGING`, `CORS_ORIGIN`, `JWT_SECRET`, `JWT_ACCESS_TOKEN_TTL`, `PUBLIC_REGISTRATION_ENABLED`, `TRUSTED_PROXIES`, `RATE_LIMIT_ENABLED`, `RATE_LIMIT_API_MAX`, `RATE_LIMIT_LOGIN_MAX`, `RATE_LIMIT_REGISTER_MAX`, `RATE_LIMIT_REFRESH_MAX`, `GREENDESK_SEED_ADMIN_EMAIL` et, uniquement au moment d’exécuter le seeder, `GREENDESK_SEED_ADMIN_PASSWORD`. Toutes les variables sensibles doivent être injectées par l’environnement ou un gestionnaire de secrets en production.
 
-Frontend : `VITE_API_URL`, par défaut `/api`, et `VITE_API_PROXY_TARGET`, par défaut `http://localhost:3000`.
+Frontend : `VITE_API_URL`, par défaut `/api`, `VITE_API_PROXY_TARGET`, par défaut `http://localhost:3000`, et `VITE_PUBLIC_REGISTRATION_ENABLED`, actif hors production et désactivé par défaut dans un build de production.
 
 ## Sequelize CLI
 

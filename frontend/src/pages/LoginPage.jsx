@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../auth/useAuth.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import PasswordInput from '../components/PasswordInput.jsx';
+import { publicRegistrationEnabled } from '../config/features.js';
 import useNotification from '../notifications/useNotification.js';
 export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
@@ -87,12 +88,14 @@ export default function LoginPage() {
         <button className="btn btn-brand align-self-center px-4 mt-5" disabled={loading}>
           {loading ? 'Connexion…' : 'Se connecter'}
         </button>
-        <p className="mb-0 text-center small text-body-secondary">
-          Pas encore de compte ?{' '}
-          <Link className="fw-semibold" to="/register">
-            Créer un compte
-          </Link>
-        </p>
+        {publicRegistrationEnabled && (
+          <p className="mb-0 text-center small text-body-secondary">
+            Pas encore de compte ?{' '}
+            <Link className="fw-semibold" to="/register">
+              Créer un compte
+            </Link>
+          </p>
+        )}
       </form>
     </main>
   );

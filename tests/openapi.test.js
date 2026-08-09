@@ -103,6 +103,27 @@ describe('OpenAPI contract', () => {
     }
   });
 
+  it('documents 429 and its quota headers on every rate-limited API operation', () => {
+    for (const [path, pathItem] of Object.entries(swaggerSpec.paths)) {
+      for (const [method, operation] of Object.entries(pathItem)) {
+        if (!HTTP_METHODS.has(method) || path === '/health') continue;
+        const rateLimitResponse = operation.responses[429];
+        const response = rateLimitResponse.$ref
+          ? resolveLocalReference(rateLimitResponse.$ref)
+          : rateLimitResponse;
+
+        expect(response).toEqual(swaggerSpec.components.responses.TooManyRequests);
+        expect(Object.keys(response.headers)).toEqual(
+          expect.arrayContaining(['Retry-After', 'RateLimit', 'RateLimit-Policy']),
+        );
+      }
+    }
+  });
+
+  it('keeps proxy trust disabled unless explicit proxies are configured', () => {
+    expect(app.get('trust proxy')).toBe(false);
+  });
+
   it('contains no broken local component reference', () => {
     const brokenReferences = [];
     const visit = (value) => {

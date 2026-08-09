@@ -30,7 +30,10 @@ const reference = (name) => ({ $ref: `#/components/schemas/${name}` });
 const cacheControlHeaders = {
   'Cache-Control': { $ref: '#/components/headers/CacheControl' },
 };
-const withCacheControl = (response) => ({ ...response, headers: cacheControlHeaders });
+const withCacheControl = (response) => ({
+  ...response,
+  headers: { ...cacheControlHeaders, ...(response.headers ?? {}) },
+});
 
 const permission = {
   type: 'object',
@@ -873,6 +876,15 @@ export const openApiResponses = {
     description: 'The request conflicts with an existing resource.',
     content: { 'application/json': { schema: reference('ErrorResponse') } },
   }),
+  TooManyRequests: withCacheControl({
+    description: 'The request quota has been exceeded. Retry after the indicated delay.',
+    headers: {
+      'Retry-After': { $ref: '#/components/headers/RetryAfter' },
+      RateLimit: { $ref: '#/components/headers/RateLimit' },
+      'RateLimit-Policy': { $ref: '#/components/headers/RateLimitPolicy' },
+    },
+    content: { 'application/json': { schema: reference('ErrorResponse') } },
+  }),
   InternalError: withCacheControl({
     description: 'Unexpected server error.',
     content: { 'application/json': { schema: reference('ErrorResponse') } },
@@ -887,6 +899,18 @@ export const openApiHeaders = {
       type: 'string',
       example: 'private, no-cache',
     },
+  },
+  RetryAfter: {
+    description: 'Nombre de secondes avant une nouvelle tentative.',
+    schema: { type: 'integer', minimum: 1 },
+  },
+  RateLimit: {
+    description: 'Quota restant et délai de réinitialisation au format IETF draft-8.',
+    schema: { type: 'string' },
+  },
+  RateLimitPolicy: {
+    description: 'Politique de quota appliquée à la requête.',
+    schema: { type: 'string' },
   },
 };
 

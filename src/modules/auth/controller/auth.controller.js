@@ -1,11 +1,15 @@
+import { createHash } from 'node:crypto';
+
 import HTTP_STATUS from '../../../core/constants/http-status.js';
+import logger from '../../../core/logger/logger.js';
 import { successResponse } from '../../../core/responses/api-response.js';
 import AuthService from '../service/auth.service.js';
 
 /** Translates authentication HTTP requests to AuthService calls. */
 export default class AuthController {
-  constructor(authService = new AuthService()) {
+  constructor(authService = new AuthService(), securityLogger = logger) {
     this.authService = authService;
+    this.securityLogger = securityLogger;
   }
   async register(request, response) {
     response
@@ -13,9 +17,29 @@ export default class AuthController {
       .json(successResponse(await this.authService.register(request.body)));
   }
   async login(request, response) {
-    response.json(
-      successResponse(await this.authService.login(request.body.email, request.body.password)),
-    );
+    try {
+      response.json(
+        successResponse(await this.authService.login(request.body.email, request.body.password)),
+      );
+    } catch (error) {
+      if (error.statusCode === HTTP_STATUS.UNAUTHORIZED) {
+        const emailFingerprint = createHash('sha256')
+          .update(
+            String(request.body.email ?? '')
+              .trim()
+              .toLowerCase(),
+          )
+          .digest('hex')
+          .slice(0, 16);
+        this.securityLogger.warn('Authentication failed', {
+          event: 'security.login_failed',
+          requestId: request.id,
+          ip: request.ip,
+          emailFingerprint,
+        });
+      }
+      throw error;
+    }
   }
   async refresh(request, response) {
     response.json(successResponse(await this.authService.refresh(request.user)));

@@ -6,6 +6,7 @@ import AdminRoute from './auth/AdminRoute.jsx';
 import AppFooter from './components/AppFooter.jsx';
 import MaterialManufacturerCell from './components/MaterialManufacturerCell.jsx';
 import { activityStatusFilter } from './filters/filter-options.js';
+import { publicRegistrationEnabled } from './config/features.js';
 import AppLayout from './layouts/AppLayout.jsx';
 import maintenancePermissions from './maintenance/maintenance.permissions.js';
 import DashboardPage from './pages/DashboardPage.jsx';
@@ -86,7 +87,10 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route
+          path="/register"
+          element={publicRegistrationEnabled ? <RegisterPage /> : <Navigate to="/login" replace />}
+        />
         <Route element={<ProtectedRoute />}>
           <Route path="/403" element={<ForbiddenPage />} />
           <Route element={<AppLayout />}>

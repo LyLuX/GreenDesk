@@ -4,7 +4,10 @@ const parameterRef = (name) => ({ $ref: `#/components/parameters/${name}` });
 const cacheControlHeaders = {
   'Cache-Control': { $ref: '#/components/headers/CacheControl' },
 };
-const withCacheControl = (response) => ({ ...response, headers: cacheControlHeaders });
+const withCacheControl = (response) => ({
+  ...response,
+  headers: { ...cacheControlHeaders, ...(response.headers ?? {}) },
+});
 const jsonBody = (schemaName, required = true) => ({
   required,
   content: { 'application/json': { schema: schemaRef(schemaName) } },
@@ -99,10 +102,13 @@ export const openApiPaths = {
       operationId: 'register',
       tags: ['Auth'],
       summary: 'Crée un compte avec le rôle utilisateur par défaut.',
+      description:
+        'Disponible uniquement lorsque `PUBLIC_REGISTRATION_ENABLED=true`. Cette option est désactivée par défaut en production.',
       requestBody: jsonBody('RegisterRequest'),
       responses: {
         201: jsonResponse('UserResponse', 'Compte créé.'),
         400: responseRef('BadRequest'),
+        403: responseRef('Forbidden'),
         409: responseRef('Conflict'),
         500: responseRef('InternalError'),
       },
@@ -1039,3 +1045,13 @@ export const openApiPaths = {
     },
   },
 };
+
+// Every documented `/api/v1` operation is covered by the application-wide API quota.
+for (const [path, pathItem] of Object.entries(openApiPaths)) {
+  if (path === '/health') continue;
+  for (const operation of Object.values(pathItem)) {
+    if (operation?.responses) {
+      operation.responses[429] ??= responseRef('TooManyRequests');
+    }
+  }
+}

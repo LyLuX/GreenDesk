@@ -28,6 +28,8 @@ describe('runtime environment configuration', () => {
         logging: false,
       },
       corsOrigin: 'https://greendesk.example.com',
+      trustedProxies: false,
+      auth: { publicRegistrationEnabled: false },
       jwt: {
         secret: 'a-secure-production-secret-with-more-than-32-bytes',
         accessTokenTtl: '15m',
@@ -51,6 +53,14 @@ describe('runtime environment configuration', () => {
     expect(createEnvironment({ NODE_ENV: 'test' })).toMatchObject({
       nodeEnv: 'test',
       corsOrigin: 'http://localhost:5173',
+      auth: { publicRegistrationEnabled: true },
+      rateLimit: {
+        enabled: true,
+        api: { limit: 500 },
+        login: { limit: 10 },
+        register: { limit: 5 },
+        refresh: { limit: 30 },
+      },
       jwt: { secret: 'test-only-greendesk-secret-never-used-outside-tests' },
     });
   });
@@ -97,6 +107,35 @@ describe('runtime environment configuration', () => {
         DATABASE_LOGGING: 'yes',
       }),
     ).toThrow(/PORT doit être[\s\S]*DATABASE_PORT doit être[\s\S]*DATABASE_LOGGING doit valoir/);
+  });
+
+  it('accepts only explicit trusted proxy addresses or subnets', () => {
+    expect(
+      createEnvironment({
+        NODE_ENV: 'test',
+        TRUSTED_PROXIES: 'loopback, 10.0.0.0/8',
+      }).trustedProxies,
+    ).toEqual(['loopback', '10.0.0.0/8']);
+    expect(() => createEnvironment({ NODE_ENV: 'test', TRUSTED_PROXIES: 'true' })).toThrow(
+      /TRUSTED_PROXIES doit lister explicitement/,
+    );
+  });
+
+  it('validates public registration and rate-limit settings', () => {
+    expect(
+      createEnvironment({
+        NODE_ENV: 'test',
+        PUBLIC_REGISTRATION_ENABLED: 'false',
+        RATE_LIMIT_ENABLED: 'false',
+        RATE_LIMIT_LOGIN_MAX: '4',
+      }),
+    ).toMatchObject({
+      auth: { publicRegistrationEnabled: false },
+      rateLimit: { enabled: false, login: { limit: 4 } },
+    });
+    expect(() => createEnvironment({ NODE_ENV: 'test', RATE_LIMIT_LOGIN_MAX: '0' })).toThrow(
+      /RATE_LIMIT_LOGIN_MAX doit être un entier strictement positif/,
+    );
   });
 
   it('never includes credential values in validation errors', () => {

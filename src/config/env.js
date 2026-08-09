@@ -43,6 +43,30 @@ const parseBoolean = (source, key, fallback, errors) => {
   return rawValue === 'true';
 };
 
+const parsePositiveInteger = (source, key, fallback, errors) => {
+  const rawValue = normalizedValue(source, key);
+  const value = rawValue ? Number(rawValue) : fallback;
+  if (!Number.isInteger(value) || value < 1) {
+    errors.push(`${key} doit être un entier strictement positif.`);
+  }
+  return value;
+};
+
+const parseTrustedProxies = (source, errors) => {
+  const rawValue = normalizedValue(source, 'TRUSTED_PROXIES');
+  if (!rawValue || rawValue === 'false') return false;
+  if (['true', '*', 'all'].includes(rawValue.toLowerCase())) {
+    errors.push(
+      'TRUSTED_PROXIES doit lister explicitement les adresses ou sous-réseaux des proxys fiables.',
+    );
+    return false;
+  }
+  return rawValue
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+};
+
 /**
  * Builds and validates the runtime configuration before any service starts.
  * Production deliberately has no fallback for credentials or public origins.
@@ -95,6 +119,33 @@ export function createEnvironment(source = process.env) {
   const port = parsePort(source, 'PORT', 3000, errors);
   const databasePort = parsePort(source, 'DATABASE_PORT', 3306, errors);
   const databaseLogging = parseBoolean(source, 'DATABASE_LOGGING', false, errors);
+  const publicRegistrationEnabled = parseBoolean(
+    source,
+    'PUBLIC_REGISTRATION_ENABLED',
+    !isProduction,
+    errors,
+  );
+  const rateLimitEnabled = parseBoolean(source, 'RATE_LIMIT_ENABLED', true, errors);
+  const trustedProxies = parseTrustedProxies(source, errors);
+  const rateLimit = {
+    enabled: rateLimitEnabled,
+    api: {
+      windowMs: 15 * 60 * 1000,
+      limit: parsePositiveInteger(source, 'RATE_LIMIT_API_MAX', 500, errors),
+    },
+    login: {
+      windowMs: 15 * 60 * 1000,
+      limit: parsePositiveInteger(source, 'RATE_LIMIT_LOGIN_MAX', 10, errors),
+    },
+    register: {
+      windowMs: 60 * 60 * 1000,
+      limit: parsePositiveInteger(source, 'RATE_LIMIT_REGISTER_MAX', 5, errors),
+    },
+    refresh: {
+      windowMs: 15 * 60 * 1000,
+      limit: parsePositiveInteger(source, 'RATE_LIMIT_REFRESH_MAX', 30, errors),
+    },
+  };
 
   if (errors.length > 0) {
     throw new Error(`Configuration d’environnement invalide :\n- ${errors.join('\n- ')}`);
@@ -113,6 +164,11 @@ export function createEnvironment(source = process.env) {
       logging: databaseLogging,
     },
     corsOrigin,
+    trustedProxies,
+    auth: {
+      publicRegistrationEnabled,
+    },
+    rateLimit,
     jwt: {
       secret: jwtSecret,
       accessTokenTtl: normalizedValue(source, 'JWT_ACCESS_TOKEN_TTL') || '15m',

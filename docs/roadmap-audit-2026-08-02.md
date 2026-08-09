@@ -4,32 +4,17 @@ J’ai confronté l’audit du 2 août, réalisé sur GreenDesk v1.15.3, à Gree
 
 ## Roadmap recommandée
 
-| Priorité | Correction | Sévérité | Taille |
-|---|---|---:|---:|
-| 1 | Protection de l’authentification publique | Haute | M |
-| 2 | CORS et Swagger en production | Haute | S |
-| 3 | Unification du système de migrations | Haute | L |
-| 4 | Refonte minimale du modèle de stock | Haute | L |
-| 5 | Intégration continue obligatoire | Haute | M |
-| 6 | Validation réelle des fichiers téléversés | Modérée | M |
-| 7 | Optimisations frontend et maintenance | Modérée | M/L |
-| 8 | Refactorings structurels et Sequelize v7 | Basse | L |
+| Priorité | Correction                                | Sévérité | Taille |
+| -------- | ----------------------------------------- | -------: | -----: |
+| 1        | CORS et Swagger en production             |    Haute |      S |
+| 2        | Unification du système de migrations      |    Haute |      L |
+| 3        | Refonte minimale du modèle de stock       |    Haute |      L |
+| 4        | Intégration continue obligatoire          |    Haute |      M |
+| 5        | Validation réelle des fichiers téléversés |  Modérée |      M |
+| 6        | Optimisations frontend et maintenance     |  Modérée |    M/L |
+| 7        | Refactorings structurels et Sequelize v7  |    Basse |      L |
 
-### 1. Protéger login, inscription et renouvellement
-
-L’inscription reste publique et aucun rate limiting n’est présent.
-
-À faire :
-
-- Désactiver l’inscription publique par défaut en production.
-- Prévoir une configuration explicite si elle doit être réactivée.
-- Ajouter un rate limiting distinct pour login, inscription et renouvellement.
-- Ajouter une limite générale plus souple sur l’API.
-- Gérer correctement les proxys pour ne pas limiter tous les utilisateurs sur la même adresse.
-- Documenter les réponses `429` dans OpenAPI.
-- Journaliser les échecs répétés sans enregistrer les mots de passe.
-
-### 2. Restreindre CORS et Swagger
+### 1. Restreindre CORS et Swagger
 
 GreenDesk utilise désormais l’origine CORS centralisée et refuse l’origine `*` en production. Il reste à gérer plusieurs origines autorisées et à décider de l’exposition de Swagger.
 
@@ -39,7 +24,7 @@ GreenDesk utilise désormais l’origine CORS centralisée et refuse l’origine
 - Désactiver Swagger en production ou le protéger par authentification et permission.
 - Adapter les règles de cache de la documentation à ce choix.
 
-### 3. Rendre les migrations fiables
+### 2. Rendre les migrations fiables
 
 Le projet mélange :
 
@@ -60,7 +45,7 @@ Une base vide ne peut pas être reconstruite de manière certaine uniquement ave
 
 Cette étape doit précéder la refonte du stock afin que sa migration soit fiable.
 
-### 4. Corriger le modèle de stock
+### 3. Corriger le modèle de stock
 
 C’est le principal risque apparu avec les fonctionnalités ajoutées aujourd’hui.
 
@@ -100,9 +85,9 @@ Il faudra aussi :
 - ajouter des contraintes DB et un historique des mouvements ;
 - définir explicitement la règle concernant l’horizon 30/60/90/365 jours avant implémentation.
 
-### 5. Ajouter une CI bloquante
+### 4. Ajouter une CI bloquante
 
-Le constat de l’audit indiquant que les tests n’avaient pas été exécutés est désormais dépassé : les validations de la v1.20.3 passent, avec 146 tests backend, 112 tests frontend, le contrôle OpenAPI et le build de production.
+Le constat de l’audit indiquant que les tests n’avaient pas été exécutés est désormais dépassé : les validations de la v4.1.0 passent, avec 179 tests backend, 118 tests frontend, le contrôle OpenAPI et le build de production.
 
 En revanche, aucun workflow CI n’impose encore ces contrôles.
 
@@ -116,13 +101,13 @@ La CI devrait exécuter :
 - build frontend ;
 - reconstruction d’une base vide par migrations.
 
-### 6. Vérifier le contenu réel des fichiers
+### 5. Vérifier le contenu réel des fichiers
 
 Les uploads sont protégés, limités en taille et stockés sous des noms UUID, ce qui est positif. Mais le type est déterminé depuis le MIME déclaré par le client.
 
 Ajouter une vérification des signatures binaires — magic bytes — avant conservation du fichier, avec suppression immédiate des fichiers rejetés et tests de MIME falsifié.
 
-### 7. Optimisations après sécurisation
+### 6. Optimisations après sécurisation
 
 Les constats de performance restent globalement valides :
 
@@ -142,7 +127,7 @@ Ordre conseillé :
 
 Le niveau `9` de compression mérite également un benchmark : il peut consommer davantage de CPU pour un gain réseau faible.
 
-### 8. Reporter Sequelize v7 et les grands refactorings
+### 7. Reporter Sequelize v7 et les grands refactorings
 
 Je ne recommande pas de migrer maintenant. La documentation officielle décrit toujours Sequelize v7 comme une version alpha et recommande `@sequelize/core@alpha`. La remarque de l’audit affirmant que la CLI n’était pas prête est toutefois à revalider, car la documentation v7 actuelle comporte désormais une section CLI : [Sequelize v7](https://sequelize.org/docs/v7/), [installation](https://sequelize.org/docs/v7/getting-started/), [CLI](https://sequelize.org/docs/v7/cli/).
 
