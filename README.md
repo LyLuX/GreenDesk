@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **1.16.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **1.17.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -123,7 +123,7 @@ Vite écoute alors sur toutes les interfaces réseau. Ouvrez depuis l’autre ap
 
 Backend : `npm test`, `npm run docs:check`, `npm run lint`, `npm run format:check`.
 
-Frontend : `cd frontend`, puis `npm test` et `npm run build`.
+Frontend : `cd frontend`, puis `npm test` et `npm run build`. Le build de production applique PurgeCSS aux sources React pour retirer les sélecteurs Bootstrap et GreenDesk inutilisés ; cette purge reste désactivée en développement.
 
 ## Architecture
 
