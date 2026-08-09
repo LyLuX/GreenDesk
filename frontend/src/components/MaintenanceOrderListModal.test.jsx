@@ -237,8 +237,8 @@ describe('MaintenanceOrderListModal', () => {
 
     await waitFor(() =>
       expect(mocks.updateStock).toHaveBeenCalledWith('part-uuid', {
-        stockStatus: 'ordered',
-        stockQuantity: 3,
+        operation: 'order',
+        quantity: 3,
       }),
     );
     expect(await screen.findByText('Aucune pièce à commander sur cette période.')).toBeVisible();

@@ -1,5 +1,10 @@
 import { body, param, query } from 'express-validator';
 import { STOCK_STATUS_VALUES } from '../../../core/inventory/stock-status.js';
+import {
+  MAX_STOCK_QUANTITY,
+  PUBLIC_STOCK_OPERATION_VALUES,
+  STOCK_OPERATIONS,
+} from '../../../core/inventory/stock-operation.js';
 import { MAINTENANCE_PRIORITIES, MAINTENANCE_TYPES } from '../maintenance.constants.js';
 
 const uuid = param('uuid').isUUID();
@@ -87,8 +92,6 @@ export const createPartValidator = [
   body('reference').trim().notEmpty().isLength({ max: 150 }),
   optionalText('supplierReference', 150),
   body('unit').optional().trim().notEmpty().isLength({ max: 50 }),
-  body('stockStatus').optional().isIn(STOCK_STATUS_VALUES),
-  body('stockQuantity').optional().isInt({ min: 0, max: 1000000 }).toInt(),
 ];
 export const updatePartValidator = [
   uuid,
@@ -99,12 +102,31 @@ export const updatePartValidator = [
   body('reference').optional().trim().notEmpty().isLength({ max: 150 }),
   optionalText('supplierReference', 150),
   body('unit').optional().trim().notEmpty().isLength({ max: 50 }),
-  body('stockStatus').optional().isIn(STOCK_STATUS_VALUES),
-  body('stockQuantity').optional().isInt({ min: 0, max: 1000000 }).toInt(),
   body('active').optional().isBoolean().toBoolean(),
 ];
 export const updatePartStockValidator = [
   uuid,
-  body('stockStatus').isIn(STOCK_STATUS_VALUES),
-  body('stockQuantity').isInt({ min: 0, max: 1000000 }).toInt(),
+  body('operation').optional().isIn(PUBLIC_STOCK_OPERATION_VALUES),
+  body('quantity').optional().isInt({ min: 1, max: MAX_STOCK_QUANTITY }).toInt(),
+  body('quantityOnHand').optional().isInt({ min: 0, max: MAX_STOCK_QUANTITY }).toInt(),
+  body('quantityOnOrder').optional().isInt({ min: 0, max: MAX_STOCK_QUANTITY }).toInt(),
+  body('stockStatus').optional().isIn(STOCK_STATUS_VALUES),
+  body('stockQuantity').optional().isInt({ min: 0, max: MAX_STOCK_QUANTITY }).toInt(),
+  body().custom((value) => {
+    if (!value.operation) {
+      if (value.stockStatus && Number.isInteger(value.stockQuantity)) return true;
+      throw new Error('Une opération de stock doit être renseignée.');
+    }
+    if (value.operation === STOCK_OPERATIONS.ADJUST) {
+      if (value.quantityOnHand !== undefined || value.quantityOnOrder !== undefined) return true;
+      throw new Error('Une quantité à ajuster doit être renseignée.');
+    }
+    if (Number.isInteger(value.quantity)) return true;
+    throw new Error('Une quantité positive doit être renseignée.');
+  }),
+];
+export const stockMovementListValidator = [
+  uuid,
+  query('page').optional().isInt({ min: 1 }).toInt(),
+  query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
 ];

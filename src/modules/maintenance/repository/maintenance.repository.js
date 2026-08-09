@@ -25,6 +25,7 @@ const partsInclude = {
   model: MaintenancePart,
   as: 'parts',
   attributes: [
+    'id',
     'uuid',
     'name',
     'manufacturer',
@@ -32,8 +33,8 @@ const partsInclude = {
     'reference',
     'supplierReference',
     'unit',
-    'stockStatus',
-    'stockQuantity',
+    'quantityOnHand',
+    'quantityOnOrder',
     'active',
   ],
   through: { attributes: ['quantity'] },

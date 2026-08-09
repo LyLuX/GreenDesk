@@ -857,14 +857,38 @@ export const openApiPaths = {
     patch: {
       operationId: 'updateMaintenancePartStock',
       tags: ['Maintenance'],
-      summary: 'Met à jour l’état et la quantité de stock d’une pièce.',
+      summary: 'Applique une opération atomique au stock d’une pièce.',
       description:
-        'Nécessite `maintenance.parts.update`. Une pièce `ordered` ou `inStock` est exclue de la liste de commande ; une pièce `toOrder` y redevient éligible et sa quantité de stock est remise à zéro.',
+        'Nécessite `maintenance.parts.update`. `adjust` corrige les compteurs, `order` ajoute une commande et `receive` transfère une quantité commandée vers le stock atelier. Les écritures sont transactionnelles et historisées.',
       security: secure,
       requestBody: jsonBody('MaintenancePartStockRequest'),
       responses: {
         200: jsonResponse('MaintenancePartResponse', 'Stock de la pièce mis à jour.'),
         ...writeErrors,
+      },
+    },
+  },
+  '/maintenance/parts/{uuid}/stock-movements': {
+    parameters: [uuidParameter],
+    get: {
+      operationId: 'listMaintenancePartStockMovements',
+      tags: ['Maintenance'],
+      summary: 'Liste les mouvements de stock d’une pièce.',
+      description:
+        'Nécessite `maintenance.parts.read`. Les mouvements sont retournés du plus récent au plus ancien.',
+      security: secure,
+      parameters: [
+        pageParameter,
+        {
+          name: 'limit',
+          in: 'query',
+          required: false,
+          schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+        },
+      ],
+      responses: {
+        200: jsonResponse('StockMovementListResponse', 'Mouvements de stock retournés.'),
+        ...standardErrors,
       },
     },
   },

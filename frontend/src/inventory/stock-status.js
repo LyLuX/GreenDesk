@@ -4,6 +4,20 @@ export const STOCK_STATUSES = Object.freeze({
   ORDERED: 'ordered',
 });
 
+export const STOCK_OPERATIONS = Object.freeze({
+  ADJUST: 'adjust',
+  ORDER: 'order',
+  RECEIVE: 'receive',
+});
+
+export const stockOperationPresentation = Object.freeze({
+  adjust: 'Ajustement',
+  order: 'Commande',
+  receive: 'Réception',
+  consume: 'Consommation',
+  migrate: 'Reprise initiale',
+});
+
 export const stockStatusPresentation = Object.freeze({
   [STOCK_STATUSES.IN_STOCK]: Object.freeze({
     label: 'En stock',

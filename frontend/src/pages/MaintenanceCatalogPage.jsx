@@ -31,6 +31,7 @@ export default function MaintenanceCatalogPage({
   deleteItem,
   permissions,
   compactTable = false,
+  renderRowActions,
 }) {
   const { hasPermission } = useAuth();
   const { notify } = useNotification();
@@ -208,6 +209,11 @@ export default function MaintenanceCatalogPage({
           }
           actionLoadingId={busy ? confirmation?.row.uuid : null}
           compact={compactTable}
+          renderActions={
+            renderRowActions && hasPermission(permissions.update)
+              ? (row) => renderRowActions(row, { reload: load })
+              : undefined
+          }
           onEdit={
             hasPermission(permissions.update)
               ? (row) => {

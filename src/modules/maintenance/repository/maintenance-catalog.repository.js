@@ -76,12 +76,13 @@ export default class MaintenanceCatalogRepository {
     });
   }
 
-  findPartByUuid(uuid, { transaction, withDeleted = false } = {}) {
+  findPartByUuid(uuid, { transaction, withDeleted = false, lock = false } = {}) {
     return MaintenancePart.findOne({
       where: { uuid },
       paranoid: !withDeleted,
       include: partDirectoryIncludes,
       transaction,
+      lock: lock ? transaction?.LOCK.UPDATE : undefined,
     });
   }
 
@@ -90,6 +91,15 @@ export default class MaintenanceCatalogRepository {
       where: { uuid: { [Op.in]: uuids }, active: true },
       include: partDirectoryIncludes,
       transaction,
+    });
+  }
+
+  findPartsByIds(ids, { transaction, lock = false } = {}) {
+    return MaintenancePart.findAll({
+      where: { id: { [Op.in]: ids } },
+      transaction,
+      lock: lock ? transaction?.LOCK.UPDATE : undefined,
+      order: [['id', 'ASC']],
     });
   }
 

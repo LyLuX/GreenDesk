@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   listParts: vi.fn(),
   createPart: vi.fn(),
   updatePart: vi.fn(),
+  updatePartStock: vi.fn(),
+  listPartStockMovements: vi.fn(),
   deletePart: vi.fn(),
   notify: vi.fn(),
   hasPermission: vi.fn(),
@@ -25,6 +27,8 @@ vi.mock('../api/maintenance.api.js', () => ({
   listMaintenanceParts: mocks.listParts,
   createMaintenancePart: mocks.createPart,
   updateMaintenancePart: mocks.updatePart,
+  updateMaintenancePartStock: mocks.updatePartStock,
+  listMaintenancePartStockMovements: mocks.listPartStockMovements,
   deleteMaintenancePart: mocks.deletePart,
 }));
 vi.mock('../api/reference.api.js', () => ({
@@ -86,6 +90,8 @@ describe('dedicated maintenance catalogue pages', () => {
             unit: 'pièce',
             stockStatus: 'toOrder',
             stockQuantity: 0,
+            quantityOnHand: 0,
+            quantityOnOrder: 0,
             active: true,
           },
         ],
@@ -112,6 +118,21 @@ describe('dedicated maintenance catalogue pages', () => {
     mocks.createOperation.mockResolvedValue({ data: { data: {} } });
     mocks.createPart.mockResolvedValue({ data: { data: {} } });
     mocks.updateOperation.mockResolvedValue({ data: { data: {} } });
+    mocks.listPartStockMovements.mockResolvedValue({
+      data: { data: { items: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 1 } } },
+    });
+    mocks.updatePartStock.mockResolvedValue({
+      data: {
+        data: {
+          uuid: 'part-uuid',
+          name: 'Bougie',
+          unit: 'pièce',
+          quantityOnHand: 2,
+          quantityOnOrder: 3,
+          stockStatus: 'inStock',
+        },
+      },
+    });
   });
 
   it('creates and deactivates an operation from its dedicated page', async () => {
@@ -166,8 +187,7 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(screen.getByRole('table').parentElement).toHaveClass('table-responsive');
 
     await user.click(screen.getByRole('button', { name: 'Créer' }));
-    expect(screen.getByRole('option', { name: 'En stock' })).toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: 'En stock atelier' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('État du stock')).not.toBeInTheDocument();
     const designation = screen.getByLabelText('Désignation');
     await user.type(designation, 'Bou');
     await user.click(screen.getByRole('option', { name: 'Bougie' }));
@@ -187,9 +207,34 @@ describe('dedicated maintenance catalogue pages', () => {
         supplierUuid: 'supplier-uuid',
         supplierReference: null,
         unit: 'pièce',
-        stockStatus: 'toOrder',
-        stockQuantity: 0,
       }),
+    );
+  });
+
+  it('manages workshop and ordered quantities from a dedicated reusable action', async () => {
+    const user = userEvent.setup();
+    render(<MaintenancePartsPage />);
+
+    await user.click(await screen.findByRole('button', { name: 'Gérer le stock de Bougie' }));
+    expect(screen.getByRole('dialog')).toHaveTextContent('Gérer le stock — Bougie');
+    expect(screen.getByLabelText('Quantité en stock')).toHaveValue(0);
+    expect(screen.getByLabelText('Quantité commandée')).toHaveValue(0);
+    await user.clear(screen.getByLabelText('Quantité en stock'));
+    await user.type(screen.getByLabelText('Quantité en stock'), '2');
+    await user.clear(screen.getByLabelText('Quantité commandée'));
+    await user.type(screen.getByLabelText('Quantité commandée'), '3');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer le mouvement' }));
+
+    await waitFor(() =>
+      expect(mocks.updatePartStock).toHaveBeenCalledWith('part-uuid', {
+        operation: 'adjust',
+        quantityOnHand: 2,
+        quantityOnOrder: 3,
+      }),
+    );
+    expect(mocks.notify).toHaveBeenCalledWith(
+      'success',
+      'Mouvement de stock enregistré : Ajustement.',
     );
   });
 

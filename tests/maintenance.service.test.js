@@ -140,8 +140,8 @@ describe('MaintenanceService', () => {
       reference: 'BPMR8Y',
       supplierReference: null,
       unit: 'pièce',
-      stockStatus: 'toOrder',
-      stockQuantity: 0,
+      quantityOnHand: 0,
+      quantityOnOrder: 0,
       active: false,
     };
     const task = (uuid, materialName, quantity) => ({
@@ -182,19 +182,19 @@ describe('MaintenanceService', () => {
   });
 
   it('only returns quantities not covered by workshop stock or current orders', async () => {
-    const makeTask = (uuid, partKey, stockStatus, stockQuantity, requiredQuantity = 2) => ({
+    const makeTask = (uuid, partKey, quantityOnHand, quantityOnOrder, requiredQuantity = 2) => ({
       uuid,
       title: 'Entretien',
       nextMaintenanceDate: '2026-08-20',
-      material: { uuid, name: `Matériel ${stockStatus}` },
+      material: { uuid, name: `Matériel ${partKey}` },
       parts: [
         {
           uuid: `part-${partKey}`,
           name: `Pièce ${partKey}`,
           reference: `REF-${partKey}`,
           unit: 'pièce',
-          stockStatus,
-          stockQuantity,
+          quantityOnHand,
+          quantityOnOrder,
           MaintenanceTaskPart: { quantity: requiredQuantity },
         },
       ],
@@ -203,11 +203,11 @@ describe('MaintenanceService', () => {
       findForOrderList: jest
         .fn()
         .mockResolvedValue([
-          makeTask('11111111-1111-4111-8111-111111111111', 'to-order', 'toOrder', 0),
-          makeTask('22222222-2222-4222-8222-222222222222', 'ordered-covered', 'ordered', 2),
-          makeTask('33333333-3333-4333-8333-333333333333', 'stock-covered', 'inStock', 5, 4),
-          makeTask('44444444-4444-4444-8444-444444444444', 'stock-shortage', 'inStock', 1),
-          makeTask('55555555-5555-4555-8555-555555555555', 'ordered-shortage', 'ordered', 1),
+          makeTask('11111111-1111-4111-8111-111111111111', 'to-order', 0, 0),
+          makeTask('22222222-2222-4222-8222-222222222222', 'ordered-covered', 0, 2),
+          makeTask('33333333-3333-4333-8333-333333333333', 'stock-covered', 5, 0, 4),
+          makeTask('44444444-4444-4444-8444-444444444444', 'stock-shortage', 1, 0),
+          makeTask('55555555-5555-4555-8555-555555555555', 'ordered-shortage', 0, 1),
         ]),
     };
     const service = new MaintenanceService(repository, {}, {}, {});
@@ -301,6 +301,90 @@ describe('MaintenanceService', () => {
       },
       { transaction: { id: 'transaction' } },
     );
+  });
+
+  it('consumes every required part in the same transaction as maintenance execution', async () => {
+    const today = todayDateOnly();
+    const taskPart = {
+      id: 9,
+      uuid: '99999999-9999-4999-8999-999999999999',
+      MaintenanceTaskPart: { quantity: 2 },
+    };
+    const task = {
+      id: 1,
+      uuid: '11111111-1111-4111-8111-111111111111',
+      active: true,
+      intervalDays: 30,
+      lastMaintenanceDate: addDaysDateOnly(today, -30),
+      material: { active: true },
+      parts: [taskPart],
+      toJSON: () => ({ uuid: '11111111-1111-4111-8111-111111111111' }),
+    };
+    const transaction = { id: 'transaction' };
+    const repository = {
+      withTransaction: jest.fn((callback) => callback(transaction)),
+      findByUuid: jest.fn().mockResolvedValue(task),
+      update: jest.fn(),
+      createHistory: jest.fn().mockResolvedValue({ uuid: 'history-uuid' }),
+    };
+    const lockedPart = { id: 9, name: 'Filtre', quantityOnHand: 3, quantityOnOrder: 0 };
+    const catalogRepository = { findPartsByIds: jest.fn().mockResolvedValue([lockedPart]) };
+    const stockService = { apply: jest.fn() };
+    const service = new MaintenanceService(
+      repository,
+      {},
+      { record: jest.fn() },
+      catalogRepository,
+      stockService,
+    );
+
+    await service.execute(task.uuid, { performedAt: today }, 42);
+
+    expect(catalogRepository.findPartsByIds).toHaveBeenCalledWith([9], {
+      transaction,
+      lock: true,
+    });
+    expect(stockService.apply).toHaveBeenCalledWith(
+      lockedPart,
+      expect.objectContaining({
+        operation: 'consume',
+        quantity: 2,
+        source: { type: 'maintenanceTask', uuid: task.uuid },
+      }),
+      { transaction },
+    );
+  });
+
+  it('does not complete maintenance when a required part is unavailable', async () => {
+    const today = todayDateOnly();
+    const task = {
+      id: 1,
+      uuid: '11111111-1111-4111-8111-111111111111',
+      active: true,
+      intervalDays: 30,
+      lastMaintenanceDate: addDaysDateOnly(today, -30),
+      material: { active: true },
+      parts: [{ id: 9, MaintenanceTaskPart: { quantity: 2 } }],
+      toJSON: () => ({}),
+    };
+    const repository = {
+      withTransaction: jest.fn((callback) => callback({ id: 'transaction' })),
+      findByUuid: jest.fn().mockResolvedValue(task),
+      update: jest.fn(),
+      createHistory: jest.fn(),
+    };
+    const stockError = Object.assign(new Error('Stock insuffisant'), { statusCode: 409 });
+    const service = new MaintenanceService(
+      repository,
+      {},
+      { record: jest.fn() },
+      { findPartsByIds: jest.fn().mockResolvedValue([{ id: 9 }]) },
+      { apply: jest.fn().mockRejectedValue(stockError) },
+    );
+
+    await expect(service.execute(task.uuid, { performedAt: today }, 42)).rejects.toBe(stockError);
+    expect(repository.update).not.toHaveBeenCalled();
+    expect(repository.createHistory).not.toHaveBeenCalled();
   });
 
   it('refuses to create a plan for an inactive material', async () => {

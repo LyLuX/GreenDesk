@@ -5,7 +5,7 @@ import getApiErrorMessage from '../api/get-api-error-message.js';
 import { getMaintenanceOrderList, updateMaintenancePartStock } from '../api/maintenance.api.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
-import { formatStockQuantity, STOCK_STATUSES } from '../inventory/stock-status.js';
+import { formatStockQuantity, STOCK_OPERATIONS } from '../inventory/stock-status.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import useNotification from '../notifications/useNotification.js';
 import AppFooter from './AppFooter.jsx';
@@ -295,8 +295,8 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
     setError('');
     try {
       await updateMaintenancePartStock(confirmation.part.uuid, {
-        stockStatus: STOCK_STATUSES.ORDERED,
-        stockQuantity: confirmation.quantity,
+        operation: STOCK_OPERATIONS.ORDER,
+        quantity: confirmation.quantity,
       });
       notify(
         'success',

@@ -3,6 +3,7 @@ import {
   MAINTENANCE_TYPES,
 } from '../modules/maintenance/maintenance.constants.js';
 import { STOCK_STATUS_VALUES } from '../core/inventory/stock-status.js';
+import { STOCK_OPERATIONS, STOCK_OPERATION_VALUES } from '../core/inventory/stock-operation.js';
 import { DOCUMENT_TYPES } from '../modules/materials/material-file.constants.js';
 
 const uuid = { type: 'string', format: 'uuid' };
@@ -199,7 +200,17 @@ const supplier = {
 
 const maintenancePart = {
   type: 'object',
-  required: ['uuid', 'name', 'reference', 'unit', 'stockStatus', 'stockQuantity', 'active'],
+  required: [
+    'uuid',
+    'name',
+    'reference',
+    'unit',
+    'quantityOnHand',
+    'quantityOnOrder',
+    'stockStatus',
+    'stockQuantity',
+    'active',
+  ],
   properties: {
     uuid,
     name: writeText(150),
@@ -211,7 +222,15 @@ const maintenancePart = {
     supplierReference: { ...nullableString, maxLength: 150 },
     unit: writeText(50),
     stockStatus: { type: 'string', enum: STOCK_STATUS_VALUES },
-    stockQuantity: { type: 'integer', minimum: 0, maximum: 1000000 },
+    stockQuantity: {
+      type: 'integer',
+      minimum: 0,
+      maximum: 2000000,
+      deprecated: true,
+      description: 'Somme de compatibilité. Utiliser les deux quantités détaillées.',
+    },
+    quantityOnHand: { type: 'integer', minimum: 0, maximum: 1000000 },
+    quantityOnOrder: { type: 'integer', minimum: 0, maximum: 1000000 },
     active: { type: 'boolean' },
     ...timestamps,
   },
@@ -439,6 +458,29 @@ export const openApiSchemas = {
   MaintenanceOperation: maintenanceOperation,
   Supplier: supplier,
   MaintenancePart: maintenancePart,
+  StockMovement: {
+    type: 'object',
+    required: [
+      'uuid',
+      'operation',
+      'quantityOnHandChange',
+      'quantityOnOrderChange',
+      'quantityOnHandAfter',
+      'quantityOnOrderAfter',
+      'createdAt',
+    ],
+    properties: {
+      uuid,
+      operation: { type: 'string', enum: STOCK_OPERATION_VALUES },
+      quantityOnHandChange: { type: 'integer' },
+      quantityOnOrderChange: { type: 'integer' },
+      quantityOnHandAfter: { type: 'integer', minimum: 0, maximum: 1000000 },
+      quantityOnOrderAfter: { type: 'integer', minimum: 0, maximum: 1000000 },
+      sourceType: nullableString,
+      sourceUuid: { ...uuid, nullable: true },
+      createdAt: dateTime,
+    },
+  },
   MaintenanceTask: maintenanceTask,
   MaintenanceHistory: maintenanceHistory,
   RegisterRequest: {
@@ -619,8 +661,6 @@ export const openApiSchemas = {
       reference: writeText(150),
       supplierReference: { ...nullableString, maxLength: 150 },
       unit: { ...writeText(50), default: 'pièce' },
-      stockStatus: { type: 'string', enum: STOCK_STATUS_VALUES, default: 'toOrder' },
-      stockQuantity: { type: 'integer', minimum: 0, maximum: 1000000, default: 0 },
     },
   },
   MaintenancePartUpdateRequest: {
@@ -638,17 +678,52 @@ export const openApiSchemas = {
       reference: writeText(150),
       supplierReference: { ...nullableString, maxLength: 150 },
       unit: writeText(50),
-      stockStatus: { type: 'string', enum: STOCK_STATUS_VALUES },
-      stockQuantity: { type: 'integer', minimum: 0, maximum: 1000000 },
       active: { type: 'boolean' },
     },
   },
   MaintenancePartStockRequest: {
+    oneOf: [
+      {
+        type: 'object',
+        required: ['operation'],
+        properties: {
+          operation: { type: 'string', enum: [STOCK_OPERATIONS.ADJUST] },
+          quantityOnHand: { type: 'integer', minimum: 0, maximum: 1000000 },
+          quantityOnOrder: { type: 'integer', minimum: 0, maximum: 1000000 },
+        },
+        anyOf: [{ required: ['quantityOnHand'] }, { required: ['quantityOnOrder'] }],
+        additionalProperties: false,
+      },
+      {
+        type: 'object',
+        required: ['operation', 'quantity'],
+        properties: {
+          operation: {
+            type: 'string',
+            enum: [STOCK_OPERATIONS.ORDER, STOCK_OPERATIONS.RECEIVE],
+          },
+          quantity: { type: 'integer', minimum: 1, maximum: 1000000 },
+        },
+        additionalProperties: false,
+      },
+      {
+        type: 'object',
+        deprecated: true,
+        required: ['stockStatus', 'stockQuantity'],
+        properties: {
+          stockStatus: { type: 'string', enum: STOCK_STATUS_VALUES },
+          stockQuantity: { type: 'integer', minimum: 0, maximum: 1000000 },
+        },
+        additionalProperties: false,
+      },
+    ],
+  },
+  StockMovementPage: {
     type: 'object',
-    required: ['stockStatus', 'stockQuantity'],
+    required: ['items', 'pagination'],
     properties: {
-      stockStatus: { type: 'string', enum: STOCK_STATUS_VALUES },
-      stockQuantity: { type: 'integer', minimum: 0, maximum: 1000000 },
+      items: arrayOf(reference('StockMovement')),
+      pagination: reference('Pagination'),
     },
   },
   SupplierCreateRequest: {
@@ -861,6 +936,7 @@ export const openApiSchemas = {
   SupplierListResponse: success(arrayOf(reference('Supplier'))),
   MaintenancePartResponse: success(reference('MaintenancePart')),
   MaintenancePartListResponse: success(arrayOf(reference('MaintenancePart'))),
+  StockMovementListResponse: success(reference('StockMovementPage')),
   MaintenanceOrderListResponse: success(reference('MaintenanceOrderList')),
   MaintenanceHistoryResponse: success(arrayOf(reference('MaintenanceHistory'))),
   MaintenanceExecutionResponse: success(reference('MaintenanceExecution')),

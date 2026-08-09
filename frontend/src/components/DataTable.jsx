@@ -7,11 +7,12 @@ export default function DataTable({
   onStatus,
   onDelete,
   onView,
+  renderActions,
   emptyMessage = 'Aucun élément trouvé.',
   actionLoadingId,
   compact = false,
 }) {
-  const hasActions = Boolean(onView || onEdit || onStatus || onDelete);
+  const hasActions = Boolean(renderActions || onView || onEdit || onStatus || onDelete);
   const cellSpacing = compact ? 'px-3 py-3' : 'px-4 py-3';
   return (
     <div className="table-shell">
@@ -53,6 +54,7 @@ export default function DataTable({
                   ))}
                   {hasActions ? (
                     <td className={`${cellSpacing} text-nowrap`}>
+                      {renderActions?.(row)}
                       {onView && (
                         <button
                           aria-label={`Voir ${row.name ?? 'l’élément'}`}

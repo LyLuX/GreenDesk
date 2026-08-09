@@ -64,6 +64,13 @@ router.patch(
   validateRequest,
   asyncHandler(catalogController.updatePartStock.bind(catalogController)),
 );
+router.get(
+  '/parts/:uuid/stock-movements',
+  authorize(maintenancePermissions.parts.read),
+  validator.stockMovementListValidator,
+  validateRequest,
+  asyncHandler(catalogController.partStockMovements.bind(catalogController)),
+);
 router.delete(
   '/parts/:uuid',
   authorize(maintenancePermissions.parts.delete),

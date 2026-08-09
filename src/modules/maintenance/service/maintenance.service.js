@@ -1,6 +1,8 @@
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
-import { STOCK_STATUSES } from '../../../core/inventory/stock-status.js';
+import { STOCK_OPERATIONS, STOCKABLE_TYPES } from '../../../core/inventory/stock-operation.js';
+import StockService from '../../../core/inventory/stock.service.js';
+import { getStockAvailability } from '../../../core/inventory/stock-status.js';
 import AuditService from '../../audit/service/audit.service.js';
 import MaterialService from '../../materials/service/material.service.js';
 import MaintenanceCatalogRepository from '../repository/maintenance-catalog.repository.js';
@@ -21,11 +23,13 @@ export default class MaintenanceService {
     materialService = new MaterialService(),
     auditService = new AuditService(),
     catalogRepository = new MaintenanceCatalogRepository(),
+    stockService = new StockService(),
   ) {
     this.repository = repository;
     this.materialService = materialService;
     this.auditService = auditService;
     this.catalogRepository = catalogRepository;
+    this.stockService = stockService;
   }
   async getAll(query) {
     const result = await this.repository.findAll(query);
@@ -224,6 +228,31 @@ export default class MaintenanceService {
           'La date réalisée ne peut pas précéder le dernier entretien.',
           HTTP_STATUS.BAD_REQUEST,
         );
+      const taskParts = task.parts ?? [];
+      const lockedParts = taskParts.length
+        ? await this.catalogRepository.findPartsByIds(
+            taskParts.map((part) => part.id),
+            { transaction, lock: true },
+          )
+        : [];
+      const lockedPartById = new Map(lockedParts.map((part) => [String(part.id), part]));
+      for (const taskPart of taskParts) {
+        const part = lockedPartById.get(String(taskPart.id));
+        if (!part) {
+          throw new AppError('Une pièce associée au plan est introuvable.', HTTP_STATUS.CONFLICT);
+        }
+        await this.stockService.apply(
+          part,
+          {
+            stockableType: STOCKABLE_TYPES.MAINTENANCE_PART,
+            operation: STOCK_OPERATIONS.CONSUME,
+            quantity: Number(taskPart.MaintenanceTaskPart?.quantity ?? 1),
+            userId,
+            source: { type: 'maintenanceTask', uuid: task.uuid },
+          },
+          { transaction },
+        );
+      }
       const update = {
         lastMaintenanceDate: performedAt,
         updatedBy: userId,
@@ -280,8 +309,8 @@ export default class MaintenanceService {
           reference: part.reference,
           supplierReference: part.supplierReference,
           unit: part.unit,
-          stockStatus: part.stockStatus,
-          stockQuantity: part.stockQuantity,
+          quantityOnHand: part.quantityOnHand,
+          quantityOnOrder: part.quantityOnOrder,
           active: part.active,
           quantity: 0,
           plans: [],
@@ -299,11 +328,12 @@ export default class MaintenanceService {
     }
     const items = [...grouped.values()]
       .map((part) => {
-        const coveredQuantity =
-          part.stockStatus === STOCK_STATUSES.TO_ORDER ? 0 : Number(part.stockQuantity);
+        const availability = getStockAvailability(part, part.quantity);
         return {
           ...part,
-          quantity: Math.max(part.quantity - coveredQuantity, 0),
+          stockStatus: availability.status,
+          stockQuantity: availability.quantityOnHand + availability.quantityOnOrder,
+          quantity: availability.shortage,
         };
       })
       .filter((part) => part.quantity > 0)
@@ -376,21 +406,27 @@ export default class MaintenanceService {
             maintenanceType: value.operation.maintenanceType,
           }
         : null,
-      parts: (value.parts ?? []).map((part) => ({
-        uuid: part.uuid,
-        name: part.name,
-        manufacturer: part.manufacturer,
-        manufacturerUuid: part.manufacturerDirectory?.uuid ?? null,
-        supplier: part.supplier,
-        supplierUuid: part.supplierDirectory?.uuid ?? null,
-        reference: part.reference,
-        supplierReference: part.supplierReference,
-        unit: part.unit,
-        active: part.active,
-        stockStatus: part.stockStatus ?? STOCK_STATUSES.TO_ORDER,
-        stockQuantity: Number(part.stockQuantity ?? 0),
-        quantity: Number(part.MaintenanceTaskPart?.quantity ?? part.quantity ?? 1),
-      })),
+      parts: (value.parts ?? []).map((part) => {
+        const quantity = Number(part.MaintenanceTaskPart?.quantity ?? part.quantity ?? 1);
+        const availability = getStockAvailability(part, quantity);
+        return {
+          uuid: part.uuid,
+          name: part.name,
+          manufacturer: part.manufacturer,
+          manufacturerUuid: part.manufacturerDirectory?.uuid ?? null,
+          supplier: part.supplier,
+          supplierUuid: part.supplierDirectory?.uuid ?? null,
+          reference: part.reference,
+          supplierReference: part.supplierReference,
+          unit: part.unit,
+          active: part.active,
+          quantityOnHand: availability.quantityOnHand,
+          quantityOnOrder: availability.quantityOnOrder,
+          stockStatus: availability.status,
+          stockQuantity: availability.quantityOnHand + availability.quantityOnOrder,
+          quantity,
+        };
+      }),
       ...getDeadlineDetails(publicValue),
     };
   }

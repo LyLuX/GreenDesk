@@ -6,7 +6,7 @@ import MaintenanceRepository from '../src/modules/maintenance/repository/mainten
 describe('MaintenanceRepository order list', () => {
   afterEach(() => jest.restoreAllMocks());
 
-  it('loads the stock state and quantity required to calculate uncovered needs', async () => {
+  it('loads workshop and ordered quantities required to calculate uncovered needs', async () => {
     const findAll = jest.spyOn(MaintenanceTask, 'findAll').mockResolvedValue([]);
     const repository = new MaintenanceRepository();
 
@@ -14,6 +14,6 @@ describe('MaintenanceRepository order list', () => {
 
     const query = findAll.mock.calls[0][0];
     const parts = query.include.find((item) => item.as === 'parts');
-    expect(parts.attributes).toEqual(expect.arrayContaining(['stockStatus', 'stockQuantity']));
+    expect(parts.attributes).toEqual(expect.arrayContaining(['quantityOnHand', 'quantityOnOrder']));
   });
 });

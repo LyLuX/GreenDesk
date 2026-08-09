@@ -25,6 +25,11 @@ export const updateMaintenancePart = (uuid, payload) =>
   client.put(`/v1/maintenance/parts/${uuid}`, payload);
 export const updateMaintenancePartStock = (uuid, payload) =>
   client.patch(`/v1/maintenance/parts/${uuid}/stock`, payload);
+export const listMaintenancePartStockMovements = (uuid, params, signal) =>
+  client.get(`/v1/maintenance/parts/${uuid}/stock-movements`, {
+    params: compactQueryParams(params),
+    signal,
+  });
 export const deleteMaintenancePart = (uuid) => client.delete(`/v1/maintenance/parts/${uuid}`);
 export const getMaintenanceOrderList = (params, signal) =>
   client.get('/v1/maintenance/order-list', {

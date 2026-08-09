@@ -1,6 +1,8 @@
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
-import { STOCK_STATUSES } from '../../../core/inventory/stock-status.js';
+import StockService from '../../../core/inventory/stock.service.js';
+import { STOCK_OPERATIONS, STOCKABLE_TYPES } from '../../../core/inventory/stock-operation.js';
+import { STOCK_STATUSES, getStockAvailability } from '../../../core/inventory/stock-status.js';
 import AuditService from '../../audit/service/audit.service.js';
 import ManufacturerRepository from '../../manufacturers/repository/manufacturer.repository.js';
 import SupplierRepository from '../../suppliers/repository/supplier.repository.js';
@@ -13,11 +15,13 @@ export default class MaintenanceCatalogService {
     auditService = new AuditService(),
     manufacturerRepository = new ManufacturerRepository(),
     supplierRepository = new SupplierRepository(),
+    stockService = new StockService(),
   ) {
     this.repository = repository;
     this.auditService = auditService;
     this.manufacturerRepository = manufacturerRepository;
     this.supplierRepository = supplierRepository;
+    this.stockService = stockService;
   }
 
   async getOperations() {
@@ -108,9 +112,7 @@ export default class MaintenanceCatalogService {
 
   async createPart(values, userId) {
     const prepared = await this.repository.withTransaction(async (transaction) => {
-      const partValues = this.prepareInventoryValues(
-        await this.preparePartValues(values, transaction),
-      );
+      const partValues = await this.preparePartValues(values, transaction);
       const existing = await this.repository.findPartByIdentity(
         partValues.reference,
         {
@@ -150,10 +152,7 @@ export default class MaintenanceCatalogService {
     const part = await this.getPartEntity(uuid);
     const oldValues = this.toPublic(part);
     await this.repository.withTransaction(async (transaction) => {
-      const partValues = this.prepareInventoryValues(
-        await this.preparePartValues(values, transaction, part),
-        part,
-      );
+      const partValues = await this.preparePartValues(values, transaction, part);
       const nextReference = partValues.reference ?? part.reference;
       const nextManufacturerId = Object.hasOwn(partValues, 'manufacturerId')
         ? partValues.manufacturerId
@@ -188,33 +187,69 @@ export default class MaintenanceCatalogService {
   }
 
   async updatePartStock(uuid, values, userId) {
-    return this.updatePart(uuid, values, userId);
+    let part;
+    let oldValues;
+    await this.repository.withTransaction(async (transaction) => {
+      part = await this.getPartEntity(uuid, { transaction, lock: true });
+      oldValues = this.toPublic(part);
+      await this.stockService.apply(
+        part,
+        {
+          stockableType: STOCKABLE_TYPES.MAINTENANCE_PART,
+          ...this.normalizeStockOperation(values),
+          userId,
+        },
+        { transaction },
+      );
+    });
+    await this.record(userId, 'STOCK_UPDATE', 'MAINTENANCE_PART', part, oldValues);
+    return this.toPublic(await this.repository.findPartByUuid(part.uuid));
   }
 
-  prepareInventoryValues(values, currentPart = null) {
-    const partValues = { ...values };
-    const stockStatus =
-      partValues.stockStatus ?? currentPart?.stockStatus ?? STOCK_STATUSES.TO_ORDER;
-    let stockQuantity = Object.hasOwn(partValues, 'stockQuantity')
-      ? Number(partValues.stockQuantity)
-      : Number(currentPart?.stockQuantity ?? 0);
+  async getPartStockMovements(uuid, query = {}) {
+    const part = await this.getPartEntity(uuid);
+    const result = await this.stockService.getMovements(
+      STOCKABLE_TYPES.MAINTENANCE_PART,
+      part.id,
+      query,
+    );
+    return {
+      items: result.items.map((movement) => this.toPublicStockMovement(movement)),
+      pagination: result.pagination,
+    };
+  }
 
-    if (stockStatus === STOCK_STATUSES.TO_ORDER) stockQuantity = 0;
-    if (stockStatus !== STOCK_STATUSES.TO_ORDER && stockQuantity < 1) {
-      throw new AppError(
-        'Une quantité positive est requise pour une pièce commandée ou en stock atelier.',
-        HTTP_STATUS.BAD_REQUEST,
-      );
+  normalizeStockOperation(values) {
+    if (values.operation) return values;
+    if (values.stockStatus === STOCK_STATUSES.IN_STOCK) {
+      return {
+        operation: STOCK_OPERATIONS.ADJUST,
+        quantityOnHand: values.stockQuantity,
+        quantityOnOrder: 0,
+      };
     }
-    partValues.stockStatus = stockStatus;
-    partValues.stockQuantity = stockQuantity;
-    return partValues;
+    if (values.stockStatus === STOCK_STATUSES.ORDERED) {
+      return {
+        operation: STOCK_OPERATIONS.ADJUST,
+        quantityOnHand: 0,
+        quantityOnOrder: values.stockQuantity,
+      };
+    }
+    return {
+      operation: STOCK_OPERATIONS.ADJUST,
+      quantityOnHand: 0,
+      quantityOnOrder: 0,
+    };
   }
 
   async preparePartValues(values, transaction, currentPart = null) {
     const partValues = { ...values };
     delete partValues.manufacturerUuid;
     delete partValues.supplierUuid;
+    delete partValues.stockStatus;
+    delete partValues.stockQuantity;
+    delete partValues.quantityOnHand;
+    delete partValues.quantityOnOrder;
 
     if (Object.hasOwn(values, 'manufacturerUuid')) {
       const manufacturer = values.manufacturerUuid
@@ -285,8 +320,31 @@ export default class MaintenanceCatalogService {
     delete publicValue.createdBy;
     delete publicValue.updatedBy;
     return Object.hasOwn(value, 'reference')
-      ? { ...publicValue, manufacturerUuid, supplierUuid }
+      ? {
+          ...publicValue,
+          quantityOnHand: Number(value.quantityOnHand ?? 0),
+          quantityOnOrder: Number(value.quantityOnOrder ?? 0),
+          stockStatus: getStockAvailability(value).status,
+          stockQuantity: Number(value.quantityOnHand ?? 0) + Number(value.quantityOnOrder ?? 0),
+          manufacturerUuid,
+          supplierUuid,
+        }
       : publicValue;
+  }
+
+  toPublicStockMovement(item) {
+    const value = typeof item.toJSON === 'function' ? item.toJSON() : item;
+    return {
+      uuid: value.uuid,
+      operation: value.operation,
+      quantityOnHandChange: Number(value.quantityOnHandChange),
+      quantityOnOrderChange: Number(value.quantityOnOrderChange),
+      quantityOnHandAfter: Number(value.quantityOnHandAfter),
+      quantityOnOrderAfter: Number(value.quantityOnOrderAfter),
+      sourceType: value.sourceType,
+      sourceUuid: value.sourceUuid,
+      createdAt: value.createdAt,
+    };
   }
 
   record(userId, action, entity, item, oldValues) {

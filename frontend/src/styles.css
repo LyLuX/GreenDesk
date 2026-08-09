@@ -620,6 +620,36 @@ a:hover {
   color: var(--brand-blue-dark);
 }
 
+.stock-management-modal {
+  width: min(42rem, calc(100vw - 2rem));
+}
+
+.stock-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.stock-summary-card {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: var(--brand-mist);
+}
+
+.stock-summary-card span {
+  color: var(--bs-secondary-color);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 36rem) {
+  .stock-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .status-badge.audit-create {
   background: #e3eddc;
   color: #365d16;

@@ -15,6 +15,9 @@ const catalogController = {
   ),
   updatePart: jest.fn((_request, response) => response.json({ success: true, data: {} })),
   updatePartStock: jest.fn((_request, response) => response.json({ success: true, data: {} })),
+  partStockMovements: jest.fn((_request, response) =>
+    response.json({ success: true, data: { items: [], pagination: {} } }),
+  ),
   removePart: jest.fn((_request, response) => response.status(204).send()),
 };
 const manufacturerController = {
@@ -45,6 +48,7 @@ jest.unstable_mockModule(
       createPart = catalogController.createPart;
       updatePart = catalogController.updatePart;
       updatePartStock = catalogController.updatePartStock;
+      partStockMovements = catalogController.partStockMovements;
       removePart = catalogController.removePart;
     },
   }),
@@ -180,7 +184,7 @@ describe('maintenance catalogue route permissions', () => {
     await request(app)
       .patch(`/api/v1/maintenance/parts/${uuid}/stock`)
       .set('Authorization', authorization(['maintenance.parts.update']))
-      .send({ stockStatus: 'ordered', stockQuantity: 3 })
+      .send({ operation: 'order', quantity: 3 })
       .expect(200);
     expect(catalogController.updatePartStock).toHaveBeenCalled();
     await request(app)
@@ -193,12 +197,23 @@ describe('maintenance catalogue route permissions', () => {
     await request(app)
       .patch(`/api/v1/maintenance/parts/${uuid}/stock`)
       .set('Authorization', authorization(['maintenance.update']))
-      .send({ stockStatus: 'ordered', stockQuantity: 3 })
+      .send({ operation: 'order', quantity: 3 })
       .expect(403);
     await request(app)
       .patch(`/api/v1/maintenance/parts/${uuid}/stock`)
       .set('Authorization', authorization(['maintenance.parts.update']))
-      .send({ stockStatus: 'unknown', stockQuantity: -1 })
+      .send({ operation: 'receive', quantity: -1 })
       .expect(400);
+  });
+
+  it('protects and validates the paginated stock movement history', async () => {
+    await request(app)
+      .get(`/api/v1/maintenance/parts/${uuid}/stock-movements?page=1&limit=10`)
+      .set('Authorization', authorization(['maintenance.parts.read']))
+      .expect(200);
+    await request(app)
+      .get(`/api/v1/maintenance/parts/${uuid}/stock-movements`)
+      .set('Authorization', authorization(['maintenance.read']))
+      .expect(403);
   });
 });

@@ -12,11 +12,8 @@ import Button from '../components/Button.jsx';
 import Loader from '../components/Loader.jsx';
 import ManufacturerLogo from '../components/ManufacturerLogo.jsx';
 import StockStatusBadge from '../components/StockStatusBadge.jsx';
-import {
-  formatStockQuantity,
-  STOCK_STATUSES,
-  stockStatusOptions,
-} from '../inventory/stock-status.js';
+import StockManagementModal from '../components/StockManagementModal.jsx';
+import { formatStockQuantity } from '../inventory/stock-status.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import MaintenanceCatalogPage from './MaintenanceCatalogPage.jsx';
 
@@ -33,6 +30,7 @@ export default function MaintenancePartsPage() {
   const [suppliers, setSuppliers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [stockDialog, setStockDialog] = useState(null);
 
   const loadDirectories = useCallback(async (signal) => {
     setIsLoading(true);
@@ -93,73 +91,79 @@ export default function MaintenancePartsPage() {
     },
     { name: 'supplierReference', label: 'Référence fournisseur' },
     { name: 'unit', label: 'Unité', required: true, defaultValue: 'pièce' },
-    {
-      name: 'stockStatus',
-      label: 'État du stock',
-      required: true,
-      options: stockStatusOptions,
-      defaultValue: STOCK_STATUSES.TO_ORDER,
-    },
-    {
-      name: 'stockQuantity',
-      label: 'Quantité en stock ou commandée',
-      type: 'number',
-      min: 0,
-      max: 1000000,
-      step: 1,
-      required: true,
-      valueType: 'number',
-      defaultValue: 0,
-    },
   ];
   const manufacturerByUuid = new Map(
     manufacturers.map((manufacturer) => [manufacturer.uuid, manufacturer]),
   );
 
   return (
-    <MaintenanceCatalogPage
-      title="Pièces de maintenance"
-      subtitle="Références exactes à associer aux plans et à commander"
-      singular="Pièce"
-      singularWithArticle="la pièce"
-      fields={fields}
-      columns={[
-        { key: 'name', label: 'Désignation' },
-        {
-          key: 'manufacturer',
-          label: 'Fabricant',
-          render: (_value, part) => (
-            <ManufacturerLogo manufacturer={manufacturerByUuid.get(part.manufacturerUuid)} />
-          ),
-        },
-        { key: 'reference', label: 'Référence' },
-        { key: 'supplier', label: 'Fournisseur' },
-        {
-          key: 'stockStatus',
-          label: 'Stock',
-          render: (value) => <StockStatusBadge status={value} />,
-        },
-        {
-          key: 'stockQuantity',
-          label: 'Quantité',
-          render: (value, part) => formatStockQuantity(value, part.unit),
-        },
-        {
-          key: 'active',
-          label: 'Catalogue',
-          render: (value) => (
-            <span className={`status-badge ${value ? '' : 'inactive'}`}>
-              {value ? 'Active' : 'Inactive'}
-            </span>
-          ),
-        },
-      ]}
-      listItems={listMaintenanceParts}
-      createItem={createMaintenancePart}
-      updateItem={updateMaintenancePart}
-      deleteItem={deleteMaintenancePart}
-      permissions={maintenancePermissions.parts}
-      compactTable
-    />
+    <>
+      <MaintenanceCatalogPage
+        title="Pièces de maintenance"
+        subtitle="Références exactes à associer aux plans et à commander"
+        singular="Pièce"
+        singularWithArticle="la pièce"
+        fields={fields}
+        columns={[
+          { key: 'name', label: 'Désignation' },
+          {
+            key: 'manufacturer',
+            label: 'Fabricant',
+            render: (_value, part) => (
+              <ManufacturerLogo manufacturer={manufacturerByUuid.get(part.manufacturerUuid)} />
+            ),
+          },
+          { key: 'reference', label: 'Référence' },
+          { key: 'supplier', label: 'Fournisseur' },
+          {
+            key: 'stockStatus',
+            label: 'Stock',
+            render: (value) => <StockStatusBadge status={value} />,
+          },
+          {
+            key: 'quantityOnHand',
+            label: 'En stock',
+            render: (value, part) => formatStockQuantity(value, part.unit),
+          },
+          {
+            key: 'quantityOnOrder',
+            label: 'Commandée',
+            render: (value, part) => formatStockQuantity(value, part.unit),
+          },
+          {
+            key: 'active',
+            label: 'Catalogue',
+            render: (value) => (
+              <span className={`status-badge ${value ? '' : 'inactive'}`}>
+                {value ? 'Active' : 'Inactive'}
+              </span>
+            ),
+          },
+        ]}
+        listItems={listMaintenanceParts}
+        createItem={createMaintenancePart}
+        updateItem={updateMaintenancePart}
+        deleteItem={deleteMaintenancePart}
+        permissions={maintenancePermissions.parts}
+        compactTable
+        renderRowActions={(part, { reload }) => (
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-brand me-1"
+            aria-label={`Gérer le stock de ${part.name}`}
+            onClick={() => setStockDialog({ part, reload })}
+          >
+            Stock
+          </button>
+        )}
+      />
+      {stockDialog ? (
+        <StockManagementModal
+          part={stockDialog.part}
+          onClose={() => setStockDialog(null)}
+          onUpdated={() => stockDialog.reload()}
+        />
+      ) : null}
+    </>
   );
 }

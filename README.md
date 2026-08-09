@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **4.3.3**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **4.4.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -99,6 +99,8 @@ Chaque matériel peut recevoir plusieurs plans de maintenance : préventif, insp
 La liste des plans accepte une recherche sur le nom, la description, les notes, le matériel et l’opération, ainsi que des filtres par matériel, priorité, type, échéance et statut d’activation. Dans l’interface, ces contrôles utilisent le panneau de filtres partagé. Depuis l’onglet Maintenance d’un matériel, le bouton `Voir la maintenance` ouvre cette liste préfiltrée sur le matériel concerné et affiche directement tous ses plans.
 
 Une tâche est à faire aujourd’hui lorsque sa prochaine date correspond à la date du jour, en retard lorsque cette date est dépassée, et à prévoir lorsqu’elle tombe dans les 30 prochains jours. Les dates métier sont des valeurs UTC `YYYY-MM-DD`, sans heure. L’exécution met à jour transactionnellement la tâche et son historique.
+
+Les pièces distinguent la quantité disponible en atelier de la quantité déjà commandée. Le badge de stock est calculé à partir de ces deux valeurs et du besoin concerné. La liste de commande agrège les besoins des plans compris dans l’horizon 30, 60, 90 ou 365 jours choisi par l’utilisateur, puis retire le stock atelier et les commandes en cours. Les ajustements, commandes, réceptions et consommations utilisent un service de stock partagé, transactionnel et historisé. Une réception transfère la quantité commandée vers l’atelier ; l’exécution d’un entretien consomme ses pièces et est refusée atomiquement lorsque le stock atelier est insuffisant.
 
 Les plans utilisent `maintenance.read`, `maintenance.create`, `maintenance.update`, `maintenance.delete` et `maintenance.execute`. Les catalogues d’opérations et de pièces utilisent respectivement `maintenance.operations.*` et `maintenance.parts.*`, avec les actions `read`, `create`, `update` et `delete`. Les routes, menus et boutons sont filtrés avec ces mêmes permissions. Le tableau de bord compte les entretiens prévus aujourd’hui, en retard et dans les 30 prochains jours uniquement lorsque l’utilisateur possède `maintenance.read`. Chaque compteur non nul donne accès à la liste exacte des entretiens concernés. Un bouton dans cette liste ouvre la page Maintenance en présélectionnant l’échéance correspondante.
 

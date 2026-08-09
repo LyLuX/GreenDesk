@@ -13,6 +13,7 @@ import MaintenancePart from '../../modules/maintenance/model/maintenance-part.mo
 import Supplier from '../../modules/suppliers/model/supplier.model.js';
 import MaintenanceTaskPart from '../../modules/maintenance/model/maintenance-task-part.model.js';
 import RevokedAccessToken from '../../modules/auth/model/revoked-access-token.model.js';
+import StockMovement from '../inventory/stock-movement.model.js';
 
 let initialized = false;
 
@@ -129,6 +130,7 @@ export function initializeModels() {
     onDelete: 'CASCADE',
   });
   MaintenanceHistory.belongsTo(User, { foreignKey: 'performed_by', as: 'performedByUser' });
+  StockMovement.belongsTo(User, { foreignKey: 'performedBy', as: 'performedByUser' });
 
   initialized = true;
 }
@@ -149,4 +151,5 @@ export {
   Supplier,
   MaintenanceTaskPart,
   RevokedAccessToken,
+  StockMovement,
 };
