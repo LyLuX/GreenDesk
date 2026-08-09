@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **3.0.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **4.0.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -108,7 +108,7 @@ Les migrations `20260727_zz_add_maintenance_catalogs.js` et `20260727_zzz_add_pa
 
 ## Configuration
 
-Créez `.env` depuis `.env.example` pour le backend et `frontend/.env` depuis `frontend/.env.example` pour l'interface. `VITE_API_URL=/api` est la valeur de développement par défaut. Aucun secret réel ne doit être committé.
+Configurez directement `.env` pour le backend et `frontend/.env` pour l’interface. Ces deux fichiers sont locaux, ignorés par Git et ne doivent jamais être commités. `VITE_API_URL=/api` et `VITE_API_PROXY_TARGET=http://localhost:3000` sont les valeurs de développement usuelles.
 
 `NODE_ENV` est obligatoire et accepte uniquement `development`, `test` ou `production`. En production, GreenDesk refuse de démarrer si les identifiants de base de données, `CORS_ORIGIN` ou `JWT_SECRET` sont absents. L’origine CORS ne peut pas être `*` et le secret JWT doit contenir au moins 32 octets sans reprendre une valeur d’exemple. Générez un secret aléatoire avec :
 
@@ -163,9 +163,9 @@ La connexion retourne un access token JWT et le profil utilisateur avec ses rôl
 
 ## Variables d’environnement
 
-Backend : `NODE_ENV`, `PORT`, `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_LOGGING`, `CORS_ORIGIN`, `JWT_SECRET`, `JWT_ACCESS_TOKEN_TTL`. Toutes les variables sensibles doivent être injectées par l’environnement ou un gestionnaire de secrets en production ; les valeurs du fichier `.env.example` sont exclusivement documentaires.
+Backend : `NODE_ENV`, `PORT`, `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_LOGGING`, `CORS_ORIGIN`, `JWT_SECRET`, `JWT_ACCESS_TOKEN_TTL`, `GREENDESK_SEED_ADMIN_EMAIL` et, uniquement au moment d’exécuter le seeder, `GREENDESK_SEED_ADMIN_PASSWORD`. Toutes les variables sensibles doivent être injectées par l’environnement ou un gestionnaire de secrets en production.
 
-Frontend : `VITE_API_URL`, par défaut `/api`.
+Frontend : `VITE_API_URL`, par défaut `/api`, et `VITE_API_PROXY_TARGET`, par défaut `http://localhost:3000`.
 
 ## Sequelize CLI
 
