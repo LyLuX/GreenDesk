@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from 'react';
+import { lockPageScroll } from '../utils/page-scroll-lock.js';
 
 /**
  * Displays accessible content above the application with focus and scroll management.
@@ -32,8 +33,7 @@ export default function Modal({
   useEffect(() => {
     if (!open) return undefined;
     const previous = document.activeElement;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const releaseScrollLock = lockPageScroll();
     dialogRef.current?.querySelector('input,select,textarea,button')?.focus();
     const escape = (event) => {
       if (event.key === 'Escape' && !busyRef.current) onCloseRef.current();
@@ -41,7 +41,7 @@ export default function Modal({
     window.addEventListener('keydown', escape);
     return () => {
       window.removeEventListener('keydown', escape);
-      document.body.style.overflow = previousOverflow;
+      releaseScrollLock();
       previous?.focus?.();
     };
   }, [open]);

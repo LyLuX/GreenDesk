@@ -578,8 +578,7 @@ export default function MaintenancePage() {
                         <label className="d-flex align-items-center gap-2">
                           <span className="small text-body-secondary">Quantité</span>
                           <input
-                            className="form-control form-control-sm"
-                            style={{ width: '6rem' }}
+                            className="maintenance-plan-quantity form-control form-control-sm"
                             type="number"
                             name={`quantity:${part.uuid}`}
                             min="1"

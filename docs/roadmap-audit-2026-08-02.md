@@ -1,14 +1,14 @@
 # Roadmap de correction de l’audit GreenDesk du 2 août 2026
 
-J’ai confronté l’audit du 2 août, réalisé sur GreenDesk v1.15.3, à GreenDesk v4.3.2. Conclusion : le système de migrations reste le risque technique le plus grave. La nouvelle gestion de stock introduit également un risque important de cohérence métier.
+J’ai confronté l’audit du 2 août, réalisé sur GreenDesk v1.15.3, à GreenDesk v4.3.3. Conclusion : le système de migrations reste le risque technique le plus grave. La nouvelle gestion de stock introduit également un risque important de cohérence métier.
 
 ## Roadmap recommandée
 
-| Priorité | Correction                               | Sévérité | Taille |
-| -------- | ---------------------------------------- | -------: | -----: |
-| 1        | Unification du système de migrations     |    Haute |      L |
-| 2        | Refonte minimale du modèle de stock      |    Haute |      L |
-| 3        | Intégration continue obligatoire         |    Haute |      M |
+| Priorité | Correction                           | Sévérité | Taille |
+| -------- | ------------------------------------ | -------: | -----: |
+| 1        | Unification du système de migrations |    Haute |      L |
+| 2        | Refonte minimale du modèle de stock  |    Haute |      L |
+| 3        | Intégration continue obligatoire     |    Haute |      M |
 
 ### 1. Rendre les migrations fiables
 
@@ -73,7 +73,7 @@ Il faudra aussi :
 
 ### 3. Ajouter une CI bloquante
 
-Le constat de l’audit indiquant que les tests n’avaient pas été exécutés est désormais dépassé : les validations de la v4.3.2 passent, avec 199 tests backend, 119 tests frontend, le contrôle OpenAPI et le build de production.
+Le constat de l’audit indiquant que les tests n’avaient pas été exécutés est désormais dépassé : les validations de la v4.3.3 passent, avec 200 tests backend, 121 tests frontend, le contrôle OpenAPI et le build de production.
 
 En revanche, aucun workflow CI n’impose encore ces contrôles.
 
@@ -95,5 +95,3 @@ La CI devrait exécuter :
 - Les URL Blob des images sont correctement révoquées et les requêtes identiques sont dédupliquées.
 - Les tests, OpenAPI et le build de production ont été validés.
 - Plusieurs pages auparavant centralisées ont déjà été extraites.
-
-Il reste un durcissement CSP secondaire : supprimer progressivement `'unsafe-inline'` de `styleSrc`, après avoir éliminé les styles inline compatibles.

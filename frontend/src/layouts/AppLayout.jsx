@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import useAuth from '../auth/useAuth.js';
 import SidebarNavigation from '../components/SidebarNavigation.jsx';
 import useNotification from '../notifications/useNotification.js';
+import { lockPageScroll } from '../utils/page-scroll-lock.js';
 
 const focusableElements = (container) =>
   [...(container?.querySelectorAll('a[href], button:not([disabled])') ?? [])].filter(
@@ -20,8 +21,7 @@ export default function AppLayout() {
 
   useEffect(() => {
     if (!isSidebarOpen) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const releaseScrollLock = lockPageScroll();
     sidebarRef.current?.querySelector('.sidebar-close')?.focus();
     const handleDrawerKeydown = (event) => {
       if (event.key === 'Escape') {
@@ -42,7 +42,7 @@ export default function AppLayout() {
     };
     window.addEventListener('keydown', handleDrawerKeydown);
     return () => {
-      document.body.style.overflow = previousOverflow;
+      releaseScrollLock();
       window.removeEventListener('keydown', handleDrawerKeydown);
       menuButtonRef.current?.focus();
     };

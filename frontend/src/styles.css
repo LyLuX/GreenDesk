@@ -718,6 +718,10 @@ a:hover {
   background: rgba(8, 55, 38, 0.55);
 }
 
+body.app-scroll-locked {
+  overflow: hidden;
+}
+
 .modal-surface {
   width: min(100%, 50rem);
   max-height: calc(100vh - 3rem);
@@ -831,6 +835,10 @@ a:hover {
 
 .maintenance-plan-part-row {
   min-width: max-content;
+}
+
+.maintenance-plan-quantity {
+  width: 6rem;
 }
 
 .maintenance-summary-list {

@@ -37,7 +37,7 @@ describe('AppLayout navigation drawer', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
-    document.body.style.overflow = '';
+    document.body.classList.remove('app-scroll-locked');
   });
 
   it('opens from the header and closes with Escape', async () => {
@@ -51,7 +51,7 @@ describe('AppLayout navigation drawer', () => {
     expect(menuButton).toHaveAttribute('aria-expanded', 'true');
     expect(navigation).toHaveClass('open');
     expect(screen.getByRole('button', { name: 'Fermer le menu' })).toHaveFocus();
-    expect(document.body.style.overflow).toBe('hidden');
+    expect(document.body).toHaveClass('app-scroll-locked');
 
     fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
     expect(screen.getByRole('button', { name: 'Administration' })).toHaveFocus();
