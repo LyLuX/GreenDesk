@@ -6,7 +6,7 @@ export const STOCK_STATUSES = Object.freeze({
 
 export const stockStatusPresentation = Object.freeze({
   [STOCK_STATUSES.IN_STOCK]: Object.freeze({
-    label: 'En stock atelier',
+    label: 'En stock',
     badgeClass: 'stock-in-stock',
   }),
   [STOCK_STATUSES.TO_ORDER]: Object.freeze({
@@ -22,3 +22,14 @@ export const stockStatusPresentation = Object.freeze({
 export const stockStatusOptions = Object.entries(stockStatusPresentation).map(
   ([value, { label }]) => ({ value, label }),
 );
+
+/** Formats a stock quantity with the part unit and its common French plural. */
+export const formatStockQuantity = (quantity, unit) => {
+  const numericQuantity = Number(quantity);
+  const normalizedUnit = String(unit ?? '').trim();
+  const displayedUnit =
+    numericQuantity > 1 && normalizedUnit.toLocaleLowerCase('fr') === 'pièce'
+      ? 'pièces'
+      : normalizedUnit;
+  return `${numericQuantity.toLocaleString('fr-FR')} ${displayedUnit}`.trim();
+};

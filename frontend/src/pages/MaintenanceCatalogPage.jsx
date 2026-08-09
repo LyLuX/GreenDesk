@@ -30,6 +30,7 @@ export default function MaintenanceCatalogPage({
   updateItem,
   deleteItem,
   permissions,
+  compactTable = false,
 }) {
   const { hasPermission } = useAuth();
   const { notify } = useNotification();
@@ -206,6 +207,7 @@ export default function MaintenanceCatalogPage({
               : 'Aucun élément enregistré.'
           }
           actionLoadingId={busy ? confirmation?.row.uuid : null}
+          compact={compactTable}
           onEdit={
             hasPermission(permissions.update)
               ? (row) => {

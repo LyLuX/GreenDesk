@@ -5,7 +5,7 @@ import getApiErrorMessage from '../api/get-api-error-message.js';
 import { getMaintenanceOrderList, updateMaintenancePartStock } from '../api/maintenance.api.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
-import { STOCK_STATUSES } from '../inventory/stock-status.js';
+import { formatStockQuantity, STOCK_STATUSES } from '../inventory/stock-status.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import useNotification from '../notifications/useNotification.js';
 import AppFooter from './AppFooter.jsx';
@@ -37,15 +37,7 @@ export const getOrderListFiltersForDeadline = (deadlineStatus) => {
 };
 
 /** Formats the default part unit with its French plural when required. */
-export const formatOrderQuantity = (quantity, unit) => {
-  const numericQuantity = Number(quantity);
-  const normalizedUnit = String(unit ?? '').trim();
-  const displayedUnit =
-    numericQuantity > 1 && normalizedUnit.toLocaleLowerCase('fr') === 'pièce'
-      ? 'pièces'
-      : normalizedUnit;
-  return `${numericQuantity.toLocaleString('fr-FR')} ${displayedUnit}`.trim();
-};
+export const formatOrderQuantity = formatStockQuantity;
 
 /** Groups ordered parts by supplier for one printed page per supplier. */
 export const groupOrderPartsBySupplier = (parts = []) => {

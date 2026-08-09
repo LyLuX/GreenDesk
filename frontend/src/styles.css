@@ -591,6 +591,7 @@ a:hover {
 
 .status-badge {
   display: inline-block;
+  white-space: nowrap;
   padding: 0.25rem 0.55rem;
   border-radius: 99px;
   background: #e3eddc;

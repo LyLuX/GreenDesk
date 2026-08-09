@@ -12,7 +12,11 @@ import Button from '../components/Button.jsx';
 import Loader from '../components/Loader.jsx';
 import ManufacturerLogo from '../components/ManufacturerLogo.jsx';
 import StockStatusBadge from '../components/StockStatusBadge.jsx';
-import { STOCK_STATUSES, stockStatusOptions } from '../inventory/stock-status.js';
+import {
+  formatStockQuantity,
+  STOCK_STATUSES,
+  stockStatusOptions,
+} from '../inventory/stock-status.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import MaintenanceCatalogPage from './MaintenanceCatalogPage.jsx';
 
@@ -128,16 +132,18 @@ export default function MaintenancePartsPage() {
             <ManufacturerLogo manufacturer={manufacturerByUuid.get(part.manufacturerUuid)} />
           ),
         },
-        { key: 'reference', label: 'Référence fabricant' },
+        { key: 'reference', label: 'Référence' },
         { key: 'supplier', label: 'Fournisseur' },
-        { key: 'supplierReference', label: 'Référence fournisseur' },
-        { key: 'unit', label: 'Unité' },
         {
           key: 'stockStatus',
           label: 'Stock',
           render: (value) => <StockStatusBadge status={value} />,
         },
-        { key: 'stockQuantity', label: 'Quantité' },
+        {
+          key: 'stockQuantity',
+          label: 'Quantité',
+          render: (value, part) => formatStockQuantity(value, part.unit),
+        },
         {
           key: 'active',
           label: 'Catalogue',
@@ -153,6 +159,7 @@ export default function MaintenancePartsPage() {
       updateItem={updateMaintenancePart}
       deleteItem={deleteMaintenancePart}
       permissions={maintenancePermissions.parts}
+      compactTable
     />
   );
 }

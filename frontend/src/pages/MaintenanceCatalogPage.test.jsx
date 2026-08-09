@@ -158,8 +158,16 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(screen.getByRole('img', { name: 'Logo NGK' })).toBeVisible();
     expect(screen.queryByText('NGK')).not.toBeInTheDocument();
     expect(screen.getByText('À commander')).toHaveClass('stock-to-order');
+    expect(screen.getByRole('columnheader', { name: 'Actions' })).toBeVisible();
+    expect(
+      screen.queryByRole('columnheader', { name: 'Référence fournisseur' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('FOU-42')).not.toBeInTheDocument();
+    expect(screen.getByRole('table').parentElement).toHaveClass('table-responsive');
 
     await user.click(screen.getByRole('button', { name: 'Créer' }));
+    expect(screen.getByRole('option', { name: 'En stock' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'En stock atelier' })).not.toBeInTheDocument();
     const designation = screen.getByLabelText('Désignation');
     await user.type(designation, 'Bou');
     await user.click(screen.getByRole('option', { name: 'Bougie' }));
