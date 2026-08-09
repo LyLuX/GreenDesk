@@ -87,6 +87,22 @@ describe('OpenAPI contract', () => {
     expect(new Set(operationIds).size).toBe(operationIds.length);
   });
 
+  it('documents Cache-Control on every response', () => {
+    for (const pathItem of Object.values(swaggerSpec.paths)) {
+      for (const [method, operation] of Object.entries(pathItem)) {
+        if (!HTTP_METHODS.has(method)) continue;
+        for (const response of Object.values(operation.responses)) {
+          const resolvedResponse = response.$ref ? resolveLocalReference(response.$ref) : response;
+          const cacheControlHeader = resolvedResponse.headers?.['Cache-Control'];
+          const resolvedHeader = cacheControlHeader?.$ref
+            ? resolveLocalReference(cacheControlHeader.$ref)
+            : cacheControlHeader;
+          expect(resolvedHeader).toEqual(swaggerSpec.components.headers.CacheControl);
+        }
+      }
+    }
+  });
+
   it('contains no broken local component reference', () => {
     const brokenReferences = [];
     const visit = (value) => {

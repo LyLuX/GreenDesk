@@ -5,9 +5,11 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 
+import env from './config/env.js';
 import { compressionOptions, helmetOptions } from './config/http-middleware.js';
 import swaggerSpec from './config/swagger.js';
 import logger from './core/logger/logger.js';
+import { createCacheControlMiddleware } from './core/middlewares/cache-control.middleware.js';
 import { errorHandler, notFoundHandler } from './core/middlewares/error-handler.js';
 import { transactionMiddleware } from './core/middlewares/transaction.middleware.js';
 import { requestId } from './core/utils/request-id.js';
@@ -17,6 +19,7 @@ const app = express();
 
 app.disable('x-powered-by');
 app.use(helmet(helmetOptions));
+app.use(createCacheControlMiddleware(env.nodeEnv));
 app.use(compression(compressionOptions));
 app.use(cors({ origin: process.env.CORS_ORIGIN ?? '*', credentials: false }));
 app.use(express.json({ limit: '1mb' }));

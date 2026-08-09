@@ -26,6 +26,10 @@ const success = (data) => ({
 });
 const arrayOf = (schema) => ({ type: 'array', items: schema });
 const reference = (name) => ({ $ref: `#/components/schemas/${name}` });
+const cacheControlHeaders = {
+  'Cache-Control': { $ref: '#/components/headers/CacheControl' },
+};
+const withCacheControl = (response) => ({ ...response, headers: cacheControlHeaders });
 
 const permission = {
   type: 'object',
@@ -829,29 +833,40 @@ export const openApiSchemas = {
 };
 
 export const openApiResponses = {
-  BadRequest: {
+  BadRequest: withCacheControl({
     description: 'Invalid request.',
     content: { 'application/json': { schema: reference('ErrorResponse') } },
-  },
-  Unauthorized: {
+  }),
+  Unauthorized: withCacheControl({
     description: 'Authentication is required or the token is invalid.',
     content: { 'application/json': { schema: reference('ErrorResponse') } },
-  },
-  Forbidden: {
+  }),
+  Forbidden: withCacheControl({
     description: 'The authenticated user lacks the required role or permission.',
     content: { 'application/json': { schema: reference('ErrorResponse') } },
-  },
-  NotFound: {
+  }),
+  NotFound: withCacheControl({
     description: 'The requested resource was not found.',
     content: { 'application/json': { schema: reference('ErrorResponse') } },
-  },
-  Conflict: {
+  }),
+  Conflict: withCacheControl({
     description: 'The request conflicts with an existing resource.',
     content: { 'application/json': { schema: reference('ErrorResponse') } },
-  },
-  InternalError: {
+  }),
+  InternalError: withCacheControl({
     description: 'Unexpected server error.',
     content: { 'application/json': { schema: reference('ErrorResponse') } },
+  }),
+};
+
+export const openApiHeaders = {
+  CacheControl: {
+    description:
+      'Politique de cache dépendant de l’environnement, de la sensibilité et du type de ressource.',
+    schema: {
+      type: 'string',
+      example: 'private, no-cache',
+    },
   },
 };
 

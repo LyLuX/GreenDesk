@@ -1,5 +1,10 @@
 import appVersion from './app-version.js';
-import { openApiParameters, openApiResponses, openApiSchemas } from './openapi-components.js';
+import {
+  openApiHeaders,
+  openApiParameters,
+  openApiResponses,
+  openApiSchemas,
+} from './openapi-components.js';
 import { openApiPaths } from './openapi-paths.js';
 
 /** OpenAPI contract served by Swagger UI. */
@@ -34,6 +39,7 @@ const swaggerSpec = {
     schemas: openApiSchemas,
     responses: openApiResponses,
     parameters: openApiParameters,
+    headers: openApiHeaders,
   },
   paths: openApiPaths,
 };

@@ -1,24 +1,32 @@
 const schemaRef = (name) => ({ $ref: `#/components/schemas/${name}` });
 const responseRef = (name) => ({ $ref: `#/components/responses/${name}` });
 const parameterRef = (name) => ({ $ref: `#/components/parameters/${name}` });
+const cacheControlHeaders = {
+  'Cache-Control': { $ref: '#/components/headers/CacheControl' },
+};
+const withCacheControl = (response) => ({ ...response, headers: cacheControlHeaders });
 const jsonBody = (schemaName, required = true) => ({
   required,
   content: { 'application/json': { schema: schemaRef(schemaName) } },
 });
-const jsonResponse = (schemaName, description) => ({
-  description,
-  content: { 'application/json': { schema: schemaRef(schemaName) } },
+const jsonResponse = (schemaName, description) =>
+  withCacheControl({
+    description,
+    content: { 'application/json': { schema: schemaRef(schemaName) } },
+  });
+const binaryResponse = (description, contentTypes) =>
+  withCacheControl({
+    description,
+    content: Object.fromEntries(
+      contentTypes.map((contentType) => [
+        contentType,
+        { schema: { type: 'string', format: 'binary' } },
+      ]),
+    ),
+  });
+const noContent = withCacheControl({
+  description: 'Operation completed successfully; no response body.',
 });
-const binaryResponse = (description, contentTypes) => ({
-  description,
-  content: Object.fromEntries(
-    contentTypes.map((contentType) => [
-      contentType,
-      { schema: { type: 'string', format: 'binary' } },
-    ]),
-  ),
-});
-const noContent = { description: 'Operation completed successfully; no response body.' };
 const secure = [{ bearerAuth: [] }];
 const standardErrors = {
   400: responseRef('BadRequest'),
