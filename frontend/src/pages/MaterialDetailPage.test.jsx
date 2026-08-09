@@ -164,6 +164,79 @@ describe('MaterialDetailPage', () => {
     expect(screen.getByText('Suppression')).toHaveClass('status-badge', 'audit-delete');
   });
 
+  it('paginates material history with the shared GreenDesk controls', async () => {
+    mocks.history = Array.from({ length: 6 }, (_, index) => ({
+      uuid: `history-${index + 1}`,
+      action: 'UPDATE',
+      createdAt: `2026-07-${String(30 - index).padStart(2, '0')}T10:00:00.000Z`,
+      oldValues: { name: `Ancien nom ${index + 1}` },
+      newValues: { name: `Nouveau nom ${index + 1}` },
+    }));
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/materials/material-uuid']}>
+        <Routes>
+          <Route path="/materials/:uuid" element={<MaterialDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('img', { name: 'Logo Green' });
+    await user.click(screen.getByRole('tab', { name: 'Historique' }));
+
+    expect(screen.getByText('6 événement(s), page 1 sur 2')).toBeVisible();
+    expect(screen.getByText('Nouveau nom 1')).toBeVisible();
+    expect(screen.queryByText('Nouveau nom 6')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Suivant' }));
+
+    expect(screen.getByText('6 événement(s), page 2 sur 2')).toBeVisible();
+    expect(screen.getByText('Nouveau nom 6')).toBeVisible();
+  });
+
+  it('paginates material maintenance with the shared GreenDesk controls', async () => {
+    mocks.hasPermission.mockImplementation((permission) => permission === 'maintenance.read');
+    mocks.listMaintenance.mockImplementation(({ page }) =>
+      Promise.resolve({
+        data: {
+          data: {
+            items: [
+              {
+                uuid: `maintenance-${page}`,
+                title: `Entretien page ${page}`,
+                nextMaintenanceDate: '2026-08-15',
+                status: 'upcoming',
+              },
+            ],
+            pagination: { page, limit: 5, total: 6, totalPages: 2 },
+          },
+        },
+      }),
+    );
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/materials/material-uuid']}>
+        <Routes>
+          <Route path="/materials/:uuid" element={<MaterialDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('img', { name: 'Logo Green' });
+    await user.click(screen.getByRole('tab', { name: 'Maintenance' }));
+
+    expect(await screen.findByText('Entretien page 1')).toBeVisible();
+    expect(screen.getByText('6 plan(s) d’entretien, page 1 sur 2')).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Suivant' }));
+
+    expect(await screen.findByText('Entretien page 2')).toBeVisible();
+    expect(mocks.listMaintenance).toHaveBeenLastCalledWith(
+      { materialUuid: 'material-uuid', page: 2, limit: 5 },
+      expect.any(AbortSignal),
+    );
+  });
+
   it('opens all maintenance plans filtered by the current material', async () => {
     mocks.hasPermission.mockImplementation((permission) => permission === 'maintenance.read');
     const user = userEvent.setup();

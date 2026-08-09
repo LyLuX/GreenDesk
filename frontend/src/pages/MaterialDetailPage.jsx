@@ -16,12 +16,14 @@ import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Loader from '../components/Loader.jsx';
 import ManufacturerLogo from '../components/ManufacturerLogo.jsx';
+import PaginationControls from '../components/PaginationControls.jsx';
 import {
   maintenanceStatusClasses,
   maintenanceStatusLabels,
 } from '../maintenance/maintenance.labels.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import { formatCurrency, formatDate, formatDateTime } from '../utils/formatters.js';
+import { paginateItems } from '../utils/pagination.js';
 
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const documentTypeLabels = Object.freeze({
@@ -112,6 +114,11 @@ export default function MaterialDetailPage() {
   const [material, setMaterial] = useState(null);
   const [history, setHistory] = useState([]);
   const [maintenance, setMaintenance] = useState([]);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyLimit, setHistoryLimit] = useState(5);
+  const [maintenancePage, setMaintenancePage] = useState(1);
+  const [maintenanceLimit, setMaintenanceLimit] = useState(5);
+  const [maintenancePagination, setMaintenancePagination] = useState(null);
   const [activeTab, setActiveTab] = useState('details');
   const [error, setError] = useState('');
   const [selectedPhotos, setSelectedPhotos] = useState([]);
@@ -144,11 +151,17 @@ export default function MaterialDetailPage() {
   useEffect(() => {
     if (!hasPermission(maintenancePermissions.plans.read)) return undefined;
     const controller = new AbortController();
-    listMaintenance({ materialUuid: uuid }, controller.signal)
-      .then((response) => setMaintenance(response.data.data?.items ?? []))
+    listMaintenance(
+      { materialUuid: uuid, page: maintenancePage, limit: maintenanceLimit },
+      controller.signal,
+    )
+      .then((response) => {
+        setMaintenance(response.data.data?.items ?? []);
+        setMaintenancePagination(response.data.data?.pagination ?? null);
+      })
       .catch(() => {});
     return () => controller.abort();
-  }, [hasPermission, uuid]);
+  }, [hasPermission, maintenanceLimit, maintenancePage, uuid]);
   useEffect(() => () => previewsRef.current.forEach((url) => URL.revokeObjectURL(url)), []);
 
   const photos = useMemo(
@@ -161,6 +174,10 @@ export default function MaterialDetailPage() {
   const documents = useMemo(
     () => material?.files?.filter((file) => file.kind === 'document') ?? [],
     [material],
+  );
+  const historyRows = useMemo(
+    () => paginateItems(history, historyPage, historyLimit),
+    [history, historyLimit, historyPage],
   );
   const upload = async (file, document = false, onUploadProgress) => {
     if (file.size > 10 * 1024 * 1024) throw new Error('Le fichier dépasse la limite de 10 Mo.');
@@ -587,6 +604,16 @@ export default function MaterialDetailPage() {
               </table>
             </div>
           )}
+          <PaginationControls
+            pagination={maintenancePagination}
+            limit={maintenanceLimit}
+            itemLabel="plan(s) d’entretien"
+            onLimitChange={(value) => {
+              setMaintenanceLimit(value);
+              setMaintenancePage(1);
+            }}
+            onPageChange={setMaintenancePage}
+          />
           <Link
             className="btn btn-outline-brand mt-3"
             to={`/maintenance?materialUuid=${encodeURIComponent(uuid)}&limit=all`}
@@ -613,7 +640,7 @@ export default function MaterialDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {history.map((event) => {
+                  {historyRows.items.map((event) => {
                     const changes = eventChanges(event);
                     return (
                       <tr key={event.uuid}>
@@ -653,6 +680,16 @@ export default function MaterialDetailPage() {
               </table>
             </div>
           )}
+          <PaginationControls
+            pagination={historyRows.pagination}
+            limit={historyLimit}
+            itemLabel="événement(s)"
+            onLimitChange={(value) => {
+              setHistoryLimit(value);
+              setHistoryPage(1);
+            }}
+            onPageChange={setHistoryPage}
+          />
         </section>
       )}
       <ConfirmDialog
