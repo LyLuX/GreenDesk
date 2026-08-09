@@ -1014,7 +1014,7 @@ a:hover {
 }
 
 .toast-stack {
-  max-width: min(22rem, calc(100vw - 2rem));
+  max-width: min(28rem, calc(100vw - 3rem));
   justify-items: end;
 }
 
