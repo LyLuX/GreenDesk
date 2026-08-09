@@ -29,10 +29,10 @@ describe('HTTP middleware configuration', () => {
     expect(response.headers['x-permitted-cross-domain-policies']).toBe('none');
   });
 
-  it('uses maximum zlib compression settings and compresses eligible responses', async () => {
+  it('uses benchmarked zlib compression settings and compresses eligible responses', async () => {
     const response = await request(app).get('/docs/openapi.json').set('Accept-Encoding', 'gzip');
 
-    expect(compressionOptions).toEqual({ level: 9, memLevel: 9 });
+    expect(compressionOptions).toEqual({ level: 6, memLevel: 8 });
     expect(response.headers['content-encoding']).toBe('gzip');
   });
 

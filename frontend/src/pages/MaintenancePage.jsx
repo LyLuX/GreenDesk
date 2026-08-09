@@ -12,7 +12,7 @@ import {
   setMaintenanceStatus,
   updateMaintenance,
 } from '../api/maintenance.api.js';
-import { createReferenceApi } from '../api/reference.api.js';
+import { listMaterialOptions } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
 import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
@@ -95,32 +95,25 @@ export default function MaintenancePage() {
   const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [catalogError, setCatalogError] = useState('');
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
   const [orderListOpen, setOrderListOpen] = useState(false);
 
-  const load = useCallback(
+  const loadTasks = useCallback(
     async (signal) => {
       setIsLoading(true);
       try {
-        const [tasks, materialList, operationList, partList] = await Promise.all([
-          listMaintenance(
-            {
-              ...filters,
-              ...(debouncedSearch ? { search: debouncedSearch } : {}),
-            },
-            signal,
-          ),
-          createReferenceApi('materials').list({ limit: 'all' }, signal),
-          listMaintenanceOperations(signal),
-          listMaintenanceParts(signal),
-        ]);
+        const tasks = await listMaintenance(
+          {
+            ...filters,
+            ...(debouncedSearch ? { search: debouncedSearch } : {}),
+          },
+          signal,
+        );
         setItems(tasks.data.data?.items ?? []);
         setPagination(tasks.data.data?.pagination ?? null);
-        setMaterials(materialList.data.data?.items ?? materialList.data.data ?? []);
-        setOperations(operationList.data.data ?? []);
-        setParts(partList.data.data ?? []);
         setError('');
       } catch (requestError) {
         if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
@@ -132,9 +125,31 @@ export default function MaintenancePage() {
   );
   useEffect(() => {
     const controller = new AbortController();
-    load(controller.signal);
+    loadTasks(controller.signal);
     return () => controller.abort();
-  }, [load]);
+  }, [loadTasks]);
+  const loadCatalogs = useCallback(async (signal) => {
+    try {
+      const [materialList, operationList, partList] = await Promise.all([
+        listMaterialOptions(signal),
+        listMaintenanceOperations(signal),
+        listMaintenanceParts(signal),
+      ]);
+      setMaterials(materialList.data.data ?? []);
+      setOperations(operationList.data.data ?? []);
+      setParts(partList.data.data ?? []);
+      setCatalogError('');
+    } catch (requestError) {
+      if (requestError.code !== 'ERR_CANCELED') {
+        setCatalogError(getApiErrorMessage(requestError));
+      }
+    }
+  }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    loadCatalogs(controller.signal);
+    return () => controller.abort();
+  }, [loadCatalogs]);
   const close = () => {
     if (!busy) {
       setDialog(null);
@@ -186,7 +201,7 @@ export default function MaintenancePage() {
         dialog.type === 'edit' ? 'Plan d’entretien modifié.' : 'Plan d’entretien créé.',
       );
       close();
-      await load();
+      await loadTasks();
     } catch (requestError) {
       setFormError(getApiErrorMessage(requestError));
     } finally {
@@ -206,7 +221,7 @@ export default function MaintenancePage() {
       });
       notify('success', 'Entretien enregistré.');
       close();
-      await load();
+      await loadTasks();
     } catch (requestError) {
       setFormError(getApiErrorMessage(requestError));
     } finally {
@@ -219,7 +234,7 @@ export default function MaintenancePage() {
     try {
       await setMaintenanceStatus(item.uuid, !item.active);
       notify('success', 'Statut du plan mis à jour.');
-      await load();
+      await loadTasks();
       return true;
     } catch (requestError) {
       setError(getApiErrorMessage(requestError));
@@ -234,7 +249,7 @@ export default function MaintenancePage() {
     try {
       await deleteMaintenance(item.uuid);
       notify('success', 'Plan d’entretien supprimé.');
-      await load();
+      await loadTasks();
       return true;
     } catch (requestError) {
       setError(getApiErrorMessage(requestError));
@@ -352,13 +367,20 @@ export default function MaintenancePage() {
           },
         ]}
       />
-      {error && (
+      {(error || catalogError) && (
         <div
           role="alert"
           className="alert alert-danger d-flex align-items-center justify-content-between"
         >
-          <p className="mb-0">{error}</p>
-          <Button onClick={() => load()}>Réessayer</Button>
+          <p className="mb-0">{error || catalogError}</p>
+          <Button
+            onClick={() => {
+              if (error) loadTasks();
+              if (catalogError) loadCatalogs();
+            }}
+          >
+            Réessayer
+          </Button>
         </div>
       )}
       {isLoading ? (

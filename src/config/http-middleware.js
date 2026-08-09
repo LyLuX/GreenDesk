@@ -32,8 +32,8 @@ export const helmetOptions = {
   },
 };
 
-/** Maximum zlib compression level and memory allocation for HTTP responses. */
+/** Balanced zlib settings: near-maximum compression with lower response CPU cost. */
 export const compressionOptions = {
-  level: 9,
-  memLevel: 9,
+  level: 6,
+  memLevel: 8,
 };

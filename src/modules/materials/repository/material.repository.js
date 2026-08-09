@@ -18,6 +18,13 @@ const include = [
 
 /** Sequelize persistence operations for material catalogue records. */
 export default class MaterialRepository {
+  async findOptions() {
+    return Material.findAll({
+      attributes: ['uuid', 'name', 'active'],
+      order: [['name', 'ASC']],
+    });
+  }
+
   async findAll({
     search,
     active,

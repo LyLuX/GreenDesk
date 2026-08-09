@@ -18,6 +18,7 @@ describe('MaterialService', () => {
   const createService = (overrides = {}) => {
     const repository = {
       findAll: jest.fn(),
+      findOptions: jest.fn(),
       findByUuid: jest.fn(),
       findByName: jest.fn().mockResolvedValue(null),
       findBySerialNumber: jest.fn().mockResolvedValue(null),
@@ -37,6 +38,29 @@ describe('MaterialService', () => {
     const audit = { record: jest.fn(), findByEntity: jest.fn().mockResolvedValue([]) };
     return { repository, audit, service: new MaterialService(repository, audit, {}, {}) };
   };
+
+  it('returns only lightweight material option fields', async () => {
+    const { repository, service } = createService({
+      findOptions: jest.fn().mockResolvedValue([
+        model({
+          id: 7,
+          uuid: '11111111-1111-4111-8111-111111111111',
+          name: 'Tondeuse',
+          active: true,
+          notes: 'Ne doit pas sortir',
+        }),
+      ]),
+    });
+
+    await expect(service.getOptions()).resolves.toEqual([
+      {
+        uuid: '11111111-1111-4111-8111-111111111111',
+        name: 'Tondeuse',
+        active: true,
+      },
+    ]);
+    expect(repository.findOptions).toHaveBeenCalledTimes(1);
+  });
 
   it('returns only public fields when listing materials', async () => {
     const { repository, service } = createService({

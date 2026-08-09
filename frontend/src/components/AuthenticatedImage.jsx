@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { getMaterialFileContent } from '../api/material-files.api.js';
+import {
+  clearAuthenticatedImageCache,
+  loadAuthenticatedImageBlob,
+} from '../utils/authenticated-image-cache.js';
 import Loader from './Loader.jsx';
+
+export { clearAuthenticatedImageCache };
 
 /** Displays a protected image through an authenticated blob request. */
 export default function AuthenticatedImage({
@@ -17,10 +23,11 @@ export default function AuthenticatedImage({
     let objectUrl = '';
     setUrl('');
     setError(false);
-    loadImage(fileUuid)
-      .then((response) => {
-        objectUrl = URL.createObjectURL(response.data);
-        if (active) setUrl(objectUrl);
+    loadAuthenticatedImageBlob(loadImage, fileUuid)
+      .then((blob) => {
+        if (!active) return;
+        objectUrl = URL.createObjectURL(blob);
+        setUrl(objectUrl);
       })
       .catch(() => {
         if (active) setError(true);

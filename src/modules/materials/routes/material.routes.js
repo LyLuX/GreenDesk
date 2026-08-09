@@ -4,6 +4,7 @@ import { authorize } from '../../../core/middlewares/authorization.middleware.js
 import { validateRequest } from '../../../core/middlewares/validate-request.js';
 import { asyncHandler } from '../../../core/utils/async-handler.js';
 import MaterialController from '../controller/material.controller.js';
+import maintenancePermissions from '../../maintenance/maintenance.permissions.js';
 import * as validator from '../validator/material.validator.js';
 const router = Router();
 const controller = new MaterialController();
@@ -14,6 +15,11 @@ router.get(
   validator.listValidator,
   validateRequest,
   asyncHandler(controller.getAll.bind(controller)),
+);
+router.get(
+  '/options',
+  authorize('materials.read', maintenancePermissions.plans.read),
+  asyncHandler(controller.getOptions.bind(controller)),
 );
 router.get(
   '/:uuid/history',

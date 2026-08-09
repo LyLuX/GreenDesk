@@ -523,6 +523,20 @@ export const openApiPaths = {
       },
     },
   },
+  '/materials/options': {
+    get: {
+      operationId: 'listMaterialOptions',
+      tags: ['Materials'],
+      summary: 'Retourne les matériels destinés aux listes de sélection.',
+      description:
+        'Nécessite `materials.read` ou `maintenance.read`. La réponse légère ne contient que l’identifiant, le nom et le statut.',
+      security: secure,
+      responses: {
+        200: jsonResponse('MaterialOptionListResponse', 'Options de matériels retournées.'),
+        ...standardErrors,
+      },
+    },
+  },
   '/materials/{uuid}': {
     parameters: [uuidParameter],
     get: {

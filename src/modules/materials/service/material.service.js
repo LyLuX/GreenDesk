@@ -101,6 +101,13 @@ export default class MaterialService {
       },
     };
   }
+  async getOptions() {
+    const items = await this.materialRepository.findOptions();
+    return items.map((item) => {
+      const value = typeof item.toJSON === 'function' ? item.toJSON() : item;
+      return { uuid: value.uuid, name: value.name, active: value.active };
+    });
+  }
   async getByUuid(uuid) {
     return this.toPublic(await this.getEntityByUuid(uuid));
   }

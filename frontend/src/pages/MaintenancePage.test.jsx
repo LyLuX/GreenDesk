@@ -34,6 +34,7 @@ vi.mock('../api/maintenance.api.js', () => ({
   getMaintenanceOrderList: mocks.getOrderList,
 }));
 vi.mock('../api/reference.api.js', () => ({
+  listMaterialOptions: mocks.listMaterials,
   createReferenceApi: (resource) => ({
     list: resource === 'manufacturers' ? mocks.listManufacturers : mocks.listMaterials,
   }),
@@ -55,9 +56,7 @@ describe('MaintenancePage', () => {
     mocks.hasPermission.mockReturnValue(true);
     mocks.listMaterials.mockResolvedValue({
       data: {
-        data: {
-          items: [{ uuid: 'material-uuid', name: 'Tronçonneuse' }],
-        },
+        data: [{ uuid: 'material-uuid', name: 'Tronçonneuse', active: true }],
       },
     });
     mocks.listManufacturers.mockResolvedValue({ data: { data: [] } });
@@ -132,7 +131,7 @@ describe('MaintenancePage', () => {
       { page: 1, limit: 5, active: 'true' },
       expect.any(AbortSignal),
     );
-    expect(mocks.listMaterials).toHaveBeenCalledWith({ limit: 'all' }, expect.any(AbortSignal));
+    expect(mocks.listMaterials).toHaveBeenCalledWith(expect.any(AbortSignal));
     expect(screen.getByText('05/08/2026')).toBeInTheDocument();
     expect(screen.queryByText(/Compteur/)).not.toBeInTheDocument();
     expect(screen.getByText('Normale', { selector: 'span' })).toHaveClass(
@@ -170,6 +169,9 @@ describe('MaintenancePage', () => {
         expect.any(AbortSignal),
       ),
     );
+    expect(mocks.listMaterials).toHaveBeenCalledTimes(1);
+    expect(mocks.listOperations).toHaveBeenCalledTimes(1);
+    expect(mocks.listParts).toHaveBeenCalledTimes(1);
   });
 
   it('loads all plans for the material provided by the detail page', async () => {

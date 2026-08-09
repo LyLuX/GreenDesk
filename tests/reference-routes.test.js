@@ -6,6 +6,7 @@ import app from '../src/app.js';
 import env from '../src/config/env.js';
 import sequelize from '../src/config/database.js';
 import User from '../src/modules/users/model/user.model.js';
+import Material from '../src/modules/materials/model/material.model.js';
 
 const tokenFor = (permissions) =>
   jwt.sign(
@@ -48,6 +49,20 @@ describe('reference routes authorization and validation', () => {
       .get('/api/v1/suppliers')
       .set('Authorization', `Bearer ${tokenFor(['maintenance.read'])}`)
       .expect(403);
+  });
+
+  it('protects lightweight material options and allows maintenance readers', async () => {
+    await request(app)
+      .get('/api/v1/materials/options')
+      .set('Authorization', `Bearer ${tokenFor([])}`)
+      .expect(403);
+
+    const findAll = jest.spyOn(Material, 'findAll').mockResolvedValue([]);
+    await request(app)
+      .get('/api/v1/materials/options')
+      .set('Authorization', `Bearer ${tokenFor(['maintenance.read'])}`)
+      .expect(200);
+    findAll.mockRestore();
   });
 
   it('protects manufacturer logos with the manufacturer permissions', async () => {

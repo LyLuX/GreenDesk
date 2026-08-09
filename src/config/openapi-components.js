@@ -159,6 +159,16 @@ const material = {
   },
 };
 
+const materialOption = {
+  type: 'object',
+  required: ['uuid', 'name', 'active'],
+  properties: {
+    uuid,
+    name: writeText(150),
+    active: { type: 'boolean' },
+  },
+};
+
 const maintenanceOperation = {
   type: 'object',
   required: ['uuid', 'name', 'maintenanceType', 'active'],
@@ -424,6 +434,7 @@ export const openApiSchemas = {
   Manufacturer: manufacturer,
   MaterialFile: materialFile,
   Material: material,
+  MaterialOption: materialOption,
   AuditLog: auditLog,
   MaintenanceOperation: maintenanceOperation,
   Supplier: supplier,
@@ -839,6 +850,7 @@ export const openApiSchemas = {
   }),
   MaterialResponse: success(reference('Material')),
   MaterialListResponse: success(reference('MaterialPage')),
+  MaterialOptionListResponse: success(arrayOf(reference('MaterialOption'))),
   MaterialFileResponse: success(reference('MaterialFile')),
   AuditLogListResponse: success(arrayOf(reference('AuditLog'))),
   MaintenanceResponse: success(reference('MaintenanceTask')),

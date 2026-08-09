@@ -2,11 +2,23 @@ import { jest } from '@jest/globals';
 import { Op } from 'sequelize';
 
 import MaterialRepository from '../src/modules/materials/repository/material.repository.js';
+import Material from '../src/modules/materials/model/material.model.js';
 import MaintenanceTask from '../src/modules/maintenance/model/maintenance-task.model.js';
 
 describe('MaterialRepository maintenance cascades', () => {
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  it('loads lightweight material options without catalogue associations', async () => {
+    const findAll = jest.spyOn(Material, 'findAll').mockResolvedValue([]);
+
+    await new MaterialRepository().findOptions();
+
+    expect(findAll).toHaveBeenCalledWith({
+      attributes: ['uuid', 'name', 'active'],
+      order: [['name', 'ASC']],
+    });
   });
 
   it('reactivates only plans whose update date matches a material deactivation marker', async () => {

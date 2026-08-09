@@ -1,12 +1,13 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getMaterialFileContent } from '../api/material-files.api.js';
-import AuthenticatedImage from './AuthenticatedImage.jsx';
+import AuthenticatedImage, { clearAuthenticatedImageCache } from './AuthenticatedImage.jsx';
 
 vi.mock('../api/material-files.api.js', () => ({ getMaterialFileContent: vi.fn() }));
 
 describe('AuthenticatedImage', () => {
   beforeEach(() => {
+    clearAuthenticatedImageCache();
     URL.createObjectURL = vi.fn().mockReturnValue('blob:photo');
     URL.revokeObjectURL = vi.fn();
   });
@@ -30,5 +31,20 @@ describe('AuthenticatedImage', () => {
     await waitFor(() =>
       expect(screen.getByRole('img')).toHaveAccessibleName('Image indisponible : Photo matériel'),
     );
+  });
+
+  it('deduplicates identical authenticated image requests', async () => {
+    getMaterialFileContent.mockResolvedValue({ data: new Blob(['image']) });
+
+    render(
+      <>
+        <AuthenticatedImage fileUuid="shared-file" alt="Première photo" />
+        <AuthenticatedImage fileUuid="shared-file" alt="Deuxième photo" />
+      </>,
+    );
+
+    expect(await screen.findByRole('img', { name: 'Première photo' })).toBeInTheDocument();
+    expect(await screen.findByRole('img', { name: 'Deuxième photo' })).toBeInTheDocument();
+    expect(getMaterialFileContent).toHaveBeenCalledTimes(1);
   });
 });

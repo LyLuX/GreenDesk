@@ -1,11 +1,15 @@
 import client from './client.js';
+import { clearAuthenticatedImageCache } from '../utils/authenticated-image-cache.js';
 
 const baseUrl = (uuid) => `/v1/materials/${uuid}`;
 
 export const uploadMaterialPhoto = (uuid, file, onUploadProgress) => {
   const formData = new FormData();
   formData.append('file', file);
-  return client.post(`${baseUrl(uuid)}/photos`, formData, { onUploadProgress });
+  return client.post(`${baseUrl(uuid)}/photos`, formData, { onUploadProgress }).then((response) => {
+    clearAuthenticatedImageCache();
+    return response;
+  });
 };
 
 export const uploadMaterialDocument = (uuid, file, documentType, onUploadProgress) => {
@@ -15,9 +19,16 @@ export const uploadMaterialDocument = (uuid, file, documentType, onUploadProgres
   return client.post(`${baseUrl(uuid)}/documents`, formData, { onUploadProgress });
 };
 
-export const deleteMaterialFile = (uuid) => client.delete(`/v1/materials/files/${uuid}`);
+export const deleteMaterialFile = (uuid) =>
+  client.delete(`/v1/materials/files/${uuid}`).then((response) => {
+    clearAuthenticatedImageCache();
+    return response;
+  });
 export const setPrimaryMaterialPhoto = (uuid) =>
-  client.patch(`/v1/materials/files/${uuid}/primary`);
+  client.patch(`/v1/materials/files/${uuid}/primary`).then((response) => {
+    clearAuthenticatedImageCache();
+    return response;
+  });
 export const downloadMaterialFile = (uuid) =>
   client.get(`/v1/materials/files/${uuid}/download`, { responseType: 'blob' });
 export const getMaterialFileContent = (uuid) =>
