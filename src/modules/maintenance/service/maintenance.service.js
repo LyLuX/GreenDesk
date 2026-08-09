@@ -270,7 +270,6 @@ export default class MaintenanceService {
     const grouped = new Map();
     for (const task of tasks.map((item) => this.toPublic(item))) {
       for (const part of task.parts ?? []) {
-        if (part.stockStatus !== STOCK_STATUSES.TO_ORDER) continue;
         const current = grouped.get(part.uuid) ?? {
           uuid: part.uuid,
           name: part.name,
@@ -298,13 +297,24 @@ export default class MaintenanceService {
         grouped.set(part.uuid, current);
       }
     }
+    const items = [...grouped.values()]
+      .map((part) => {
+        const coveredQuantity =
+          part.stockStatus === STOCK_STATUSES.TO_ORDER ? 0 : Number(part.stockQuantity);
+        return {
+          ...part,
+          quantity: Math.max(part.quantity - coveredQuantity, 0),
+        };
+      })
+      .filter((part) => part.quantity > 0)
+      .sort((left, right) => left.name.localeCompare(right.name, 'fr'));
     return {
       horizonDays: normalizedHorizon,
       includeOverdue: includeOverdue !== false,
       status: normalizedStatus ?? null,
       from: today,
       through,
-      items: [...grouped.values()].sort((left, right) => left.name.localeCompare(right.name, 'fr')),
+      items,
     };
   }
   async resolveOperation(uuid, transaction) {

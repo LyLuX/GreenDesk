@@ -724,7 +724,12 @@ export const openApiSchemas = {
               type: 'object',
               required: ['quantity', 'plans'],
               properties: {
-                quantity: { type: 'integer', minimum: 1 },
+                quantity: {
+                  type: 'integer',
+                  minimum: 1,
+                  description:
+                    'Quantité restant à commander après déduction du stock ou de la commande en cours.',
+                },
                 plans: {
                   type: 'array',
                   items: {

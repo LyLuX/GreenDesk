@@ -223,9 +223,13 @@ describe('MaintenanceOrderListModal', () => {
     const quantity = await screen.findByLabelText('Quantité commandée pour Bougie');
     await user.clear(quantity);
     await user.type(quantity, '3');
-    await user.click(screen.getByRole('button', { name: 'Marquer commandée' }));
+    expect(quantity).toHaveClass('maintenance-order-quantity');
+    const orderButton = screen.getByRole('button', { name: 'Marquer Bougie commandée' });
+    expect(orderButton).toHaveTextContent('Commander');
+    expect(orderButton.parentElement).toHaveClass('maintenance-order-command-controls');
+    await user.click(orderButton);
     expect(screen.getByText(/Quantité commandée : 3 pièces/)).toBeVisible();
-    await user.click(screen.getAllByRole('button', { name: 'Marquer commandée' }).at(-1));
+    await user.click(screen.getByRole('button', { name: 'Marquer commandée' }));
 
     await waitFor(() =>
       expect(mocks.updateStock).toHaveBeenCalledWith('part-uuid', {
@@ -243,7 +247,9 @@ describe('MaintenanceOrderListModal', () => {
     render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
 
     expect(await within(screen.getByRole('dialog')).findByText('Bougie')).toBeVisible();
-    expect(screen.queryByRole('button', { name: 'Marquer commandée' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Marquer Bougie commandée' }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Quantité commandée pour Bougie')).not.toBeInTheDocument();
   });
 

@@ -32,6 +32,8 @@ const partsInclude = {
     'reference',
     'supplierReference',
     'unit',
+    'stockStatus',
+    'stockQuantity',
     'active',
   ],
   through: { attributes: ['quantity'] },

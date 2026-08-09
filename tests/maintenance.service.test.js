@@ -181,21 +181,21 @@ describe('MaintenanceService', () => {
     ]);
   });
 
-  it('excludes ordered and workshop-stock parts from the order list', async () => {
-    const makeTask = (uuid, stockStatus) => ({
+  it('only returns quantities not covered by workshop stock or current orders', async () => {
+    const makeTask = (uuid, partKey, stockStatus, stockQuantity, requiredQuantity = 2) => ({
       uuid,
       title: 'Entretien',
       nextMaintenanceDate: '2026-08-20',
       material: { uuid, name: `Matériel ${stockStatus}` },
       parts: [
         {
-          uuid: `part-${stockStatus}`,
-          name: `Pièce ${stockStatus}`,
-          reference: `REF-${stockStatus}`,
+          uuid: `part-${partKey}`,
+          name: `Pièce ${partKey}`,
+          reference: `REF-${partKey}`,
           unit: 'pièce',
           stockStatus,
-          stockQuantity: stockStatus === 'toOrder' ? 0 : 2,
-          MaintenanceTaskPart: { quantity: 2 },
+          stockQuantity,
+          MaintenanceTaskPart: { quantity: requiredQuantity },
         },
       ],
     });
@@ -203,18 +203,27 @@ describe('MaintenanceService', () => {
       findForOrderList: jest
         .fn()
         .mockResolvedValue([
-          makeTask('11111111-1111-4111-8111-111111111111', 'toOrder'),
-          makeTask('22222222-2222-4222-8222-222222222222', 'ordered'),
-          makeTask('33333333-3333-4333-8333-333333333333', 'inStock'),
+          makeTask('11111111-1111-4111-8111-111111111111', 'to-order', 'toOrder', 0),
+          makeTask('22222222-2222-4222-8222-222222222222', 'ordered-covered', 'ordered', 2),
+          makeTask('33333333-3333-4333-8333-333333333333', 'stock-covered', 'inStock', 5, 4),
+          makeTask('44444444-4444-4444-8444-444444444444', 'stock-shortage', 'inStock', 1),
+          makeTask('55555555-5555-4555-8555-555555555555', 'ordered-shortage', 'ordered', 1),
         ]),
     };
     const service = new MaintenanceService(repository, {}, {}, {});
 
     const result = await service.getOrderList();
 
-    expect(result.items).toHaveLength(1);
-    expect(result.items[0]).toEqual(
-      expect.objectContaining({ stockStatus: 'toOrder', reference: 'REF-toOrder', quantity: 2 }),
+    expect(result.items).toEqual([
+      expect.objectContaining({ reference: 'REF-ordered-shortage', quantity: 1 }),
+      expect.objectContaining({ reference: 'REF-stock-shortage', quantity: 1 }),
+      expect.objectContaining({ reference: 'REF-to-order', quantity: 2 }),
+    ]);
+    expect(result.items).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ reference: 'REF-stock-covered' }),
+        expect.objectContaining({ reference: 'REF-ordered-covered' }),
+      ]),
     );
   });
 

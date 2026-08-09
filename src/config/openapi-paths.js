@@ -851,7 +851,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Agrège les pièces nécessaires aux plans arrivant à échéance.',
       description:
-        'Nécessite `maintenance.read`. Une échéance correspond à un besoin de pièces ; seules les pièces `toOrder` sont retournées. Les pièces `ordered` ou `inStock` sont exclues, même lorsqu’un plan les utilise. Une pièce désactivée reste comptée si elle est encore `toOrder`. Le filtre `status`, lorsqu’il est renseigné, prend la priorité sur la période.',
+        'Nécessite `maintenance.read`. Une échéance correspond à un besoin de pièces. La quantité en stock atelier ou déjà commandée est déduite du besoin agrégé ; seules les quantités restant à commander sont retournées. Une pièce désactivée reste comptée lorsqu’un besoin non couvert subsiste. Le filtre `status`, lorsqu’il est renseigné, prend la priorité sur la période.',
       security: secure,
       parameters: [
         {

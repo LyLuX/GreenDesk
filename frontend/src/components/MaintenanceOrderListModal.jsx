@@ -133,7 +133,7 @@ function OrderPartsTable({
                   ) : null}
                   {onMarkOrdered ? (
                     <td>
-                      <div className="d-flex flex-wrap align-items-end gap-2">
+                      <div className="maintenance-order-command-controls d-flex align-items-end gap-2">
                         <label className="form-label mb-0 text-body-secondary">
                           <span className="visually-hidden">
                             Quantité commandée pour {part.name}
@@ -154,10 +154,11 @@ function OrderPartsTable({
                         <Button
                           type="button"
                           className="btn-sm"
+                          aria-label={`Marquer ${part.name} commandée`}
                           onClick={() => onMarkOrdered(part)}
                           disabled={actionLoadingId === part.uuid}
                         >
-                          {actionLoadingId === part.uuid ? 'Traitement…' : 'Marquer commandée'}
+                          {actionLoadingId === part.uuid ? 'Traitement…' : 'Commander'}
                         </Button>
                       </div>
                     </td>
