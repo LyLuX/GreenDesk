@@ -738,6 +738,8 @@ a:hover {
 
 .modal-surface.maintenance-order-list-modal {
   display: flex;
+  width: min(76rem, calc(100vw - 3rem));
+  max-width: calc(100vw - 3rem);
   flex-direction: column;
   height: calc(90vh - 3rem);
   overflow: hidden;
@@ -771,6 +773,16 @@ a:hover {
   min-height: 0;
   overflow-y: auto;
   scrollbar-gutter: stable;
+}
+
+.maintenance-order-list-screen .maintenance-order-list-table {
+  min-width: 68rem;
+}
+
+.maintenance-order-list-screen .maintenance-order-part-summary,
+.maintenance-order-list-screen .maintenance-order-supplier-cell,
+.maintenance-order-list-screen .maintenance-order-plans li {
+  white-space: nowrap;
 }
 
 .maintenance-order-list-actions {

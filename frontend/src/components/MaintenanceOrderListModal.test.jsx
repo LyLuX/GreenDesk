@@ -79,7 +79,11 @@ describe('MaintenanceOrderListModal', () => {
     render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
 
     const dialog = screen.getByRole('dialog');
-    expect(await within(dialog).findByRole('img', { name: 'Logo NGK' })).toBeVisible();
+    const logo = await within(dialog).findByRole('img', { name: 'Logo NGK' });
+    expect(logo).toBeVisible();
+    expect(logo.parentElement).toHaveClass('maintenance-order-part-summary');
+    expect(within(dialog).getByRole('table')).toHaveClass('maintenance-order-list-table');
+    expect(within(dialog).getByText('2 pièces').closest('td')).toHaveClass('text-nowrap');
     expect(within(dialog).queryByText('NGK')).not.toBeInTheDocument();
 
     const printPage = document.querySelector('.maintenance-order-print-page');

@@ -81,7 +81,7 @@ function OrderPartsTable({
   return (
     <div className="table-shell">
       <div className="table-responsive">
-        <table className="table table-hover align-middle">
+        <table className="maintenance-order-list-table table table-hover align-middle">
           <thead>
             <tr>
               <th>Pièce</th>
@@ -98,20 +98,20 @@ function OrderPartsTable({
 
               return (
                 <tr key={part.uuid}>
-                  <td>
-                    <strong>{part.name}</strong>
-                    {showManufacturerLogo && (manufacturerName || part.manufacturerUuid) ? (
-                      <span className="mt-1 d-block">
+                  <td className="maintenance-order-part-cell">
+                    <div className="maintenance-order-part-summary d-flex align-items-center gap-2">
+                      {showManufacturerLogo && (manufacturerName || part.manufacturerUuid) ? (
                         <ManufacturerLogo manufacturer={manufacturer} />
-                      </span>
-                    ) : null}
+                      ) : null}
+                      <strong>{part.name}</strong>
+                    </div>
                     {!showManufacturerLogo && manufacturerName ? (
                       <small className="maintenance-order-print-manufacturer d-block mt-1">
                         {manufacturerName}
                       </small>
                     ) : null}
                   </td>
-                  <td>
+                  <td className="maintenance-order-supplier-cell">
                     {showSupplier && part.supplier ? (
                       <span className="d-block">{part.supplier}</span>
                     ) : null}
@@ -119,9 +119,9 @@ function OrderPartsTable({
                       {part.supplierReference || part.reference}
                     </small>
                   </td>
-                  <td>{formatOrderQuantity(part.quantity, part.unit)}</td>
+                  <td className="text-nowrap">{formatOrderQuantity(part.quantity, part.unit)}</td>
                   {showPlans ? (
-                    <td>
+                    <td className="maintenance-order-plans">
                       <ul className="mb-0 ps-3">
                         {part.plans.map((plan) => (
                           <li key={plan.maintenanceUuid}>
@@ -132,7 +132,7 @@ function OrderPartsTable({
                     </td>
                   ) : null}
                   {onMarkOrdered ? (
-                    <td>
+                    <td className="text-nowrap">
                       <div className="maintenance-order-command-controls d-flex align-items-end gap-2">
                         <label className="form-label mb-0 text-body-secondary">
                           <span className="visually-hidden">
