@@ -26,7 +26,7 @@ describe('cache-control middleware', () => {
     expect(response.headers['surrogate-control']).toBe('no-store');
   });
 
-  it('uses standard production caches according to the resource type', async () => {
+  it('keeps disabled production documentation out of every cache', async () => {
     const app = createTestApp('production');
     const [api, docs, contract, staticAsset] = await Promise.all([
       request(app).get('/api/v1/materials'),
@@ -37,9 +37,12 @@ describe('cache-control middleware', () => {
 
     expect(api.headers['cache-control']).toBe(cacheControlPolicies.privateRevalidate);
     expect(api.headers.vary).toContain('Authorization');
-    expect(docs.headers['cache-control']).toBe(cacheControlPolicies.publicRevalidate);
-    expect(contract.headers['cache-control']).toBe(cacheControlPolicies.publicShort);
-    expect(staticAsset.headers['cache-control']).toBe(cacheControlPolicies.publicStatic);
+    for (const response of [docs, contract, staticAsset]) {
+      expect(response.headers['cache-control']).toBe(cacheControlPolicies.noStore);
+      expect(response.headers.pragma).toBe('no-cache');
+      expect(response.headers.expires).toBe('0');
+      expect(response.headers['surrogate-control']).toBe('no-store');
+    }
   });
 
   it('never stores production health, authentication or mutation responses', async () => {

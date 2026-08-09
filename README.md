@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **4.1.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **4.2.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -24,7 +24,8 @@ serveur Vite interdisent explicitement tout stockage par le navigateur et les ca
 intermédiaires. En `production`, les données privées sont systématiquement revalidées, les
 réponses sensibles ne sont jamais stockées, le HTML est revalidé et les fichiers Vite
 fingerprintés sont immuables pendant un an. Les ressources statiques non fingerprintées sont
-conservées pendant un jour.
+conservées pendant un jour. La documentation API n’est jamais stockée et n’est pas exposée en
+production.
 
 ## Modules disponibles
 
@@ -61,7 +62,7 @@ Les permissions ajoutées sont `categories.*` et `materials.*` avec les actions 
 
 Le dashboard est disponible via `GET /api/v1/dashboard/summary`, protégé par `dashboard.read`. Il compte les matériels, les catégories et les fabricants, calcule la valeur d’achat cumulée, le coût moyen et l’âge moyen du parc, puis retourne les compteurs et les listes d’entretiens à faire aujourd’hui, sous 30 jours et en retard.
 
-La documentation Swagger UI est servie sur `/docs` et le document OpenAPI brut sur `/docs/openapi.json`. Son contrat est centralisé dans `src/config/openapi-paths.js` pour les opérations et `src/config/openapi-components.js` pour les données. Toute modification d’une route, d’un paramètre, d’un corps, d’une réponse, d’une permission ou d’un code HTTP doit mettre à jour ces fichiers dans le même commit. `npm run docs:check` valide la conformité OpenAPI 3 et vérifie automatiquement la couverture des routes canoniques, les références de composants, les identifiants d’opération et les données de maintenance.
+En développement et en test, la documentation Swagger UI est servie sur `/docs` et le document OpenAPI brut sur `/docs/openapi.json`. Ces routes ne sont pas montées en production et une requête les visant reçoit une réponse `404` non stockable. Le contrat reste utilisable par les contrôles internes et est centralisé dans `src/config/openapi-paths.js` pour les opérations et `src/config/openapi-components.js` pour les données. Toute modification d’une route, d’un paramètre, d’un corps, d’une réponse, d’une permission ou d’un code HTTP doit mettre à jour ces fichiers dans le même commit. `npm run docs:check` valide la conformité OpenAPI 3 et vérifie automatiquement la couverture des routes canoniques, les références de composants, les identifiants d’opération et les données de maintenance.
 
 ## Sprint 5 : parc matériel
 
@@ -110,7 +111,7 @@ Les migrations `20260727_zz_add_maintenance_catalogs.js` et `20260727_zzz_add_pa
 
 Configurez directement `.env` pour le backend et `frontend/.env` pour l’interface. Ces deux fichiers sont locaux, ignorés par Git et ne doivent jamais être commités. `VITE_API_URL=/api` et `VITE_API_PROXY_TARGET=http://localhost:3000` sont les valeurs de développement usuelles.
 
-`NODE_ENV` est obligatoire et accepte uniquement `development`, `test` ou `production`. En production, GreenDesk refuse de démarrer si les identifiants de base de données, `CORS_ORIGIN` ou `JWT_SECRET` sont absents. L’origine CORS ne peut pas être `*` et le secret JWT doit contenir au moins 32 octets sans reprendre une valeur d’exemple. Générez un secret aléatoire avec :
+`NODE_ENV` est obligatoire et accepte uniquement `development`, `test` ou `production`. En production, GreenDesk refuse de démarrer si les identifiants de base de données, `CORS_ORIGINS` ou `JWT_SECRET` sont absents. `CORS_ORIGINS` contient une ou plusieurs origines HTTP(S) explicites séparées par des virgules, sans chemin, par exemple `https://app.greendesk.fr,https://admin.greendesk.fr`. Les doublons sont supprimés et la valeur `*` est toujours refusée. L’ancien nom `CORS_ORIGIN` reste accepté pour une seule origine pendant la transition, mais les deux variables ne peuvent pas être définies ensemble. Le secret JWT doit contenir au moins 32 octets sans reprendre une valeur d’exemple. Générez un secret aléatoire avec :
 
 ```bash
 node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
@@ -169,7 +170,7 @@ La connexion retourne un access token JWT et le profil utilisateur avec ses rôl
 
 ## Variables d’environnement
 
-Backend : `NODE_ENV`, `PORT`, `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_LOGGING`, `CORS_ORIGIN`, `JWT_SECRET`, `JWT_ACCESS_TOKEN_TTL`, `PUBLIC_REGISTRATION_ENABLED`, `TRUSTED_PROXIES`, `RATE_LIMIT_ENABLED`, `RATE_LIMIT_API_MAX`, `RATE_LIMIT_LOGIN_MAX`, `RATE_LIMIT_REGISTER_MAX`, `RATE_LIMIT_REFRESH_MAX`, `GREENDESK_SEED_ADMIN_EMAIL` et, uniquement au moment d’exécuter le seeder, `GREENDESK_SEED_ADMIN_PASSWORD`. Toutes les variables sensibles doivent être injectées par l’environnement ou un gestionnaire de secrets en production.
+Backend : `NODE_ENV`, `PORT`, `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_LOGGING`, `CORS_ORIGINS`, `JWT_SECRET`, `JWT_ACCESS_TOKEN_TTL`, `PUBLIC_REGISTRATION_ENABLED`, `TRUSTED_PROXIES`, `RATE_LIMIT_ENABLED`, `RATE_LIMIT_API_MAX`, `RATE_LIMIT_LOGIN_MAX`, `RATE_LIMIT_REGISTER_MAX`, `RATE_LIMIT_REFRESH_MAX`, `GREENDESK_SEED_ADMIN_EMAIL` et, uniquement au moment d’exécuter le seeder, `GREENDESK_SEED_ADMIN_PASSWORD`. Toutes les variables sensibles doivent être injectées par l’environnement ou un gestionnaire de secrets en production.
 
 Frontend : `VITE_API_URL`, par défaut `/api`, `VITE_API_PROXY_TARGET`, par défaut `http://localhost:3000`, et `VITE_PUBLIC_REGISTRATION_ENABLED`, actif hors production et désactivé par défaut dans un build de production.
 

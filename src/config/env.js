@@ -67,6 +67,56 @@ const parseTrustedProxies = (source, errors) => {
     .filter(Boolean);
 };
 
+const parseCorsOrigins = (source, isProduction, errors) => {
+  const configuredOrigins = normalizedValue(source, 'CORS_ORIGINS');
+  const legacyOrigin = normalizedValue(source, 'CORS_ORIGIN');
+  if (configuredOrigins && legacyOrigin) {
+    errors.push('CORS_ORIGINS et CORS_ORIGIN ne peuvent pas être définies ensemble.');
+  }
+  if (legacyOrigin.includes(',')) {
+    errors.push('CORS_ORIGIN accepte une seule origine ; utilisez CORS_ORIGINS pour une liste.');
+  }
+
+  const rawValue =
+    configuredOrigins || legacyOrigin || (isProduction ? '' : 'http://localhost:5173');
+  if (!rawValue) {
+    errors.push('CORS_ORIGINS est obligatoire en production.');
+    return [];
+  }
+
+  const rawOrigins = rawValue.split(',').map((value) => value.trim());
+  if (rawOrigins.some((value) => !value)) {
+    errors.push('CORS_ORIGINS doit contenir une liste d’origines sans valeur vide.');
+  }
+
+  const origins = [];
+  for (const rawOrigin of rawOrigins.filter(Boolean)) {
+    if (rawOrigin === '*') {
+      errors.push('CORS_ORIGINS ne peut pas contenir "*".');
+      continue;
+    }
+
+    try {
+      const origin = new URL(rawOrigin);
+      if (
+        !['http:', 'https:'].includes(origin.protocol) ||
+        origin.username ||
+        origin.password ||
+        origin.pathname !== '/' ||
+        origin.search ||
+        origin.hash
+      ) {
+        throw new Error('Invalid origin');
+      }
+      origins.push(origin.origin);
+    } catch {
+      errors.push('Chaque valeur de CORS_ORIGINS doit être une origine HTTP(S) sans chemin.');
+    }
+  }
+
+  return [...new Set(origins)];
+};
+
 /**
  * Builds and validates the runtime configuration before any service starts.
  * Production deliberately has no fallback for credentials or public origins.
@@ -109,12 +159,7 @@ export function createEnvironment(source = process.env) {
     errors.push('JWT_SECRET doit contenir au moins 32 octets et ne pas être une valeur d’exemple.');
   }
 
-  const corsOrigin =
-    normalizedValue(source, 'CORS_ORIGIN') || (isProduction ? '' : 'http://localhost:5173');
-  if (isProduction && !corsOrigin) errors.push('CORS_ORIGIN est obligatoire en production.');
-  if (isProduction && corsOrigin === '*') {
-    errors.push('CORS_ORIGIN ne peut pas valoir "*" en production.');
-  }
+  const corsOrigins = parseCorsOrigins(source, isProduction, errors);
 
   const port = parsePort(source, 'PORT', 3000, errors);
   const databasePort = parsePort(source, 'DATABASE_PORT', 3306, errors);
@@ -163,7 +208,10 @@ export function createEnvironment(source = process.env) {
       password: source.DATABASE_PASSWORD ?? '',
       logging: databaseLogging,
     },
-    corsOrigin,
+    corsOrigins,
+    apiDocs: {
+      enabled: !isProduction,
+    },
     trustedProxies,
     auth: {
       publicRegistrationEnabled,

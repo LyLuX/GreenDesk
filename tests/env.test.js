@@ -9,7 +9,7 @@ const productionEnvironment = {
   DATABASE_USER: 'greendesk',
   DATABASE_PASSWORD: 'a-production-database-password',
   DATABASE_LOGGING: 'false',
-  CORS_ORIGIN: 'https://greendesk.example.com',
+  CORS_ORIGINS: 'https://greendesk.example.com, https://admin.greendesk.example.com',
   JWT_SECRET: 'a-secure-production-secret-with-more-than-32-bytes',
   JWT_ACCESS_TOKEN_TTL: '15m',
 };
@@ -27,7 +27,8 @@ describe('runtime environment configuration', () => {
         password: 'a-production-database-password',
         logging: false,
       },
-      corsOrigin: 'https://greendesk.example.com',
+      corsOrigins: ['https://greendesk.example.com', 'https://admin.greendesk.example.com'],
+      apiDocs: { enabled: false },
       trustedProxies: false,
       auth: { publicRegistrationEnabled: false },
       jwt: {
@@ -52,7 +53,8 @@ describe('runtime environment configuration', () => {
   it('provides isolated, non-production defaults during tests', () => {
     expect(createEnvironment({ NODE_ENV: 'test' })).toMatchObject({
       nodeEnv: 'test',
-      corsOrigin: 'http://localhost:5173',
+      corsOrigins: ['http://localhost:5173'],
+      apiDocs: { enabled: true },
       auth: { publicRegistrationEnabled: true },
       rateLimit: {
         enabled: true,
@@ -71,7 +73,7 @@ describe('runtime environment configuration', () => {
         NODE_ENV: 'production',
         JWT_SECRET: productionEnvironment.JWT_SECRET,
       }),
-    ).toThrow(/DATABASE_HOST est obligatoire[\s\S]*CORS_ORIGIN est obligatoire/);
+    ).toThrow(/DATABASE_HOST est obligatoire[\s\S]*CORS_ORIGINS est obligatoire/);
   });
 
   it('rejects the example database password in production', () => {
@@ -92,10 +94,45 @@ describe('runtime environment configuration', () => {
     },
   );
 
-  it('rejects a wildcard production origin', () => {
-    expect(() => createEnvironment({ ...productionEnvironment, CORS_ORIGIN: '*' })).toThrow(
-      /CORS_ORIGIN ne peut pas valoir "\*"/,
+  it('rejects wildcard and malformed origins', () => {
+    expect(() => createEnvironment({ NODE_ENV: 'test', CORS_ORIGINS: '*' })).toThrow(
+      /CORS_ORIGINS ne peut pas contenir "\*"/,
     );
+    expect(() =>
+      createEnvironment({ NODE_ENV: 'test', CORS_ORIGINS: 'https://example.com/path' }),
+    ).toThrow(/Chaque valeur de CORS_ORIGINS doit être une origine HTTP\(S\) sans chemin/);
+    expect(() =>
+      createEnvironment({ NODE_ENV: 'test', CORS_ORIGINS: 'https://example.com,' }),
+    ).toThrow(/CORS_ORIGINS doit contenir une liste d’origines sans valeur vide/);
+  });
+
+  it('normalizes, deduplicates and supports the legacy single-origin variable', () => {
+    expect(
+      createEnvironment({
+        NODE_ENV: 'test',
+        CORS_ORIGINS: 'https://EXAMPLE.com/, https://example.com',
+      }).corsOrigins,
+    ).toEqual(['https://example.com']);
+    expect(
+      createEnvironment({ NODE_ENV: 'test', CORS_ORIGIN: 'https://legacy.example.com' })
+        .corsOrigins,
+    ).toEqual(['https://legacy.example.com']);
+  });
+
+  it('rejects ambiguous CORS variables', () => {
+    expect(() =>
+      createEnvironment({
+        NODE_ENV: 'test',
+        CORS_ORIGINS: 'https://one.example.com',
+        CORS_ORIGIN: 'https://two.example.com',
+      }),
+    ).toThrow(/CORS_ORIGINS et CORS_ORIGIN ne peuvent pas être définies ensemble/);
+    expect(() =>
+      createEnvironment({
+        NODE_ENV: 'test',
+        CORS_ORIGIN: 'https://one.example.com,https://two.example.com',
+      }),
+    ).toThrow(/CORS_ORIGIN accepte une seule origine/);
   });
 
   it('rejects malformed ports and boolean flags', () => {

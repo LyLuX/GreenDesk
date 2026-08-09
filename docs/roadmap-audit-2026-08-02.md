@@ -6,25 +6,14 @@ J’ai confronté l’audit du 2 août, réalisé sur GreenDesk v1.15.3, à Gree
 
 | Priorité | Correction                                | Sévérité | Taille |
 | -------- | ----------------------------------------- | -------: | -----: |
-| 1        | CORS et Swagger en production             |    Haute |      S |
-| 2        | Unification du système de migrations      |    Haute |      L |
-| 3        | Refonte minimale du modèle de stock       |    Haute |      L |
-| 4        | Intégration continue obligatoire          |    Haute |      M |
-| 5        | Validation réelle des fichiers téléversés |  Modérée |      M |
-| 6        | Optimisations frontend et maintenance     |  Modérée |    M/L |
-| 7        | Refactorings structurels et Sequelize v7  |    Basse |      L |
+| 1        | Unification du système de migrations      |    Haute |      L |
+| 2        | Refonte minimale du modèle de stock       |    Haute |      L |
+| 3        | Intégration continue obligatoire          |    Haute |      M |
+| 4        | Validation réelle des fichiers téléversés |  Modérée |      M |
+| 5        | Optimisations frontend et maintenance     |  Modérée |    M/L |
+| 6        | Refactorings structurels et Sequelize v7  |    Basse |      L |
 
-### 1. Restreindre CORS et Swagger
-
-GreenDesk utilise désormais l’origine CORS centralisée et refuse l’origine `*` en production. Il reste à gérer plusieurs origines autorisées et à décider de l’exposition de Swagger.
-
-À faire :
-
-- Accepter une liste explicite d’origines.
-- Désactiver Swagger en production ou le protéger par authentification et permission.
-- Adapter les règles de cache de la documentation à ce choix.
-
-### 2. Rendre les migrations fiables
+### 1. Rendre les migrations fiables
 
 Le projet mélange :
 
@@ -45,7 +34,7 @@ Une base vide ne peut pas être reconstruite de manière certaine uniquement ave
 
 Cette étape doit précéder la refonte du stock afin que sa migration soit fiable.
 
-### 3. Corriger le modèle de stock
+### 2. Corriger le modèle de stock
 
 C’est le principal risque apparu avec les fonctionnalités ajoutées aujourd’hui.
 
@@ -85,9 +74,9 @@ Il faudra aussi :
 - ajouter des contraintes DB et un historique des mouvements ;
 - définir explicitement la règle concernant l’horizon 30/60/90/365 jours avant implémentation.
 
-### 4. Ajouter une CI bloquante
+### 3. Ajouter une CI bloquante
 
-Le constat de l’audit indiquant que les tests n’avaient pas été exécutés est désormais dépassé : les validations de la v4.1.0 passent, avec 179 tests backend, 118 tests frontend, le contrôle OpenAPI et le build de production.
+Le constat de l’audit indiquant que les tests n’avaient pas été exécutés est désormais dépassé : les validations de la v4.2.0 passent, avec 187 tests backend, 118 tests frontend, le contrôle OpenAPI et le build de production.
 
 En revanche, aucun workflow CI n’impose encore ces contrôles.
 
@@ -101,13 +90,13 @@ La CI devrait exécuter :
 - build frontend ;
 - reconstruction d’une base vide par migrations.
 
-### 5. Vérifier le contenu réel des fichiers
+### 4. Vérifier le contenu réel des fichiers
 
 Les uploads sont protégés, limités en taille et stockés sous des noms UUID, ce qui est positif. Mais le type est déterminé depuis le MIME déclaré par le client.
 
 Ajouter une vérification des signatures binaires — magic bytes — avant conservation du fichier, avec suppression immédiate des fichiers rejetés et tests de MIME falsifié.
 
-### 6. Optimisations après sécurisation
+### 5. Optimisations après sécurisation
 
 Les constats de performance restent globalement valides :
 
@@ -127,7 +116,7 @@ Ordre conseillé :
 
 Le niveau `9` de compression mérite également un benchmark : il peut consommer davantage de CPU pour un gain réseau faible.
 
-### 7. Reporter Sequelize v7 et les grands refactorings
+### 6. Reporter Sequelize v7 et les grands refactorings
 
 Je ne recommande pas de migrer maintenant. La documentation officielle décrit toujours Sequelize v7 comme une version alpha et recommande `@sequelize/core@alpha`. La remarque de l’audit affirmant que la CLI n’était pas prête est toutefois à revalider, car la documentation v7 actuelle comporte désormais une section CLI : [Sequelize v7](https://sequelize.org/docs/v7/), [installation](https://sequelize.org/docs/v7/getting-started/), [CLI](https://sequelize.org/docs/v7/cli/).
 
