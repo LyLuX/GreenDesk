@@ -19,6 +19,10 @@
   The runtime values derive from package metadata, but verify them with `tests/versioning.test.js`.
 - Run the backend tests and frontend tests, then generate the production frontend build after every
   version change and before committing or pushing.
+- When a requested modification is complete and every required check passes, create a focused
+  commit containing only the files that belong to that modification, then push it to the current
+  branch. Never include unrelated or pre-existing user changes; if the commit or push cannot be
+  completed safely, report the blocker instead of silently leaving the validated change unpushed.
 - Always use GreenDesk's existing permission system for protected features. Apply the matching
   permission consistently to API routes, frontend routes, navigation, and user actions; do not
   bypass authorization or add a redundant permission when an existing permission covers the
