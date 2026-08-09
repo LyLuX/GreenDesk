@@ -72,6 +72,7 @@ jest.unstable_mockModule('../src/modules/suppliers/controller/supplier.controlle
 
 const { default: app } = await import('../src/app.js');
 const { default: env } = await import('../src/config/env.js');
+const { default: sequelize } = await import('../src/config/database.js');
 const { default: User } = await import('../src/modules/users/model/user.model.js');
 
 const tokenFor = (permissions) =>
@@ -84,6 +85,9 @@ const uuid = 'f75ce638-18d2-4e29-9958-2afaa4ae5151';
 
 describe('maintenance catalogue route permissions', () => {
   beforeAll(() => {
+    jest
+      .spyOn(sequelize, 'transaction')
+      .mockImplementation(async (...args) => args.at(-1)({ id: 'route-test-transaction' }));
     jest.spyOn(User, 'findOne').mockResolvedValue({ id: 1 });
   });
 

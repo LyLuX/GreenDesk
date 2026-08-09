@@ -1,5 +1,5 @@
 import MaterialFile from '../model/material-file.model.js';
-import sequelize from '../../../config/database.js';
+import { withTransaction } from '../../../core/database/transaction-context.js';
 export default class MaterialFileRepository {
   async create(values) {
     return MaterialFile.create(values);
@@ -14,7 +14,7 @@ export default class MaterialFileRepository {
     return file.destroy();
   }
   async setPrimary(file) {
-    return sequelize.transaction(async (transaction) => {
+    return withTransaction(async (transaction) => {
       await MaterialFile.update(
         { isPrimary: false },
         { where: { materialId: file.materialId, kind: 'photo' }, transaction },

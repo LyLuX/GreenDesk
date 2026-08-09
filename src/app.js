@@ -8,6 +8,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger.js';
 import logger from './core/logger/logger.js';
 import { errorHandler, notFoundHandler } from './core/middlewares/error-handler.js';
+import { transactionMiddleware } from './core/middlewares/transaction.middleware.js';
 import { requestId } from './core/utils/request-id.js';
 import { routeRegistry } from './routes/route-registry.js';
 
@@ -28,6 +29,7 @@ app.use(
 
 app.get('/docs/openapi.json', (_request, response) => response.json(swaggerSpec));
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
+app.use('/api', transactionMiddleware);
 for (const { mountPath, router } of routeRegistry) app.use(mountPath, router);
 
 app.use(notFoundHandler);

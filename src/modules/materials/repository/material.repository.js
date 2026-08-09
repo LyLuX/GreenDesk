@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 
-import sequelize from '../../../config/database.js';
+import { withTransaction } from '../../../core/database/transaction-context.js';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 import Material from '../model/material.model.js';
 import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
@@ -142,6 +142,6 @@ export default class MaterialRepository {
   }
 
   async withTransaction(callback) {
-    return sequelize.transaction(callback);
+    return withTransaction(callback);
   }
 }

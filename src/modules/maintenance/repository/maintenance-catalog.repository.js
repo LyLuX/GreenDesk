@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 
-import sequelize from '../../../config/database.js';
+import { withTransaction } from '../../../core/database/transaction-context.js';
 import MaintenanceTask from '../model/maintenance-task.model.js';
 import MaintenanceOperation from '../model/maintenance-operation.model.js';
 import MaintenancePart from '../model/maintenance-part.model.js';
@@ -142,6 +142,6 @@ export default class MaintenanceCatalogRepository {
   }
 
   withTransaction(callback) {
-    return sequelize.transaction(callback);
+    return withTransaction(callback);
   }
 }

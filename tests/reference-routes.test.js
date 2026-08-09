@@ -4,6 +4,7 @@ import request from 'supertest';
 
 import app from '../src/app.js';
 import env from '../src/config/env.js';
+import sequelize from '../src/config/database.js';
 import User from '../src/modules/users/model/user.model.js';
 
 const tokenFor = (permissions) =>
@@ -14,6 +15,9 @@ const tokenFor = (permissions) =>
 
 describe('reference routes authorization and validation', () => {
   beforeAll(() => {
+    jest
+      .spyOn(sequelize, 'transaction')
+      .mockImplementation(async (...args) => args.at(-1)({ id: 'route-test-transaction' }));
     jest.spyOn(User, 'findOne').mockResolvedValue({ id: 1 });
   });
 

@@ -1,5 +1,5 @@
 import { Op, Sequelize } from 'sequelize';
-import sequelize from '../../../config/database.js';
+import { withTransaction } from '../../../core/database/transaction-context.js';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 import Material from '../../materials/model/material.model.js';
 import MaintenanceHistory from '../model/maintenance-history.model.js';
@@ -225,6 +225,6 @@ export default class MaintenanceRepository {
     return task.destroy();
   }
   async withTransaction(callback) {
-    return sequelize.transaction(callback);
+    return withTransaction(callback);
   }
 }

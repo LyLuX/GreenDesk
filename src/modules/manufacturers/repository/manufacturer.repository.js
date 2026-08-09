@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import sequelize from '../../../config/database.js';
+import { withTransaction } from '../../../core/database/transaction-context.js';
 import Material from '../../materials/model/material.model.js';
 import MaintenancePart from '../../maintenance/model/maintenance-part.model.js';
 import PartManufacturer from '../model/part-manufacturer.model.js';
@@ -58,6 +58,6 @@ export default class ManufacturerRepository {
     );
   }
   withTransaction(callback) {
-    return sequelize.transaction(callback);
+    return withTransaction(callback);
   }
 }

@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 
-import sequelize from '../../../config/database.js';
+import { withTransaction } from '../../../core/database/transaction-context.js';
 import MaintenancePart from '../../maintenance/model/maintenance-part.model.js';
 import Supplier from '../model/supplier.model.js';
 
@@ -44,6 +44,6 @@ export default class SupplierRepository {
     return MaintenancePart.update({ supplier: name }, { where: { supplierId }, transaction });
   }
   withTransaction(callback) {
-    return sequelize.transaction(callback);
+    return withTransaction(callback);
   }
 }
