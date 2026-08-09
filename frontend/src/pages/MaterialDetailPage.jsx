@@ -36,6 +36,12 @@ const auditActionLabels = Object.freeze({
   RESTORE: 'Restauration',
   DELETE: 'Suppression',
 });
+const auditActionClasses = Object.freeze({
+  CREATE: 'audit-create',
+  UPDATE: 'audit-update',
+  RESTORE: 'audit-restore',
+  DELETE: 'audit-delete',
+});
 const auditFieldLabels = Object.freeze({
   name: 'Nom',
   description: 'Description',
@@ -613,7 +619,9 @@ export default function MaterialDetailPage() {
                       <tr key={event.uuid}>
                         <td className="text-nowrap">{formatDateTime(event.createdAt)}</td>
                         <td>
-                          <span className="status-badge">
+                          <span
+                            className={`status-badge ${auditActionClasses[event.action] ?? ''}`}
+                          >
                             {auditActionLabels[event.action] ?? event.action}
                           </span>
                         </td>

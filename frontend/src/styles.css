@@ -604,6 +604,26 @@ a:hover {
   color: #59635d;
 }
 
+.status-badge.audit-create {
+  background: #e3eddc;
+  color: #365d16;
+}
+
+.status-badge.audit-update {
+  background: #dcecf1;
+  color: var(--brand-blue-dark);
+}
+
+.status-badge.audit-restore {
+  background: #f7edbd;
+  color: #6b5700;
+}
+
+.status-badge.audit-delete {
+  background: #f5d8d8;
+  color: #8a2525;
+}
+
 .status-badge.priority-low {
   background: #eef0ee;
   color: #59635d;

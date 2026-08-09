@@ -139,6 +139,31 @@ describe('MaterialDetailPage', () => {
     expect(screen.queryByText('Prix d’achat')).not.toBeInTheDocument();
   });
 
+  it('uses the GreenDesk badge color assigned to each history action', async () => {
+    mocks.history = [
+      { uuid: 'create', action: 'CREATE', createdAt: '2026-07-27T10:00:00.000Z' },
+      { uuid: 'update', action: 'UPDATE', createdAt: '2026-07-28T10:00:00.000Z' },
+      { uuid: 'restore', action: 'RESTORE', createdAt: '2026-07-29T10:00:00.000Z' },
+      { uuid: 'delete', action: 'DELETE', createdAt: '2026-07-30T10:00:00.000Z' },
+    ];
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/materials/material-uuid']}>
+        <Routes>
+          <Route path="/materials/:uuid" element={<MaterialDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('img', { name: 'Logo Green' });
+    await user.click(screen.getByRole('tab', { name: 'Historique' }));
+
+    expect(screen.getByText('Création')).toHaveClass('status-badge', 'audit-create');
+    expect(screen.getByText('Modification')).toHaveClass('status-badge', 'audit-update');
+    expect(screen.getByText('Restauration')).toHaveClass('status-badge', 'audit-restore');
+    expect(screen.getByText('Suppression')).toHaveClass('status-badge', 'audit-delete');
+  });
+
   it('opens all maintenance plans filtered by the current material', async () => {
     mocks.hasPermission.mockImplementation((permission) => permission === 'maintenance.read');
     const user = userEvent.setup();
