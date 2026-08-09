@@ -30,15 +30,20 @@ export default class AuthService {
     if (!user || !user.isActive || !(await bcrypt.compare(password, user.passwordHash))) {
       throw new AppError('Invalid email or password', HTTP_STATUS.UNAUTHORIZED);
     }
-    await this.authRepository.update(user, { lastLoginAt: new Date() });
-    const session = this.createSession(user);
-    await this.auditService.record({
-      userId: user.id,
-      action: 'LOGIN_SUCCESS',
-      entity: 'USER',
-      entityUuid: user.uuid,
+    return this.authRepository.withTransaction(async (transaction) => {
+      await this.authRepository.update(user, { lastLoginAt: new Date() }, { transaction });
+      const session = this.createSession(user);
+      await this.auditService.record(
+        {
+          userId: user.id,
+          action: 'LOGIN_SUCCESS',
+          entity: 'USER',
+          entityUuid: user.uuid,
+        },
+        { transaction },
+      );
+      return session;
     });
-    return session;
   }
 
   /** Renews an active user's access token and revokes the token it replaces. */
@@ -50,8 +55,12 @@ export default class AuthService {
     if (!user?.isActive) {
       throw new AppError('Invalid or expired access token', HTTP_STATUS.UNAUTHORIZED);
     }
-    await this.authRepository.revokeAccessToken(claims.jti, new Date(claims.exp * 1000));
-    return this.createSession(user);
+    return this.authRepository.withTransaction(async (transaction) => {
+      await this.authRepository.revokeAccessToken(claims.jti, new Date(claims.exp * 1000), {
+        transaction,
+      });
+      return this.createSession(user);
+    });
   }
 
   /** Creates the public session payload shared by login and active-session renewal. */
@@ -91,12 +100,19 @@ export default class AuthService {
     if (!claims?.jti || !claims?.exp) {
       throw new AppError('Invalid or expired access token', HTTP_STATUS.UNAUTHORIZED);
     }
-    await this.authRepository.revokeAccessToken(claims.jti, new Date(claims.exp * 1000));
-    await this.auditService.record({
-      userId: claims.userId,
-      action: 'LOGOUT_SUCCESS',
-      entity: 'USER',
-      entityUuid: claims.sub,
+    await this.authRepository.withTransaction(async (transaction) => {
+      await this.authRepository.revokeAccessToken(claims.jti, new Date(claims.exp * 1000), {
+        transaction,
+      });
+      await this.auditService.record(
+        {
+          userId: claims.userId,
+          action: 'LOGOUT_SUCCESS',
+          entity: 'USER',
+          entityUuid: claims.sub,
+        },
+        { transaction },
+      );
     });
   }
 }

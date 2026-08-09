@@ -43,20 +43,30 @@ export default class MaintenanceCatalogService {
       throw new AppError('Cette opération existe déjà.', HTTP_STATUS.CONFLICT);
 
     const operation = await this.repository.withTransaction(async (transaction) => {
+      let created;
       if (existing) {
         await this.repository.restoreOperation(existing, { transaction });
-        return this.repository.updateOperation(
+        created = await this.repository.updateOperation(
           existing,
           { ...values, active: true, updatedBy: userId },
           { transaction },
         );
+      } else {
+        created = await this.repository.createOperation(
+          { ...values, createdBy: userId, updatedBy: userId },
+          { transaction },
+        );
       }
-      return this.repository.createOperation(
-        { ...values, createdBy: userId, updatedBy: userId },
+      await this.record(
+        userId,
+        existing ? 'RESTORE' : 'CREATE',
+        'MAINTENANCE_OPERATION',
+        created,
+        undefined,
         { transaction },
       );
+      return created;
     });
-    await this.record(userId, existing ? 'RESTORE' : 'CREATE', 'MAINTENANCE_OPERATION', operation);
     return this.toPublic(operation);
   }
 
@@ -85,19 +95,28 @@ export default class MaintenanceCatalogService {
           { transaction },
         );
       }
+      await this.record(userId, 'UPDATE', 'MAINTENANCE_OPERATION', operation, oldValues, {
+        transaction,
+      });
     });
-    await this.record(userId, 'UPDATE', 'MAINTENANCE_OPERATION', operation, oldValues);
     return this.toPublic(operation);
   }
 
   async removeOperation(uuid, userId) {
-    const operation = await this.getOperationEntity(uuid);
-    if (await this.repository.countTasksForOperation(operation.id)) {
-      throw new AppError('Cette opération est encore utilisée par un plan.', HTTP_STATUS.CONFLICT);
-    }
-    const oldValues = this.toPublic(operation);
-    await this.repository.removeOperation(operation);
-    await this.record(userId, 'DELETE', 'MAINTENANCE_OPERATION', operation, oldValues);
+    await this.repository.withTransaction(async (transaction) => {
+      const operation = await this.getOperationEntity(uuid, { transaction });
+      if (await this.repository.countTasksForOperation(operation.id, { transaction })) {
+        throw new AppError(
+          'Cette opération est encore utilisée par un plan.',
+          HTTP_STATUS.CONFLICT,
+        );
+      }
+      const oldValues = this.toPublic(operation);
+      await this.repository.removeOperation(operation, { transaction });
+      await this.record(userId, 'DELETE', 'MAINTENANCE_OPERATION', operation, oldValues, {
+        transaction,
+      });
+    });
   }
 
   async getParts() {
@@ -131,20 +150,17 @@ export default class MaintenanceCatalogService {
           { ...partValues, active: true, updatedBy: userId },
           { transaction },
         );
-        return { part, restored: true };
+        const prepared = { part, restored: true };
+        await this.record(userId, 'RESTORE', 'MAINTENANCE_PART', part, undefined, { transaction });
+        return prepared;
       }
       const part = await this.repository.createPart(
         { ...partValues, createdBy: userId, updatedBy: userId },
         { transaction },
       );
+      await this.record(userId, 'CREATE', 'MAINTENANCE_PART', part, undefined, { transaction });
       return { part, restored: false };
     });
-    await this.record(
-      userId,
-      prepared.restored ? 'RESTORE' : 'CREATE',
-      'MAINTENANCE_PART',
-      prepared.part,
-    );
     return this.toPublic(await this.repository.findPartByUuid(prepared.part.uuid));
   }
 
@@ -181,8 +197,8 @@ export default class MaintenanceCatalogService {
         }
       }
       await this.repository.updatePart(part, { ...partValues, updatedBy: userId }, { transaction });
+      await this.record(userId, 'UPDATE', 'MAINTENANCE_PART', part, oldValues, { transaction });
     });
-    await this.record(userId, 'UPDATE', 'MAINTENANCE_PART', part, oldValues);
     return this.toPublic(await this.repository.findPartByUuid(part.uuid));
   }
 
@@ -201,8 +217,10 @@ export default class MaintenanceCatalogService {
         },
         { transaction },
       );
+      await this.record(userId, 'STOCK_UPDATE', 'MAINTENANCE_PART', part, oldValues, {
+        transaction,
+      });
     });
-    await this.record(userId, 'STOCK_UPDATE', 'MAINTENANCE_PART', part, oldValues);
     return this.toPublic(await this.repository.findPartByUuid(part.uuid));
   }
 
@@ -298,13 +316,15 @@ export default class MaintenanceCatalogService {
   }
 
   async removePart(uuid, userId) {
-    const part = await this.getPartEntity(uuid);
-    if (await this.repository.countTasksForPart(part.id)) {
-      throw new AppError('Cette pièce est encore utilisée par un plan.', HTTP_STATUS.CONFLICT);
-    }
-    const oldValues = this.toPublic(part);
-    await this.repository.removePart(part);
-    await this.record(userId, 'DELETE', 'MAINTENANCE_PART', part, oldValues);
+    await this.repository.withTransaction(async (transaction) => {
+      const part = await this.getPartEntity(uuid, { transaction });
+      if (await this.repository.countTasksForPart(part.id, { transaction })) {
+        throw new AppError('Cette pièce est encore utilisée par un plan.', HTTP_STATUS.CONFLICT);
+      }
+      const oldValues = this.toPublic(part);
+      await this.repository.removePart(part, { transaction });
+      await this.record(userId, 'DELETE', 'MAINTENANCE_PART', part, oldValues, { transaction });
+    });
   }
 
   toPublic(item) {
@@ -347,14 +367,17 @@ export default class MaintenanceCatalogService {
     };
   }
 
-  record(userId, action, entity, item, oldValues) {
-    return this.auditService.record({
-      userId,
-      action,
-      entity,
-      entityUuid: item.uuid,
-      ...(oldValues ? { oldValues } : {}),
-      ...(action !== 'DELETE' ? { newValues: this.toPublic(item) } : {}),
-    });
+  record(userId, action, entity, item, oldValues, options) {
+    return this.auditService.record(
+      {
+        userId,
+        action,
+        entity,
+        entityUuid: item.uuid,
+        ...(oldValues ? { oldValues } : {}),
+        ...(action !== 'DELETE' ? { newValues: this.toPublic(item) } : {}),
+      },
+      options,
+    );
   }
 }

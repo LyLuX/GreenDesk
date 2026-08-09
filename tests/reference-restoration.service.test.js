@@ -2,6 +2,9 @@ import { jest } from '@jest/globals';
 
 import CategoryService from '../src/modules/categories/service/category.service.js';
 
+const transaction = { id: 'transaction' };
+const withTransaction = jest.fn((callback) => callback(transaction));
+
 const restoredItem = (name) => ({
   uuid: `${name}-uuid`,
   name,
@@ -23,20 +26,23 @@ describe.each(restorationCases)('$entity restoration', ({ Service, entity, value
       restore: jest.fn(),
       update: jest.fn(),
       create: jest.fn(),
+      withTransaction,
     };
     const auditService = { record: jest.fn() };
     const service = new Service(repository, auditService);
 
     await service.create(values, 3);
 
-    expect(repository.restore).toHaveBeenCalledWith(item);
+    expect(repository.restore).toHaveBeenCalledWith(item, { transaction });
     expect(repository.update).toHaveBeenCalledWith(
       item,
       expect.objectContaining({ active: true, updatedBy: 3 }),
+      { transaction },
     );
     expect(repository.create).not.toHaveBeenCalled();
     expect(auditService.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'RESTORE', entity }),
+      { transaction },
     );
   });
 });
@@ -49,6 +55,7 @@ describe('CategoryService update', () => {
       findByUuid: jest.fn().mockResolvedValue(item),
       findByName: jest.fn().mockResolvedValue(item),
       update: jest.fn((category, values) => Object.assign(category, values)),
+      withTransaction,
     };
     const service = new CategoryService(repository, { record: jest.fn() });
 

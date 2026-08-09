@@ -2,6 +2,8 @@ import { jest } from '@jest/globals';
 
 import MaterialFileService from '../src/modules/materials/service/material-file.service.js';
 
+const transaction = { id: 'transaction' };
+
 describe('MaterialFileService', () => {
   const createService = (overrides = {}, materialService = { getEntityByUuid: jest.fn() }) =>
     new MaterialFileService(
@@ -10,6 +12,7 @@ describe('MaterialFileService', () => {
         create: jest.fn(),
         findByUuid: jest.fn(),
         remove: jest.fn(),
+        withTransaction: jest.fn((callback) => callback(transaction)),
         ...overrides,
       },
       materialService,
@@ -57,7 +60,7 @@ describe('MaterialFileService', () => {
     const service = createService(repository);
     service.safeDeletePhysicalFile = jest.fn().mockResolvedValue(false);
     await service.remove('file');
-    expect(repository.remove).toHaveBeenCalledWith(file);
+    expect(repository.remove).toHaveBeenCalledWith(file, { transaction });
   });
 
   it('keeps the database row when physical deletion fails', async () => {

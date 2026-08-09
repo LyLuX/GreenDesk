@@ -28,25 +28,31 @@ export default class SupplierService {
       throw new AppError('Ce fournisseur existe déjà.', HTTP_STATUS.CONFLICT);
     }
     const item = await this.repository.withTransaction(async (transaction) => {
+      let created;
       if (existing) {
         await this.repository.restore(existing, { transaction });
-        return this.repository.update(
+        created = await this.repository.update(
           existing,
           { ...values, active: true, updatedBy: userId },
           { transaction },
         );
+      } else {
+        created = await this.repository.create(
+          { ...values, createdBy: userId, updatedBy: userId },
+          { transaction },
+        );
       }
-      return this.repository.create(
-        { ...values, createdBy: userId, updatedBy: userId },
+      await this.auditService.record(
+        {
+          userId,
+          action: existing ? 'RESTORE' : 'CREATE',
+          entity: 'SUPPLIER',
+          entityUuid: created.uuid,
+          newValues: created.toJSON(),
+        },
         { transaction },
       );
-    });
-    await this.auditService.record({
-      userId,
-      action: existing ? 'RESTORE' : 'CREATE',
-      entity: 'SUPPLIER',
-      entityUuid: item.uuid,
-      newValues: item.toJSON(),
+      return created;
     });
     return this.toPublic(item);
   }
@@ -64,30 +70,35 @@ export default class SupplierService {
       if (values.name) {
         await this.repository.updatePartNames(item.id, item.name, { transaction });
       }
-    });
-    await this.auditService.record({
-      userId,
-      action: 'UPDATE',
-      entity: 'SUPPLIER',
-      entityUuid: item.uuid,
-      oldValues,
-      newValues: item.toJSON(),
+      await this.auditService.record(
+        {
+          userId,
+          action: 'UPDATE',
+          entity: 'SUPPLIER',
+          entityUuid: item.uuid,
+          oldValues,
+          newValues: item.toJSON(),
+        },
+        { transaction },
+      );
     });
     return this.toPublic(item);
   }
   async remove(uuid, userId) {
-    const item = await this.getEntityByUuid(uuid);
-    if (await this.repository.countParts(item.id)) {
-      throw new AppError('Ce fournisseur est encore utilisé par une pièce.', HTTP_STATUS.CONFLICT);
-    }
-    const oldValues = item.toJSON();
-    await this.repository.delete(item);
-    await this.auditService.record({
-      userId,
-      action: 'DELETE',
-      entity: 'SUPPLIER',
-      entityUuid: item.uuid,
-      oldValues,
+    await this.repository.withTransaction(async (transaction) => {
+      const item = await this.getEntityByUuid(uuid, { transaction });
+      if (await this.repository.countParts(item.id, { transaction })) {
+        throw new AppError(
+          'Ce fournisseur est encore utilisé par une pièce.',
+          HTTP_STATUS.CONFLICT,
+        );
+      }
+      const oldValues = item.toJSON();
+      await this.repository.delete(item, { transaction });
+      await this.auditService.record(
+        { userId, action: 'DELETE', entity: 'SUPPLIER', entityUuid: item.uuid, oldValues },
+        { transaction },
+      );
     });
   }
   toPublic(item) {

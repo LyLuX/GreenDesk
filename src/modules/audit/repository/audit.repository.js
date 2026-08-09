@@ -3,8 +3,8 @@ import User from '../../users/model/user.model.js';
 
 /** Database access for immutable audit records. */
 export default class AuditRepository {
-  async create(values) {
-    return AuditLog.create(values);
+  async create(values, options = {}) {
+    return AuditLog.create(values, options);
   }
 
   async findByEntity(entity, entityUuid) {

@@ -113,14 +113,17 @@ export default class MaintenanceService {
         { transaction },
       );
       await this.repository.replaceParts(created.id, resolvedParts, { transaction });
+      await this.auditService.record(
+        {
+          userId,
+          action: 'CREATE',
+          entity: 'MAINTENANCE_TASK',
+          entityUuid: created.uuid,
+          newValues: created.toJSON(),
+        },
+        { transaction },
+      );
       return created;
-    });
-    await this.auditService.record({
-      userId,
-      action: 'CREATE',
-      entity: 'MAINTENANCE_TASK',
-      entityUuid: task.uuid,
-      newValues: task.toJSON(),
     });
     return this.toPublic(await this.repository.findByUuid(task.uuid));
   }
@@ -157,14 +160,17 @@ export default class MaintenanceService {
           transaction,
         });
       }
-    });
-    await this.auditService.record({
-      userId,
-      action: 'UPDATE',
-      entity: 'MAINTENANCE_TASK',
-      entityUuid: task.uuid,
-      oldValues,
-      newValues: task.toJSON(),
+      await this.auditService.record(
+        {
+          userId,
+          action: 'UPDATE',
+          entity: 'MAINTENANCE_TASK',
+          entityUuid: task.uuid,
+          oldValues,
+          newValues: task.toJSON(),
+        },
+        { transaction },
+      );
     });
     return this.toPublic(await this.repository.findByUuid(task.uuid));
   }
@@ -182,27 +188,30 @@ export default class MaintenanceService {
       }
       oldValues = task.toJSON();
       await this.repository.update(task, { active, updatedBy: userId }, { transaction });
-    });
-    await this.auditService.record({
-      userId,
-      action: 'STATUS_CHANGE',
-      entity: 'MAINTENANCE_TASK',
-      entityUuid: task.uuid,
-      oldValues,
-      newValues: task.toJSON(),
+      await this.auditService.record(
+        {
+          userId,
+          action: 'STATUS_CHANGE',
+          entity: 'MAINTENANCE_TASK',
+          entityUuid: task.uuid,
+          oldValues,
+          newValues: task.toJSON(),
+        },
+        { transaction },
+      );
     });
     return this.toPublic(task);
   }
   async remove(uuid, userId) {
-    const task = await this.getEntityByUuid(uuid);
-    const oldValues = task.toJSON();
-    await this.repository.remove(task);
-    await this.auditService.record({
-      userId,
-      action: 'DELETE',
-      entity: 'MAINTENANCE_TASK',
-      entityUuid: task.uuid,
-      oldValues,
+    await this.repository.withTransaction(async (transaction) => {
+      const task = await this.repository.findByUuid(uuid, { transaction, lock: true });
+      if (!task) throw new AppError('Tâche de maintenance introuvable.', HTTP_STATUS.NOT_FOUND);
+      const oldValues = task.toJSON();
+      await this.repository.remove(task, { transaction });
+      await this.auditService.record(
+        { userId, action: 'DELETE', entity: 'MAINTENANCE_TASK', entityUuid: task.uuid, oldValues },
+        { transaction },
+      );
     });
   }
   async execute(uuid, values, userId) {
@@ -268,15 +277,18 @@ export default class MaintenanceService {
         },
         { transaction },
       );
+      await this.auditService.record(
+        {
+          userId,
+          action: 'EXECUTE',
+          entity: 'MAINTENANCE_TASK',
+          entityUuid: task.uuid,
+          oldValues,
+          newValues: task.toJSON(),
+        },
+        { transaction },
+      );
       return { task, history, oldValues };
-    });
-    await this.auditService.record({
-      userId,
-      action: 'EXECUTE',
-      entity: 'MAINTENANCE_TASK',
-      entityUuid: result.task.uuid,
-      oldValues: result.oldValues,
-      newValues: result.task.toJSON(),
     });
     return { task: this.toPublic(result.task), history: this.toHistory(result.history) };
   }

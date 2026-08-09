@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 
-import { withTransaction } from '../../../core/database/transaction-context.js';
+import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 import Material from '../model/material.model.js';
 import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
@@ -17,7 +17,7 @@ const include = [
 ];
 
 /** Sequelize persistence operations for material catalogue records. */
-export default class MaterialRepository {
+export default class MaterialRepository extends TransactionalRepository {
   async findOptions() {
     return Material.findAll({
       attributes: ['uuid', 'name', 'active'],
@@ -79,18 +79,18 @@ export default class MaterialRepository {
     });
   }
 
-  async findByName(name, { withDeleted = false } = {}) {
-    return Material.findOne({ where: { name }, paranoid: !withDeleted });
+  async findByName(name, { withDeleted = false, transaction } = {}) {
+    return Material.findOne({ where: { name }, paranoid: !withDeleted, transaction });
   }
 
-  async findBySerialNumber(serialNumber, { withDeleted = false } = {}) {
+  async findBySerialNumber(serialNumber, { withDeleted = false, transaction } = {}) {
     return serialNumber
-      ? Material.findOne({ where: { serialNumber }, paranoid: !withDeleted })
+      ? Material.findOne({ where: { serialNumber }, paranoid: !withDeleted, transaction })
       : null;
   }
 
-  async create(values) {
-    return Material.create(values);
+  async create(values, options = {}) {
+    return Material.create(values, options);
   }
 
   async update(material, values, options = {}) {
@@ -101,8 +101,8 @@ export default class MaterialRepository {
     return material.destroy(options);
   }
 
-  async restore(material) {
-    return material.restore();
+  async restore(material, options = {}) {
+    return material.restore(options);
   }
 
   async countMaintenanceTasks(materialId, options = {}) {
@@ -146,9 +146,5 @@ export default class MaterialRepository {
         transaction: options.transaction,
       },
     );
-  }
-
-  async withTransaction(callback) {
-    return withTransaction(callback);
   }
 }

@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 
-import { withTransaction } from '../../../core/database/transaction-context.js';
+import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
 import MaintenanceTask from '../model/maintenance-task.model.js';
 import MaintenanceOperation from '../model/maintenance-operation.model.js';
 import MaintenancePart from '../model/maintenance-part.model.js';
@@ -20,7 +20,7 @@ const supplierInclude = {
 const partDirectoryIncludes = [manufacturerInclude, supplierInclude];
 
 /** Persistence operations for reusable maintenance operations and exact parts. */
-export default class MaintenanceCatalogRepository {
+export default class MaintenanceCatalogRepository extends TransactionalRepository {
   findOperations() {
     return MaintenanceOperation.findAll({ order: [['name', 'ASC']] });
   }
@@ -149,9 +149,5 @@ export default class MaintenanceCatalogRepository {
       distinct: true,
       transaction,
     });
-  }
-
-  withTransaction(callback) {
-    return withTransaction(callback);
   }
 }

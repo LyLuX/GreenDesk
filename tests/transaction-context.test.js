@@ -11,7 +11,7 @@ describe('transaction context', () => {
   afterEach(() => jest.restoreAllMocks());
 
   it('reuses the transaction propagated through the current async context', async () => {
-    const transaction = { id: 'request-transaction' };
+    const transaction = { id: 'outer-service-transaction' };
     const callback = jest.fn().mockResolvedValue('done');
     const createTransaction = jest.spyOn(sequelize, 'transaction');
 
@@ -32,11 +32,14 @@ describe('transaction context', () => {
     const callback = jest.fn().mockResolvedValue('done');
     const createTransaction = jest
       .spyOn(sequelize, 'transaction')
-      .mockImplementation(async (managedCallback) => managedCallback(transaction));
+      .mockImplementation(async (_options, managedCallback) => managedCallback(transaction));
 
     await expect(withTransaction(callback)).resolves.toBe('done');
 
-    expect(createTransaction).toHaveBeenCalledWith(callback);
+    expect(createTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({ isolationLevel: 'READ COMMITTED' }),
+      callback,
+    );
     expect(callback).toHaveBeenCalledWith(transaction);
   });
 });

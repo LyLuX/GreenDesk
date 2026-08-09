@@ -1,6 +1,7 @@
 import User from '../model/user.model.js';
 import Role from '../../roles/model/role.model.js';
 import Permission from '../../permissions/model/permission.model.js';
+import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
 
 const roleInclude = [
   {
@@ -15,7 +16,7 @@ const roleInclude = [
 ];
 
 /** Database access for users. */
-export default class UserRepository {
+export default class UserRepository extends TransactionalRepository {
   async findAll() {
     return User.findAll({
       include: roleInclude,
@@ -25,11 +26,16 @@ export default class UserRepository {
       ],
     });
   }
-  async findByUuid(uuid) {
-    return User.findOne({ where: { uuid }, include: roleInclude });
+  async findByUuid(uuid, { transaction } = {}) {
+    return User.findOne({ where: { uuid }, include: roleInclude, transaction });
   }
-  async findByEmail(email, { withDeleted = false } = {}) {
-    return User.findOne({ where: { email }, include: roleInclude, paranoid: !withDeleted });
+  async findByEmail(email, { withDeleted = false, transaction } = {}) {
+    return User.findOne({
+      where: { email },
+      include: roleInclude,
+      paranoid: !withDeleted,
+      transaction,
+    });
   }
   async findByEmailWithPassword(email) {
     return User.scope('withPassword').findOne({ where: { email }, include: roleInclude });
@@ -43,19 +49,19 @@ export default class UserRepository {
       }),
     );
   }
-  async create(values) {
-    return User.create(values);
+  async create(values, { transaction } = {}) {
+    return User.create(values, { transaction });
   }
-  async update(user, values) {
-    return user.update(values);
+  async update(user, values, { transaction } = {}) {
+    return user.update(values, { transaction });
   }
-  async delete(user) {
-    return user.destroy();
+  async delete(user, { transaction } = {}) {
+    return user.destroy({ transaction });
   }
-  async restore(user) {
-    return user.restore();
+  async restore(user, { transaction } = {}) {
+    return user.restore({ transaction });
   }
-  async setRoles(user, roles) {
-    return user.setRoles(roles);
+  async setRoles(user, roles, { transaction } = {}) {
+    return user.setRoles(roles, { transaction });
   }
 }

@@ -12,6 +12,7 @@ const user = {
     return { ...this, passwordHash: 'hidden' };
   },
 };
+const transaction = { id: 'transaction' };
 
 describe('UserService', () => {
   const createService = () => {
@@ -24,6 +25,7 @@ describe('UserService', () => {
       update: jest.fn(),
       delete: jest.fn(),
       restore: jest.fn(),
+      withTransaction: jest.fn((callback) => callback(transaction)),
     };
     const roleRepository = {
       findByName: jest.fn().mockResolvedValue({ id: 3, name: 'USER' }),
@@ -53,11 +55,13 @@ describe('UserService', () => {
     );
     expect(userRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({ email: 'ada@greendesk.local', passwordHash: expect.any(String) }),
+      { transaction },
     );
     expect(userRepository.create.mock.calls[0][0].passwordHash).not.toBe('SecurePass123!');
     expect(result.passwordHash).toBeUndefined();
     expect(auditService.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'USER_CREATED' }),
+      { transaction },
     );
   });
 
@@ -69,9 +73,11 @@ describe('UserService', () => {
   it('updates user role assignments', async () => {
     const { service, userRepository } = createService();
     await service.update(user.uuid, { roleUuids: ['a5eaf09e-49b1-4fa3-a022-1a20854b06bd'] });
-    expect(userRepository.setRoles).toHaveBeenCalledWith(user, [
-      expect.objectContaining({ id: 3 }),
-    ]);
+    expect(userRepository.setRoles).toHaveBeenCalledWith(
+      user,
+      [expect.objectContaining({ id: 3 })],
+      { transaction },
+    );
   });
 
   it('allows an email normalization when the lookup returns the user being edited', async () => {
@@ -86,6 +92,7 @@ describe('UserService', () => {
     expect(userRepository.update).toHaveBeenCalledWith(
       legacyUser,
       expect.objectContaining({ email: 'ada@greendesk.local' }),
+      { transaction },
     );
   });
 
@@ -106,7 +113,7 @@ describe('UserService', () => {
       'USER',
     );
 
-    expect(userRepository.restore).toHaveBeenCalledWith(deletedUser);
+    expect(userRepository.restore).toHaveBeenCalledWith(deletedUser, { transaction });
     expect(userRepository.update).toHaveBeenCalledWith(
       deletedUser,
       expect.objectContaining({
@@ -114,9 +121,11 @@ describe('UserService', () => {
         passwordHash: expect.any(String),
         isActive: true,
       }),
+      { transaction },
     );
     expect(auditService.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'USER_RESTORED' }),
+      { transaction },
     );
   });
 });

@@ -3,6 +3,7 @@ import { jest } from '@jest/globals';
 import SupplierService from '../src/modules/suppliers/service/supplier.service.js';
 
 describe('SupplierService', () => {
+  const transaction = { id: 'transaction' };
   it('allows an update when the name lookup returns the supplier being edited', async () => {
     const supplier = {
       id: 7,
@@ -15,7 +16,7 @@ describe('SupplierService', () => {
     const repository = {
       findByUuid: jest.fn().mockResolvedValue(supplier),
       findByName: jest.fn().mockResolvedValue(supplier),
-      withTransaction: jest.fn((callback) => callback(undefined)),
+      withTransaction: jest.fn((callback) => callback(transaction)),
       update: jest.fn((item, values) => Object.assign(item, values)),
       updatePartNames: jest.fn(),
     };
@@ -39,6 +40,7 @@ describe('SupplierService', () => {
       findByUuid: jest.fn().mockResolvedValue(supplier),
       countParts: jest.fn().mockResolvedValue(1),
       delete: jest.fn(),
+      withTransaction: jest.fn((callback) => callback(transaction)),
     };
     const service = new SupplierService(repository, {});
 

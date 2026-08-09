@@ -1,8 +1,8 @@
 import MaterialFile from '../model/material-file.model.js';
-import { withTransaction } from '../../../core/database/transaction-context.js';
-export default class MaterialFileRepository {
-  async create(values) {
-    return MaterialFile.create(values);
+import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
+export default class MaterialFileRepository extends TransactionalRepository {
+  async create(values, { transaction } = {}) {
+    return MaterialFile.create(values, { transaction });
   }
   async findByUuid(uuid) {
     return MaterialFile.findOne({ where: { uuid } });
@@ -10,11 +10,11 @@ export default class MaterialFileRepository {
   async countPhotos(materialId) {
     return MaterialFile.count({ where: { materialId, kind: 'photo' } });
   }
-  async remove(file) {
-    return file.destroy();
+  async remove(file, { transaction } = {}) {
+    return file.destroy({ transaction });
   }
   async setPrimary(file) {
-    return withTransaction(async (transaction) => {
+    return this.withTransaction(async (transaction) => {
       await MaterialFile.update(
         { isPrimary: false },
         { where: { materialId: file.materialId, kind: 'photo' }, transaction },

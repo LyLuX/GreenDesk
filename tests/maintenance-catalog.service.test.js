@@ -77,6 +77,7 @@ describe('MaintenanceCatalogService', () => {
       findPartByUuid: jest.fn().mockResolvedValue(part),
       countTasksForPart: jest.fn().mockResolvedValue(1),
       removePart: jest.fn(),
+      withTransaction: jest.fn((callback) => callback({ id: 'transaction' })),
     };
     const service = new MaintenanceCatalogService(repository, {});
 

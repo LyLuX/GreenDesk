@@ -204,6 +204,7 @@ describe('MaterialService', () => {
         entity: 'MATERIAL',
         entityUuid: material.uuid,
       }),
+      { transaction: { id: 'transaction' } },
     );
   });
 
@@ -292,13 +293,17 @@ describe('MaterialService', () => {
 
     await service.create({ name: 'Tondeuse', unit: 'u', purchasePrice: 0 }, 7);
 
-    expect(repository.restore).toHaveBeenCalledWith(deletedMaterial);
+    expect(repository.restore).toHaveBeenCalledWith(deletedMaterial, {
+      transaction: { id: 'transaction' },
+    });
     expect(repository.update).toHaveBeenCalledWith(
       deletedMaterial,
       expect.objectContaining({ active: true, updatedBy: 7 }),
+      { transaction: { id: 'transaction' } },
     );
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'RESTORE', entity: 'MATERIAL' }),
+      { transaction: { id: 'transaction' } },
     );
   });
 

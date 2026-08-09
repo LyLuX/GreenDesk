@@ -18,20 +18,29 @@ export default class MaterialFileService {
         throw new AppError('Le type de photo est invalide.', HTTP_STATUS.BAD_REQUEST);
       if (kind === 'document' && !DOCUMENT_TYPES.includes(documentType))
         throw new AppError('Le type de document est invalide.', HTTP_STATUS.BAD_REQUEST);
-      const material = await this.materialService.getEntityByUuid(materialUuid);
-      if (kind === 'photo' && (await this.repository.countPhotos(material.id)) >= 10)
-        throw new AppError('Un matériel ne peut contenir que 10 photos.', HTTP_STATUS.BAD_REQUEST);
-      return this.toPublic(
-        await this.repository.create({
-          materialId: material.id,
-          kind,
-          documentType: documentType ?? null,
-          originalName: file.originalname,
-          fileName: file.filename,
-          mimeType: file.mimetype,
-          size: file.size,
-        }),
-      );
+      const persistedFile = await this.repository.withTransaction(async (transaction) => {
+        const material = await this.materialService.getEntityByUuid(materialUuid, { transaction });
+        if (kind === 'photo' && (await this.repository.countPhotos(material.id)) >= 10)
+          throw new AppError(
+            'Un matériel ne peut contenir que 10 photos.',
+            HTTP_STATUS.BAD_REQUEST,
+          );
+        return this.toPublic(
+          await this.repository.create(
+            {
+              materialId: material.id,
+              kind,
+              documentType: documentType ?? null,
+              originalName: file.originalname,
+              fileName: file.filename,
+              mimeType: file.mimetype,
+              size: file.size,
+            },
+            { transaction },
+          ),
+        );
+      });
+      return persistedFile;
     } catch (error) {
       if (file?.path) await this.safeDeletePhysicalFile(file.path);
       throw error;
@@ -41,7 +50,9 @@ export default class MaterialFileService {
     const file = await this.repository.findByUuid(uuid);
     if (!file) throw new AppError('Fichier introuvable.', HTTP_STATUS.NOT_FOUND);
     await this.safeDeletePhysicalFile(this.getPhysicalPath(file.fileName));
-    await this.repository.remove(file);
+    await this.repository.withTransaction((transaction) =>
+      this.repository.remove(file, { transaction }),
+    );
   }
   async setPrimary(uuid) {
     const file = await this.repository.findByUuid(uuid);

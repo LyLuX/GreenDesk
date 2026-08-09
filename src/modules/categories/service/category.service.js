@@ -12,71 +12,81 @@ export default class CategoryService {
   async getAll(search) {
     return this.categoryRepository.findAll(search);
   }
-  async getByUuid(uuid) {
-    const item = await this.categoryRepository.findByUuid(uuid);
+  async getByUuid(uuid, options) {
+    const item = await this.categoryRepository.findByUuid(uuid, options);
     if (!item) throw new AppError('Category not found', HTTP_STATUS.NOT_FOUND);
     return item;
   }
   async create(values, userId) {
-    const existingCategory = await this.categoryRepository.findByName(values.name, {
-      withDeleted: true,
-    });
-    if (existingCategory && !existingCategory.deletedAt) await this.ensureName(values.name);
-    const oldValues = existingCategory?.toJSON();
-    if (existingCategory) {
-      await this.categoryRepository.restore(existingCategory);
-      await this.categoryRepository.update(existingCategory, {
-        ...values,
-        active: true,
-        updatedBy: userId,
+    return this.categoryRepository.withTransaction(async (transaction) => {
+      const existingCategory = await this.categoryRepository.findByName(values.name, {
+        withDeleted: true,
+        transaction,
       });
-    }
-    const item =
-      existingCategory ??
-      (await this.categoryRepository.create({
-        ...values,
-        createdBy: userId,
-        updatedBy: userId,
-      }));
-    await this.auditService.record({
-      userId,
-      action: existingCategory ? 'RESTORE' : 'CREATE',
-      entity: 'CATEGORY',
-      entityUuid: item.uuid,
-      ...(oldValues ? { oldValues } : {}),
-      newValues: item.toJSON(),
+      if (existingCategory && !existingCategory.deletedAt)
+        await this.ensureName(values.name, undefined, { transaction });
+      const oldValues = existingCategory?.toJSON();
+      if (existingCategory) {
+        await this.categoryRepository.restore(existingCategory, { transaction });
+        await this.categoryRepository.update(
+          existingCategory,
+          { ...values, active: true, updatedBy: userId },
+          { transaction },
+        );
+      }
+      const item =
+        existingCategory ??
+        (await this.categoryRepository.create(
+          { ...values, createdBy: userId, updatedBy: userId },
+          { transaction },
+        ));
+      await this.auditService.record(
+        {
+          userId,
+          action: existingCategory ? 'RESTORE' : 'CREATE',
+          entity: 'CATEGORY',
+          entityUuid: item.uuid,
+          ...(oldValues ? { oldValues } : {}),
+          newValues: item.toJSON(),
+        },
+        { transaction },
+      );
+      return item;
     });
-    return item;
   }
   async update(uuid, values, userId) {
-    const item = await this.getByUuid(uuid);
-    const oldValues = item.toJSON();
-    if (values.name) await this.ensureName(values.name, item.uuid);
-    await this.categoryRepository.update(item, { ...values, updatedBy: userId });
-    await this.auditService.record({
-      userId,
-      action: 'UPDATE',
-      entity: 'CATEGORY',
-      entityUuid: item.uuid,
-      oldValues,
-      newValues: item.toJSON(),
+    return this.categoryRepository.withTransaction(async (transaction) => {
+      const item = await this.getByUuid(uuid, { transaction });
+      const oldValues = item.toJSON();
+      if (values.name) await this.ensureName(values.name, item.uuid, { transaction });
+      await this.categoryRepository.update(item, { ...values, updatedBy: userId }, { transaction });
+      await this.auditService.record(
+        {
+          userId,
+          action: 'UPDATE',
+          entity: 'CATEGORY',
+          entityUuid: item.uuid,
+          oldValues,
+          newValues: item.toJSON(),
+        },
+        { transaction },
+      );
+      return item;
     });
-    return item;
   }
   async remove(uuid, userId) {
-    const item = await this.getByUuid(uuid);
-    const oldValues = item.toJSON();
-    await this.categoryRepository.delete(item);
-    await this.auditService.record({
-      userId,
-      action: 'DELETE',
-      entity: 'CATEGORY',
-      entityUuid: item.uuid,
-      oldValues,
+    return this.categoryRepository.withTransaction(async (transaction) => {
+      const item = await this.getByUuid(uuid, { transaction });
+      const oldValues = item.toJSON();
+      await this.categoryRepository.delete(item, { transaction });
+      await this.auditService.record(
+        { userId, action: 'DELETE', entity: 'CATEGORY', entityUuid: item.uuid, oldValues },
+        { transaction },
+      );
     });
   }
-  async ensureName(name, currentUuid) {
-    const duplicate = await this.categoryRepository.findByName(name);
+  async ensureName(name, currentUuid, options) {
+    const duplicate = await this.categoryRepository.findByName(name, options);
     if (duplicate && duplicate.uuid !== currentUuid)
       throw new AppError('Category name is already in use', HTTP_STATUS.CONFLICT);
   }

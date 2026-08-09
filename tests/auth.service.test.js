@@ -5,6 +5,11 @@ import { jest } from '@jest/globals';
 import AuthService from '../src/modules/auth/service/auth.service.js';
 
 const uuid = 'a5eaf09e-49b1-4fa3-a022-1a20854b06bd';
+const transaction = { id: 'transaction' };
+const transactional = (repository) => ({
+  ...repository,
+  withTransaction: jest.fn((callback) => callback(transaction)),
+});
 const makeUser = async () => ({
   id: 1,
   uuid,
@@ -37,10 +42,10 @@ describe('AuthService', () => {
 
   it('returns an access token for valid credentials', async () => {
     const user = await makeUser();
-    const authRepository = {
+    const authRepository = transactional({
       findByEmailWithPassword: jest.fn().mockResolvedValue(user),
       update: jest.fn(),
-    };
+    });
     const service = new AuthService(
       authRepository,
       { publicUser: (value) => value.toJSON() },
@@ -53,6 +58,7 @@ describe('AuthService', () => {
     expect(authRepository.update).toHaveBeenCalledWith(
       user,
       expect.objectContaining({ lastLoginAt: expect.any(Date) }),
+      { transaction },
     );
   });
 
@@ -69,7 +75,7 @@ describe('AuthService', () => {
 
   it('renews an active session and revokes the previous token', async () => {
     const user = await makeUser();
-    const authRepository = { revokeAccessToken: jest.fn() };
+    const authRepository = transactional({ revokeAccessToken: jest.fn() });
     const service = new AuthService(
       authRepository,
       {
@@ -87,22 +93,31 @@ describe('AuthService', () => {
       userId: user.id,
     });
 
-    expect(authRepository.revokeAccessToken).toHaveBeenCalledWith(uuid, new Date(expiresAt * 1000));
+    expect(authRepository.revokeAccessToken).toHaveBeenCalledWith(
+      uuid,
+      new Date(expiresAt * 1000),
+      { transaction },
+    );
     expect(jwt.decode(result.accessToken).jti).not.toBe(uuid);
     expect(result.user).toMatchObject({ uuid, roles: ['USER'] });
   });
 
   it('revokes the current token on logout', async () => {
-    const authRepository = { revokeAccessToken: jest.fn() };
+    const authRepository = transactional({ revokeAccessToken: jest.fn() });
     const auditService = { record: jest.fn() };
     const service = new AuthService(authRepository, {}, auditService);
     const expiresAt = 1_800_000_000;
 
     await service.logout({ jti: uuid, exp: expiresAt, userId: 1, sub: uuid });
 
-    expect(authRepository.revokeAccessToken).toHaveBeenCalledWith(uuid, new Date(expiresAt * 1000));
+    expect(authRepository.revokeAccessToken).toHaveBeenCalledWith(
+      uuid,
+      new Date(expiresAt * 1000),
+      { transaction },
+    );
     expect(auditService.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'LOGOUT_SUCCESS', userId: 1 }),
+      { transaction },
     );
   });
 });

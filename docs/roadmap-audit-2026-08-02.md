@@ -1,14 +1,13 @@
 # Roadmap de correction des audits GreenDesk des 2 et 9 août 2026
 
-J’ai confronté l’audit du 2 août, réalisé sur GreenDesk v1.15.3, et celui du 9 août, réalisé sur GreenDesk v4.4.0, à GreenDesk v4.4.2. Les failles critiques relevées par le premier audit et les évolutions fonctionnelles récentes ont déjà été traitées. Les risques les plus importants encore présents concernent le système de migrations et la transaction globale appliquée à toutes les routes API.
+J’ai confronté l’audit du 2 août, réalisé sur GreenDesk v1.15.3, et celui du 9 août, réalisé sur GreenDesk v4.4.0, à GreenDesk v4.4.3. Les failles critiques relevées par le premier audit et les évolutions fonctionnelles récentes ont déjà été traitées. Le système de migrations reste le principal risque technique actif.
 
 ## Roadmap recommandée
 
-| Priorité | Correction                                      | Sévérité | Taille |
-| -------- | ----------------------------------------------- | -------: | -----: |
-| 1        | Unification du système de migrations            |    Haute |      L |
-| 2        | Transactions limitées aux unités d’écriture     |    Haute |      L |
-| 3        | Intégration continue obligatoire                |    Haute |      M |
+| Priorité | Correction                           | Sévérité | Taille |
+| -------- | ------------------------------------ | -------: | -----: |
+| 1        | Unification du système de migrations |    Haute |      L |
+| 2        | Intégration continue obligatoire     |    Haute |      M |
 
 ### 1. Rendre les migrations fiables
 
@@ -29,25 +28,9 @@ Une base vide ne peut pas être reconstruite de manière certaine uniquement ave
 5. Retirer ensuite tous les `sequelize.sync()`.
 6. Ajouter le test de reconstruction à la CI.
 
-### 2. Limiter les transactions aux unités d’écriture
+### 2. Ajouter une CI bloquante
 
-Le middleware global de [app.js](../src/app.js) ouvre actuellement une transaction `READ COMMITTED` pour chaque requête sous `/api`, y compris les lectures. Avec un pool limité à dix connexions, les requêtes `GET` consomment inutilement une connexion et exécutent un `BEGIN` puis un `COMMIT`, ce qui réduira la capacité de montée en charge.
-
-Ce middleware garantit toutefois aujourd’hui que certaines modifications métier et leur journal d’audit restent atomiques. Il ne doit donc pas être retiré avant d’avoir sécurisé chaque chemin d’écriture.
-
-À faire dans cet ordre :
-
-1. Inventorier toutes les écritures et leur dépendance au contexte transactionnel de la requête.
-2. Regrouper explicitement chaque modification métier et son audit dans une même unité de travail au niveau service.
-3. Conserver un mécanisme transactionnel réutilisable pour les appels imbriqués, sans dupliquer la gestion des transactions dans les contrôleurs.
-4. Ajouter des tests d’atomicité vérifiant que les données métier et l’audit sont annulés ensemble en cas d’échec.
-5. Retirer la transaction globale des routes de lecture, puis supprimer le middleware global lorsque toutes les écritures sont couvertes.
-6. Ajouter un test garantissant qu’une requête `GET` n’ouvre aucune transaction.
-7. Mesurer la concurrence sur des lectures représentatives et vérifier la latence ainsi que l’utilisation du pool avant et après la correction.
-
-### 3. Ajouter une CI bloquante
-
-Le constat des audits indiquant que les tests n’avaient pas été exécutés est désormais dépassé : les validations de la v4.4.2 passent localement avec les tests backend et frontend, le contrôle OpenAPI et le build de production.
+Le constat des audits indiquant que les tests n’avaient pas été exécutés est désormais dépassé : les validations de la v4.4.3 passent localement avec les tests backend et frontend, le contrôle OpenAPI et le build de production.
 
 En revanche, aucun workflow CI n’impose encore ces contrôles.
 
@@ -75,5 +58,6 @@ La CI devrait exécuter :
 - La compression utilise le réglage équilibré validé par benchmark.
 - Les URL Blob des images sont correctement révoquées et les requêtes identiques sont dédupliquées.
 - Les tests, OpenAPI et le build de production sont validés à chaque livraison.
+- Les transactions sont limitées aux unités d’écriture des services. Les données métier et leur audit partagent la même transaction, tandis que les lectures concurrentes n’occupent plus le pool avec des transactions inutiles.
 - Plusieurs pages auparavant centralisées ont déjà été extraites.
 - Le stock atelier et les commandes sont séparés, historisés et modifiés atomiquement par un service réutilisable ; l’exécution d’un entretien consomme désormais ses pièces.

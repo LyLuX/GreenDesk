@@ -1,10 +1,10 @@
 import { Op } from 'sequelize';
-import { withTransaction } from '../../../core/database/transaction-context.js';
+import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
 import Material from '../../materials/model/material.model.js';
 import MaintenancePart from '../../maintenance/model/maintenance-part.model.js';
 import PartManufacturer from '../model/part-manufacturer.model.js';
 
-export default class ManufacturerRepository {
+export default class ManufacturerRepository extends TransactionalRepository {
   async findAll(search) {
     return PartManufacturer.findAll({
       where: search ? { name: { [Op.like]: `%${search}%` } } : {},
@@ -56,8 +56,5 @@ export default class ManufacturerRepository {
       { manufacturer: name },
       { where: { manufacturerId }, transaction },
     );
-  }
-  withTransaction(callback) {
-    return withTransaction(callback);
   }
 }

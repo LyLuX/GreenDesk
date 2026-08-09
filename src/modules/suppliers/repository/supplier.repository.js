@@ -1,10 +1,10 @@
 import { Op } from 'sequelize';
 
-import { withTransaction } from '../../../core/database/transaction-context.js';
+import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
 import MaintenancePart from '../../maintenance/model/maintenance-part.model.js';
 import Supplier from '../model/supplier.model.js';
 
-export default class SupplierRepository {
+export default class SupplierRepository extends TransactionalRepository {
   findAll(search) {
     return Supplier.findAll({
       where: search ? { name: { [Op.like]: `%${search}%` } } : {},
@@ -42,8 +42,5 @@ export default class SupplierRepository {
   }
   updatePartNames(supplierId, name, { transaction } = {}) {
     return MaintenancePart.update({ supplier: name }, { where: { supplierId }, transaction });
-  }
-  withTransaction(callback) {
-    return withTransaction(callback);
   }
 }

@@ -1,5 +1,5 @@
 import { Op, Sequelize } from 'sequelize';
-import { withTransaction } from '../../../core/database/transaction-context.js';
+import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 import Material from '../../materials/model/material.model.js';
 import MaintenanceHistory from '../model/maintenance-history.model.js';
@@ -86,7 +86,7 @@ const getStatusFilter = (status) => {
   return null;
 };
 
-export default class MaintenanceRepository {
+export default class MaintenanceRepository extends TransactionalRepository {
   async findAll({
     search,
     materialUuid,
@@ -224,10 +224,7 @@ export default class MaintenanceRepository {
       order: [['performed_at', 'DESC']],
     });
   }
-  async remove(task) {
-    return task.destroy();
-  }
-  async withTransaction(callback) {
-    return withTransaction(callback);
+  async remove(task, options = {}) {
+    return task.destroy(options);
   }
 }

@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { Sequelize } from 'sequelize';
+import { Sequelize, Transaction } from 'sequelize';
 
 import sequelize from '../../config/database.js';
 
@@ -33,15 +33,16 @@ export function getCurrentTransaction() {
 }
 
 /**
- * Runs a unit of work atomically, reusing the request transaction when one is active.
- * Reusing it keeps audits, relationship changes, and the business write in one commit.
+ * Runs a unit of work atomically, reusing the current service transaction when one is active.
+ * Reusing it keeps nested writes and audits in one commit without opening savepoints.
  */
 export function withTransaction(callback, options) {
   const currentTransaction = getCurrentTransaction();
   if (currentTransaction) return callback(currentTransaction);
-  return options
-    ? sequelize.transaction(options, callback)
-    : sequelize.transaction(callback);
+  return sequelize.transaction(
+    options ?? { isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED },
+    callback,
+  );
 }
 
 export { namespace as transactionNamespace };

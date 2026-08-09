@@ -31,24 +31,33 @@ export default class ManufacturerLogoService {
       const oldValues = manufacturer.toJSON();
       const previousFileName = manufacturer.logoFileName;
       const previousFilePath = previousFileName ? this.getPhysicalPath(previousFileName) : null;
-      await this.repository.update(manufacturer, {
-        logoFileName: file.filename,
-        logoOriginalName: file.originalname,
-        logoMimeType: file.mimetype,
-        updatedBy: userId,
+      await this.repository.withTransaction(async (transaction) => {
+        await this.repository.update(
+          manufacturer,
+          {
+            logoFileName: file.filename,
+            logoOriginalName: file.originalname,
+            logoMimeType: file.mimetype,
+            updatedBy: userId,
+          },
+          { transaction },
+        );
+        await this.auditService.record(
+          {
+            userId,
+            action: 'UPDATE',
+            entity: 'MANUFACTURER',
+            entityUuid: manufacturer.uuid,
+            oldValues,
+            newValues: manufacturer.toJSON(),
+          },
+          { transaction },
+        );
       });
       persisted = true;
       if (previousFilePath && previousFileName !== file.filename) {
         await this.safeDeletePhysicalFile(previousFilePath);
       }
-      await this.auditService.record({
-        userId,
-        action: 'UPDATE',
-        entity: 'MANUFACTURER',
-        entityUuid: manufacturer.uuid,
-        oldValues,
-        newValues: manufacturer.toJSON(),
-      });
       return { hasLogo: true };
     } catch (error) {
       if (!persisted) await this.safeDeletePhysicalFile(file.path);
@@ -61,21 +70,30 @@ export default class ManufacturerLogoService {
     if (!manufacturer.logoFileName) return { hasLogo: false };
     const oldValues = manufacturer.toJSON();
     const filePath = await this.findPhysicalPath(manufacturer.logoFileName);
-    await this.repository.update(manufacturer, {
-      logoFileName: null,
-      logoOriginalName: null,
-      logoMimeType: null,
-      updatedBy: userId,
+    await this.repository.withTransaction(async (transaction) => {
+      await this.repository.update(
+        manufacturer,
+        {
+          logoFileName: null,
+          logoOriginalName: null,
+          logoMimeType: null,
+          updatedBy: userId,
+        },
+        { transaction },
+      );
+      await this.auditService.record(
+        {
+          userId,
+          action: 'UPDATE',
+          entity: 'MANUFACTURER',
+          entityUuid: manufacturer.uuid,
+          oldValues,
+          newValues: manufacturer.toJSON(),
+        },
+        { transaction },
+      );
     });
     await this.safeDeletePhysicalFile(filePath);
-    await this.auditService.record({
-      userId,
-      action: 'UPDATE',
-      entity: 'MANUFACTURER',
-      entityUuid: manufacturer.uuid,
-      oldValues,
-      newValues: manufacturer.toJSON(),
-    });
     return { hasLogo: false };
   }
 

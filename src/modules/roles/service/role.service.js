@@ -21,35 +21,45 @@ export default class RoleService {
     return role;
   }
   async create(values) {
-    const existingRole = await this.roleRepository.findByName(values.name, { withDeleted: true });
-    if (existingRole && !existingRole.deletedAt)
-      throw new AppError('Role name is already in use', HTTP_STATUS.CONFLICT);
     const { permissionUuids, ...roleValues } = values;
     const permissions = permissionUuids?.length
       ? await this.findPermissions(permissionUuids)
       : null;
-    if (existingRole) {
-      await this.roleRepository.restore(existingRole);
-      await this.roleRepository.update(existingRole, roleValues);
-      if (permissions) await this.roleRepository.setPermissions(existingRole, permissions);
-      return this.getByUuid(existingRole.uuid);
-    }
-    const role = await this.roleRepository.create(roleValues);
-    if (permissions) await this.roleRepository.setPermissions(role, permissions);
-    return this.getByUuid(role.uuid);
+    return this.roleRepository.withTransaction(async (transaction) => {
+      const existingRole = await this.roleRepository.findByName(values.name, {
+        withDeleted: true,
+        transaction,
+      });
+      if (existingRole && !existingRole.deletedAt)
+        throw new AppError('Role name is already in use', HTTP_STATUS.CONFLICT);
+      if (existingRole) {
+        await this.roleRepository.restore(existingRole, { transaction });
+        await this.roleRepository.update(existingRole, roleValues, { transaction });
+        if (permissions)
+          await this.roleRepository.setPermissions(existingRole, permissions, { transaction });
+        return this.roleRepository.findByUuid(existingRole.uuid, { transaction });
+      }
+      const role = await this.roleRepository.create(roleValues, { transaction });
+      if (permissions) await this.roleRepository.setPermissions(role, permissions, { transaction });
+      return this.roleRepository.findByUuid(role.uuid, { transaction });
+    });
   }
   async update(uuid, values) {
     const role = await this.getByUuid(uuid);
     const { permissionUuids, ...roleValues } = values;
     const permissions =
       permissionUuids !== undefined ? await this.findPermissions(permissionUuids) : null;
-    await this.roleRepository.update(role, roleValues);
-    if (permissions) await this.roleRepository.setPermissions(role, permissions);
-    return this.getByUuid(uuid);
+    return this.roleRepository.withTransaction(async (transaction) => {
+      await this.roleRepository.update(role, roleValues, { transaction });
+      if (permissions) await this.roleRepository.setPermissions(role, permissions, { transaction });
+      return this.roleRepository.findByUuid(uuid, { transaction });
+    });
   }
   async remove(uuid) {
     const role = await this.getByUuid(uuid);
-    await this.roleRepository.delete(role);
+    await this.roleRepository.withTransaction((transaction) =>
+      this.roleRepository.delete(role, { transaction }),
+    );
   }
 
   /** Resolves permission UUIDs before a role write is performed. */

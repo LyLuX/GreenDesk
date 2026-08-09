@@ -2,6 +2,8 @@ import { jest } from '@jest/globals';
 
 import ManufacturerLogoService from '../src/modules/manufacturers/service/manufacturer-logo.service.js';
 
+const transaction = { id: 'transaction' };
+
 const manufacturerModel = (values) => ({
   ...values,
   toJSON() {
@@ -20,6 +22,7 @@ describe('ManufacturerLogoService', () => {
     const repository = {
       findByUuid: jest.fn().mockResolvedValue(manufacturer),
       update: jest.fn().mockImplementation(async (item, values) => Object.assign(item, values)),
+      withTransaction: jest.fn((callback) => callback(transaction)),
     };
     const auditService = { record: jest.fn() };
     const service = new ManufacturerLogoService(repository, auditService);
@@ -41,12 +44,14 @@ describe('ManufacturerLogoService', () => {
         logoMimeType: 'image/webp',
         updatedBy: 7,
       }),
+      { transaction },
     );
     expect(service.safeDeletePhysicalFile).toHaveBeenCalledWith(
       expect.stringMatching(/uploads[\\/]manufacturers[\\/]old\.png$/),
     );
     expect(auditService.record).toHaveBeenCalledWith(
       expect.objectContaining({ entity: 'MANUFACTURER', entityUuid: manufacturer.uuid }),
+      { transaction },
     );
   });
 

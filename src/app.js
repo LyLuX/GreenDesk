@@ -12,7 +12,6 @@ import logger from './core/logger/logger.js';
 import { createCacheControlMiddleware } from './core/middlewares/cache-control.middleware.js';
 import { errorHandler, notFoundHandler } from './core/middlewares/error-handler.js';
 import { apiRateLimiter } from './core/middlewares/rate-limit.middleware.js';
-import { transactionMiddleware } from './core/middlewares/transaction.middleware.js';
 import { requestId } from './core/utils/request-id.js';
 import { routeRegistry } from './routes/route-registry.js';
 
@@ -35,7 +34,6 @@ app.use(
 );
 
 mountApiDocumentation(app, env.apiDocs.enabled);
-app.use('/api', transactionMiddleware);
 for (const { mountPath, router } of routeRegistry) app.use(mountPath, router);
 
 app.use(notFoundHandler);

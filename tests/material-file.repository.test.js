@@ -12,7 +12,7 @@ describe('MaterialFileRepository.setPrimary', () => {
     const file = { materialId: 8, update: jest.fn().mockResolvedValue({ uuid: 'photo' }) };
     jest
       .spyOn(sequelize, 'transaction')
-      .mockImplementation(async (callback) => callback(transaction));
+      .mockImplementation(async (...args) => args.at(-1)(transaction));
     jest.spyOn(MaterialFile, 'update').mockResolvedValue([1]);
 
     await expect(new MaterialFileRepository().setPrimary(file)).resolves.toEqual({ uuid: 'photo' });
@@ -28,7 +28,7 @@ describe('MaterialFileRepository.setPrimary', () => {
     const file = { materialId: 8, update: jest.fn().mockRejectedValue(new Error('update failed')) };
     const callbackTransaction = jest
       .spyOn(sequelize, 'transaction')
-      .mockImplementation(async (callback) => callback(transaction));
+      .mockImplementation(async (...args) => args.at(-1)(transaction));
     jest.spyOn(MaterialFile, 'update').mockResolvedValue([1]);
 
     await expect(new MaterialFileRepository().setPrimary(file)).rejects.toThrow('update failed');

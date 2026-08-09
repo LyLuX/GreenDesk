@@ -119,33 +119,37 @@ export default class MaterialService {
   async create(values, userId) {
     await this.ensureAvailable(values);
     this.ensureDatesAreCoherent(values);
-    const deletedMaterial = await this.findDeletedMaterial(values);
     values = await this.resolveRelations(values);
-    const oldValues = deletedMaterial?.toJSON();
-    if (deletedMaterial) {
-      await this.materialRepository.restore(deletedMaterial);
-      await this.materialRepository.update(deletedMaterial, {
-        ...values,
-        active: true,
-        updatedBy: userId,
-      });
-    }
-    const item =
-      deletedMaterial ??
-      (await this.materialRepository.create({
-        ...values,
-        createdBy: userId,
-        updatedBy: userId,
-      }));
-    await this.auditService.record({
-      userId,
-      action: deletedMaterial ? 'RESTORE' : 'CREATE',
-      entity: 'MATERIAL',
-      entityUuid: item.uuid,
-      ...(oldValues ? { oldValues } : {}),
-      newValues: item.toJSON(),
+    return this.materialRepository.withTransaction(async (transaction) => {
+      const deletedMaterial = await this.findDeletedMaterial(values, { transaction });
+      const oldValues = deletedMaterial?.toJSON();
+      if (deletedMaterial) {
+        await this.materialRepository.restore(deletedMaterial, { transaction });
+        await this.materialRepository.update(
+          deletedMaterial,
+          { ...values, active: true, updatedBy: userId },
+          { transaction },
+        );
+      }
+      const item =
+        deletedMaterial ??
+        (await this.materialRepository.create(
+          { ...values, createdBy: userId, updatedBy: userId },
+          { transaction },
+        ));
+      await this.auditService.record(
+        {
+          userId,
+          action: deletedMaterial ? 'RESTORE' : 'CREATE',
+          entity: 'MATERIAL',
+          entityUuid: item.uuid,
+          ...(oldValues ? { oldValues } : {}),
+          newValues: item.toJSON(),
+        },
+        { transaction },
+      );
+      return this.toPublic(item);
     });
-    return this.toPublic(item);
   }
   async update(uuid, values, userId) {
     let item = await this.getEntityByUuid(uuid);
@@ -176,14 +180,17 @@ export default class MaterialService {
           { transaction },
         );
       }
-    });
-    await this.auditService.record({
-      userId,
-      action: 'UPDATE',
-      entity: 'MATERIAL',
-      entityUuid: item.uuid,
-      oldValues,
-      newValues: item.toJSON(),
+      await this.auditService.record(
+        {
+          userId,
+          action: 'UPDATE',
+          entity: 'MATERIAL',
+          entityUuid: item.uuid,
+          oldValues,
+          newValues: item.toJSON(),
+        },
+        { transaction },
+      );
     });
     return this.toPublic(item);
   }
@@ -200,13 +207,10 @@ export default class MaterialService {
       }
       oldValues = item.toJSON();
       await this.materialRepository.delete(item, { transaction });
-    });
-    await this.auditService.record({
-      userId,
-      action: 'DELETE',
-      entity: 'MATERIAL',
-      entityUuid: item.uuid,
-      oldValues,
+      await this.auditService.record(
+        { userId, action: 'DELETE', entity: 'MATERIAL', entityUuid: item.uuid, oldValues },
+        { transaction },
+      );
     });
   }
   async findDeactivationTimestamps(item) {
@@ -255,11 +259,14 @@ export default class MaterialService {
     )
       throw new AppError('Material serial number is already in use', HTTP_STATUS.CONFLICT);
   }
-  async findDeletedMaterial(values) {
+  async findDeletedMaterial(values, options = {}) {
     const matches = await Promise.all([
-      this.materialRepository.findByName(values.name, { withDeleted: true }),
+      this.materialRepository.findByName(values.name, { withDeleted: true, ...options }),
       values.serialNumber
-        ? this.materialRepository.findBySerialNumber(values.serialNumber, { withDeleted: true })
+        ? this.materialRepository.findBySerialNumber(values.serialNumber, {
+            withDeleted: true,
+            ...options,
+          })
         : null,
     ]);
     const deletedMaterials = [

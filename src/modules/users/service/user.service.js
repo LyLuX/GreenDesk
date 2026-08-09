@@ -24,58 +24,60 @@ export default class UserService {
     return this.userRepository.findAll();
   }
 
-  async getByUuid(uuid) {
-    const user = await this.userRepository.findByUuid(uuid);
+  async getByUuid(uuid, options) {
+    const user = await this.userRepository.findByUuid(uuid, options);
     if (!user) throw new AppError('User not found', HTTP_STATUS.NOT_FOUND);
     return user;
   }
 
   async create(values, actorUserId = null, defaultRoleName = null) {
     const email = values.email.toLowerCase();
-    const existingUser = await this.userRepository.findByEmail(email, { withDeleted: true });
-    if (existingUser && !existingUser.deletedAt)
-      throw new AppError('Email is already in use', HTTP_STATUS.CONFLICT);
     const { roleUuids, ...userValues } = values;
     const assignedRoles = roleUuids?.length ? await this.findRoles(roleUuids) : null;
     const passwordHash = await bcrypt.hash(values.password, PASSWORD_ROUNDS);
-    const oldValues = existingUser ? this.publicUser(existingUser) : null;
-    if (existingUser) {
-      await this.userRepository.restore(existingUser);
-      await this.userRepository.update(existingUser, {
-        ...userValues,
-        email,
-        passwordHash,
-        isActive: true,
-        lastLoginAt: null,
+    return this.userRepository.withTransaction(async (transaction) => {
+      const existingUser = await this.userRepository.findByEmail(email, {
+        withDeleted: true,
+        transaction,
       });
-    }
-    const user =
-      existingUser ??
-      (await this.userRepository.create({
-        ...userValues,
-        email,
-        passwordHash,
-      }));
-    if (assignedRoles) {
-      await this.userRepository.setRoles(user, assignedRoles);
-    } else if (defaultRoleName) {
-      const role = await this.roleRepository.findByName(defaultRoleName);
-      if (!role)
-        throw new AppError(
-          `Default role ${defaultRoleName} is not configured`,
-          HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      if (existingUser && !existingUser.deletedAt)
+        throw new AppError('Email is already in use', HTTP_STATUS.CONFLICT);
+      const oldValues = existingUser ? this.publicUser(existingUser) : null;
+      if (existingUser) {
+        await this.userRepository.restore(existingUser, { transaction });
+        await this.userRepository.update(
+          existingUser,
+          { ...userValues, email, passwordHash, isActive: true, lastLoginAt: null },
+          { transaction },
         );
-      await this.userRepository.setRoles(user, [role]);
-    }
-    await this.auditService.record({
-      userId: actorUserId,
-      action: existingUser ? 'USER_RESTORED' : 'USER_CREATED',
-      entity: 'USER',
-      entityUuid: user.uuid,
-      ...(oldValues ? { oldValues } : {}),
-      newValues: this.publicUser(user),
+      }
+      const user =
+        existingUser ??
+        (await this.userRepository.create({ ...userValues, email, passwordHash }, { transaction }));
+      if (assignedRoles) {
+        await this.userRepository.setRoles(user, assignedRoles, { transaction });
+      } else if (defaultRoleName) {
+        const role = await this.roleRepository.findByName(defaultRoleName, { transaction });
+        if (!role)
+          throw new AppError(
+            `Default role ${defaultRoleName} is not configured`,
+            HTTP_STATUS.INTERNAL_SERVER_ERROR,
+          );
+        await this.userRepository.setRoles(user, [role], { transaction });
+      }
+      await this.auditService.record(
+        {
+          userId: actorUserId,
+          action: existingUser ? 'USER_RESTORED' : 'USER_CREATED',
+          entity: 'USER',
+          entityUuid: user.uuid,
+          ...(oldValues ? { oldValues } : {}),
+          newValues: this.publicUser(user),
+        },
+        { transaction },
+      );
+      return this.getByUuid(user.uuid, { transaction });
     });
-    return this.getByUuid(user.uuid);
   }
 
   async update(uuid, values, actorUserId = null) {
@@ -93,28 +95,38 @@ export default class UserService {
     if (values.password)
       updateValues.passwordHash = await bcrypt.hash(values.password, PASSWORD_ROUNDS);
     delete updateValues.password;
-    await this.userRepository.update(user, updateValues);
-    if (assignedRoles) await this.userRepository.setRoles(user, assignedRoles);
-    await this.auditService.record({
-      userId: actorUserId,
-      action: 'USER_UPDATED',
-      entity: 'USER',
-      entityUuid: user.uuid,
-      oldValues,
-      newValues: this.publicUser(user),
+    return this.userRepository.withTransaction(async (transaction) => {
+      await this.userRepository.update(user, updateValues, { transaction });
+      if (assignedRoles) await this.userRepository.setRoles(user, assignedRoles, { transaction });
+      await this.auditService.record(
+        {
+          userId: actorUserId,
+          action: 'USER_UPDATED',
+          entity: 'USER',
+          entityUuid: user.uuid,
+          oldValues,
+          newValues: this.publicUser(user),
+        },
+        { transaction },
+      );
+      return this.getByUuid(uuid, { transaction });
     });
-    return this.getByUuid(uuid);
   }
 
   async remove(uuid, actorUserId = null) {
     const user = await this.getByUuid(uuid);
-    await this.userRepository.delete(user);
-    await this.auditService.record({
-      userId: actorUserId,
-      action: 'USER_DELETED',
-      entity: 'USER',
-      entityUuid: user.uuid,
-      oldValues: this.publicUser(user),
+    await this.userRepository.withTransaction(async (transaction) => {
+      await this.userRepository.delete(user, { transaction });
+      await this.auditService.record(
+        {
+          userId: actorUserId,
+          action: 'USER_DELETED',
+          entity: 'USER',
+          entityUuid: user.uuid,
+          oldValues: this.publicUser(user),
+        },
+        { transaction },
+      );
     });
   }
 

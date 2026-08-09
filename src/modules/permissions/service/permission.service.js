@@ -16,24 +16,31 @@ export default class PermissionService {
     return permission;
   }
   async create(values) {
-    const existingPermission = await this.permissionRepository.findByName(values.name, {
-      withDeleted: true,
+    return this.permissionRepository.withTransaction(async (transaction) => {
+      const existingPermission = await this.permissionRepository.findByName(values.name, {
+        withDeleted: true,
+        transaction,
+      });
+      if (existingPermission && !existingPermission.deletedAt)
+        throw new AppError('Permission name is already in use', HTTP_STATUS.CONFLICT);
+      if (existingPermission) {
+        await this.permissionRepository.restore(existingPermission, { transaction });
+        return this.permissionRepository.update(existingPermission, values, { transaction });
+      }
+      return this.permissionRepository.create(values, { transaction });
     });
-    if (existingPermission && !existingPermission.deletedAt)
-      throw new AppError('Permission name is already in use', HTTP_STATUS.CONFLICT);
-    if (existingPermission) {
-      await this.permissionRepository.restore(existingPermission);
-      return this.permissionRepository.update(existingPermission, values);
-    }
-    return this.permissionRepository.create(values);
   }
   async update(uuid, values) {
     const permission = await this.getByUuid(uuid);
-    await this.permissionRepository.update(permission, values);
-    return permission;
+    return this.permissionRepository.withTransaction(async (transaction) => {
+      await this.permissionRepository.update(permission, values, { transaction });
+      return permission;
+    });
   }
   async remove(uuid) {
     const permission = await this.getByUuid(uuid);
-    await this.permissionRepository.delete(permission);
+    await this.permissionRepository.withTransaction((transaction) =>
+      this.permissionRepository.delete(permission, { transaction }),
+    );
   }
 }
