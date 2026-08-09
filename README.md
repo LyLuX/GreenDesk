@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **2.0.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **3.0.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -118,13 +118,21 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 
 Lors d’une rotation, remplacez `JWT_SECRET` dans le gestionnaire de secrets de chaque instance, redémarrez toutes les instances avec la même nouvelle valeur, vérifiez que les anciens jetons sont refusés, puis reconnectez les utilisateurs. La rotation invalide volontairement toutes les sessions existantes. Ne journalisez, ne partagez et ne committez jamais la valeur générée.
 
-Le seeder crée un administrateur réservé au développement. Consultez le seeder local pour ses identifiants, et changez-les dans tout environnement partagé.
+Le seeder est strictement réservé à une base locale en environnement `development`. Il ne crée jamais le schéma : appliquez d’abord toutes les migrations, puis confirmez explicitement la cible locale :
+
+```bash
+npm run db:migrate
+npm run seed -- --confirm-local-development
+```
+
+Sans `GREENDESK_SEED_ADMIN_PASSWORD`, un mot de passe aléatoire est généré, affiché une seule fois et appliqué au compte local configuré par `GREENDESK_SEED_ADMIN_EMAIL`. Une nouvelle exécution renouvelle le mot de passe de ce compte. Pour fournir votre propre secret sans le stocker dans `.env`, définissez temporairement `GREENDESK_SEED_ADMIN_PASSWORD` dans le terminal avant la commande ; il doit contenir au moins 16 octets et ne sera jamais affiché par GreenDesk.
 
 ## Lancement
 
 ```bash
 npm install
-npm run seed
+npm run db:migrate
+npm run seed -- --confirm-local-development
 npm run dev
 cd frontend
 npm install

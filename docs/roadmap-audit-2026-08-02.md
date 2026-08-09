@@ -1,39 +1,21 @@
 # Roadmap de correction de l’audit GreenDesk du 2 août 2026
 
-J’ai confronté l’audit du 2 août, réalisé sur GreenDesk v1.15.3, à GreenDesk v1.20.3. Conclusion : les risques les plus graves concernant le compte administrateur et les migrations sont toujours présents. La nouvelle gestion de stock introduit également un risque important de cohérence métier.
+J’ai confronté l’audit du 2 août, réalisé sur GreenDesk v1.15.3, à GreenDesk v1.20.3. Conclusion : le système de migrations reste le risque technique le plus grave. La nouvelle gestion de stock introduit également un risque important de cohérence métier.
 
 ## Roadmap recommandée
 
 | Priorité | Correction | Sévérité | Taille |
 |---|---|---:|---:|
-| 1 | Suppression des identifiants administrateur fixes | Critique | S |
-| 2 | Protection de l’authentification publique | Haute | M |
-| 3 | CORS et Swagger en production | Haute | S |
-| 4 | Unification du système de migrations | Haute | L |
-| 5 | Refonte minimale du modèle de stock | Haute | L |
-| 6 | Intégration continue obligatoire | Haute | M |
-| 7 | Validation réelle des fichiers téléversés | Modérée | M |
-| 8 | Optimisations frontend et maintenance | Modérée | M/L |
-| 9 | Refactorings structurels et Sequelize v7 | Basse | L |
+| 1 | Protection de l’authentification publique | Haute | M |
+| 2 | CORS et Swagger en production | Haute | S |
+| 3 | Unification du système de migrations | Haute | L |
+| 4 | Refonte minimale du modèle de stock | Haute | L |
+| 5 | Intégration continue obligatoire | Haute | M |
+| 6 | Validation réelle des fichiers téléversés | Modérée | M |
+| 7 | Optimisations frontend et maintenance | Modérée | M/L |
+| 8 | Refactorings structurels et Sequelize v7 | Basse | L |
 
-### 1. Neutraliser le seeder administrateur
-
-Le seeder exécute encore `sequelize.sync()` et crée :
-
-- `admin@greendesk.local`
-- `ChangeMe123!`
-
-Voir [development.js](../src/seeders/development.js#L16).
-
-À faire :
-
-- Bloquer explicitement le seeder hors développement local.
-- Supprimer le mot de passe fixe.
-- Utiliser un secret fourni à l’exécution ou générer un mot de passe unique.
-- Vérifier les bases existantes et changer ou supprimer ce compte.
-- Retirer `sequelize.sync()` du seeder.
-
-### 2. Protéger login, inscription et renouvellement
+### 1. Protéger login, inscription et renouvellement
 
 L’inscription reste publique et aucun rate limiting n’est présent.
 
@@ -47,7 +29,7 @@ L’inscription reste publique et aucun rate limiting n’est présent.
 - Documenter les réponses `429` dans OpenAPI.
 - Journaliser les échecs répétés sans enregistrer les mots de passe.
 
-### 3. Restreindre CORS et Swagger
+### 2. Restreindre CORS et Swagger
 
 GreenDesk utilise désormais l’origine CORS centralisée et refuse l’origine `*` en production. Il reste à gérer plusieurs origines autorisées et à décider de l’exposition de Swagger.
 
@@ -57,7 +39,7 @@ GreenDesk utilise désormais l’origine CORS centralisée et refuse l’origine
 - Désactiver Swagger en production ou le protéger par authentification et permission.
 - Adapter les règles de cache de la documentation à ce choix.
 
-### 4. Rendre les migrations fiables
+### 3. Rendre les migrations fiables
 
 Le projet mélange :
 
@@ -78,7 +60,7 @@ Une base vide ne peut pas être reconstruite de manière certaine uniquement ave
 
 Cette étape doit précéder la refonte du stock afin que sa migration soit fiable.
 
-### 5. Corriger le modèle de stock
+### 4. Corriger le modèle de stock
 
 C’est le principal risque apparu avec les fonctionnalités ajoutées aujourd’hui.
 
@@ -118,7 +100,7 @@ Il faudra aussi :
 - ajouter des contraintes DB et un historique des mouvements ;
 - définir explicitement la règle concernant l’horizon 30/60/90/365 jours avant implémentation.
 
-### 6. Ajouter une CI bloquante
+### 5. Ajouter une CI bloquante
 
 Le constat de l’audit indiquant que les tests n’avaient pas été exécutés est désormais dépassé : les validations de la v1.20.3 passent, avec 146 tests backend, 112 tests frontend, le contrôle OpenAPI et le build de production.
 
@@ -134,13 +116,13 @@ La CI devrait exécuter :
 - build frontend ;
 - reconstruction d’une base vide par migrations.
 
-### 7. Vérifier le contenu réel des fichiers
+### 6. Vérifier le contenu réel des fichiers
 
 Les uploads sont protégés, limités en taille et stockés sous des noms UUID, ce qui est positif. Mais le type est déterminé depuis le MIME déclaré par le client.
 
 Ajouter une vérification des signatures binaires — magic bytes — avant conservation du fichier, avec suppression immédiate des fichiers rejetés et tests de MIME falsifié.
 
-### 8. Optimisations après sécurisation
+### 7. Optimisations après sécurisation
 
 Les constats de performance restent globalement valides :
 
@@ -160,7 +142,7 @@ Ordre conseillé :
 
 Le niveau `9` de compression mérite également un benchmark : il peut consommer davantage de CPU pour un gain réseau faible.
 
-### 9. Reporter Sequelize v7 et les grands refactorings
+### 8. Reporter Sequelize v7 et les grands refactorings
 
 Je ne recommande pas de migrer maintenant. La documentation officielle décrit toujours Sequelize v7 comme une version alpha et recommande `@sequelize/core@alpha`. La remarque de l’audit affirmant que la CLI n’était pas prête est toutefois à revalider, car la documentation v7 actuelle comporte désormais une section CLI : [Sequelize v7](https://sequelize.org/docs/v7/), [installation](https://sequelize.org/docs/v7/getting-started/), [CLI](https://sequelize.org/docs/v7/cli/).
 
