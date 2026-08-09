@@ -180,6 +180,7 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(screen.queryByText('NGK')).not.toBeInTheDocument();
     expect(screen.getByText('À commander')).toHaveClass('stock-to-order');
     expect(screen.getByRole('columnheader', { name: 'Actions' })).toBeVisible();
+    expect(screen.queryByRole('columnheader', { name: 'Catalogue' })).not.toBeInTheDocument();
     expect(
       screen.queryByRole('columnheader', { name: 'Référence fournisseur' }),
     ).not.toBeInTheDocument();

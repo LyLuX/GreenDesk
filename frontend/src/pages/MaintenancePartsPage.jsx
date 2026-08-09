@@ -130,15 +130,6 @@ export default function MaintenancePartsPage() {
             label: 'Commandée',
             render: (value, part) => formatStockQuantity(value, part.unit),
           },
-          {
-            key: 'active',
-            label: 'Catalogue',
-            render: (value) => (
-              <span className={`status-badge ${value ? '' : 'inactive'}`}>
-                {value ? 'Active' : 'Inactive'}
-              </span>
-            ),
-          },
         ]}
         listItems={listMaintenanceParts}
         createItem={createMaintenancePart}

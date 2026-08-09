@@ -1,6 +1,6 @@
 # Roadmap de correction de l’audit GreenDesk du 2 août 2026
 
-J’ai confronté l’audit du 2 août, réalisé sur GreenDesk v1.15.3, à GreenDesk v4.4.0. Conclusion : le système de migrations reste le risque technique le plus grave.
+J’ai confronté l’audit du 2 août, réalisé sur GreenDesk v1.15.3, à GreenDesk v4.4.1. Conclusion : le système de migrations reste le risque technique le plus grave.
 
 ## Roadmap recommandée
 
@@ -30,7 +30,7 @@ Une base vide ne peut pas être reconstruite de manière certaine uniquement ave
 
 ### 2. Ajouter une CI bloquante
 
-Le constat de l’audit indiquant que les tests n’avaient pas été exécutés est désormais dépassé : les validations de la v4.4.0 passent, avec 208 tests backend, 122 tests frontend, le contrôle OpenAPI et le build de production.
+Le constat de l’audit indiquant que les tests n’avaient pas été exécutés est désormais dépassé : les validations de la v4.4.1 passent, avec 208 tests backend, 122 tests frontend, le contrôle OpenAPI et le build de production.
 
 En revanche, aucun workflow CI n’impose encore ces contrôles.
 
