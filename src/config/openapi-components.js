@@ -2,6 +2,7 @@ import {
   MAINTENANCE_PRIORITIES,
   MAINTENANCE_TYPES,
 } from '../modules/maintenance/maintenance.constants.js';
+import { STOCK_STATUS_VALUES } from '../core/inventory/stock-status.js';
 import { DOCUMENT_TYPES } from '../modules/materials/material-file.constants.js';
 
 const uuid = { type: 'string', format: 'uuid' };
@@ -185,7 +186,7 @@ const supplier = {
 
 const maintenancePart = {
   type: 'object',
-  required: ['uuid', 'name', 'reference', 'unit', 'active'],
+  required: ['uuid', 'name', 'reference', 'unit', 'stockStatus', 'stockQuantity', 'active'],
   properties: {
     uuid,
     name: writeText(150),
@@ -196,6 +197,8 @@ const maintenancePart = {
     reference: writeText(150),
     supplierReference: { ...nullableString, maxLength: 150 },
     unit: writeText(50),
+    stockStatus: { type: 'string', enum: STOCK_STATUS_VALUES },
+    stockQuantity: { type: 'integer', minimum: 0, maximum: 1000000 },
     active: { type: 'boolean' },
     ...timestamps,
   },
@@ -602,6 +605,8 @@ export const openApiSchemas = {
       reference: writeText(150),
       supplierReference: { ...nullableString, maxLength: 150 },
       unit: { ...writeText(50), default: 'pièce' },
+      stockStatus: { type: 'string', enum: STOCK_STATUS_VALUES, default: 'toOrder' },
+      stockQuantity: { type: 'integer', minimum: 0, maximum: 1000000, default: 0 },
     },
   },
   MaintenancePartUpdateRequest: {
@@ -619,7 +624,17 @@ export const openApiSchemas = {
       reference: writeText(150),
       supplierReference: { ...nullableString, maxLength: 150 },
       unit: writeText(50),
+      stockStatus: { type: 'string', enum: STOCK_STATUS_VALUES },
+      stockQuantity: { type: 'integer', minimum: 0, maximum: 1000000 },
       active: { type: 'boolean' },
+    },
+  },
+  MaintenancePartStockRequest: {
+    type: 'object',
+    required: ['stockStatus', 'stockQuantity'],
+    properties: {
+      stockStatus: { type: 'string', enum: STOCK_STATUS_VALUES },
+      stockQuantity: { type: 'integer', minimum: 0, maximum: 1000000 },
     },
   },
   SupplierCreateRequest: {

@@ -1,5 +1,6 @@
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
+import { STOCK_STATUSES } from '../../../core/inventory/stock-status.js';
 import AuditService from '../../audit/service/audit.service.js';
 import ManufacturerRepository from '../../manufacturers/repository/manufacturer.repository.js';
 import SupplierRepository from '../../suppliers/repository/supplier.repository.js';
@@ -107,7 +108,9 @@ export default class MaintenanceCatalogService {
 
   async createPart(values, userId) {
     const prepared = await this.repository.withTransaction(async (transaction) => {
-      const partValues = await this.preparePartValues(values, transaction);
+      const partValues = this.prepareInventoryValues(
+        await this.preparePartValues(values, transaction),
+      );
       const existing = await this.repository.findPartByIdentity(
         partValues.reference,
         {
@@ -147,7 +150,10 @@ export default class MaintenanceCatalogService {
     const part = await this.getPartEntity(uuid);
     const oldValues = this.toPublic(part);
     await this.repository.withTransaction(async (transaction) => {
-      const partValues = await this.preparePartValues(values, transaction, part);
+      const partValues = this.prepareInventoryValues(
+        await this.preparePartValues(values, transaction, part),
+        part,
+      );
       const nextReference = partValues.reference ?? part.reference;
       const nextManufacturerId = Object.hasOwn(partValues, 'manufacturerId')
         ? partValues.manufacturerId
@@ -179,6 +185,30 @@ export default class MaintenanceCatalogService {
     });
     await this.record(userId, 'UPDATE', 'MAINTENANCE_PART', part, oldValues);
     return this.toPublic(await this.repository.findPartByUuid(part.uuid));
+  }
+
+  async updatePartStock(uuid, values, userId) {
+    return this.updatePart(uuid, values, userId);
+  }
+
+  prepareInventoryValues(values, currentPart = null) {
+    const partValues = { ...values };
+    const stockStatus =
+      partValues.stockStatus ?? currentPart?.stockStatus ?? STOCK_STATUSES.TO_ORDER;
+    let stockQuantity = Object.hasOwn(partValues, 'stockQuantity')
+      ? Number(partValues.stockQuantity)
+      : Number(currentPart?.stockQuantity ?? 0);
+
+    if (stockStatus === STOCK_STATUSES.TO_ORDER) stockQuantity = 0;
+    if (stockStatus !== STOCK_STATUSES.TO_ORDER && stockQuantity < 1) {
+      throw new AppError(
+        'Une quantité positive est requise pour une pièce commandée ou en stock atelier.',
+        HTTP_STATUS.BAD_REQUEST,
+      );
+    }
+    partValues.stockStatus = stockStatus;
+    partValues.stockQuantity = stockQuantity;
+    return partValues;
   }
 
   async preparePartValues(values, transaction, currentPart = null) {

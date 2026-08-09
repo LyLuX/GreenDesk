@@ -604,6 +604,21 @@ a:hover {
   color: #59635d;
 }
 
+.status-badge.stock-in-stock {
+  background: #e3eddc;
+  color: #365d16;
+}
+
+.status-badge.stock-to-order {
+  background: #f7edbd;
+  color: #6b5700;
+}
+
+.status-badge.stock-ordered {
+  background: #dcecf1;
+  color: var(--brand-blue-dark);
+}
+
 .status-badge.audit-create {
   background: #e3eddc;
   color: #365d16;

@@ -2,10 +2,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import getApiErrorMessage from '../api/get-api-error-message.js';
-import { getMaintenanceOrderList } from '../api/maintenance.api.js';
+import { getMaintenanceOrderList, updateMaintenancePartStock } from '../api/maintenance.api.js';
 import { createReferenceApi } from '../api/reference.api.js';
+import useAuth from '../auth/useAuth.js';
+import { STOCK_STATUSES } from '../inventory/stock-status.js';
+import maintenancePermissions from '../maintenance/maintenance.permissions.js';
+import useNotification from '../notifications/useNotification.js';
 import AppFooter from './AppFooter.jsx';
 import Button from './Button.jsx';
+import ConfirmDialog from './ConfirmDialog.jsx';
 import Loader from './Loader.jsx';
 import ManufacturerLogo from './ManufacturerLogo.jsx';
 import Modal from './Modal.jsx';
@@ -76,6 +81,10 @@ function OrderPartsTable({
   showSupplier = true,
   showPlans = true,
   showManufacturerLogo = true,
+  orderQuantities = {},
+  onOrderQuantityChange,
+  onMarkOrdered,
+  actionLoadingId,
 }) {
   return (
     <div className="table-shell">
@@ -87,6 +96,7 @@ function OrderPartsTable({
               <th>{showSupplier ? 'Fournisseur / référence' : 'Référence fournisseur'}</th>
               <th>Quantité</th>
               {showPlans ? <th>Plans concernés</th> : null}
+              {onMarkOrdered ? <th>Commande</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -127,6 +137,37 @@ function OrderPartsTable({
                           </li>
                         ))}
                       </ul>
+                    </td>
+                  ) : null}
+                  {onMarkOrdered ? (
+                    <td>
+                      <div className="d-flex flex-wrap align-items-end gap-2">
+                        <label className="form-label mb-0 text-body-secondary">
+                          <span className="visually-hidden">
+                            Quantité commandée pour {part.name}
+                          </span>
+                          <input
+                            className="form-control form-control-sm maintenance-order-quantity"
+                            type="number"
+                            min="1"
+                            max="1000000"
+                            step="1"
+                            value={orderQuantities[part.uuid] ?? part.quantity}
+                            onChange={(event) =>
+                              onOrderQuantityChange(part.uuid, event.target.value)
+                            }
+                            disabled={actionLoadingId === part.uuid}
+                          />
+                        </label>
+                        <Button
+                          type="button"
+                          className="btn-sm"
+                          onClick={() => onMarkOrdered(part)}
+                          disabled={actionLoadingId === part.uuid}
+                        >
+                          {actionLoadingId === part.uuid ? 'Traitement…' : 'Marquer commandée'}
+                        </Button>
+                      </div>
                     </td>
                   ) : null}
                 </tr>
@@ -189,6 +230,8 @@ function MaintenanceOrderPrintPages({ supplierPages, manufacturerByUuid }) {
 
 /** Displays parts aggregated from maintenance plans due in a chosen horizon. */
 export default function MaintenanceOrderListModal({ open, onClose, initialFilters }) {
+  const { hasPermission } = useAuth();
+  const { notify } = useNotification();
   const [filters, setFilters] = useState(() => ({
     ...defaultOrderListFilters,
     ...initialFilters,
@@ -197,6 +240,9 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
   const [manufacturers, setManufacturers] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [orderQuantities, setOrderQuantities] = useState({});
+  const [confirmation, setConfirmation] = useState(null);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
 
   const load = useCallback(
     async (signal) => {
@@ -209,7 +255,13 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
             .list({}, signal)
             .catch(() => null),
         ]);
-        setData(response.data.data);
+        const orderList = response.data.data;
+        setData(orderList);
+        setOrderQuantities(
+          Object.fromEntries(
+            (orderList.items ?? []).map((part) => [part.uuid, String(part.quantity)]),
+          ),
+        );
         if (manufacturerResponse) setManufacturers(manufacturerResponse.data.data ?? []);
       } catch (requestError) {
         if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
@@ -232,6 +284,43 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
   );
   const supplierGroups = groupOrderPartsBySupplier(data?.items);
   const supplierPages = paginateSupplierGroups(supplierGroups);
+  const canUpdateStock = hasPermission(maintenancePermissions.parts.update);
+
+  const requestMarkOrdered = (part) => {
+    const quantity = Number(orderQuantities[part.uuid]);
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000000) {
+      setError('La quantité commandée doit être un entier positif.');
+      return;
+    }
+    setError('');
+    setConfirmation({ part, quantity });
+  };
+
+  const markOrdered = async () => {
+    if (!confirmation || actionLoadingId) return;
+    setActionLoadingId(confirmation.part.uuid);
+    setError('');
+    try {
+      await updateMaintenancePartStock(confirmation.part.uuid, {
+        stockStatus: STOCK_STATUSES.ORDERED,
+        stockQuantity: confirmation.quantity,
+      });
+      notify(
+        'success',
+        `${confirmation.part.name} marquée commandée (${formatOrderQuantity(
+          confirmation.quantity,
+          confirmation.part.unit,
+        )}).`,
+      );
+      setConfirmation(null);
+      await load();
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError));
+      setConfirmation(null);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
 
   return (
     <>
@@ -292,7 +381,19 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
             {loading && !data ? (
               <Loader label="Calcul de la liste de commande" />
             ) : data?.items?.length ? (
-              <OrderPartsTable parts={data.items} manufacturerByUuid={manufacturerByUuid} />
+              <OrderPartsTable
+                parts={data.items}
+                manufacturerByUuid={manufacturerByUuid}
+                orderQuantities={orderQuantities}
+                onOrderQuantityChange={
+                  canUpdateStock
+                    ? (uuid, value) =>
+                        setOrderQuantities((current) => ({ ...current, [uuid]: value }))
+                    : undefined
+                }
+                onMarkOrdered={canUpdateStock ? requestMarkOrdered : undefined}
+                actionLoadingId={actionLoadingId}
+              />
             ) : (
               <p className="mb-0">Aucune pièce à commander sur cette période.</p>
             )}
@@ -315,6 +416,23 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
             document.body,
           )
         : null}
+      <ConfirmDialog
+        open={Boolean(confirmation)}
+        title="Marquer la pièce commandée"
+        description={
+          confirmation
+            ? `« ${confirmation.part.name} » sera retirée de la liste des pièces à commander. Quantité commandée : ${formatOrderQuantity(
+                confirmation.quantity,
+                confirmation.part.unit,
+              )}.`
+            : ''
+        }
+        confirmLabel="Marquer commandée"
+        onClose={() => !actionLoadingId && setConfirmation(null)}
+        onConfirm={markOrdered}
+        busy={Boolean(actionLoadingId)}
+        destructive={false}
+      />
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { body, param, query } from 'express-validator';
+import { STOCK_STATUS_VALUES } from '../../../core/inventory/stock-status.js';
 import { MAINTENANCE_PRIORITIES, MAINTENANCE_TYPES } from '../maintenance.constants.js';
 
 const uuid = param('uuid').isUUID();
@@ -86,6 +87,8 @@ export const createPartValidator = [
   body('reference').trim().notEmpty().isLength({ max: 150 }),
   optionalText('supplierReference', 150),
   body('unit').optional().trim().notEmpty().isLength({ max: 50 }),
+  body('stockStatus').optional().isIn(STOCK_STATUS_VALUES),
+  body('stockQuantity').optional().isInt({ min: 0, max: 1000000 }).toInt(),
 ];
 export const updatePartValidator = [
   uuid,
@@ -96,5 +99,12 @@ export const updatePartValidator = [
   body('reference').optional().trim().notEmpty().isLength({ max: 150 }),
   optionalText('supplierReference', 150),
   body('unit').optional().trim().notEmpty().isLength({ max: 50 }),
+  body('stockStatus').optional().isIn(STOCK_STATUS_VALUES),
+  body('stockQuantity').optional().isInt({ min: 0, max: 1000000 }).toInt(),
   body('active').optional().isBoolean().toBoolean(),
+];
+export const updatePartStockValidator = [
+  uuid,
+  body('stockStatus').isIn(STOCK_STATUS_VALUES),
+  body('stockQuantity').isInt({ min: 0, max: 1000000 }).toInt(),
 ];

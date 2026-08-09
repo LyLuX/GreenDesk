@@ -49,6 +49,14 @@ export default class MaintenanceCatalogController {
     );
   }
 
+  async updatePartStock(request, response) {
+    response.json(
+      successResponse(
+        await this.service.updatePartStock(request.params.uuid, request.body, request.user.userId),
+      ),
+    );
+  }
+
   async removePart(request, response) {
     await this.service.removePart(request.params.uuid, request.user.userId);
     response.status(HTTP_STATUS.NO_CONTENT).send();

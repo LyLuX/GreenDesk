@@ -84,6 +84,8 @@ describe('dedicated maintenance catalogue pages', () => {
             supplierUuid: 'supplier-uuid',
             supplierReference: 'FOU-42',
             unit: 'pièce',
+            stockStatus: 'toOrder',
+            stockQuantity: 0,
             active: true,
           },
         ],
@@ -155,6 +157,7 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(await screen.findByText('BPMR8Y')).toBeVisible();
     expect(screen.getByRole('img', { name: 'Logo NGK' })).toBeVisible();
     expect(screen.queryByText('NGK')).not.toBeInTheDocument();
+    expect(screen.getByText('À commander')).toHaveClass('stock-to-order');
 
     await user.click(screen.getByRole('button', { name: 'Créer' }));
     const designation = screen.getByLabelText('Désignation');
@@ -176,6 +179,8 @@ describe('dedicated maintenance catalogue pages', () => {
         supplierUuid: 'supplier-uuid',
         supplierReference: null,
         unit: 'pièce',
+        stockStatus: 'toOrder',
+        stockQuantity: 0,
       }),
     );
   });

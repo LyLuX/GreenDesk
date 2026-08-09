@@ -158,4 +158,51 @@ describe('MaintenanceCatalogService', () => {
       }),
     );
   });
+
+  it('stores ordered quantities and clears them when a part must be ordered again', async () => {
+    const part = {
+      id: 6,
+      uuid: '66666666-6666-4666-8666-666666666666',
+      name: 'Filtre',
+      reference: 'OF-123',
+      stockStatus: 'toOrder',
+      stockQuantity: 0,
+    };
+    const repository = {
+      findPartByUuid: jest.fn().mockImplementation(() => Promise.resolve(part)),
+      withTransaction: jest.fn((callback) => callback({ id: 'transaction' })),
+      updatePart: jest.fn((item, values) => Object.assign(item, values)),
+    };
+    const auditService = { record: jest.fn() };
+    const service = new MaintenanceCatalogService(repository, auditService);
+
+    await service.updatePartStock(part.uuid, { stockStatus: 'ordered', stockQuantity: 4 }, 42);
+    expect(part).toEqual(expect.objectContaining({ stockStatus: 'ordered', stockQuantity: 4 }));
+
+    await service.updatePartStock(part.uuid, { stockStatus: 'toOrder', stockQuantity: 4 }, 42);
+    expect(part).toEqual(expect.objectContaining({ stockStatus: 'toOrder', stockQuantity: 0 }));
+    expect(auditService.record).toHaveBeenCalledTimes(2);
+  });
+
+  it('requires a positive quantity for ordered or workshop-stock parts', async () => {
+    const part = {
+      id: 7,
+      uuid: '77777777-7777-4777-8777-777777777777',
+      name: 'Courroie',
+      reference: 'BELT-7',
+      stockStatus: 'toOrder',
+      stockQuantity: 0,
+    };
+    const repository = {
+      findPartByUuid: jest.fn().mockResolvedValue(part),
+      withTransaction: jest.fn((callback) => callback(undefined)),
+      updatePart: jest.fn(),
+    };
+    const service = new MaintenanceCatalogService(repository, { record: jest.fn() });
+
+    await expect(
+      service.updatePartStock(part.uuid, { stockStatus: 'inStock', stockQuantity: 0 }, 42),
+    ).rejects.toThrow('quantité positive');
+    expect(repository.updatePart).not.toHaveBeenCalled();
+  });
 });

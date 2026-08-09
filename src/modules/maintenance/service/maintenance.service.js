@@ -1,5 +1,6 @@
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
+import { STOCK_STATUSES } from '../../../core/inventory/stock-status.js';
 import AuditService from '../../audit/service/audit.service.js';
 import MaterialService from '../../materials/service/material.service.js';
 import MaintenanceCatalogRepository from '../repository/maintenance-catalog.repository.js';
@@ -269,6 +270,7 @@ export default class MaintenanceService {
     const grouped = new Map();
     for (const task of tasks.map((item) => this.toPublic(item))) {
       for (const part of task.parts ?? []) {
+        if (part.stockStatus !== STOCK_STATUSES.TO_ORDER) continue;
         const current = grouped.get(part.uuid) ?? {
           uuid: part.uuid,
           name: part.name,
@@ -279,6 +281,9 @@ export default class MaintenanceService {
           reference: part.reference,
           supplierReference: part.supplierReference,
           unit: part.unit,
+          stockStatus: part.stockStatus,
+          stockQuantity: part.stockQuantity,
+          active: part.active,
           quantity: 0,
           plans: [],
         };
@@ -372,6 +377,8 @@ export default class MaintenanceService {
         supplierReference: part.supplierReference,
         unit: part.unit,
         active: part.active,
+        stockStatus: part.stockStatus ?? STOCK_STATUSES.TO_ORDER,
+        stockQuantity: Number(part.stockQuantity ?? 0),
         quantity: Number(part.MaintenanceTaskPart?.quantity ?? part.quantity ?? 1),
       })),
       ...getDeadlineDetails(publicValue),

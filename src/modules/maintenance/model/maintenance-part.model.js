@@ -2,6 +2,7 @@ import { DataTypes, Model } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
 
 import sequelize from '../../../config/database.js';
+import { STOCK_STATUSES, STOCK_STATUS_VALUES } from '../../../core/inventory/stock-status.js';
 
 /** Exact orderable part reference reusable across maintenance plans. */
 class MaintenancePart extends Model {}
@@ -30,6 +31,20 @@ MaintenancePart.init(
       allowNull: true,
     },
     unit: { type: DataTypes.STRING(50), allowNull: false, defaultValue: 'pièce' },
+    stockStatus: {
+      type: DataTypes.STRING(30),
+      field: 'stock_status',
+      allowNull: false,
+      defaultValue: STOCK_STATUSES.TO_ORDER,
+      validate: { isIn: [STOCK_STATUS_VALUES] },
+    },
+    stockQuantity: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      field: 'stock_quantity',
+      allowNull: false,
+      defaultValue: 0,
+      validate: { min: 0 },
+    },
     active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     createdBy: { type: DataTypes.BIGINT.UNSIGNED, field: 'created_by', allowNull: true },
     updatedBy: { type: DataTypes.BIGINT.UNSIGNED, field: 'updated_by', allowNull: true },

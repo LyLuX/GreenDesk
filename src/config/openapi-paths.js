@@ -829,13 +829,29 @@ export const openApiPaths = {
       responses: { 204: noContent, ...writeErrors },
     },
   },
+  '/maintenance/parts/{uuid}/stock': {
+    parameters: [uuidParameter],
+    patch: {
+      operationId: 'updateMaintenancePartStock',
+      tags: ['Maintenance'],
+      summary: 'Met à jour l’état et la quantité de stock d’une pièce.',
+      description:
+        'Nécessite `maintenance.parts.update`. Une pièce `ordered` ou `inStock` est exclue de la liste de commande ; une pièce `toOrder` y redevient éligible et sa quantité de stock est remise à zéro.',
+      security: secure,
+      requestBody: jsonBody('MaintenancePartStockRequest'),
+      responses: {
+        200: jsonResponse('MaintenancePartResponse', 'Stock de la pièce mis à jour.'),
+        ...writeErrors,
+      },
+    },
+  },
   '/maintenance/order-list': {
     get: {
       operationId: 'getMaintenanceOrderList',
       tags: ['Maintenance'],
       summary: 'Agrège les pièces nécessaires aux plans arrivant à échéance.',
       description:
-        'Nécessite `maintenance.read`. Une échéance correspond à un besoin de pièces ; une pièce désactivée reste comptée tant qu’un plan l’utilise. Le filtre `status`, lorsqu’il est renseigné, prend la priorité sur la période.',
+        'Nécessite `maintenance.read`. Une échéance correspond à un besoin de pièces ; seules les pièces `toOrder` sont retournées. Les pièces `ordered` ou `inStock` sont exclues, même lorsqu’un plan les utilise. Une pièce désactivée reste comptée si elle est encore `toOrder`. Le filtre `status`, lorsqu’il est renseigné, prend la priorité sur la période.',
       security: secure,
       parameters: [
         {

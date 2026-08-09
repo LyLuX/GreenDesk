@@ -140,6 +140,8 @@ describe('MaintenanceService', () => {
       reference: 'BPMR8Y',
       supplierReference: null,
       unit: 'pièce',
+      stockStatus: 'toOrder',
+      stockQuantity: 0,
       active: false,
     };
     const task = (uuid, materialName, quantity) => ({
@@ -177,6 +179,43 @@ describe('MaintenanceService', () => {
         ]),
       }),
     ]);
+  });
+
+  it('excludes ordered and workshop-stock parts from the order list', async () => {
+    const makeTask = (uuid, stockStatus) => ({
+      uuid,
+      title: 'Entretien',
+      nextMaintenanceDate: '2026-08-20',
+      material: { uuid, name: `Matériel ${stockStatus}` },
+      parts: [
+        {
+          uuid: `part-${stockStatus}`,
+          name: `Pièce ${stockStatus}`,
+          reference: `REF-${stockStatus}`,
+          unit: 'pièce',
+          stockStatus,
+          stockQuantity: stockStatus === 'toOrder' ? 0 : 2,
+          MaintenanceTaskPart: { quantity: 2 },
+        },
+      ],
+    });
+    const repository = {
+      findForOrderList: jest
+        .fn()
+        .mockResolvedValue([
+          makeTask('11111111-1111-4111-8111-111111111111', 'toOrder'),
+          makeTask('22222222-2222-4222-8222-222222222222', 'ordered'),
+          makeTask('33333333-3333-4333-8333-333333333333', 'inStock'),
+        ]),
+    };
+    const service = new MaintenanceService(repository, {}, {}, {});
+
+    const result = await service.getOrderList();
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toEqual(
+      expect.objectContaining({ stockStatus: 'toOrder', reference: 'REF-toOrder', quantity: 2 }),
+    );
   });
 
   it('uses the exact maintenance deadline status for the order list', async () => {

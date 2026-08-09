@@ -4,17 +4,27 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getOrderList: vi.fn(),
+  updateStock: vi.fn(),
   listManufacturers: vi.fn(),
+  hasPermission: vi.fn(),
+  notify: vi.fn(),
 }));
 
 vi.mock('../api/maintenance.api.js', () => ({
   getMaintenanceOrderList: mocks.getOrderList,
+  updateMaintenancePartStock: mocks.updateStock,
 }));
 vi.mock('../api/reference.api.js', () => ({
   createReferenceApi: () => ({ list: mocks.listManufacturers }),
 }));
 vi.mock('./ManufacturerLogo.jsx', () => ({
   default: ({ manufacturer }) => <img alt={`Logo ${manufacturer?.name ?? 'indisponible'}`} />,
+}));
+vi.mock('../auth/useAuth.js', () => ({
+  default: () => ({ hasPermission: mocks.hasPermission }),
+}));
+vi.mock('../notifications/useNotification.js', () => ({
+  default: () => ({ notify: mocks.notify }),
 }));
 
 import MaintenanceOrderListModal, {
@@ -30,6 +40,8 @@ describe('MaintenanceOrderListModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.print = vi.fn();
+    mocks.hasPermission.mockReturnValue(true);
+    mocks.updateStock.mockResolvedValue({ data: { data: {} } });
     mocks.getOrderList.mockResolvedValue({
       data: {
         data: {
@@ -182,6 +194,57 @@ describe('MaintenanceOrderListModal', () => {
     await user.click(printButton);
 
     expect(window.print).toHaveBeenCalledOnce();
+  });
+
+  it('marks the entered quantity as ordered and reloads the list', async () => {
+    const user = userEvent.setup();
+    mocks.getOrderList
+      .mockResolvedValueOnce({
+        data: {
+          data: {
+            items: [
+              {
+                uuid: 'part-uuid',
+                name: 'Bougie',
+                supplier: 'Pièces Pro',
+                reference: 'BPMR8Y',
+                quantity: 2,
+                unit: 'pièce',
+                plans: [],
+              },
+            ],
+          },
+        },
+      })
+      .mockResolvedValue({ data: { data: { items: [] } } });
+
+    render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
+
+    const quantity = await screen.findByLabelText('Quantité commandée pour Bougie');
+    await user.clear(quantity);
+    await user.type(quantity, '3');
+    await user.click(screen.getByRole('button', { name: 'Marquer commandée' }));
+    expect(screen.getByText(/Quantité commandée : 3 pièces/)).toBeVisible();
+    await user.click(screen.getAllByRole('button', { name: 'Marquer commandée' }).at(-1));
+
+    await waitFor(() =>
+      expect(mocks.updateStock).toHaveBeenCalledWith('part-uuid', {
+        stockStatus: 'ordered',
+        stockQuantity: 3,
+      }),
+    );
+    expect(await screen.findByText('Aucune pièce à commander sur cette période.')).toBeVisible();
+    expect(mocks.notify).toHaveBeenCalledWith('success', 'Bougie marquée commandée (3 pièces).');
+  });
+
+  it('hides stock update actions without the part update permission', async () => {
+    mocks.hasPermission.mockReturnValue(false);
+
+    render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
+
+    expect(await within(screen.getByRole('dialog')).findByText('Bougie')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Marquer commandée' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Quantité commandée pour Bougie')).not.toBeInTheDocument();
   });
 
   it('creates one independent print page per supplier', async () => {

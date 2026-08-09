@@ -11,6 +11,8 @@ import { createReferenceApi } from '../api/reference.api.js';
 import Button from '../components/Button.jsx';
 import Loader from '../components/Loader.jsx';
 import ManufacturerLogo from '../components/ManufacturerLogo.jsx';
+import StockStatusBadge from '../components/StockStatusBadge.jsx';
+import { STOCK_STATUSES, stockStatusOptions } from '../inventory/stock-status.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import MaintenanceCatalogPage from './MaintenanceCatalogPage.jsx';
 
@@ -87,6 +89,24 @@ export default function MaintenancePartsPage() {
     },
     { name: 'supplierReference', label: 'Référence fournisseur' },
     { name: 'unit', label: 'Unité', required: true, defaultValue: 'pièce' },
+    {
+      name: 'stockStatus',
+      label: 'État du stock',
+      required: true,
+      options: stockStatusOptions,
+      defaultValue: STOCK_STATUSES.TO_ORDER,
+    },
+    {
+      name: 'stockQuantity',
+      label: 'Quantité en stock ou commandée',
+      type: 'number',
+      min: 0,
+      max: 1000000,
+      step: 1,
+      required: true,
+      valueType: 'number',
+      defaultValue: 0,
+    },
   ];
   const manufacturerByUuid = new Map(
     manufacturers.map((manufacturer) => [manufacturer.uuid, manufacturer]),
@@ -113,8 +133,14 @@ export default function MaintenancePartsPage() {
         { key: 'supplierReference', label: 'Référence fournisseur' },
         { key: 'unit', label: 'Unité' },
         {
+          key: 'stockStatus',
+          label: 'Stock',
+          render: (value) => <StockStatusBadge status={value} />,
+        },
+        { key: 'stockQuantity', label: 'Quantité' },
+        {
           key: 'active',
-          label: 'Statut',
+          label: 'Catalogue',
           render: (value) => (
             <span className={`status-badge ${value ? '' : 'inactive'}`}>
               {value ? 'Active' : 'Inactive'}

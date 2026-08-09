@@ -14,6 +14,7 @@ const catalogController = {
     response.status(201).json({ success: true, data: {} }),
   ),
   updatePart: jest.fn((_request, response) => response.json({ success: true, data: {} })),
+  updatePartStock: jest.fn((_request, response) => response.json({ success: true, data: {} })),
   removePart: jest.fn((_request, response) => response.status(204).send()),
 };
 const manufacturerController = {
@@ -43,6 +44,7 @@ jest.unstable_mockModule(
       parts = catalogController.parts;
       createPart = catalogController.createPart;
       updatePart = catalogController.updatePart;
+      updatePartStock = catalogController.updatePartStock;
       removePart = catalogController.removePart;
     },
   }),
@@ -176,8 +178,27 @@ describe('maintenance catalogue route permissions', () => {
       .send({ name: 'Bougie moteur' })
       .expect(200);
     await request(app)
+      .patch(`/api/v1/maintenance/parts/${uuid}/stock`)
+      .set('Authorization', authorization(['maintenance.parts.update']))
+      .send({ stockStatus: 'ordered', stockQuantity: 3 })
+      .expect(200);
+    expect(catalogController.updatePartStock).toHaveBeenCalled();
+    await request(app)
       .delete(`/api/v1/maintenance/parts/${uuid}`)
       .set('Authorization', authorization(['maintenance.parts.delete']))
       .expect(204);
+  });
+
+  it('validates stock updates and rejects unrelated permissions', async () => {
+    await request(app)
+      .patch(`/api/v1/maintenance/parts/${uuid}/stock`)
+      .set('Authorization', authorization(['maintenance.update']))
+      .send({ stockStatus: 'ordered', stockQuantity: 3 })
+      .expect(403);
+    await request(app)
+      .patch(`/api/v1/maintenance/parts/${uuid}/stock`)
+      .set('Authorization', authorization(['maintenance.parts.update']))
+      .send({ stockStatus: 'unknown', stockQuantity: -1 })
+      .expect(400);
   });
 });
