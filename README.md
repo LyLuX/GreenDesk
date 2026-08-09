@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **4.2.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **4.3.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -68,9 +68,9 @@ En développement et en test, la documentation Swagger UI est servie sur `/docs`
 
 Un matériel contient son UUID public, nom, fabricant, modèle, catégorie, numéro de série, dates, prix d’achat et notes. Les relations sont exclusivement transmises et renvoyées avec des UUID publics. La liste supporte la recherche, les filtres par statut, fabricant et catégorie, le tri et la pagination.
 
-Les photos (JPEG, PNG, WebP) et documents PDF sont stockés sous `uploads/materials`, sans exposition statique du dossier. Les photos sont consultées via une route authentifiée inline ; les documents sont téléchargés en pièce jointe via une route authentifiée. Chaque fichier est limité à 10 Mo et chaque matériel à 10 photos. Les fichiers reçoivent un nom UUID dérivé de leur MIME autorisé, jamais de leur nom client. La fiche matériel présente les informations, les documents, la maintenance et l’historique sous forme de tableaux. L’historique utilise des libellés métier, remplace les identifiants internes du fabricant et de la catégorie par leurs noms et ignore les différences purement décimales d’un prix inchangé.
+Les photos (JPEG, PNG, WebP) et documents PDF sont stockés sous `uploads/materials`, sans exposition statique du dossier. Les photos sont consultées via une route authentifiée inline ; les documents sont téléchargés en pièce jointe via une route authentifiée. Chaque fichier est limité à 10 Mo et chaque matériel à 10 photos. Les fichiers reçoivent un nom UUID dérivé de leur MIME autorisé, jamais de leur nom client. Avant toute écriture en base, leur signature binaire est détectée et doit correspondre au MIME déclaré ; un fichier falsifié ou non reconnu est immédiatement supprimé. La fiche matériel présente les informations, les documents, la maintenance et l’historique sous forme de tableaux. L’historique utilise des libellés métier, remplace les identifiants internes du fabricant et de la catégorie par leurs noms et ignore les différences purement décimales d’un prix inchangé.
 
-Chaque fabricant peut recevoir un logo JPEG, PNG ou WebP de 2 Mo maximum. Les logos sont stockés sous `uploads/manufacturers` avec un nom serveur UUID et sont affichés via une route authentifiée. Les anciennes marques sont migrées dans ce référentiel avec leurs logos et leurs matériels.
+Chaque fabricant peut recevoir un logo JPEG, PNG ou WebP de 2 Mo maximum. Les logos sont stockés sous `uploads/manufacturers` avec un nom serveur UUID et sont affichés via une route authentifiée. Leur signature binaire doit correspondre au MIME déclaré avant la mise à jour du fabricant ; tout logo falsifié ou non reconnu est immédiatement supprimé. Les anciennes marques sont migrées dans ce référentiel avec leurs logos et leurs matériels.
 
 ### Permissions
 

@@ -209,4 +209,15 @@ describe('OpenAPI contract', () => {
     expect(swaggerSpec.paths['/maintenance/{uuid}/status'].patch.responses).toHaveProperty('409');
     expect(swaggerSpec.paths['/maintenance/{uuid}/execute'].post.responses).toHaveProperty('409');
   });
+
+  it('documents binary-signature validation on every upload endpoint', () => {
+    for (const operation of [
+      swaggerSpec.paths['/manufacturers/{uuid}/logo'].post,
+      swaggerSpec.paths['/materials/{uuid}/photos'].post,
+      swaggerSpec.paths['/materials/{uuid}/documents'].post,
+    ]) {
+      expect(operation.description).toContain('signature binaire');
+      expect(operation.responses).toHaveProperty('400');
+    }
+  });
 });

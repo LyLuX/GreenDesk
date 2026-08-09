@@ -430,7 +430,8 @@ export const openApiPaths = {
       operationId: 'uploadManufacturerLogo',
       tags: ['Manufacturers'],
       summary: 'Ajoute ou remplace le logo d’un fabricant (2 Mo maximum).',
-      description: 'Nécessite `manufacturers.create` ou `manufacturers.update`.',
+      description:
+        'Nécessite `manufacturers.create` ou `manufacturers.update`. Le MIME déclaré et la signature binaire doivent correspondre à une image JPEG, PNG ou WebP.',
       security: secure,
       requestBody: {
         required: true,
@@ -443,7 +444,7 @@ export const openApiPaths = {
                 file: {
                   type: 'string',
                   format: 'binary',
-                  description: 'Image JPEG, PNG ou WebP.',
+                  description: 'Image JPEG, PNG ou WebP validée par sa signature binaire.',
                 },
               },
             },
@@ -579,7 +580,8 @@ export const openApiPaths = {
       operationId: 'uploadMaterialPhoto',
       tags: ['Material files'],
       summary: 'Ajoute une photo au matériel (10 Mo, 10 photos maximum).',
-      description: 'Nécessite `materials.update`. Formats acceptés : JPEG, PNG et WebP.',
+      description:
+        'Nécessite `materials.update`. Formats acceptés : JPEG, PNG et WebP, avec correspondance obligatoire entre le MIME déclaré et la signature binaire.',
       security: secure,
       requestBody: {
         required: true,
@@ -605,7 +607,8 @@ export const openApiPaths = {
       operationId: 'uploadMaterialDocument',
       tags: ['Material files'],
       summary: 'Ajoute un document PDF au matériel (10 Mo maximum).',
-      description: 'Nécessite `materials.update`.',
+      description:
+        'Nécessite `materials.update`. Le MIME déclaré et la signature binaire doivent correspondre à un document PDF.',
       security: secure,
       requestBody: {
         required: true,

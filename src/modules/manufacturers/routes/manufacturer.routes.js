@@ -7,6 +7,7 @@ import { authenticate } from '../../../core/middlewares/auth.middleware.js';
 import { authorize } from '../../../core/middlewares/authorization.middleware.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
+import { createFileSignatureValidator } from '../../../core/middlewares/file-signature.middleware.js';
 import { validateRequest } from '../../../core/middlewares/validate-request.js';
 import { asyncHandler } from '../../../core/utils/async-handler.js';
 import ManufacturerController from '../controller/manufacturer.controller.js';
@@ -33,6 +34,10 @@ const logoUpload = multer({
     callback(allowed ? null : new Error('Unsupported logo type'), allowed);
   },
 });
+const validateLogoSignature = createFileSignatureValidator(
+  MANUFACTURER_LOGO_MIME_TYPES,
+  'Le contenu du fichier ne correspond pas à une signature JPEG, PNG ou WebP autorisée.',
+);
 const uploadLogo = (request, response, next) =>
   logoUpload.single('file')(request, response, (error) => {
     if (!error) return next();
@@ -76,6 +81,7 @@ router.post(
   validator.uuidValidator,
   validateRequest,
   uploadLogo,
+  validateLogoSignature,
   asyncHandler(controller.uploadLogo.bind(controller)),
 );
 router.delete(

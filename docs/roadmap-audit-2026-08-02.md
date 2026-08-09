@@ -4,14 +4,13 @@ J’ai confronté l’audit du 2 août, réalisé sur GreenDesk v1.15.3, à Gree
 
 ## Roadmap recommandée
 
-| Priorité | Correction                                | Sévérité | Taille |
-| -------- | ----------------------------------------- | -------: | -----: |
-| 1        | Unification du système de migrations      |    Haute |      L |
-| 2        | Refonte minimale du modèle de stock       |    Haute |      L |
-| 3        | Intégration continue obligatoire          |    Haute |      M |
-| 4        | Validation réelle des fichiers téléversés |  Modérée |      M |
-| 5        | Optimisations frontend et maintenance     |  Modérée |    M/L |
-| 6        | Refactorings structurels et Sequelize v7  |    Basse |      L |
+| Priorité | Correction                               | Sévérité | Taille |
+| -------- | ---------------------------------------- | -------: | -----: |
+| 1        | Unification du système de migrations     |    Haute |      L |
+| 2        | Refonte minimale du modèle de stock      |    Haute |      L |
+| 3        | Intégration continue obligatoire         |    Haute |      M |
+| 4        | Optimisations frontend et maintenance    |  Modérée |    M/L |
+| 5        | Refactorings structurels et Sequelize v7 |    Basse |      L |
 
 ### 1. Rendre les migrations fiables
 
@@ -76,7 +75,7 @@ Il faudra aussi :
 
 ### 3. Ajouter une CI bloquante
 
-Le constat de l’audit indiquant que les tests n’avaient pas été exécutés est désormais dépassé : les validations de la v4.2.0 passent, avec 187 tests backend, 118 tests frontend, le contrôle OpenAPI et le build de production.
+Le constat de l’audit indiquant que les tests n’avaient pas été exécutés est désormais dépassé : les validations de la v4.3.0 passent, avec 196 tests backend, 118 tests frontend, le contrôle OpenAPI et le build de production.
 
 En revanche, aucun workflow CI n’impose encore ces contrôles.
 
@@ -90,13 +89,7 @@ La CI devrait exécuter :
 - build frontend ;
 - reconstruction d’une base vide par migrations.
 
-### 4. Vérifier le contenu réel des fichiers
-
-Les uploads sont protégés, limités en taille et stockés sous des noms UUID, ce qui est positif. Mais le type est déterminé depuis le MIME déclaré par le client.
-
-Ajouter une vérification des signatures binaires — magic bytes — avant conservation du fichier, avec suppression immédiate des fichiers rejetés et tests de MIME falsifié.
-
-### 5. Optimisations après sécurisation
+### 4. Optimisations après sécurisation
 
 Les constats de performance restent globalement valides :
 
@@ -116,7 +109,7 @@ Ordre conseillé :
 
 Le niveau `9` de compression mérite également un benchmark : il peut consommer davantage de CPU pour un gain réseau faible.
 
-### 6. Reporter Sequelize v7 et les grands refactorings
+### 5. Reporter Sequelize v7 et les grands refactorings
 
 Je ne recommande pas de migrer maintenant. La documentation officielle décrit toujours Sequelize v7 comme une version alpha et recommande `@sequelize/core@alpha`. La remarque de l’audit affirmant que la CLI n’était pas prête est toutefois à revalider, car la documentation v7 actuelle comporte désormais une section CLI : [Sequelize v7](https://sequelize.org/docs/v7/), [installation](https://sequelize.org/docs/v7/getting-started/), [CLI](https://sequelize.org/docs/v7/cli/).
 
