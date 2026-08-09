@@ -1,6 +1,6 @@
 # Roadmap de correction de l’audit GreenDesk du 2 août 2026
 
-J’ai confronté l’audit du 2 août, réalisé sur GreenDesk v1.15.3, à GreenDesk v4.3.1. Conclusion : le système de migrations reste le risque technique le plus grave. La nouvelle gestion de stock introduit également un risque important de cohérence métier.
+J’ai confronté l’audit du 2 août, réalisé sur GreenDesk v1.15.3, à GreenDesk v4.3.2. Conclusion : le système de migrations reste le risque technique le plus grave. La nouvelle gestion de stock introduit également un risque important de cohérence métier.
 
 ## Roadmap recommandée
 
@@ -9,7 +9,6 @@ J’ai confronté l’audit du 2 août, réalisé sur GreenDesk v1.15.3, à Gree
 | 1        | Unification du système de migrations     |    Haute |      L |
 | 2        | Refonte minimale du modèle de stock      |    Haute |      L |
 | 3        | Intégration continue obligatoire         |    Haute |      M |
-| 5        | Refactorings structurels et Sequelize v7 |    Basse |      L |
 
 ### 1. Rendre les migrations fiables
 
@@ -74,7 +73,7 @@ Il faudra aussi :
 
 ### 3. Ajouter une CI bloquante
 
-Le constat de l’audit indiquant que les tests n’avaient pas été exécutés est désormais dépassé : les validations de la v4.3.1 passent, avec 199 tests backend, 119 tests frontend, le contrôle OpenAPI et le build de production.
+Le constat de l’audit indiquant que les tests n’avaient pas été exécutés est désormais dépassé : les validations de la v4.3.2 passent, avec 199 tests backend, 119 tests frontend, le contrôle OpenAPI et le build de production.
 
 En revanche, aucun workflow CI n’impose encore ces contrôles.
 
@@ -87,12 +86,6 @@ La CI devrait exécuter :
 - test de cohérence des versions ;
 - build frontend ;
 - reconstruction d’une base vide par migrations.
-
-### 5. Reporter Sequelize v7 et les grands refactorings
-
-Je ne recommande pas de migrer maintenant. La documentation officielle décrit toujours Sequelize v7 comme une version alpha et recommande `@sequelize/core@alpha`. La remarque de l’audit affirmant que la CLI n’était pas prête est toutefois à revalider, car la documentation v7 actuelle comporte désormais une section CLI : [Sequelize v7](https://sequelize.org/docs/v7/), [installation](https://sequelize.org/docs/v7/getting-started/), [CLI](https://sequelize.org/docs/v7/cli/).
-
-Les abstractions CRUD et la réduction de `App.jsx` pourront ensuite être réalisées progressivement, sans refonte globale.
 
 ## Éléments déjà améliorés depuis l’audit
 
