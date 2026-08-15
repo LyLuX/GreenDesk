@@ -572,7 +572,6 @@ a:hover {
 }
 
 .table-responsive > .table {
-  width: auto;
   min-width: min(100%, 48rem);
   max-width: 100%;
   white-space: normal;

@@ -31,8 +31,10 @@ describe('production CSS build', () => {
       /\.table-responsive\s*\{[^}]*max-width:\s*100%;[^}]*overflow-x:\s*visible;/,
     );
     expect(styles).toMatch(
-      /\.table-responsive\s*>\s*\.table\s*\{[^}]*width:\s*auto;[^}]*min-width:\s*min\(100%,\s*48rem\);[^}]*max-width:\s*100%;[^}]*white-space:\s*normal;/,
+      /\.table-responsive\s*>\s*\.table\s*\{[^}]*min-width:\s*min\(100%,\s*48rem\);[^}]*max-width:\s*100%;[^}]*white-space:\s*normal;/,
     );
+    const responsiveTableRule = styles.match(/\.table-responsive\s*>\s*\.table\s*\{([^}]*)\}/)?.[1];
+    expect(responsiveTableRule).not.toMatch(/(?:^|;)\s*width\s*:/);
     expect(styles).not.toMatch(/\.history-table\s*\{[^}]*min-width:/);
     expect(styles).not.toMatch(/\.maintenance-order-list-table\s*\{[^}]*min-width:/);
     expect(styles).toMatch(
