@@ -1,10 +1,24 @@
+import { Op } from 'sequelize';
+
 import Permission from '../model/permission.model.js';
 import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
+import { normalizePagination } from '../../../core/utils/pagination.js';
 
 /** Database access for permissions. */
 export default class PermissionRepository extends TransactionalRepository {
-  async findAll() {
-    return Permission.findAll({ order: [['name', 'ASC']] });
+  async findAll({ search, page, limit } = {}) {
+    const pagination = normalizePagination({ page, limit });
+    const pattern = search ? `%${search}%` : undefined;
+    return Permission.findAndCountAll({
+      where: pattern
+        ? {
+            [Op.or]: [{ name: { [Op.like]: pattern } }, { description: { [Op.like]: pattern } }],
+          }
+        : {},
+      order: [['name', 'ASC']],
+      limit: pagination.limit,
+      offset: pagination.offset,
+    });
   }
   async findByUuid(uuid, { transaction } = {}) {
     return Permission.findOne({ where: { uuid }, transaction });

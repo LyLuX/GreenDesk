@@ -2,6 +2,7 @@ import CategoryRepository from '../../../core/database/repositories/category.rep
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';
+import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 
 /** Business lifecycle for categories. */
 export default class CategoryService {
@@ -9,8 +10,9 @@ export default class CategoryService {
     this.categoryRepository = categoryRepository;
     this.auditService = auditService;
   }
-  async getAll(search) {
-    return this.categoryRepository.findAll(search);
+  async getAll(query = {}) {
+    const result = await this.categoryRepository.findAll(query);
+    return paginatedResult(result, normalizePagination(query));
   }
   async getByUuid(uuid, options) {
     const item = await this.categoryRepository.findByUuid(uuid, options);

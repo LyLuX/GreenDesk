@@ -9,6 +9,7 @@ import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
 import useNotification from '../notifications/useNotification.js';
+import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import { paginateItems } from '../utils/pagination.js';
 
 const emptyRole = () => ({ name: '', description: '', permissionUuids: [] });
@@ -32,6 +33,10 @@ export default function RolesPage() {
   const [limit, setLimit] = useState(5);
   const [search, setSearch] = useState('');
   const [permissionUuid, setPermissionUuid] = useState('');
+  const [pagination, setPagination] = useState(null);
+  const [permissionsPagination, setPermissionsPagination] = useState(null);
+  const [loadingMorePermissions, setLoadingMorePermissions] = useState(false);
+  const debouncedSearch = useDebouncedValue(search, 300);
   const sortedPermissions = useMemo(
     () =>
       [...permissions].sort((left, right) =>
@@ -40,26 +45,71 @@ export default function RolesPage() {
     [permissions],
   );
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [rolesResponse, permissionsResponse] = await Promise.all([
-        rolesApi.list({ limit: 'all' }),
-        permissionsApi.list({ limit: 'all' }),
-      ]);
-      setRoles(rolesResponse.data.data ?? []);
-      setPermissions(permissionsResponse.data.data ?? []);
-      setError('');
-    } catch (requestError) {
-      setError(getApiErrorMessage(requestError));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (signal) => {
+      setLoading(true);
+      try {
+        const rolesResponse = await rolesApi.list(
+          {
+            page,
+            limit,
+            ...(debouncedSearch ? { search: debouncedSearch } : {}),
+            ...(permissionUuid ? { permissionUuid } : {}),
+          },
+          signal,
+        );
+        const payload = rolesResponse.data.data ?? {};
+        const normalized = Array.isArray(payload)
+          ? paginateItems(
+              payload.filter((role) => {
+                const term = debouncedSearch.trim().toLocaleLowerCase('fr');
+                const matchesSearch =
+                  !term ||
+                  [role.name, role.description]
+                    .filter(Boolean)
+                    .some((value) => value.toLocaleLowerCase('fr').includes(term));
+                const matchesPermission =
+                  !permissionUuid ||
+                  role.permissions?.some((permission) => permission.uuid === permissionUuid) ===
+                    true;
+                return matchesSearch && matchesPermission;
+              }),
+              page,
+              limit,
+            )
+          : payload;
+        setRoles(normalized.items ?? []);
+        setPagination(normalized.pagination ?? null);
+        setError('');
+      } catch (requestError) {
+        if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
+      } finally {
+        if (!signal?.aborted) setLoading(false);
+      }
+    },
+    [debouncedSearch, limit, page, permissionUuid],
+  );
 
   useEffect(() => {
-    load();
+    const controller = new AbortController();
+    load(controller.signal);
+    return () => controller.abort();
   }, [load]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    permissionsApi
+      .list({ limit: 25 }, controller.signal)
+      .then((response) => {
+        const payload = response.data.data ?? {};
+        setPermissions(Array.isArray(payload) ? payload : (payload.items ?? []));
+        setPermissionsPagination(Array.isArray(payload) ? null : (payload.pagination ?? null));
+      })
+      .catch((requestError) => {
+        if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
+      });
+    return () => controller.abort();
+  }, []);
 
   const openCreate = () => {
     setEditing({});
@@ -68,6 +118,12 @@ export default function RolesPage() {
   };
 
   const openEdit = (role) => {
+    setPermissions((current) => [
+      ...current,
+      ...(role.permissions ?? []).filter(
+        (permission) => !current.some((item) => item.uuid === permission.uuid),
+      ),
+    ]);
     setEditing(role);
     setForm({
       name: role.name ?? '',
@@ -75,6 +131,29 @@ export default function RolesPage() {
       permissionUuids: role.permissions?.map((permission) => permission.uuid) ?? [],
     });
     setFormError('');
+  };
+
+  const loadMorePermissions = async () => {
+    if (
+      !permissionsPagination ||
+      permissionsPagination.page >= permissionsPagination.totalPages ||
+      loadingMorePermissions
+    )
+      return;
+    setLoadingMorePermissions(true);
+    try {
+      const response = await permissionsApi.list({
+        page: permissionsPagination.page + 1,
+        limit: 25,
+      });
+      const payload = response.data.data ?? {};
+      setPermissions((current) => [...current, ...(payload.items ?? [])]);
+      setPermissionsPagination(payload.pagination ?? permissionsPagination);
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError));
+    } finally {
+      setLoadingMorePermissions(false);
+    }
   };
 
   const togglePermission = (permissionUuid) => {
@@ -128,22 +207,6 @@ export default function RolesPage() {
       setRemoving(null);
     }
   };
-  const filteredRoles = useMemo(() => {
-    const term = search.trim().toLocaleLowerCase('fr');
-    return roles.filter((role) => {
-      const matchesSearch =
-        !term ||
-        [role.name, role.description]
-          .filter(Boolean)
-          .some((value) => value.toLocaleLowerCase('fr').includes(term));
-      const matchesPermission =
-        permissionUuid === '' ||
-        role.permissions?.some((permission) => permission.uuid === permissionUuid) === true;
-      return matchesSearch && matchesPermission;
-    });
-  }, [permissionUuid, roles, search]);
-  const rolePage = paginateItems(filteredRoles, page, limit);
-
   return (
     <main className="app-page">
       <div className="page-header mb-3 d-flex flex-wrap align-items-start justify-content-between gap-3">
@@ -184,6 +247,16 @@ export default function RolesPage() {
           },
         ]}
       />
+      {permissionsPagination?.page < permissionsPagination?.totalPages && (
+        <Button
+          className="btn-sm btn-outline-secondary mb-3"
+          type="button"
+          disabled={loadingMorePermissions}
+          onClick={loadMorePermissions}
+        >
+          {loadingMorePermissions ? 'Chargement…' : 'Charger plus de permissions'}
+        </Button>
+      )}
       {error && (
         <p className="alert alert-danger" role="alert">
           {error}
@@ -204,7 +277,7 @@ export default function RolesPage() {
               </tr>
             </thead>
             <tbody>
-              {rolePage.pagination.total === 0 ? (
+              {pagination?.total === 0 ? (
                 <tr>
                   <td className="py-5 text-center text-body-secondary" colSpan="3">
                     {search.trim() || permissionUuid
@@ -213,7 +286,7 @@ export default function RolesPage() {
                   </td>
                 </tr>
               ) : (
-                rolePage.items.map((role) => (
+                roles.map((role) => (
                   <tr key={role.uuid}>
                     <td className="text-nowrap">
                       <strong>{role.name}</strong>
@@ -252,7 +325,7 @@ export default function RolesPage() {
       )}
       {!loading && (
         <PaginationControls
-          pagination={rolePage.pagination}
+          pagination={pagination}
           limit={limit}
           itemLabel="rôle(s)"
           onLimitChange={(value) => {
@@ -323,6 +396,16 @@ export default function RolesPage() {
                 );
               })}
             </div>
+            {permissionsPagination?.page < permissionsPagination?.totalPages && (
+              <Button
+                className="btn-sm btn-outline-secondary mt-2"
+                type="button"
+                disabled={loadingMorePermissions}
+                onClick={loadMorePermissions}
+              >
+                {loadingMorePermissions ? 'Chargement…' : 'Charger plus de permissions'}
+              </Button>
+            )}
           </fieldset>
           <Button type="submit" disabled={saving}>
             {saving ? 'Enregistrement…' : 'Enregistrer'}

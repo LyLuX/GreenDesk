@@ -7,8 +7,8 @@ export default class RoleController {
   constructor(roleService = new RoleService()) {
     this.roleService = roleService;
   }
-  async getAll(_request, response) {
-    response.json(successResponse(await this.roleService.getAll()));
+  async getAll(request, response) {
+    response.json(successResponse(await this.roleService.getAll(request.query)));
   }
   async create(request, response) {
     response

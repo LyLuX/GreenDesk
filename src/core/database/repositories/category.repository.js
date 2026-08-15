@@ -1,13 +1,17 @@
 import Category from '../../../modules/categories/model/category.model.js';
 import { Op } from 'sequelize';
 import TransactionalRepository from './transactional.repository.js';
+import { normalizePagination } from '../../utils/pagination.js';
 
 /** Sequelize persistence operations for category records. */
 export default class CategoryRepository extends TransactionalRepository {
-  async findAll(search) {
-    return Category.findAll({
+  async findAll({ search, page, limit } = {}) {
+    const pagination = normalizePagination({ page, limit });
+    return Category.findAndCountAll({
       where: search ? { name: { [Op.like]: `%${search}%` } } : {},
       order: [['name', 'ASC']],
+      limit: pagination.limit,
+      offset: pagination.offset,
     });
   }
   async findByUuid(uuid, { transaction } = {}) {

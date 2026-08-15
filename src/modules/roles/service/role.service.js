@@ -2,6 +2,7 @@ import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import PermissionRepository from '../../permissions/repository/permission.repository.js';
 import RoleRepository from '../repository/role.repository.js';
+import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 
 /** Business operations for roles. */
 export default class RoleService {
@@ -12,8 +13,9 @@ export default class RoleService {
     this.roleRepository = roleRepository;
     this.permissionRepository = permissionRepository;
   }
-  async getAll() {
-    return this.roleRepository.findAll();
+  async getAll(query = {}) {
+    const result = await this.roleRepository.findAll(query);
+    return paginatedResult(result, normalizePagination(query));
   }
   async getByUuid(uuid) {
     const role = await this.roleRepository.findByUuid(uuid);

@@ -51,6 +51,8 @@ export default function ReferencePage({
   const [direction, setDirection] = useState('ASC');
   const [paginationData, setPaginationData] = useState(null);
   const [optionLists, setOptionLists] = useState({});
+  const [optionPagination, setOptionPagination] = useState({});
+  const [loadingMoreOptions, setLoadingMoreOptions] = useState('');
   const [editing, setEditing] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -124,22 +126,71 @@ export default function ReferencePage({
     Promise.all(
       resources.map(async (resourceName) => {
         const response = await createReferenceApi(resourceName).list(
-          { limit: 'all' },
+          { limit: 25 },
           controller.signal,
         );
         const payload = response.data.data ?? [];
-        return [resourceName, Array.isArray(payload) ? payload : (payload.items ?? [])];
+        return [
+          resourceName,
+          Array.isArray(payload) ? payload : (payload.items ?? []),
+          Array.isArray(payload) ? null : (payload.pagination ?? null),
+        ];
       }),
     )
-      .then((entries) => setOptionLists(Object.fromEntries(entries)))
+      .then((entries) => {
+        setOptionLists(Object.fromEntries(entries.map(([name, items]) => [name, items])));
+        setOptionPagination(
+          Object.fromEntries(entries.map(([name, _items, pageData]) => [name, pageData])),
+        );
+      })
       .catch(() => {});
     return () => controller.abort();
   }, [fields, filters]);
 
   const resetPage = () => setPage(1);
-  const selectOptions = (field) =>
-    field.options ??
-    optionLists[field.optionsResource]?.map((item) => ({ value: item.uuid, label: item.name }));
+  const selectOptions = (field) => {
+    const options =
+      field.options ??
+      (field.optionsResource
+        ? (optionLists[field.optionsResource]?.map((item) => ({
+            value: item.uuid,
+            label: item.name,
+          })) ?? [])
+        : undefined);
+    if (!options) return undefined;
+    const selectedRelation = field.relation ? editing?.[field.relation] : null;
+    if (
+      selectedRelation?.uuid &&
+      !options.some((option) => option.value === selectedRelation.uuid)
+    ) {
+      return [
+        ...options,
+        { value: selectedRelation.uuid, label: selectedRelation.name ?? selectedRelation.uuid },
+      ];
+    }
+    return options;
+  };
+  const loadMoreOptions = async (resourceName) => {
+    const current = optionPagination[resourceName];
+    if (!current || current.page >= current.totalPages || loadingMoreOptions) return;
+    setLoadingMoreOptions(resourceName);
+    try {
+      const response = await createReferenceApi(resourceName).list({
+        page: current.page + 1,
+        limit: 25,
+      });
+      const payload = response.data.data ?? {};
+      setOptionLists((lists) => ({
+        ...lists,
+        [resourceName]: [...(lists[resourceName] ?? []), ...(payload.items ?? [])],
+      }));
+      setOptionPagination((pages) => ({ ...pages, [resourceName]: payload.pagination ?? current }));
+    } catch (error) {
+      setLoadError(getApiErrorMessage(error));
+    } finally {
+      setLoadingMoreOptions('');
+    }
+  };
   const save = async (event) => {
     event.preventDefault();
     setFormError('');
@@ -241,20 +292,36 @@ export default function ReferencePage({
           {formError}
         </p>
       )}
-      {fields.map((field) => (
-        <FormField
-          key={field.name}
-          label={field.label}
-          name={field.name}
-          type={field.type ?? 'text'}
-          step={field.step}
-          min={field.min}
-          defaultValue={editing?.[field.name] ?? editing?.[field.relation]?.uuid ?? ''}
-          required={field.required}
-          multiline={field.multiline}
-          options={selectOptions(field)}
-        />
-      ))}
+      {fields.map((field) => {
+        const optionsPage = optionPagination[field.optionsResource];
+        return (
+          <div className="d-grid gap-2" key={field.name}>
+            <FormField
+              label={field.label}
+              name={field.name}
+              type={field.type ?? 'text'}
+              step={field.step}
+              min={field.min}
+              defaultValue={editing?.[field.name] ?? editing?.[field.relation]?.uuid ?? ''}
+              required={field.required}
+              multiline={field.multiline}
+              options={selectOptions(field)}
+            />
+            {optionsPage?.page < optionsPage?.totalPages && (
+              <Button
+                className="btn-sm btn-outline-secondary justify-self-start"
+                type="button"
+                disabled={Boolean(loadingMoreOptions)}
+                onClick={() => loadMoreOptions(field.optionsResource)}
+              >
+                {loadingMoreOptions === field.optionsResource
+                  ? 'Chargement…'
+                  : `Charger plus de ${field.label.toLowerCase()}`}
+              </Button>
+            )}
+          </div>
+        );
+      })}
       {fileField && (
         <>
           {editing?.uuid && fileField.hasFile(editing) && fileField.renderPreview?.(editing)}
@@ -326,6 +393,24 @@ export default function ReferencePage({
           })),
         ]}
       />
+      {[...new Set(filters.map((filter) => filter.optionsResource).filter(Boolean))].map(
+        (resourceName) => {
+          const optionsPage = optionPagination[resourceName];
+          return optionsPage?.page < optionsPage?.totalPages ? (
+            <Button
+              className="btn-sm btn-outline-secondary mb-3"
+              type="button"
+              disabled={Boolean(loadingMoreOptions)}
+              onClick={() => loadMoreOptions(resourceName)}
+              key={resourceName}
+            >
+              {loadingMoreOptions === resourceName
+                ? 'Chargement…'
+                : 'Charger plus d’options de filtre'}
+            </Button>
+          ) : null;
+        },
+      )}
       {pagination && resource === 'materials' && (
         <FilterPanel
           ariaLabel="Tri"

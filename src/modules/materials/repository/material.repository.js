@@ -2,6 +2,7 @@ import { Op } from 'sequelize';
 
 import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
+import { normalizePagination } from '../../../core/utils/pagination.js';
 import Material from '../model/material.model.js';
 import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
 import Category from '../../categories/model/category.model.js';
@@ -18,10 +19,17 @@ const include = [
 
 /** Sequelize persistence operations for material catalogue records. */
 export default class MaterialRepository extends TransactionalRepository {
-  async findOptions() {
-    return Material.findAll({
+  async findOptions({ search, active, page, limit } = {}) {
+    const pagination = normalizePagination({ page, limit });
+    const where = search ? { name: { [Op.like]: `%${search}%` } } : {};
+    const normalizedActive = normalizeBooleanFilter(active);
+    if (normalizedActive !== undefined) where.active = normalizedActive;
+    return Material.findAndCountAll({
       attributes: ['uuid', 'name', 'active'],
+      where,
       order: [['name', 'ASC']],
+      limit: pagination.limit,
+      offset: pagination.offset,
     });
   }
 
@@ -50,7 +58,7 @@ export default class MaterialRepository extends TransactionalRepository {
       },
       { ...include[1], ...(categoryUuid ? { where: { uuid: categoryUuid }, required: true } : {}) },
     ];
-    const normalizedLimit = limit === 'all' ? null : Math.min(Number(limit) || 5, 100);
+    const pagination = normalizePagination({ page, limit });
     return Material.findAndCountAll({
       where,
       include: filteredInclude,
@@ -60,12 +68,8 @@ export default class MaterialRepository extends TransactionalRepository {
           direction === 'DESC' ? 'DESC' : 'ASC',
         ],
       ],
-      ...(normalizedLimit
-        ? {
-            limit: normalizedLimit,
-            offset: (Math.max(Number(page), 1) - 1) * normalizedLimit,
-          }
-        : {}),
+      limit: pagination.limit,
+      offset: pagination.offset,
       distinct: true,
     });
   }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import useAuth from '../auth/useAuth.js';
@@ -12,6 +12,7 @@ import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
 import { activityStatusFilter } from '../filters/filter-options.js';
+import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import useNotification from '../notifications/useNotification.js';
 import normalizeFormValues from '../utils/normalize-form-values.js';
 import { paginateItems } from '../utils/pagination.js';
@@ -47,6 +48,8 @@ export default function MaintenanceCatalogPage({
   const [loadError, setLoadError] = useState('');
   const [formError, setFormError] = useState('');
   const [actionError, setActionError] = useState('');
+  const [pagination, setPagination] = useState(null);
+  const debouncedSearch = useDebouncedValue(search, 300);
   const agreement = feminine
     ? { saved: 'enregistrée', deleted: 'supprimée', disabled: 'désactivée', enabled: 'réactivée' }
     : { saved: 'enregistré', deleted: 'supprimé', disabled: 'désactivé', enabled: 'réactivé' };
@@ -55,8 +58,36 @@ export default function MaintenanceCatalogPage({
     async (signal) => {
       setIsLoading(true);
       try {
-        const response = await listItems(signal);
-        setRows(response.data.data ?? []);
+        const response = await listItems(
+          {
+            page,
+            limit,
+            ...(debouncedSearch ? { search: debouncedSearch } : {}),
+            ...(active !== '' ? { active } : {}),
+          },
+          signal,
+        );
+        const payload = response.data.data ?? {};
+        if (Array.isArray(payload)) {
+          const term = debouncedSearch.trim().toLocaleLowerCase('fr');
+          const filtered = payload.filter((row) => {
+            const matchesSearch =
+              !term ||
+              fields.some((field) =>
+                String(row[field.name] ?? '')
+                  .toLocaleLowerCase('fr')
+                  .includes(term),
+              );
+            const matchesStatus = active === '' || String(row.active) === active;
+            return matchesSearch && matchesStatus;
+          });
+          const localPage = paginateItems(filtered, page, limit);
+          setRows(localPage.items);
+          setPagination(localPage.pagination);
+        } else {
+          setRows(payload.items ?? []);
+          setPagination(payload.pagination ?? null);
+        }
         setLoadError('');
       } catch (error) {
         if (error.code !== 'ERR_CANCELED') setLoadError(getApiErrorMessage(error));
@@ -64,7 +95,7 @@ export default function MaintenanceCatalogPage({
         if (!signal?.aborted) setIsLoading(false);
       }
     },
-    [listItems],
+    [active, debouncedSearch, fields, limit, listItems, page],
   );
 
   useEffect(() => {
@@ -72,22 +103,6 @@ export default function MaintenanceCatalogPage({
     load(controller.signal);
     return () => controller.abort();
   }, [load]);
-
-  const filteredRows = useMemo(() => {
-    const term = search.trim().toLocaleLowerCase('fr');
-    return rows.filter((row) => {
-      const matchesSearch =
-        !term ||
-        fields.some((field) =>
-          String(row[field.name] ?? '')
-            .toLocaleLowerCase('fr')
-            .includes(term),
-        );
-      const matchesStatus = active === '' || String(row.active) === active;
-      return matchesSearch && matchesStatus;
-    });
-  }, [active, fields, rows, search]);
-  const rowPage = paginateItems(filteredRows, page, limit);
 
   const save = async (event) => {
     event.preventDefault();
@@ -201,7 +216,7 @@ export default function MaintenanceCatalogPage({
       ) : (
         <DataTable
           columns={columns}
-          rows={rowPage.items}
+          rows={rows}
           emptyMessage={
             search.trim() || active
               ? 'Aucun élément ne correspond aux filtres.'
@@ -236,7 +251,7 @@ export default function MaintenanceCatalogPage({
       )}
       {!isLoading && (
         <PaginationControls
-          pagination={rowPage.pagination}
+          pagination={pagination}
           limit={limit}
           itemLabel={`${singular.toLocaleLowerCase('fr')}(s)`}
           disabled={busy}

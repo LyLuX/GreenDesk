@@ -7,8 +7,8 @@ export default class UserController {
   constructor(userService = new UserService()) {
     this.userService = userService;
   }
-  async getAll(_request, response) {
-    response.json(successResponse(await this.userService.getAll()));
+  async getAll(request, response) {
+    response.json(successResponse(await this.userService.getAll(request.query)));
   }
   async getByUuid(request, response) {
     response.json(successResponse(await this.userService.getByUuid(request.params.uuid)));

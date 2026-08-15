@@ -1,5 +1,6 @@
 import { Op, Sequelize } from 'sequelize';
 import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
+import { normalizePagination } from '../../../core/utils/pagination.js';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 import Material from '../../materials/model/material.model.js';
 import MaintenanceHistory from '../model/maintenance-history.model.js';
@@ -130,17 +131,13 @@ export default class MaintenanceRepository extends TransactionalRepository {
       operationInclude,
       partsInclude,
     ];
-    const normalizedLimit = limit === 'all' ? null : Math.min(Number(limit) || 5, 100);
+    const pagination = normalizePagination({ page, limit });
     return MaintenanceTask.findAndCountAll({
       where,
       include,
       order: [['next_maintenance_date', 'ASC']],
-      ...(normalizedLimit
-        ? {
-            limit: normalizedLimit,
-            offset: (Math.max(Number(page), 1) - 1) * normalizedLimit,
-          }
-        : {}),
+      limit: pagination.limit,
+      offset: pagination.offset,
       distinct: true,
     });
   }
@@ -215,13 +212,17 @@ export default class MaintenanceRepository extends TransactionalRepository {
       order: [['next_maintenance_date', 'ASC']],
     });
   }
-  async findHistory(taskId) {
-    return MaintenanceHistory.findAll({
+  async findHistory(taskId, query = {}) {
+    const pagination = normalizePagination(query);
+    return MaintenanceHistory.findAndCountAll({
       where: { maintenanceTaskId: taskId },
       include: [
         { model: User, as: 'performedByUser', attributes: ['uuid', 'firstName', 'lastName'] },
       ],
       order: [['performed_at', 'DESC']],
+      limit: pagination.limit,
+      offset: pagination.offset,
+      distinct: true,
     });
   }
   async remove(task, options = {}) {

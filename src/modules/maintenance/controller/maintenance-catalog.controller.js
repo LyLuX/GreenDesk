@@ -8,8 +8,8 @@ export default class MaintenanceCatalogController {
     this.service = service;
   }
 
-  async operations(_request, response) {
-    response.json(successResponse(await this.service.getOperations()));
+  async operations(request, response) {
+    response.json(successResponse(await this.service.getOperations(request.query)));
   }
 
   async createOperation(request, response) {
@@ -31,8 +31,8 @@ export default class MaintenanceCatalogController {
     response.status(HTTP_STATUS.NO_CONTENT).send();
   }
 
-  async parts(_request, response) {
-    response.json(successResponse(await this.service.getParts()));
+  async parts(request, response) {
+    response.json(successResponse(await this.service.getParts(request.query)));
   }
 
   async createPart(request, response) {

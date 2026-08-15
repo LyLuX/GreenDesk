@@ -3,12 +3,16 @@ import { Op } from 'sequelize';
 import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
 import MaintenancePart from '../../maintenance/model/maintenance-part.model.js';
 import Supplier from '../model/supplier.model.js';
+import { normalizePagination } from '../../../core/utils/pagination.js';
 
 export default class SupplierRepository extends TransactionalRepository {
-  findAll(search) {
-    return Supplier.findAll({
+  findAll({ search, page, limit } = {}) {
+    const pagination = normalizePagination({ page, limit });
+    return Supplier.findAndCountAll({
       where: search ? { name: { [Op.like]: `%${search}%` } } : {},
       order: [['name', 'ASC']],
+      limit: pagination.limit,
+      offset: pagination.offset,
     });
   }
   findByUuid(uuid, { transaction, withDeleted = false } = {}) {

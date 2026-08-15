@@ -7,7 +7,7 @@ export default class SupplierController {
     this.service = service;
   }
   async getAll(request, response) {
-    response.json(successResponse(await this.service.getAll(request.query.search)));
+    response.json(successResponse(await this.service.getAll(request.query)));
   }
   async create(request, response) {
     response

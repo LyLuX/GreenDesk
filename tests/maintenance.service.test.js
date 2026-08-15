@@ -8,16 +8,16 @@ import {
 describe('MaintenanceService', () => {
   const createService = () => new MaintenanceService({ findAll: jest.fn() }, {}, {});
 
-  it('returns every maintenance plan without pagination when requested', async () => {
+  it('caps maintenance plan pages at an allowed size', async () => {
     const service = new MaintenanceService(
       { findAll: jest.fn().mockResolvedValue({ count: 120, rows: [] }) },
       {},
       {},
     );
 
-    await expect(service.getAll({ limit: 'all' })).resolves.toEqual({
+    await expect(service.getAll({ limit: 25 })).resolves.toEqual({
       items: [],
-      pagination: { page: 1, limit: 120, total: 120, totalPages: 1 },
+      pagination: { page: 1, limit: 25, total: 120, totalPages: 5 },
     });
   });
 

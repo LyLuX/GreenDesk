@@ -3,12 +3,16 @@ import TransactionalRepository from '../../../core/database/repositories/transac
 import Material from '../../materials/model/material.model.js';
 import MaintenancePart from '../../maintenance/model/maintenance-part.model.js';
 import PartManufacturer from '../model/part-manufacturer.model.js';
+import { normalizePagination } from '../../../core/utils/pagination.js';
 
 export default class ManufacturerRepository extends TransactionalRepository {
-  async findAll(search) {
-    return PartManufacturer.findAll({
+  async findAll({ search, page, limit } = {}) {
+    const pagination = normalizePagination({ page, limit });
+    return PartManufacturer.findAndCountAll({
       where: search ? { name: { [Op.like]: `%${search}%` } } : {},
       order: [['name', 'ASC']],
+      limit: pagination.limit,
+      offset: pagination.offset,
     });
   }
   async findByUuid(uuid, { transaction, withDeleted = false } = {}) {

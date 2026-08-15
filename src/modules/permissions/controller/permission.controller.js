@@ -7,8 +7,8 @@ export default class PermissionController {
   constructor(permissionService = new PermissionService()) {
     this.permissionService = permissionService;
   }
-  async getAll(_request, response) {
-    response.json(successResponse(await this.permissionService.getAll()));
+  async getAll(request, response) {
+    response.json(successResponse(await this.permissionService.getAll(request.query)));
   }
   async create(request, response) {
     response

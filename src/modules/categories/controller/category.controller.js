@@ -6,7 +6,7 @@ export default class CategoryController {
     this.service = service;
   }
   async getAll(request, response) {
-    response.json(successResponse(await this.service.getAll(request.query.search)));
+    response.json(successResponse(await this.service.getAll(request.query)));
   }
   async getByUuid(request, response) {
     response.json(successResponse(await this.service.getByUuid(request.params.uuid)));

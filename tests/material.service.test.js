@@ -35,30 +35,40 @@ describe('MaterialService', () => {
       withTransaction: jest.fn((callback) => callback({ id: 'transaction' })),
       ...overrides,
     };
-    const audit = { record: jest.fn(), findByEntity: jest.fn().mockResolvedValue([]) };
+    const audit = {
+      record: jest.fn(),
+      findByEntity: jest.fn().mockResolvedValue({ count: 0, rows: [] }),
+      findAllByEntity: jest.fn().mockResolvedValue([]),
+    };
     return { repository, audit, service: new MaterialService(repository, audit, {}, {}) };
   };
 
   it('returns only lightweight material option fields', async () => {
     const { repository, service } = createService({
-      findOptions: jest.fn().mockResolvedValue([
-        model({
-          id: 7,
+      findOptions: jest.fn().mockResolvedValue({
+        count: 1,
+        rows: [
+          model({
+            id: 7,
+            uuid: '11111111-1111-4111-8111-111111111111',
+            name: 'Tondeuse',
+            active: true,
+            notes: 'Ne doit pas sortir',
+          }),
+        ],
+      }),
+    });
+
+    await expect(service.getOptions()).resolves.toEqual({
+      items: [
+        {
           uuid: '11111111-1111-4111-8111-111111111111',
           name: 'Tondeuse',
           active: true,
-          notes: 'Ne doit pas sortir',
-        }),
-      ]),
+        },
+      ],
+      pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
     });
-
-    await expect(service.getOptions()).resolves.toEqual([
-      {
-        uuid: '11111111-1111-4111-8111-111111111111',
-        name: 'Tondeuse',
-        active: true,
-      },
-    ]);
     expect(repository.findOptions).toHaveBeenCalledTimes(1);
   });
 
@@ -104,14 +114,14 @@ describe('MaterialService', () => {
     });
   });
 
-  it('returns every material without pagination when requested', async () => {
+  it('returns a bounded material page', async () => {
     const { service } = createService({
       findAll: jest.fn().mockResolvedValue({ count: 125, rows: [] }),
     });
 
-    await expect(service.getAll({ limit: 'all' })).resolves.toEqual({
+    await expect(service.getAll({ limit: 25 })).resolves.toEqual({
       items: [],
-      pagination: { page: 1, limit: 125, total: 125, totalPages: 1 },
+      pagination: { page: 1, limit: 25, total: 125, totalPages: 5 },
     });
   });
 
@@ -126,33 +136,39 @@ describe('MaterialService', () => {
     service.categoryRepository = {
       findByIds: jest.fn().mockResolvedValue([model({ id: 3, name: 'Jardin' })]),
     };
-    audit.findByEntity.mockResolvedValue([
-      model({
-        id: 9,
-        userId: 7,
-        uuid: '22222222-2222-4222-8222-222222222222',
-        oldValues: { name: 'Tondeuse', manufacturerId: 2, purchasePrice: '25.50' },
-        newValues: {
-          name: 'Tondeuse pro',
-          brandId: 2,
-          categoryId: 3,
-          purchasePrice: 25.5,
-        },
-      }),
-    ]);
+    audit.findByEntity.mockResolvedValue({
+      count: 1,
+      rows: [
+        model({
+          id: 9,
+          userId: 7,
+          uuid: '22222222-2222-4222-8222-222222222222',
+          oldValues: { name: 'Tondeuse', manufacturerId: 2, purchasePrice: '25.50' },
+          newValues: {
+            name: 'Tondeuse pro',
+            brandId: 2,
+            categoryId: 3,
+            purchasePrice: 25.5,
+          },
+        }),
+      ],
+    });
 
-    await expect(service.getHistory(material.uuid)).resolves.toEqual([
-      {
-        uuid: '22222222-2222-4222-8222-222222222222',
-        oldValues: { name: 'Tondeuse', purchasePrice: 25.5, manufacturer: 'Green' },
-        newValues: {
-          name: 'Tondeuse pro',
-          purchasePrice: 25.5,
-          manufacturer: 'Green',
-          category: 'Jardin',
+    await expect(service.getHistory(material.uuid)).resolves.toEqual({
+      items: [
+        {
+          uuid: '22222222-2222-4222-8222-222222222222',
+          oldValues: { name: 'Tondeuse', purchasePrice: 25.5, manufacturer: 'Green' },
+          newValues: {
+            name: 'Tondeuse pro',
+            purchasePrice: 25.5,
+            manufacturer: 'Green',
+            category: 'Jardin',
+          },
         },
-      },
-    ]);
+      ],
+      pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
+    });
   });
 
   it('rejects a duplicate serial number before persistence', async () => {
@@ -248,7 +264,7 @@ describe('MaterialService', () => {
     const { repository, audit, service } = createService({
       findByUuid: jest.fn().mockResolvedValue(material),
     });
-    audit.findByEntity.mockResolvedValue([
+    audit.findAllByEntity.mockResolvedValue([
       model({
         oldValues: { active: true },
         newValues: { active: false, updatedAt: deactivatedAt },

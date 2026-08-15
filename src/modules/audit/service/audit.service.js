@@ -21,7 +21,11 @@ export default class AuditService {
     );
   }
 
-  async findByEntity(entity, entityUuid) {
-    return this.auditRepository.findByEntity(entity, entityUuid);
+  async findByEntity(entity, entityUuid, query) {
+    return this.auditRepository.findByEntity(entity, entityUuid, query);
+  }
+
+  async findAllByEntity(entity, entityUuid) {
+    return this.auditRepository.findAllByEntity(entity, entityUuid);
   }
 }

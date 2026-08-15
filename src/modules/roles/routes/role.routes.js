@@ -6,6 +6,7 @@ import { asyncHandler } from '../../../core/utils/async-handler.js';
 import RoleController from '../controller/role.controller.js';
 import {
   createRoleValidator,
+  listRoleValidator,
   roleUuidValidator,
   updateRoleValidator,
 } from '../validator/role.validator.js';
@@ -14,7 +15,12 @@ const router = Router();
 const controller = new RoleController();
 router.use(authenticate);
 router.use(authorizeRole('ADMIN'));
-router.get('/', asyncHandler(controller.getAll.bind(controller)));
+router.get(
+  '/',
+  listRoleValidator,
+  validateRequest,
+  asyncHandler(controller.getAll.bind(controller)),
+);
 router.post(
   '/',
   createRoleValidator,

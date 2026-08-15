@@ -4,6 +4,7 @@ import { STOCK_OPERATIONS, STOCKABLE_TYPES } from '../../../core/inventory/stock
 import StockService from '../../../core/inventory/stock.service.js';
 import { getStockAvailability } from '../../../core/inventory/stock-status.js';
 import AuditService from '../../audit/service/audit.service.js';
+import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 import MaterialService from '../../materials/service/material.service.js';
 import MaintenanceCatalogRepository from '../repository/maintenance-catalog.repository.js';
 import MaintenanceRepository from '../repository/maintenance.repository.js';
@@ -33,18 +34,7 @@ export default class MaintenanceService {
   }
   async getAll(query) {
     const result = await this.repository.findAll(query);
-    const showAll = query.limit === 'all';
-    const limit = showAll ? Math.max(result.count, 1) : Math.min(Number(query.limit) || 5, 100);
-    const page = showAll ? 1 : Math.max(Number(query.page) || 1, 1);
-    return {
-      items: result.rows.map((task) => this.toPublic(task)),
-      pagination: {
-        page,
-        limit,
-        total: result.count,
-        totalPages: showAll ? 1 : Math.max(Math.ceil(result.count / limit), 1),
-      },
-    };
+    return paginatedResult(result, normalizePagination(query), (task) => this.toPublic(task));
   }
   async getByUuid(uuid) {
     return this.toPublic(await this.getEntityByUuid(uuid));
@@ -292,9 +282,12 @@ export default class MaintenanceService {
     });
     return { task: this.toPublic(result.task), history: this.toHistory(result.history) };
   }
-  async getHistory(uuid) {
+  async getHistory(uuid, query = {}) {
     const task = await this.getEntityByUuid(uuid);
-    return (await this.repository.findHistory(task.id)).map((history) => this.toHistory(history));
+    const result = await this.repository.findHistory(task.id, query);
+    return paginatedResult(result, normalizePagination(query), (history) =>
+      this.toHistory(history),
+    );
   }
   async getOrderList({ horizonDays = 30, includeOverdue = true, status } = {}) {
     const normalizedHorizon = Math.min(Math.max(Number(horizonDays) || 0, 0), 365);

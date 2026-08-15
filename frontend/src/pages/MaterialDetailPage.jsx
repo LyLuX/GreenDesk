@@ -116,6 +116,7 @@ export default function MaterialDetailPage() {
   const [maintenance, setMaintenance] = useState([]);
   const [historyPage, setHistoryPage] = useState(1);
   const [historyLimit, setHistoryLimit] = useState(5);
+  const [historyPagination, setHistoryPagination] = useState(null);
   const [maintenancePage, setMaintenancePage] = useState(1);
   const [maintenanceLimit, setMaintenanceLimit] = useState(5);
   const [maintenancePagination, setMaintenancePagination] = useState(null);
@@ -134,12 +135,8 @@ export default function MaterialDetailPage() {
 
   const load = useCallback(async () => {
     try {
-      const [materialResponse, historyResponse] = await Promise.all([
-        createReferenceApi('materials').get(uuid),
-        createReferenceApi('materials').get(`${uuid}/history`),
-      ]);
+      const materialResponse = await createReferenceApi('materials').get(uuid);
       setMaterial(materialResponse.data.data);
-      setHistory(historyResponse.data.data ?? []);
       setError('');
     } catch (err) {
       setError(getApiErrorMessage(err));
@@ -148,6 +145,23 @@ export default function MaterialDetailPage() {
   useEffect(() => {
     load();
   }, [load]);
+  useEffect(() => {
+    const controller = new AbortController();
+    createReferenceApi('materials')
+      .get(`${uuid}/history`, { page: historyPage, limit: historyLimit }, controller.signal)
+      .then((response) => {
+        const payload = response.data.data ?? {};
+        const normalized = Array.isArray(payload)
+          ? paginateItems(payload, historyPage, historyLimit)
+          : payload;
+        setHistory(normalized.items ?? []);
+        setHistoryPagination(normalized.pagination ?? null);
+      })
+      .catch((requestError) => {
+        if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
+      });
+    return () => controller.abort();
+  }, [historyLimit, historyPage, uuid]);
   useEffect(() => {
     if (!hasPermission(maintenancePermissions.plans.read)) return undefined;
     const controller = new AbortController();
@@ -174,10 +188,6 @@ export default function MaterialDetailPage() {
   const documents = useMemo(
     () => material?.files?.filter((file) => file.kind === 'document') ?? [],
     [material],
-  );
-  const historyRows = useMemo(
-    () => paginateItems(history, historyPage, historyLimit),
-    [history, historyLimit, historyPage],
   );
   const upload = async (file, document = false, onUploadProgress) => {
     if (file.size > 10 * 1024 * 1024) throw new Error('Le fichier dépasse la limite de 10 Mo.');
@@ -616,7 +626,7 @@ export default function MaterialDetailPage() {
           />
           <Link
             className="btn btn-outline-brand mt-3"
-            to={`/maintenance?materialUuid=${encodeURIComponent(uuid)}&limit=all`}
+            to={`/maintenance?materialUuid=${encodeURIComponent(uuid)}`}
           >
             Voir la maintenance
           </Link>
@@ -640,7 +650,7 @@ export default function MaterialDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {historyRows.items.map((event) => {
+                  {history.map((event) => {
                     const changes = eventChanges(event);
                     return (
                       <tr key={event.uuid}>
@@ -681,7 +691,7 @@ export default function MaterialDetailPage() {
             </div>
           )}
           <PaginationControls
-            pagination={historyRows.pagination}
+            pagination={historyPagination}
             limit={historyLimit}
             itemLabel="événement(s)"
             onLimitChange={(value) => {

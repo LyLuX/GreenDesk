@@ -4,6 +4,7 @@ import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';
 import ManufacturerRepository from '../../manufacturers/repository/manufacturer.repository.js';
 import CategoryRepository from '../../../core/database/repositories/category.repository.js';
+import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 
 const relationIds = (events, keys) => [
   ...new Set(
@@ -88,22 +89,11 @@ export default class MaterialService {
       ...query,
       manufacturerUuid: query.manufacturerUuid ?? query.brandUuid,
     });
-    const showAll = query.limit === 'all';
-    const limit = showAll ? Math.max(result.count, 1) : Math.min(Number(query.limit) || 5, 100);
-    const page = showAll ? 1 : Math.max(Number(query.page) || 1, 1);
-    return {
-      items: result.rows.map((item) => this.toPublic(item)),
-      pagination: {
-        page,
-        limit,
-        total: result.count,
-        totalPages: showAll ? 1 : Math.max(Math.ceil(result.count / limit), 1),
-      },
-    };
+    return paginatedResult(result, normalizePagination(query), (item) => this.toPublic(item));
   }
-  async getOptions() {
-    const items = await this.materialRepository.findOptions();
-    return items.map((item) => {
+  async getOptions(query = {}) {
+    const result = await this.materialRepository.findOptions(query);
+    return paginatedResult(result, normalizePagination(query), (item) => {
       const value = typeof item.toJSON === 'function' ? item.toJSON() : item;
       return { uuid: value.uuid, name: value.name, active: value.active };
     });
@@ -214,7 +204,7 @@ export default class MaterialService {
     });
   }
   async findDeactivationTimestamps(item) {
-    const events = await this.auditService.findByEntity('MATERIAL', item.uuid);
+    const events = await this.auditService.findAllByEntity('MATERIAL', item.uuid);
     const event = events
       .map(auditValue)
       .find(
@@ -225,9 +215,10 @@ export default class MaterialService {
       );
     return [event?.newValues?.updatedAt, item.updatedAt].filter(Boolean);
   }
-  async getHistory(uuid) {
+  async getHistory(uuid, query = {}) {
     await this.getEntityByUuid(uuid);
-    const events = await this.auditService.findByEntity('MATERIAL', uuid);
+    const result = await this.auditService.findByEntity('MATERIAL', uuid, query);
+    const events = result.rows;
     const manufacturerIds = relationIds(events, ['manufacturerId', 'brandId']);
     const categoryIds = relationIds(events, ['categoryId']);
     const [manufacturers, categories] = await Promise.all([
@@ -237,7 +228,7 @@ export default class MaterialService {
     const manufacturerNames = nameMap(manufacturers);
     const categoryNames = nameMap(categories);
 
-    return events.map((event) => {
+    return paginatedResult(result, normalizePagination(query), (event) => {
       const value = event.toJSON();
       const publicValue = {
         ...value,

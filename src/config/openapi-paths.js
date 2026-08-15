@@ -63,14 +63,8 @@ const limitParameter = {
   name: 'limit',
   in: 'query',
   required: false,
-  description: 'Nombre de résultats (1 à 100), ou `all` pour tous les résultats.',
-  schema: {
-    oneOf: [
-      { type: 'integer', minimum: 1, maximum: 100 },
-      { type: 'string', enum: ['all'] },
-    ],
-    default: 5,
-  },
+  description: 'Nombre de résultats par page.',
+  schema: { type: 'integer', enum: [5, 10, 25], default: 5 },
 };
 
 export const openApiPaths = {
@@ -160,6 +154,13 @@ export const openApiPaths = {
       tags: ['Users'],
       summary: 'Liste les utilisateurs (administrateur uniquement).',
       security: secure,
+      parameters: [
+        searchParameter,
+        { name: 'active', in: 'query', schema: { type: 'boolean' } },
+        { name: 'roleUuid', in: 'query', schema: { type: 'string', format: 'uuid' } },
+        pageParameter,
+        limitParameter,
+      ],
       responses: {
         200: jsonResponse('UserListResponse', 'Utilisateurs retournés.'),
         401: responseRef('Unauthorized'),
@@ -216,6 +217,12 @@ export const openApiPaths = {
       tags: ['Roles'],
       summary: 'Liste les rôles et leurs permissions (administrateur uniquement).',
       security: secure,
+      parameters: [
+        searchParameter,
+        { name: 'permissionUuid', in: 'query', schema: { type: 'string', format: 'uuid' } },
+        pageParameter,
+        limitParameter,
+      ],
       responses: {
         200: jsonResponse('RoleListResponse', 'Rôles retournés.'),
         401: responseRef('Unauthorized'),
@@ -262,6 +269,7 @@ export const openApiPaths = {
       tags: ['Permissions'],
       summary: 'Liste les permissions (administrateur uniquement).',
       security: secure,
+      parameters: [searchParameter, pageParameter, limitParameter],
       responses: {
         200: jsonResponse('PermissionListResponse', 'Permissions retournées.'),
         401: responseRef('Unauthorized'),
@@ -309,7 +317,7 @@ export const openApiPaths = {
       summary: 'Liste les catégories.',
       description: 'Nécessite `categories.read`. Alias historique déprécié : `/api/categories`.',
       security: secure,
-      parameters: [searchParameter],
+      parameters: [searchParameter, pageParameter, limitParameter],
       responses: {
         200: jsonResponse('CategoryListResponse', 'Catégories retournées.'),
         ...standardErrors,
@@ -370,7 +378,7 @@ export const openApiPaths = {
       description:
         'Nécessite `manufacturers.read` ou `maintenance.parts.read`. Les anciennes routes `/brands` et `/maintenance/manufacturers` sont dépréciées.',
       security: secure,
-      parameters: [searchParameter],
+      parameters: [searchParameter, pageParameter, limitParameter],
       responses: {
         200: jsonResponse('ManufacturerListResponse', 'Fabricants retournés.'),
         ...standardErrors,
@@ -531,6 +539,12 @@ export const openApiPaths = {
       description:
         'Nécessite `materials.read` ou `maintenance.read`. La réponse légère ne contient que l’identifiant, le nom et le statut.',
       security: secure,
+      parameters: [
+        searchParameter,
+        { name: 'active', in: 'query', schema: { type: 'boolean' } },
+        pageParameter,
+        limitParameter,
+      ],
       responses: {
         200: jsonResponse('MaterialOptionListResponse', 'Options de matériels retournées.'),
         ...standardErrors,
@@ -582,6 +596,7 @@ export const openApiPaths = {
       description:
         'Nécessite `materials.read`. Les identifiants relationnels internes sont remplacés par les noms du fabricant et de la catégorie.',
       security: secure,
+      parameters: [pageParameter, limitParameter],
       responses: {
         200: jsonResponse('AuditLogListResponse', 'Historique retourné.'),
         ...resourceErrors,
@@ -708,6 +723,12 @@ export const openApiPaths = {
       summary: 'Liste les opérations réutilisables.',
       description: 'Nécessite `maintenance.operations.read` ou `maintenance.read`.',
       security: secure,
+      parameters: [
+        searchParameter,
+        { name: 'active', in: 'query', schema: { type: 'boolean' } },
+        pageParameter,
+        limitParameter,
+      ],
       responses: {
         200: jsonResponse(
           'MaintenanceOperationListResponse',
@@ -761,7 +782,7 @@ export const openApiPaths = {
       description:
         'Nécessite `suppliers.read` ou `maintenance.parts.read`. L’ancienne route `/maintenance/suppliers` est dépréciée.',
       security: secure,
-      parameters: [searchParameter],
+      parameters: [searchParameter, pageParameter, limitParameter],
       responses: {
         200: jsonResponse('SupplierListResponse', 'Fournisseurs retournés.'),
         ...standardErrors,
@@ -811,6 +832,12 @@ export const openApiPaths = {
       summary: 'Liste les références de pièces commandables.',
       description: 'Nécessite `maintenance.parts.read` ou `maintenance.read`.',
       security: secure,
+      parameters: [
+        searchParameter,
+        { name: 'active', in: 'query', schema: { type: 'boolean' } },
+        pageParameter,
+        limitParameter,
+      ],
       responses: {
         200: jsonResponse('MaintenancePartListResponse', 'Pièces retournées.'),
         ...standardErrors,
@@ -877,15 +904,7 @@ export const openApiPaths = {
       description:
         'Nécessite `maintenance.parts.read`. Les mouvements sont retournés du plus récent au plus ancien.',
       security: secure,
-      parameters: [
-        pageParameter,
-        {
-          name: 'limit',
-          in: 'query',
-          required: false,
-          schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
-        },
-      ],
+      parameters: [pageParameter, limitParameter],
       responses: {
         200: jsonResponse('StockMovementListResponse', 'Mouvements de stock retournés.'),
         ...standardErrors,
@@ -1063,6 +1082,7 @@ export const openApiPaths = {
       summary: 'Liste les entretiens réalisés pour un plan.',
       description: 'Nécessite `maintenance.read`.',
       security: secure,
+      parameters: [pageParameter, limitParameter],
       responses: {
         200: jsonResponse('MaintenanceHistoryResponse', 'Historique retourné.'),
         ...resourceErrors,

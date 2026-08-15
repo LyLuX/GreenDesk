@@ -1,14 +1,16 @@
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import PermissionRepository from '../repository/permission.repository.js';
+import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 
 /** Business operations for permissions. */
 export default class PermissionService {
   constructor(permissionRepository = new PermissionRepository()) {
     this.permissionRepository = permissionRepository;
   }
-  async getAll() {
-    return this.permissionRepository.findAll();
+  async getAll(query = {}) {
+    const result = await this.permissionRepository.findAll(query);
+    return paginatedResult(result, normalizePagination(query));
   }
   async getByUuid(uuid) {
     const permission = await this.permissionRepository.findByUuid(uuid);

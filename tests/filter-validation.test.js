@@ -51,9 +51,14 @@ describe('list filter validation', () => {
     ).resolves.toEqual([]);
   });
 
-  it('accepts the complete-list pagination value', async () => {
-    await expect(validate(materialListValidator, { limit: 'all' })).resolves.toEqual([]);
-    await expect(validate(maintenanceListValidator, { limit: 'all' })).resolves.toEqual([]);
+  it.each([5, 10, 25])('accepts the bounded pagination value %s', async (limit) => {
+    await expect(validate(materialListValidator, { limit })).resolves.toEqual([]);
+    await expect(validate(maintenanceListValidator, { limit })).resolves.toEqual([]);
+  });
+
+  it('rejects unbounded pagination', async () => {
+    await expect(validate(materialListValidator, { limit: 'all' })).resolves.not.toEqual([]);
+    await expect(validate(maintenanceListValidator, { limit: 'all' })).resolves.not.toEqual([]);
   });
 
   it.each([

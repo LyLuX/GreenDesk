@@ -6,6 +6,7 @@ import { asyncHandler } from '../../../core/utils/async-handler.js';
 import UserController from '../controller/user.controller.js';
 import {
   createUserValidator,
+  listUserValidator,
   updateUserValidator,
   userUuidValidator,
 } from '../validator/user.validator.js';
@@ -14,7 +15,12 @@ const router = Router();
 const controller = new UserController();
 router.use(authenticate);
 router.use(authorizeRole('ADMIN'));
-router.get('/', asyncHandler(controller.getAll.bind(controller)));
+router.get(
+  '/',
+  listUserValidator,
+  validateRequest,
+  asyncHandler(controller.getAll.bind(controller)),
+);
 router.get(
   '/:uuid',
   userUuidValidator,

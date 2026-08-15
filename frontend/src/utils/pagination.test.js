@@ -11,10 +11,10 @@ describe('paginateItems', () => {
     });
   });
 
-  it('shows the complete collection when all items are requested', () => {
-    expect(paginateItems(items, 2, 'all')).toEqual({
+  it('supports the largest allowed page size', () => {
+    expect(paginateItems(items, 2, 25)).toEqual({
       items,
-      pagination: { page: 1, limit: 12, total: 12, totalPages: 1 },
+      pagination: { page: 1, limit: 25, total: 12, totalPages: 1 },
     });
   });
 });

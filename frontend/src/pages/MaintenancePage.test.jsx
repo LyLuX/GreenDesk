@@ -131,7 +131,7 @@ describe('MaintenancePage', () => {
       { page: 1, limit: 5, active: 'true' },
       expect.any(AbortSignal),
     );
-    expect(mocks.listMaterials).toHaveBeenCalledWith(expect.any(AbortSignal));
+    expect(mocks.listMaterials).toHaveBeenCalledWith({ limit: 25 }, expect.any(AbortSignal));
     expect(screen.getByText('05/08/2026')).toBeInTheDocument();
     expect(screen.queryByText(/Compteur/)).not.toBeInTheDocument();
     expect(screen.getByText('Normale', { selector: 'span' })).toHaveClass(
@@ -180,9 +180,9 @@ describe('MaintenancePage', () => {
     await screen.findByText('12 jours');
 
     expect(screen.getByLabelText('Filtrer par matériel')).toHaveValue('material-uuid');
-    expect(screen.getByLabelText('Nombre d’éléments par page')).toHaveValue('all');
+    expect(screen.getByLabelText('Nombre d’éléments par page')).toHaveValue('5');
     expect(mocks.listMaintenance).toHaveBeenCalledWith(
-      { page: 1, limit: 'all', active: 'true', materialUuid: 'material-uuid' },
+      { page: 1, limit: 5, active: 'true', materialUuid: 'material-uuid' },
       expect.any(AbortSignal),
     );
   });

@@ -2,6 +2,7 @@ import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';
 import ManufacturerRepository from '../repository/manufacturer.repository.js';
+import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 
 /** Global manufacturer lifecycle shared by materials and maintenance parts. */
 export default class ManufacturerService {
@@ -10,8 +11,9 @@ export default class ManufacturerService {
     this.auditService = auditService;
   }
 
-  async getAll(search) {
-    return (await this.repository.findAll(search)).map((item) => this.toPublic(item));
+  async getAll(query = {}) {
+    const result = await this.repository.findAll(query);
+    return paginatedResult(result, normalizePagination(query), (item) => this.toPublic(item));
   }
 
   async getByUuid(uuid) {

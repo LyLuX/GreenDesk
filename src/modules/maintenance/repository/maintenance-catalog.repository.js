@@ -1,6 +1,8 @@
 import { Op } from 'sequelize';
 
 import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
+import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
+import { normalizePagination } from '../../../core/utils/pagination.js';
 import MaintenanceTask from '../model/maintenance-task.model.js';
 import MaintenanceOperation from '../model/maintenance-operation.model.js';
 import MaintenancePart from '../model/maintenance-part.model.js';
@@ -21,8 +23,17 @@ const partDirectoryIncludes = [manufacturerInclude, supplierInclude];
 
 /** Persistence operations for reusable maintenance operations and exact parts. */
 export default class MaintenanceCatalogRepository extends TransactionalRepository {
-  findOperations() {
-    return MaintenanceOperation.findAll({ order: [['name', 'ASC']] });
+  findOperations({ search, active, page, limit } = {}) {
+    const pagination = normalizePagination({ page, limit });
+    const where = search ? { name: { [Op.like]: `%${search}%` } } : {};
+    const normalizedActive = normalizeBooleanFilter(active);
+    if (normalizedActive !== undefined) where.active = normalizedActive;
+    return MaintenanceOperation.findAndCountAll({
+      where,
+      order: [['name', 'ASC']],
+      limit: pagination.limit,
+      offset: pagination.offset,
+    });
   }
 
   findOperationByUuid(uuid, { transaction, withDeleted = false } = {}) {
@@ -65,14 +76,30 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
     return MaintenanceTask.update(values, { where: { operationId }, transaction });
   }
 
-  findParts() {
-    return MaintenancePart.findAll({
+  findParts({ search, active, page, limit } = {}) {
+    const pagination = normalizePagination({ page, limit });
+    const where = search
+      ? {
+          [Op.or]: [
+            { name: { [Op.like]: `%${search}%` } },
+            { reference: { [Op.like]: `%${search}%` } },
+            { manufacturer: { [Op.like]: `%${search}%` } },
+          ],
+        }
+      : {};
+    const normalizedActive = normalizeBooleanFilter(active);
+    if (normalizedActive !== undefined) where.active = normalizedActive;
+    return MaintenancePart.findAndCountAll({
+      where,
       include: partDirectoryIncludes,
       order: [
         ['name', 'ASC'],
         ['manufacturer', 'ASC'],
         ['reference', 'ASC'],
       ],
+      distinct: true,
+      limit: pagination.limit,
+      offset: pagination.offset,
     });
   }
 

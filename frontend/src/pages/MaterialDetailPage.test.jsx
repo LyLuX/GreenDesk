@@ -253,7 +253,7 @@ describe('MaterialDetailPage', () => {
 
     expect(screen.getByRole('link', { name: 'Voir la maintenance' })).toHaveAttribute(
       'href',
-      '/maintenance?materialUuid=material-uuid&limit=all',
+      '/maintenance?materialUuid=material-uuid',
     );
   });
 });

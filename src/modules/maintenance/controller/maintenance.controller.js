@@ -50,6 +50,8 @@ export default class MaintenanceController {
     );
   }
   async history(request, response) {
-    response.json(successResponse(await this.service.getHistory(request.params.uuid)));
+    response.json(
+      successResponse(await this.service.getHistory(request.params.uuid, request.query)),
+    );
   }
 }

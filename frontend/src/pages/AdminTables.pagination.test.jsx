@@ -68,7 +68,7 @@ describe('administrator table pagination', () => {
     await user.selectOptions(screen.getByLabelText('Filtrer par statut'), '');
     expect(screen.queryByText('user6@example.test')).not.toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText('Nombre d’éléments par page'), 'all');
+    await user.selectOptions(screen.getByLabelText('Nombre d’éléments par page'), '25');
 
     expect(screen.getByText('user6@example.test')).toBeInTheDocument();
   });
@@ -80,7 +80,7 @@ describe('administrator table pagination', () => {
     expect(await screen.findByText('Rôle 5')).toBeInTheDocument();
     expect(screen.queryByText('Rôle 6')).not.toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText('Nombre d’éléments par page'), 'all');
+    await user.selectOptions(screen.getByLabelText('Nombre d’éléments par page'), '25');
 
     expect(screen.getByText('Rôle 6')).toBeInTheDocument();
   });

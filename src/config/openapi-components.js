@@ -28,6 +28,14 @@ const success = (data) => ({
 });
 const arrayOf = (schema) => ({ type: 'array', items: schema });
 const reference = (name) => ({ $ref: `#/components/schemas/${name}` });
+const pageOf = (name) => ({
+  type: 'object',
+  required: ['items', 'pagination'],
+  properties: {
+    items: arrayOf(reference(name)),
+    pagination: reference('Pagination'),
+  },
+});
 const cacheControlHeaders = {
   'Cache-Control': { $ref: '#/components/headers/CacheControl' },
 };
@@ -350,7 +358,7 @@ const pagination = {
   required: ['page', 'limit', 'total', 'totalPages'],
   properties: {
     page: { type: 'integer', minimum: 1 },
-    limit: { type: 'integer', minimum: 1 },
+    limit: { type: 'integer', enum: [5, 10, 25] },
     total: { type: 'integer', minimum: 0 },
     totalPages: { type: 'integer', minimum: 1 },
   },
@@ -767,22 +775,19 @@ export const openApiSchemas = {
       },
     },
   },
-  MaterialPage: {
-    type: 'object',
-    required: ['items', 'pagination'],
-    properties: {
-      items: arrayOf(reference('Material')),
-      pagination: reference('Pagination'),
-    },
-  },
-  MaintenancePage: {
-    type: 'object',
-    required: ['items', 'pagination'],
-    properties: {
-      items: arrayOf(reference('MaintenanceTask')),
-      pagination: reference('Pagination'),
-    },
-  },
+  UserPage: pageOf('User'),
+  RolePage: pageOf('Role'),
+  PermissionPage: pageOf('Permission'),
+  CategoryPage: pageOf('Category'),
+  ManufacturerPage: pageOf('Manufacturer'),
+  SupplierPage: pageOf('Supplier'),
+  MaterialPage: pageOf('Material'),
+  MaterialOptionPage: pageOf('MaterialOption'),
+  AuditLogPage: pageOf('AuditLog'),
+  MaintenancePage: pageOf('MaintenanceTask'),
+  MaintenanceOperationPage: pageOf('MaintenanceOperation'),
+  MaintenancePartPage: pageOf('MaintenancePart'),
+  MaintenanceHistoryPage: pageOf('MaintenanceHistory'),
   MaintenanceExecution: {
     type: 'object',
     required: ['task', 'history'],
@@ -909,15 +914,15 @@ export const openApiSchemas = {
     properties: { message: { type: 'string' } },
   }),
   UserResponse: success(reference('User')),
-  UserListResponse: success(arrayOf(reference('User'))),
+  UserListResponse: success(reference('UserPage')),
   RoleResponse: success(reference('Role')),
-  RoleListResponse: success(arrayOf(reference('Role'))),
+  RoleListResponse: success(reference('RolePage')),
   PermissionResponse: success(reference('Permission')),
-  PermissionListResponse: success(arrayOf(reference('Permission'))),
+  PermissionListResponse: success(reference('PermissionPage')),
   CategoryResponse: success(reference('Category')),
-  CategoryListResponse: success(arrayOf(reference('Category'))),
+  CategoryListResponse: success(reference('CategoryPage')),
   ManufacturerResponse: success(reference('Manufacturer')),
-  ManufacturerListResponse: success(arrayOf(reference('Manufacturer'))),
+  ManufacturerListResponse: success(reference('ManufacturerPage')),
   LogoStatusResponse: success({
     type: 'object',
     required: ['hasLogo'],
@@ -925,20 +930,20 @@ export const openApiSchemas = {
   }),
   MaterialResponse: success(reference('Material')),
   MaterialListResponse: success(reference('MaterialPage')),
-  MaterialOptionListResponse: success(arrayOf(reference('MaterialOption'))),
+  MaterialOptionListResponse: success(reference('MaterialOptionPage')),
   MaterialFileResponse: success(reference('MaterialFile')),
-  AuditLogListResponse: success(arrayOf(reference('AuditLog'))),
+  AuditLogListResponse: success(reference('AuditLogPage')),
   MaintenanceResponse: success(reference('MaintenanceTask')),
   MaintenanceListResponse: success(reference('MaintenancePage')),
   MaintenanceOperationResponse: success(reference('MaintenanceOperation')),
-  MaintenanceOperationListResponse: success(arrayOf(reference('MaintenanceOperation'))),
+  MaintenanceOperationListResponse: success(reference('MaintenanceOperationPage')),
   SupplierResponse: success(reference('Supplier')),
-  SupplierListResponse: success(arrayOf(reference('Supplier'))),
+  SupplierListResponse: success(reference('SupplierPage')),
   MaintenancePartResponse: success(reference('MaintenancePart')),
-  MaintenancePartListResponse: success(arrayOf(reference('MaintenancePart'))),
+  MaintenancePartListResponse: success(reference('MaintenancePartPage')),
   StockMovementListResponse: success(reference('StockMovementPage')),
   MaintenanceOrderListResponse: success(reference('MaintenanceOrderList')),
-  MaintenanceHistoryResponse: success(arrayOf(reference('MaintenanceHistory'))),
+  MaintenanceHistoryResponse: success(reference('MaintenanceHistoryPage')),
   MaintenanceExecutionResponse: success(reference('MaintenanceExecution')),
   DashboardResponse: success(reference('DashboardSummary')),
 };

@@ -82,7 +82,9 @@ export default function MaintenancePage() {
     const status = searchParams.get('status');
     return {
       page: 1,
-      limit: searchParams.get('limit') === 'all' ? 'all' : 5,
+      limit: [5, 10, 25].includes(Number(searchParams.get('limit')))
+        ? Number(searchParams.get('limit'))
+        : 5,
       active: activityStatusFilter.defaultValue,
       ...(materialUuid ? { materialUuid } : {}),
       ...(deadlineStatuses.has(status) ? { status } : {}),
@@ -93,9 +95,14 @@ export default function MaintenancePage() {
   const [pagination, setPagination] = useState(null);
   const [dialog, setDialog] = useState(null);
   const [history, setHistory] = useState([]);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyLimit, setHistoryLimit] = useState(5);
+  const [historyPagination, setHistoryPagination] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [catalogError, setCatalogError] = useState('');
+  const [catalogPagination, setCatalogPagination] = useState({});
+  const [loadingMoreCatalog, setLoadingMoreCatalog] = useState('');
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
@@ -131,13 +138,25 @@ export default function MaintenancePage() {
   const loadCatalogs = useCallback(async (signal) => {
     try {
       const [materialList, operationList, partList] = await Promise.all([
-        listMaterialOptions(signal),
-        listMaintenanceOperations(signal),
-        listMaintenanceParts(signal),
+        listMaterialOptions({ limit: 25 }, signal),
+        listMaintenanceOperations({ limit: 25 }, signal),
+        listMaintenanceParts({ limit: 25 }, signal),
       ]);
-      setMaterials(materialList.data.data ?? []);
-      setOperations(operationList.data.data ?? []);
-      setParts(partList.data.data ?? []);
+      const materialPayload = materialList.data.data ?? {};
+      const operationPayload = operationList.data.data ?? {};
+      const partPayload = partList.data.data ?? {};
+      setMaterials(
+        Array.isArray(materialPayload) ? materialPayload : (materialPayload.items ?? []),
+      );
+      setOperations(
+        Array.isArray(operationPayload) ? operationPayload : (operationPayload.items ?? []),
+      );
+      setParts(Array.isArray(partPayload) ? partPayload : (partPayload.items ?? []));
+      setCatalogPagination({
+        materials: Array.isArray(materialPayload) ? null : (materialPayload.pagination ?? null),
+        operations: Array.isArray(operationPayload) ? null : (operationPayload.pagination ?? null),
+        parts: Array.isArray(partPayload) ? null : (partPayload.pagination ?? null),
+      });
       setCatalogError('');
     } catch (requestError) {
       if (requestError.code !== 'ERR_CANCELED') {
@@ -150,6 +169,31 @@ export default function MaintenancePage() {
     loadCatalogs(controller.signal);
     return () => controller.abort();
   }, [loadCatalogs]);
+  const loadMoreCatalog = async (catalog) => {
+    const current = catalogPagination[catalog];
+    if (!current || current.page >= current.totalPages || loadingMoreCatalog) return;
+    setLoadingMoreCatalog(catalog);
+    try {
+      const request = {
+        materials: listMaterialOptions,
+        operations: listMaintenanceOperations,
+        parts: listMaintenanceParts,
+      }[catalog];
+      const response = await request({ page: current.page + 1, limit: 25 });
+      const payload = response.data.data ?? {};
+      const setters = {
+        materials: setMaterials,
+        operations: setOperations,
+        parts: setParts,
+      };
+      setters[catalog]((items) => [...items, ...(payload.items ?? [])]);
+      setCatalogPagination((pages) => ({ ...pages, [catalog]: payload.pagination ?? current }));
+    } catch (requestError) {
+      setCatalogError(getApiErrorMessage(requestError));
+    } finally {
+      setLoadingMoreCatalog('');
+    }
+  };
   const close = () => {
     if (!busy) {
       setDialog(null);
@@ -266,17 +310,32 @@ export default function MaintenancePage() {
         : await toggle(confirmation.item);
     if (completed) setConfirmation(null);
   };
-  const showHistory = async (item) => {
+  const showHistory = (item) => {
     setDialog({ type: 'history', item });
     setHistory([]);
+    setHistoryPage(1);
+    setHistoryPagination(null);
     setFormError('');
-    try {
-      const response = await maintenanceHistory(item.uuid);
-      setHistory(response.data.data ?? []);
-    } catch (requestError) {
-      setFormError(getApiErrorMessage(requestError));
-    }
   };
+  useEffect(() => {
+    if (dialog?.type !== 'history') return undefined;
+    const controller = new AbortController();
+    maintenanceHistory(
+      dialog.item.uuid,
+      { page: historyPage, limit: historyLimit },
+      controller.signal,
+    )
+      .then((response) => {
+        const payload = response.data.data ?? {};
+        setHistory(Array.isArray(payload) ? payload : (payload.items ?? []));
+        setHistoryPagination(Array.isArray(payload) ? null : (payload.pagination ?? null));
+        setFormError('');
+      })
+      .catch((requestError) => {
+        if (requestError.code !== 'ERR_CANCELED') setFormError(getApiErrorMessage(requestError));
+      });
+    return () => controller.abort();
+  }, [dialog, historyLimit, historyPage]);
   const activeItem = dialog?.item;
   return (
     <main className="app-page">
@@ -367,6 +426,16 @@ export default function MaintenancePage() {
           },
         ]}
       />
+      {catalogPagination.materials?.page < catalogPagination.materials?.totalPages && (
+        <Button
+          className="btn-sm btn-outline-secondary mb-3"
+          type="button"
+          disabled={Boolean(loadingMoreCatalog)}
+          onClick={() => loadMoreCatalog('materials')}
+        >
+          {loadingMoreCatalog === 'materials' ? 'Chargement…' : 'Charger plus de matériels'}
+        </Button>
+      )}
       {(error || catalogError) && (
         <div
           role="alert"
@@ -538,6 +607,25 @@ export default function MaintenancePage() {
               options={formOptions(field)}
             />
           ))}
+          <div className="d-flex flex-wrap gap-2">
+            {[
+              ['materials', 'matériels'],
+              ['operations', 'opérations'],
+              ['parts', 'pièces'],
+            ].map(([catalog, label]) =>
+              catalogPagination[catalog]?.page < catalogPagination[catalog]?.totalPages ? (
+                <Button
+                  className="btn-sm btn-outline-secondary"
+                  type="button"
+                  disabled={Boolean(loadingMoreCatalog)}
+                  onClick={() => loadMoreCatalog(catalog)}
+                  key={catalog}
+                >
+                  {loadingMoreCatalog === catalog ? 'Chargement…' : `Charger plus de ${label}`}
+                </Button>
+              ) : null,
+            )}
+          </div>
           <fieldset className="surface d-grid gap-2 p-3">
             <legend className="h6 mb-0">Pièces nécessaires</legend>
             {parts.length === 0 ? (
@@ -651,6 +739,16 @@ export default function MaintenancePage() {
             ))}
           </ul>
         )}
+        <PaginationControls
+          pagination={historyPagination}
+          limit={historyLimit}
+          itemLabel="entretien(s)"
+          onLimitChange={(value) => {
+            setHistoryLimit(value);
+            setHistoryPage(1);
+          }}
+          onPageChange={setHistoryPage}
+        />
       </Modal>
       <ConfirmDialog
         open={Boolean(confirmation)}

@@ -19,12 +19,14 @@ router.get(
 router.get(
   '/options',
   authorize('materials.read', maintenancePermissions.plans.read),
+  validator.optionsValidator,
+  validateRequest,
   asyncHandler(controller.getOptions.bind(controller)),
 );
 router.get(
   '/:uuid/history',
   authorize('materials.read'),
-  validator.uuidValidator,
+  validator.historyValidator,
   validateRequest,
   asyncHandler(controller.history.bind(controller)),
 );

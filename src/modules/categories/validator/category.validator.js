@@ -1,7 +1,9 @@
 import { body, param, query } from 'express-validator';
+import { paginationValidator } from '../../../core/validators/pagination.validator.js';
 const uuid = param('uuid').isUUID();
 export const listValidator = [
   query('search').optional({ values: 'falsy' }).trim().isLength({ max: 150 }),
+  ...paginationValidator,
 ];
 export const uuidValidator = [uuid];
 export const createValidator = [

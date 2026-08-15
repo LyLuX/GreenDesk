@@ -5,6 +5,7 @@ import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';
 import RoleRepository from '../../roles/repository/role.repository.js';
 import UserRepository from '../repository/user.repository.js';
+import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 
 const PASSWORD_ROUNDS = 12;
 
@@ -20,8 +21,9 @@ export default class UserService {
     this.auditService = auditService;
   }
 
-  async getAll() {
-    return this.userRepository.findAll();
+  async getAll(query = {}) {
+    const result = await this.userRepository.findAll(query);
+    return paginatedResult(result, normalizePagination(query));
   }
 
   async getByUuid(uuid, options) {

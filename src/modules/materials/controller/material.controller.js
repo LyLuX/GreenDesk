@@ -8,8 +8,8 @@ export default class MaterialController {
   async getAll(request, response) {
     response.json(successResponse(await this.service.getAll(request.query)));
   }
-  async getOptions(_request, response) {
-    response.json(successResponse(await this.service.getOptions()));
+  async getOptions(request, response) {
+    response.json(successResponse(await this.service.getOptions(request.query)));
   }
   async getByUuid(request, response) {
     response.json(successResponse(await this.service.getByUuid(request.params.uuid)));
@@ -32,6 +32,8 @@ export default class MaterialController {
   }
 
   async history(request, response) {
-    response.json(successResponse(await this.service.getHistory(request.params.uuid)));
+    response.json(
+      successResponse(await this.service.getHistory(request.params.uuid, request.query)),
+    );
   }
 }

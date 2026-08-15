@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import { createUser, deleteUser, listUsers, updateUser } from '../api/users.api.js';
@@ -12,6 +12,7 @@ import PaginationControls from '../components/PaginationControls.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
 import { activityStatusFilter } from '../filters/filter-options.js';
 import useNotification from '../notifications/useNotification.js';
+import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import { paginateItems } from '../utils/pagination.js';
 import { getStatusActionButtonClass } from '../utils/status-action.js';
 import { formatDateTime } from '../utils/formatters.js';
@@ -44,27 +45,76 @@ export default function UsersPage() {
   const [search, setSearch] = useState('');
   const [active, setActive] = useState(activityStatusFilter.defaultValue);
   const [roleUuid, setRoleUuid] = useState('');
+  const [pagination, setPagination] = useState(null);
+  const [rolesPagination, setRolesPagination] = useState(null);
+  const [loadingMoreRoles, setLoadingMoreRoles] = useState(false);
+  const debouncedSearch = useDebouncedValue(search, 300);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [usersResponse, rolesResponse] = await Promise.all([
-        listUsers(),
-        createReferenceApi('roles').list({ limit: 'all' }),
-      ]);
-      setUsers(usersResponse.data.data ?? []);
-      setRoles(rolesResponse.data.data ?? []);
-      setError('');
-    } catch (requestError) {
-      setError(getApiErrorMessage(requestError));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (signal) => {
+      setLoading(true);
+      try {
+        const usersResponse = await listUsers(
+          {
+            page,
+            limit,
+            ...(debouncedSearch ? { search: debouncedSearch } : {}),
+            ...(active !== '' ? { active } : {}),
+            ...(roleUuid ? { roleUuid } : {}),
+          },
+          signal,
+        );
+        const payload = usersResponse.data.data ?? {};
+        const normalized = Array.isArray(payload)
+          ? paginateItems(
+              payload.filter((user) => {
+                const term = debouncedSearch.trim().toLocaleLowerCase('fr');
+                const matchesSearch =
+                  !term ||
+                  [user.firstName, user.lastName, user.email]
+                    .filter(Boolean)
+                    .some((value) => value.toLocaleLowerCase('fr').includes(term));
+                const matchesActive = active === '' || String(user.isActive) === active;
+                const matchesRole =
+                  !roleUuid || user.roles?.some((role) => role.uuid === roleUuid) === true;
+                return matchesSearch && matchesActive && matchesRole;
+              }),
+              page,
+              limit,
+            )
+          : payload;
+        setUsers(normalized.items ?? []);
+        setPagination(normalized.pagination ?? null);
+        setError('');
+      } catch (requestError) {
+        if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
+      } finally {
+        if (!signal?.aborted) setLoading(false);
+      }
+    },
+    [active, debouncedSearch, limit, page, roleUuid],
+  );
 
   useEffect(() => {
-    load();
+    const controller = new AbortController();
+    load(controller.signal);
+    return () => controller.abort();
   }, [load]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    createReferenceApi('roles')
+      .list({ limit: 25 }, controller.signal)
+      .then((response) => {
+        const payload = response.data.data ?? {};
+        setRoles(Array.isArray(payload) ? payload : (payload.items ?? []));
+        setRolesPagination(Array.isArray(payload) ? null : (payload.pagination ?? null));
+      })
+      .catch((requestError) => {
+        if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
+      });
+    return () => controller.abort();
+  }, []);
 
   const openCreate = () => {
     setEditing({});
@@ -73,6 +123,10 @@ export default function UsersPage() {
   };
 
   const openEdit = (user) => {
+    setRoles((current) => [
+      ...current,
+      ...(user.roles ?? []).filter((role) => !current.some((item) => item.uuid === role.uuid)),
+    ]);
     setEditing(user);
     setForm({
       firstName: user.firstName ?? '',
@@ -83,6 +137,25 @@ export default function UsersPage() {
       roleUuids: user.roles?.map((role) => role.uuid) ?? [],
     });
     setFormError('');
+  };
+
+  const loadMoreRoles = async () => {
+    if (!rolesPagination || rolesPagination.page >= rolesPagination.totalPages || loadingMoreRoles)
+      return;
+    setLoadingMoreRoles(true);
+    try {
+      const response = await createReferenceApi('roles').list({
+        page: rolesPagination.page + 1,
+        limit: 25,
+      });
+      const payload = response.data.data ?? {};
+      setRoles((current) => [...current, ...(payload.items ?? [])]);
+      setRolesPagination(payload.pagination ?? rolesPagination);
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError));
+    } finally {
+      setLoadingMoreRoles(false);
+    }
   };
 
   const updateField = (event) => {
@@ -179,22 +252,6 @@ export default function UsersPage() {
     if (completed) setConfirmation(null);
   };
 
-  const filteredUsers = useMemo(() => {
-    const term = search.trim().toLocaleLowerCase('fr');
-    return users.filter((user) => {
-      const matchesSearch =
-        !term ||
-        [user.firstName, user.lastName, user.email]
-          .filter(Boolean)
-          .some((value) => value.toLocaleLowerCase('fr').includes(term));
-      const matchesStatus = active === '' || String(user.isActive) === active;
-      const matchesRole =
-        roleUuid === '' || user.roles?.some((role) => role.uuid === roleUuid) === true;
-      return matchesSearch && matchesStatus && matchesRole;
-    });
-  }, [active, roleUuid, search, users]);
-  const userPage = paginateItems(filteredUsers, page, limit);
-
   return (
     <main className="app-page">
       <div className="page-header mb-3 d-flex flex-wrap align-items-start justify-content-between gap-3">
@@ -243,6 +300,16 @@ export default function UsersPage() {
           },
         ]}
       />
+      {rolesPagination?.page < rolesPagination?.totalPages && (
+        <Button
+          className="btn-sm btn-outline-secondary mb-3"
+          type="button"
+          disabled={loadingMoreRoles}
+          onClick={loadMoreRoles}
+        >
+          {loadingMoreRoles ? 'Chargement…' : 'Charger plus de rôles'}
+        </Button>
+      )}
       {error && (
         <p className="alert alert-danger" role="alert">
           {error}
@@ -265,7 +332,7 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {userPage.pagination.total === 0 ? (
+              {pagination?.total === 0 ? (
                 <tr>
                   <td className="py-5 text-center text-body-secondary" colSpan="5">
                     {search.trim() || active || roleUuid
@@ -274,7 +341,7 @@ export default function UsersPage() {
                   </td>
                 </tr>
               ) : (
-                userPage.items.map((user) => (
+                users.map((user) => (
                   <tr key={user.uuid}>
                     <td>
                       <strong>
@@ -333,7 +400,7 @@ export default function UsersPage() {
       )}
       {!loading && (
         <PaginationControls
-          pagination={userPage.pagination}
+          pagination={pagination}
           limit={limit}
           itemLabel="utilisateur(s)"
           onLimitChange={(value) => {
@@ -412,6 +479,16 @@ export default function UsersPage() {
                 </label>
               </div>
             ))}
+            {rolesPagination?.page < rolesPagination?.totalPages && (
+              <Button
+                className="btn-sm btn-outline-secondary mt-2"
+                type="button"
+                disabled={loadingMoreRoles}
+                onClick={loadMoreRoles}
+              >
+                {loadingMoreRoles ? 'Chargement…' : 'Charger plus de rôles'}
+              </Button>
+            )}
           </div>
           <div className="form-check">
             <input

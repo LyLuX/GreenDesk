@@ -15,6 +15,8 @@ router.use(authenticate);
 router.get(
   '/operations',
   authorize(maintenancePermissions.operations.read, maintenancePermissions.plans.read),
+  validator.catalogListValidator,
+  validateRequest,
   asyncHandler(catalogController.operations.bind(catalogController)),
 );
 router.post(
@@ -41,6 +43,8 @@ router.delete(
 router.get(
   '/parts',
   authorize(maintenancePermissions.parts.read, maintenancePermissions.plans.read),
+  validator.catalogListValidator,
+  validateRequest,
   asyncHandler(catalogController.parts.bind(catalogController)),
 );
 router.post(
@@ -109,7 +113,7 @@ router.post(
 router.get(
   '/:uuid/history',
   authorize(maintenancePermissions.plans.read),
-  validator.uuidValidator,
+  validator.historyValidator,
   validateRequest,
   asyncHandler(controller.history.bind(controller)),
 );

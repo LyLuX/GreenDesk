@@ -1,5 +1,4 @@
 import Button from './Button.jsx';
-import { ALL_ITEMS } from '../utils/pagination.js';
 
 /** Shared pagination footer for every application data table. */
 export default function PaginationControls({
@@ -24,13 +23,11 @@ export default function PaginationControls({
           className="form-select d-inline-block ms-1 w-auto"
           value={limit}
           disabled={disabled}
-          onChange={(event) =>
-            onLimitChange(event.target.value === ALL_ITEMS ? ALL_ITEMS : Number(event.target.value))
-          }
+          onChange={(event) => onLimitChange(Number(event.target.value))}
         >
           <option value="5">5</option>
           <option value="10">10</option>
-          <option value={ALL_ITEMS}>Tous ({pagination.total})</option>
+          <option value="25">25</option>
         </select>
       </label>
       <div className="d-flex gap-2">

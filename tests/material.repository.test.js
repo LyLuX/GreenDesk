@@ -17,7 +17,10 @@ describe('MaterialRepository maintenance cascades', () => {
 
     expect(findAll).toHaveBeenCalledWith({
       attributes: ['uuid', 'name', 'active'],
+      where: {},
       order: [['name', 'ASC']],
+      limit: 5,
+      offset: 0,
     });
   });
 

@@ -38,7 +38,7 @@ describe('ReferencePage pagination', () => {
 
   afterEach(cleanup);
 
-  it('shows five rows by default and can display the complete database list', async () => {
+  it('shows five rows by default and can use the largest page size', async () => {
     const rows = Array.from({ length: 6 }, (_value, index) => ({
       uuid: `uuid-${index + 1}`,
       name: `Élément ${index + 1}`,
@@ -60,11 +60,11 @@ describe('ReferencePage pagination', () => {
 
     expect(await screen.findByText('Élément 5')).toBeInTheDocument();
     expect(screen.queryByText('Élément 6')).not.toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Tous (6)' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '25' })).toBeInTheDocument();
     expect(screen.getByText('6 élément(s), page 1 sur 2')).toBeInTheDocument();
     expect(screen.queryByText(/résultat/)).not.toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText('Nombre d’éléments par page'), 'all');
+    await user.selectOptions(screen.getByLabelText('Nombre d’éléments par page'), '25');
 
     await waitFor(() => expect(screen.getByText('Élément 6')).toBeInTheDocument());
   });

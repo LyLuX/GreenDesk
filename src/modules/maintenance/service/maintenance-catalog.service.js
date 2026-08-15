@@ -7,6 +7,7 @@ import AuditService from '../../audit/service/audit.service.js';
 import ManufacturerRepository from '../../manufacturers/repository/manufacturer.repository.js';
 import SupplierRepository from '../../suppliers/repository/supplier.repository.js';
 import MaintenanceCatalogRepository from '../repository/maintenance-catalog.repository.js';
+import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 
 /** Reusable operation and exact-part catalogue lifecycle. */
 export default class MaintenanceCatalogService {
@@ -24,8 +25,9 @@ export default class MaintenanceCatalogService {
     this.stockService = stockService;
   }
 
-  async getOperations() {
-    return (await this.repository.findOperations()).map((item) => this.toPublic(item));
+  async getOperations(query = {}) {
+    const result = await this.repository.findOperations(query);
+    return paginatedResult(result, normalizePagination(query), (item) => this.toPublic(item));
   }
 
   async getOperationEntity(uuid, options) {
@@ -119,8 +121,9 @@ export default class MaintenanceCatalogService {
     });
   }
 
-  async getParts() {
-    return (await this.repository.findParts()).map((item) => this.toPublic(item));
+  async getParts(query = {}) {
+    const result = await this.repository.findParts(query);
+    return paginatedResult(result, normalizePagination(query), (item) => this.toPublic(item));
   }
 
   async getPartEntity(uuid, options) {
