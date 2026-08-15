@@ -505,12 +505,16 @@ export const openApiPaths = {
         {
           name: 'sort',
           in: 'query',
-          schema: { type: 'string', enum: ['name', 'purchasePrice', 'purchaseDate'] },
+          schema: {
+            type: 'string',
+            enum: ['name', 'purchasePrice', 'purchaseDate'],
+            default: 'purchaseDate',
+          },
         },
         {
           name: 'direction',
           in: 'query',
-          schema: { type: 'string', enum: ['ASC', 'DESC'] },
+          schema: { type: 'string', enum: ['ASC', 'DESC'], default: 'DESC' },
         },
       ],
       responses: {

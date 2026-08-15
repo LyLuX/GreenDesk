@@ -47,8 +47,8 @@ export default function ReferencePage({
   );
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(5);
-  const [sort, setSort] = useState('name');
-  const [direction, setDirection] = useState('ASC');
+  const [sort, setSort] = useState(resource === 'materials' ? 'purchaseDate' : 'name');
+  const [direction, setDirection] = useState(resource === 'materials' ? 'DESC' : 'ASC');
   const [paginationData, setPaginationData] = useState(null);
   const [optionLists, setOptionLists] = useState({});
   const [optionPagination, setOptionPagination] = useState({});

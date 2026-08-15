@@ -24,6 +24,25 @@ describe('MaterialRepository maintenance cascades', () => {
     });
   });
 
+  it('sorts the material catalogue by purchase date descending in the database by default', async () => {
+    const findAndCountAll = jest
+      .spyOn(Material, 'findAndCountAll')
+      .mockResolvedValue({ count: 0, rows: [] });
+
+    await new MaterialRepository().findAll();
+
+    expect(findAndCountAll).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order: [
+          ['purchaseDate', 'DESC'],
+          ['id', 'DESC'],
+        ],
+        limit: 5,
+        offset: 0,
+      }),
+    );
+  });
+
   it('reactivates only plans whose update date matches a material deactivation marker', async () => {
     const update = jest.spyOn(MaintenanceTask, 'update').mockResolvedValue([1]);
     const repository = new MaterialRepository();

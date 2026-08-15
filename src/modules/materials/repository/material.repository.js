@@ -40,8 +40,8 @@ export default class MaterialRepository extends TransactionalRepository {
     categoryUuid,
     page = 1,
     limit = 5,
-    sort = 'name',
-    direction = 'ASC',
+    sort = 'purchaseDate',
+    direction = 'DESC',
   } = {}) {
     const where = {};
     if (search)
@@ -59,14 +59,16 @@ export default class MaterialRepository extends TransactionalRepository {
       { ...include[1], ...(categoryUuid ? { where: { uuid: categoryUuid }, required: true } : {}) },
     ];
     const pagination = normalizePagination({ page, limit });
+    const sortField = ['name', 'purchasePrice', 'purchaseDate'].includes(sort)
+      ? sort
+      : 'purchaseDate';
+    const sortDirection = direction === 'ASC' ? 'ASC' : 'DESC';
     return Material.findAndCountAll({
       where,
       include: filteredInclude,
       order: [
-        [
-          ['name', 'purchasePrice', 'purchaseDate'].includes(sort) ? sort : 'name',
-          direction === 'DESC' ? 'DESC' : 'ASC',
-        ],
+        [sortField, sortDirection],
+        ['id', sortDirection],
       ],
       limit: pagination.limit,
       offset: pagination.offset,

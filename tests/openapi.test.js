@@ -207,6 +207,15 @@ describe('OpenAPI contract', () => {
     }
   });
 
+  it('documents the default material catalogue sort', () => {
+    const parameters = swaggerSpec.paths['/materials'].get.parameters;
+    const sort = parameters.find((parameter) => parameter.name === 'sort');
+    const direction = parameters.find((parameter) => parameter.name === 'direction');
+
+    expect(sort.schema.default).toBe('purchaseDate');
+    expect(direction.schema.default).toBe('DESC');
+  });
+
   it('documents lifecycle conflicts between materials and maintenance plans', () => {
     expect(swaggerSpec.paths['/materials/{uuid}'].put.description).toContain(
       'plans actifs associés',

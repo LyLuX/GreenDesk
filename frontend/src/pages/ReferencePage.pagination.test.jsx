@@ -116,7 +116,7 @@ describe('ReferencePage pagination', () => {
     );
   });
 
-  it('sends the default active status to server-side status filters', async () => {
+  it('sends the default material status and purchase-date sort to the backend', async () => {
     api.list.mockResolvedValue({
       data: {
         data: {
@@ -141,11 +141,17 @@ describe('ReferencePage pagination', () => {
 
     await waitFor(() =>
       expect(api.list).toHaveBeenCalledWith(
-        expect.objectContaining({ active: 'true' }),
+        expect.objectContaining({
+          active: 'true',
+          sort: 'purchaseDate',
+          direction: 'DESC',
+        }),
         expect.any(AbortSignal),
       ),
     );
     expect(screen.getByLabelText('Filtrer par statut')).toHaveValue('true');
+    expect(screen.getByLabelText('Trier les matériels par')).toHaveValue('purchaseDate');
+    expect(screen.getByLabelText('Choisir l’ordre de tri des matériels')).toHaveValue('DESC');
   });
 
   it('keeps the material form action visible outside its scrollable fields', async () => {
