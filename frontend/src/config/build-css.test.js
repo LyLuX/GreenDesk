@@ -21,11 +21,11 @@ describe('production CSS build', () => {
     expect(purgeCssOptions.safelist.standard[0].test('app-loader-sm')).toBe(true);
   });
 
-  it('fits table shells to their content and prevents horizontal table overflow', () => {
+  it('centers consistently sized table shells and prevents horizontal overflow', () => {
     const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
 
     expect(styles).toMatch(
-      /\.table-shell\s*\{[^}]*width:\s*fit-content;[^}]*max-width:\s*100%;[^}]*overflow:\s*visible;/,
+      /\.table-shell\s*\{[^}]*width:\s*fit-content;[^}]*min-width:\s*min\(100%,\s*48rem\);[^}]*max-width:\s*100%;[^}]*margin-inline:\s*auto;[^}]*overflow:\s*visible;/,
     );
     expect(styles).toMatch(
       /\.table-responsive\s*\{[^}]*max-width:\s*100%;[^}]*overflow-x:\s*visible;/,

@@ -552,7 +552,9 @@ a:hover {
 
 .table-shell {
   width: fit-content;
+  min-width: min(100%, 48rem);
   max-width: 100%;
+  margin-inline: auto;
   overflow: visible;
   border: 1px solid var(--border);
   border-radius: 0.5rem;
