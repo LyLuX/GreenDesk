@@ -212,7 +212,11 @@ describe('MaintenancePage', () => {
     renderPage('/maintenance?status=overdue');
 
     const emptyMessage = await screen.findByText('Aucun plan d’entretien.');
-    expect(emptyMessage.closest('[role="status"]')).toHaveClass('alert', 'alert-info');
+    expect(emptyMessage.closest('[role="status"]')).toHaveClass(
+      'alert',
+      'alert-info',
+      'text-center',
+    );
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
 

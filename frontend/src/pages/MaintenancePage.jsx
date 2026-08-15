@@ -454,7 +454,7 @@ export default function MaintenancePage() {
       )}
       {isLoading && <Loader label="Chargement des plans de maintenance" />}
       {!isLoading && !error && !catalogError && items.length === 0 && (
-        <div role="status" className="alert alert-info">
+        <div role="status" className="alert alert-info text-center">
           <p className="mb-0">Aucun plan d’entretien.</p>
         </div>
       )}
