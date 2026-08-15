@@ -43,7 +43,7 @@ router.delete(
 router.get(
   '/parts',
   authorize(maintenancePermissions.parts.read, maintenancePermissions.plans.read),
-  validator.catalogListValidator,
+  validator.partCatalogListValidator,
   validateRequest,
   asyncHandler(catalogController.parts.bind(catalogController)),
 );

@@ -216,6 +216,13 @@ describe('OpenAPI contract', () => {
     expect(direction.schema.default).toBe('DESC');
   });
 
+  it('documents the maintenance-part stock filter', () => {
+    const parameters = swaggerSpec.paths['/maintenance/parts'].get.parameters;
+    const stockStatus = parameters.find((parameter) => parameter.name === 'stockStatus');
+
+    expect(stockStatus.schema.enum).toEqual(['inStock', 'toOrder', 'ordered']);
+  });
+
   it('documents lifecycle conflicts between materials and maintenance plans', () => {
     expect(swaggerSpec.paths['/materials/{uuid}'].put.description).toContain(
       'plans actifs associés',

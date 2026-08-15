@@ -1,7 +1,10 @@
 import { validationResult } from 'express-validator';
 
 import { updateValidator as categoryUpdateValidator } from '../src/modules/categories/validator/category.validator.js';
-import { listValidator as maintenanceListValidator } from '../src/modules/maintenance/validator/maintenance.validator.js';
+import {
+  listValidator as maintenanceListValidator,
+  partCatalogListValidator,
+} from '../src/modules/maintenance/validator/maintenance.validator.js';
 import {
   listValidator as materialListValidator,
   updateValidator as materialUpdateValidator,
@@ -59,6 +62,16 @@ describe('list filter validation', () => {
   it('rejects unbounded pagination', async () => {
     await expect(validate(materialListValidator, { limit: 'all' })).resolves.not.toEqual([]);
     await expect(validate(maintenanceListValidator, { limit: 'all' })).resolves.not.toEqual([]);
+  });
+
+  it.each(['inStock', 'toOrder', 'ordered'])('accepts the stock status %s', async (stockStatus) => {
+    await expect(validate(partCatalogListValidator, { stockStatus })).resolves.toEqual([]);
+  });
+
+  it('rejects an unknown stock status', async () => {
+    await expect(
+      validate(partCatalogListValidator, { stockStatus: 'unknown' }),
+    ).resolves.not.toEqual([]);
   });
 
   it.each([

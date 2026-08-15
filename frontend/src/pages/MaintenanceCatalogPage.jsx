@@ -33,12 +33,16 @@ export default function MaintenanceCatalogPage({
   permissions,
   compactTable = false,
   renderRowActions,
+  additionalFilters = [],
 }) {
   const { hasPermission } = useAuth();
   const { notify } = useNotification();
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState('');
   const [active, setActive] = useState(activityStatusFilter.defaultValue);
+  const [additionalFilterValues, setAdditionalFilterValues] = useState(() =>
+    Object.fromEntries(additionalFilters.map((filter) => [filter.name, filter.defaultValue ?? ''])),
+  );
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(5);
   const [editing, setEditing] = useState(null);
@@ -64,6 +68,9 @@ export default function MaintenanceCatalogPage({
             limit,
             ...(debouncedSearch ? { search: debouncedSearch } : {}),
             ...(active !== '' ? { active } : {}),
+            ...Object.fromEntries(
+              Object.entries(additionalFilterValues).filter(([, value]) => value !== ''),
+            ),
           },
           signal,
         );
@@ -95,7 +102,7 @@ export default function MaintenanceCatalogPage({
         if (!signal?.aborted) setIsLoading(false);
       }
     },
-    [active, debouncedSearch, fields, limit, listItems, page],
+    [active, additionalFilterValues, debouncedSearch, fields, limit, listItems, page],
   );
 
   useEffect(() => {
@@ -194,6 +201,18 @@ export default function MaintenanceCatalogPage({
               setPage(1);
             },
           },
+          ...additionalFilters.map((filter) => ({
+            ...filter,
+            type: 'select',
+            value: additionalFilterValues[filter.name] ?? '',
+            onChange: (value) => {
+              setAdditionalFilterValues((current) => ({
+                ...current,
+                [filter.name]: value,
+              }));
+              setPage(1);
+            },
+          })),
         ]}
       />
 
@@ -218,7 +237,7 @@ export default function MaintenanceCatalogPage({
           columns={columns}
           rows={rows}
           emptyMessage={
-            search.trim() || active
+            search.trim() || active || Object.values(additionalFilterValues).some(Boolean)
               ? 'Aucun élément ne correspond aux filtres.'
               : 'Aucun élément enregistré.'
           }

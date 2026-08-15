@@ -8,6 +8,7 @@ import MaintenanceOperation from '../model/maintenance-operation.model.js';
 import MaintenancePart from '../model/maintenance-part.model.js';
 import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
 import Supplier from '../../suppliers/model/supplier.model.js';
+import { STOCK_STATUSES } from '../../../core/inventory/stock-status.js';
 
 const manufacturerInclude = {
   model: PartManufacturer,
@@ -76,7 +77,7 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
     return MaintenanceTask.update(values, { where: { operationId }, transaction });
   }
 
-  findParts({ search, active, page, limit } = {}) {
+  findParts({ search, active, stockStatus, page, limit } = {}) {
     const pagination = normalizePagination({ page, limit });
     const where = search
       ? {
@@ -89,6 +90,15 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
       : {};
     const normalizedActive = normalizeBooleanFilter(active);
     if (normalizedActive !== undefined) where.active = normalizedActive;
+    if (stockStatus === STOCK_STATUSES.IN_STOCK) {
+      where.quantityOnHand = { [Op.gt]: 0 };
+    } else if (stockStatus === STOCK_STATUSES.ORDERED) {
+      where.quantityOnHand = 0;
+      where.quantityOnOrder = { [Op.gt]: 0 };
+    } else if (stockStatus === STOCK_STATUSES.TO_ORDER) {
+      where.quantityOnHand = 0;
+      where.quantityOnOrder = 0;
+    }
     return MaintenancePart.findAndCountAll({
       where,
       include: partDirectoryIncludes,

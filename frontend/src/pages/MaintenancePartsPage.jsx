@@ -13,7 +13,7 @@ import Loader from '../components/Loader.jsx';
 import ManufacturerLogo from '../components/ManufacturerLogo.jsx';
 import StockStatusBadge from '../components/StockStatusBadge.jsx';
 import StockManagementModal from '../components/StockManagementModal.jsx';
-import { formatStockQuantity } from '../inventory/stock-status.js';
+import { formatStockQuantity, stockStatusOptions } from '../inventory/stock-status.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import { extractPageItems } from '../utils/pagination.js';
 import MaintenanceCatalogPage from './MaintenanceCatalogPage.jsx';
@@ -24,6 +24,16 @@ const directoryOptions = (items = []) =>
     label: `${item.name}${item.active ? '' : ' (inactif)'}`,
     disabled: !item.active,
   }));
+
+const stockFilters = [
+  {
+    name: 'stockStatus',
+    label: 'État du stock',
+    ariaLabel: 'Filtrer par état du stock',
+    emptyLabel: 'Tous les états de stock',
+    options: stockStatusOptions,
+  },
+];
 
 /** Dedicated exact maintenance-part management page. */
 export default function MaintenancePartsPage() {
@@ -137,6 +147,7 @@ export default function MaintenancePartsPage() {
         updateItem={updateMaintenancePart}
         deleteItem={deleteMaintenancePart}
         permissions={maintenancePermissions.parts}
+        additionalFilters={stockFilters}
         compactTable
         renderRowActions={(part, { reload }) => (
           <button

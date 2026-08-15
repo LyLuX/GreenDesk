@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -186,7 +186,7 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(await screen.findByText('BPMR8Y')).toBeVisible();
     expect(screen.getByRole('img', { name: 'Logo NGK' })).toBeVisible();
     expect(screen.queryByText('NGK')).not.toBeInTheDocument();
-    expect(screen.getByText('À commander')).toHaveClass('stock-to-order');
+    expect(screen.getByText('À commander', { selector: 'span' })).toHaveClass('stock-to-order');
     expect(screen.getByRole('columnheader', { name: 'Actions' })).toBeVisible();
     expect(screen.queryByRole('columnheader', { name: 'Catalogue' })).not.toBeInTheDocument();
     expect(
@@ -196,7 +196,9 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(screen.getByRole('table').parentElement).toHaveClass('table-responsive');
 
     await user.click(screen.getByRole('button', { name: 'Créer' }));
-    expect(screen.queryByLabelText('État du stock')).not.toBeInTheDocument();
+    expect(
+      within(screen.getByRole('dialog')).queryByLabelText('État du stock'),
+    ).not.toBeInTheDocument();
     const designation = screen.getByLabelText('Désignation');
     await user.type(designation, 'Bou');
     await user.click(screen.getByRole('option', { name: 'Bougie' }));
@@ -277,6 +279,36 @@ describe('dedicated maintenance catalogue pages', () => {
 
     await user.click(activateButton);
     expect(screen.getByRole('button', { name: 'Réactiver' })).toHaveClass('btn-outline-activation');
+  });
+
+  it('filters maintenance parts by stock status while keeping the existing filters', async () => {
+    const user = userEvent.setup();
+    render(<MaintenancePartsPage />);
+
+    const search = await screen.findByLabelText('Rechercher dans pièces de maintenance');
+    const active = screen.getByLabelText('Filtrer par statut');
+    const stockStatus = screen.getByLabelText('Filtrer par état du stock');
+
+    expect(active).toHaveValue('true');
+    expect(stockStatus).toHaveValue('');
+    await user.type(search, 'Bou');
+    await user.selectOptions(stockStatus, 'ordered');
+
+    await waitFor(() =>
+      expect(mocks.listParts).toHaveBeenCalledWith(
+        expect.objectContaining({
+          search: 'Bou',
+          active: 'true',
+          stockStatus: 'ordered',
+          page: 1,
+          limit: 5,
+        }),
+        expect.any(AbortSignal),
+      ),
+    );
+    expect(search).toHaveValue('Bou');
+    expect(active).toHaveValue('true');
+    expect(stockStatus).toHaveValue('ordered');
   });
 
   it('uses the shared pagination controls for maintenance catalogues', async () => {

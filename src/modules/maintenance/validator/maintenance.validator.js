@@ -65,6 +65,10 @@ export const catalogListValidator = [
   query('active').optional({ values: 'falsy' }).isBoolean().toBoolean(),
   ...paginationValidator,
 ];
+export const partCatalogListValidator = [
+  ...catalogListValidator,
+  query('stockStatus').optional({ values: 'falsy' }).isIn(STOCK_STATUS_VALUES),
+];
 const optionalText = (name, maxLength) =>
   body(name)
     .optional({ nullable: true })

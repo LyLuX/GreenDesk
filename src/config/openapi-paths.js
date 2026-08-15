@@ -1,3 +1,5 @@
+import { STOCK_STATUS_VALUES } from '../core/inventory/stock-status.js';
+
 const schemaRef = (name) => ({ $ref: `#/components/schemas/${name}` });
 const responseRef = (name) => ({ $ref: `#/components/responses/${name}` });
 const parameterRef = (name) => ({ $ref: `#/components/parameters/${name}` });
@@ -839,6 +841,11 @@ export const openApiPaths = {
       parameters: [
         searchParameter,
         { name: 'active', in: 'query', schema: { type: 'boolean' } },
+        {
+          name: 'stockStatus',
+          in: 'query',
+          schema: { type: 'string', enum: STOCK_STATUS_VALUES },
+        },
         pageParameter,
         limitParameter,
       ],
