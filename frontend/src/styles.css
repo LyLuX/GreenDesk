@@ -562,6 +562,11 @@ a:hover {
   margin-bottom: 0;
 }
 
+.table-responsive > .table {
+  width: auto;
+  white-space: nowrap;
+}
+
 .table-shell thead th {
   border-bottom: 1px solid var(--border);
   background: #edf3e9;
