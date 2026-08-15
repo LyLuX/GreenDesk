@@ -662,7 +662,7 @@ export const openApiSchemas = {
         enum: Object.values(MAINTENANCE_PART_ACTIONS),
         default: MAINTENANCE_PART_ACTIONS.CONSUME,
         description:
-          '`consume` retire les pièces du stock. `skip` enregistre explicitement leur non-remplacement.',
+          '`consume` retire les pièces du stock. `skip` nécessite `maintenance.execute_without_part_replacement` et enregistre explicitement leur non-remplacement.',
       },
     },
   },

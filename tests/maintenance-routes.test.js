@@ -20,6 +20,17 @@ const catalogController = {
   ),
   removePart: jest.fn((_request, response) => response.status(204).send()),
 };
+const maintenanceController = {
+  getAll: jest.fn((_request, response) => response.json({ success: true, data: [] })),
+  getByUuid: jest.fn((_request, response) => response.json({ success: true, data: {} })),
+  orderList: jest.fn((_request, response) => response.json({ success: true, data: [] })),
+  create: jest.fn((_request, response) => response.status(201).json({ success: true, data: {} })),
+  update: jest.fn((_request, response) => response.json({ success: true, data: {} })),
+  status: jest.fn((_request, response) => response.json({ success: true, data: {} })),
+  remove: jest.fn((_request, response) => response.status(204).send()),
+  execute: jest.fn((_request, response) => response.json({ success: true, data: {} })),
+  history: jest.fn((_request, response) => response.json({ success: true, data: [] })),
+};
 const manufacturerController = {
   getAll: jest.fn((_request, response) => response.json({ success: true, data: [] })),
   create: jest.fn(),
@@ -53,6 +64,19 @@ jest.unstable_mockModule(
     },
   }),
 );
+jest.unstable_mockModule('../src/modules/maintenance/controller/maintenance.controller.js', () => ({
+  default: class MaintenanceController {
+    getAll = maintenanceController.getAll;
+    getByUuid = maintenanceController.getByUuid;
+    orderList = maintenanceController.orderList;
+    create = maintenanceController.create;
+    update = maintenanceController.update;
+    status = maintenanceController.status;
+    remove = maintenanceController.remove;
+    execute = maintenanceController.execute;
+    history = maintenanceController.history;
+  },
+}));
 jest.unstable_mockModule(
   '../src/modules/manufacturers/controller/manufacturer.controller.js',
   () => ({
@@ -215,5 +239,33 @@ describe('maintenance catalogue route permissions', () => {
       .get(`/api/v1/maintenance/parts/${uuid}/stock-movements`)
       .set('Authorization', authorization(['maintenance.read']))
       .expect(403);
+  });
+
+  it('requires an additional permission to execute without replacing parts', async () => {
+    const path = `/api/v1/maintenance/${uuid}/execute`;
+    const exceptionalPermission = 'maintenance.execute_without_part_replacement';
+
+    await request(app)
+      .post(path)
+      .set('Authorization', authorization(['maintenance.execute']))
+      .send({ partsAction: 'skip', comment: 'Pièce encore en bon état.' })
+      .expect(403);
+    await request(app)
+      .post(path)
+      .set('Authorization', authorization([exceptionalPermission]))
+      .send({ partsAction: 'skip', comment: 'Pièce encore en bon état.' })
+      .expect(403);
+    await request(app)
+      .post(path)
+      .set('Authorization', authorization(['maintenance.execute']))
+      .send({ partsAction: 'consume' })
+      .expect(200);
+    await request(app)
+      .post(path)
+      .set('Authorization', authorization(['maintenance.execute', exceptionalPermission]))
+      .send({ partsAction: 'skip', comment: 'Pièce encore en bon état.' })
+      .expect(200);
+
+    expect(maintenanceController.execute).toHaveBeenCalledTimes(2);
   });
 });

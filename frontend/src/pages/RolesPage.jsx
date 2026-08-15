@@ -17,13 +17,21 @@ const rolesApi = createReferenceApi('roles');
 const permissionsApi = createReferenceApi('permissions');
 const permissionsPageLimit = 25;
 const visiblePermissionCount = 6;
-const permissionActionOrder = ['read', 'create', 'update', 'delete', 'execute'];
+const permissionActionOrder = [
+  'read',
+  'create',
+  'update',
+  'delete',
+  'execute',
+  'execute_without_part_replacement',
+];
 const permissionActionLabels = {
   read: 'Lecture',
   create: 'Création',
   update: 'Modification',
   delete: 'Suppression',
   execute: 'Exécution',
+  execute_without_part_replacement: 'Exécution sans changement de pièce',
 };
 
 const getPermissionAction = (permissionName = '') => {

@@ -362,6 +362,9 @@ export default function MaintenancePage() {
   }, [dialog, historyLimit, historyPage]);
   const activeItem = dialog?.item;
   const executionPartCount = activeItem?.parts?.length ?? 0;
+  const canExecuteWithoutPartReplacement = hasPermission(
+    maintenancePermissions.plans.executeWithoutPartReplacement,
+  );
   const executeWithPartsLabel =
     executionPartCount === 1
       ? 'Effectuer en changeant la pièce'
@@ -750,7 +753,7 @@ export default function MaintenancePage() {
             <Button type="submit" disabled={busy}>
               {busy ? 'Validation…' : executeWithPartsLabel}
             </Button>
-            {executionPartCount > 0 && (
+            {executionPartCount > 0 && canExecuteWithoutPartReplacement && (
               <button
                 type="button"
                 className="btn btn-outline-danger"
@@ -764,7 +767,9 @@ export default function MaintenancePage() {
         </form>
       </Modal>
       <ConfirmDialog
-        open={dialog?.type === 'executeWithoutPartsConfirmation'}
+        open={
+          dialog?.type === 'executeWithoutPartsConfirmation' && canExecuteWithoutPartReplacement
+        }
         title="Effectuer sans changement de pièce"
         description={`Les pièces suivantes ne seront pas retirées du stock : ${skippedPartsDescription}. La prochaine échéance sera néanmoins recalculée.`}
         confirmLabel="Confirmer sans changer les pièces"

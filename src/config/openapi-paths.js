@@ -1076,7 +1076,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Enregistre un entretien réalisé et recalcule l’échéance.',
       description:
-        'Nécessite `maintenance.execute`. Le plan et son matériel doivent être actifs. La date du jour est utilisée par défaut. `partsAction=consume` retire transactionnellement les pièces du stock. `partsAction=skip` conserve le stock, exige un commentaire et trace les pièces non remplacées dans l’historique.',
+        'Nécessite `maintenance.execute`. Le plan et son matériel doivent être actifs. La date du jour est utilisée par défaut. `partsAction=consume` retire transactionnellement les pièces du stock. `partsAction=skip` nécessite également `maintenance.execute_without_part_replacement`, conserve le stock, exige un commentaire et trace les pièces non remplacées dans l’historique.',
       security: secure,
       requestBody: jsonBody('MaintenanceExecuteRequest', false),
       responses: {

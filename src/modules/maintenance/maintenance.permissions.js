@@ -6,6 +6,7 @@ const maintenancePermissions = Object.freeze({
     update: 'maintenance.update',
     delete: 'maintenance.delete',
     execute: 'maintenance.execute',
+    executeWithoutPartReplacement: 'maintenance.execute_without_part_replacement',
   }),
   operations: Object.freeze({
     read: 'maintenance.operations.read',

@@ -5,12 +5,20 @@ import { validateRequest } from '../../../core/middlewares/validate-request.js';
 import { asyncHandler } from '../../../core/utils/async-handler.js';
 import MaintenanceCatalogController from '../controller/maintenance-catalog.controller.js';
 import MaintenanceController from '../controller/maintenance.controller.js';
+import { MAINTENANCE_PART_ACTIONS } from '../maintenance.constants.js';
 import maintenancePermissions from '../maintenance.permissions.js';
 import * as validator from '../validator/maintenance.validator.js';
 
 const router = Router();
 const controller = new MaintenanceController();
 const catalogController = new MaintenanceCatalogController();
+const authorizeWithoutPartReplacement = authorize(
+  maintenancePermissions.plans.executeWithoutPartReplacement,
+);
+const requireWithoutPartReplacementPermission = (request, response, next) => {
+  if (request.body?.partsAction !== MAINTENANCE_PART_ACTIONS.SKIP) return next();
+  return authorizeWithoutPartReplacement(request, response, next);
+};
 router.use(authenticate);
 router.get(
   '/operations',
@@ -106,6 +114,7 @@ router.post(
 router.post(
   '/:uuid/execute',
   authorize(maintenancePermissions.plans.execute),
+  requireWithoutPartReplacementPermission,
   validator.executeValidator,
   validateRequest,
   asyncHandler(controller.execute.bind(controller)),

@@ -2,6 +2,7 @@ import { jest } from '@jest/globals';
 
 import migration from '../migrations/20260730_add_maintenance_catalog_permissions.js';
 import planMigration from '../migrations/20260730_zz_add_maintenance_plan_permissions.js';
+import exceptionalExecutionMigration from '../migrations/20260815_zzzz_add_execute_without_part_replacement_permission.js';
 
 const expectedNames = [
   'maintenance.operations.read',
@@ -90,6 +91,41 @@ describe('maintenance plan permission migration', () => {
     expect(queryInterface.sequelize.query.mock.calls[0][0]).toContain('DELETE grants');
     expect(queryInterface.bulkDelete).toHaveBeenCalledWith('permissions', {
       name: planPermissionNames,
+    });
+  });
+});
+
+describe('maintenance execution exception permission migration', () => {
+  const permissionName = 'maintenance.execute_without_part_replacement';
+
+  it('creates the permission without granting it to existing roles', async () => {
+    const query = jest.fn().mockResolvedValueOnce([]).mockResolvedValueOnce([[], {}]);
+    const queryInterface = {
+      sequelize: { query },
+      bulkInsert: jest.fn().mockResolvedValue(undefined),
+    };
+
+    await exceptionalExecutionMigration.up(queryInterface);
+
+    expect(queryInterface.bulkInsert).toHaveBeenCalledWith('permissions', [
+      expect.objectContaining({ name: permissionName }),
+    ]);
+    expect(
+      query.mock.calls.some(([sql]) => sql.includes('INSERT') && sql.includes('role_permissions')),
+    ).toBe(false);
+  });
+
+  it('removes its grants before rolling the permission back', async () => {
+    const queryInterface = {
+      sequelize: { query: jest.fn().mockResolvedValue(undefined) },
+      bulkDelete: jest.fn().mockResolvedValue(undefined),
+    };
+
+    await exceptionalExecutionMigration.down(queryInterface);
+
+    expect(queryInterface.sequelize.query.mock.calls[0][0]).toContain('DELETE grants');
+    expect(queryInterface.bulkDelete).toHaveBeenCalledWith('permissions', {
+      name: permissionName,
     });
   });
 });

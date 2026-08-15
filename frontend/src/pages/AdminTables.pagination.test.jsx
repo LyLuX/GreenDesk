@@ -286,6 +286,11 @@ describe('administrator table pagination', () => {
           { uuid: 'material-read', name: 'materials.read', description: '' },
           { uuid: 'part-read', name: 'maintenance.parts.read', description: '' },
           { uuid: 'material-create', name: 'materials.create', description: '' },
+          {
+            uuid: 'maintenance-execute-without-parts',
+            name: 'maintenance.execute_without_part_replacement',
+            description: '',
+          },
           { uuid: 'permission-admin', name: 'ADMIN', description: '' },
         ],
       },
@@ -299,9 +304,13 @@ describe('administrator table pagination', () => {
     const actionGroup = within(dialog.getByRole('region', { name: 'Sélection rapide par action' }));
     const readAction = actionGroup.getByRole('checkbox', { name: 'Lecture 0 sur 2' });
     const createAction = actionGroup.getByRole('checkbox', { name: 'Création 0 sur 1' });
+    const exceptionalExecutionAction = actionGroup.getByRole('checkbox', {
+      name: 'Exécution sans changement de pièce 0 sur 1',
+    });
 
     expect(readAction).not.toBeChecked();
     expect(createAction).not.toBeChecked();
+    expect(exceptionalExecutionAction).not.toBeChecked();
     expect(actionGroup.queryByText('Admin')).not.toBeInTheDocument();
 
     await user.click(readAction);

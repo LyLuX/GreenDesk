@@ -107,6 +107,10 @@ const permissionDefinitions = [
     description: 'Enregistrer un entretien réalisé et recalculer ses prochaines échéances.',
   },
   {
+    name: maintenancePermissions.plans.executeWithoutPartReplacement,
+    description: 'Enregistrer exceptionnellement un entretien sans remplacer les pièces prévues.',
+  },
+  {
     name: maintenancePermissions.operations.read,
     description: 'Consulter le catalogue des opérations réutilisables de maintenance.',
   },

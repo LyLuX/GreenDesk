@@ -462,6 +462,25 @@ describe('MaintenancePage', () => {
     );
   });
 
+  it('hides execution without part replacement without its dedicated permission', async () => {
+    const user = userEvent.setup();
+    mocks.hasPermission.mockImplementation(
+      (permission) => permission !== 'maintenance.execute_without_part_replacement',
+    );
+    renderPage();
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Effectuer Vidange annuelle',
+      }),
+    );
+
+    expect(screen.getByRole('button', { name: 'Effectuer en changeant la pièce' })).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Effectuer sans changement de pièce' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('highlights maintenance performed without replacing parts in history', async () => {
     const user = userEvent.setup();
     mocks.maintenanceHistory.mockResolvedValue({
