@@ -74,7 +74,14 @@ export default class AuthService {
       ),
     ];
     const accessToken = jwt.sign(
-      { sub: user.uuid, userId: user.id, email: user.email, roles, permissions },
+      {
+        sub: user.uuid,
+        userId: user.id,
+        email: user.email,
+        roles,
+        permissions,
+        authorizationVersion: Number(user.authorizationVersion ?? 0),
+      },
       env.jwt.secret,
       {
         expiresIn: env.jwt.accessTokenTtl,

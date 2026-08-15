@@ -9,6 +9,7 @@ class User extends Model {
   toJSON() {
     const values = { ...this.get() };
     delete values.passwordHash;
+    delete values.authorizationVersion;
     return values;
   }
 }
@@ -22,6 +23,12 @@ User.init(
     email: { type: DataTypes.STRING(255), allowNull: false, unique: true },
     passwordHash: { type: DataTypes.STRING(255), allowNull: false },
     isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    authorizationVersion: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: false,
+      defaultValue: 0,
+      field: 'authorization_version',
+    },
     lastLoginAt: { type: DataTypes.DATE, allowNull: true },
   },
   {

@@ -16,8 +16,8 @@ export default class AuthRepository extends TransactionalRepository {
   async update(user, values, options) {
     return this.userRepository.update(user, values, options);
   }
-  async isActiveUser(userId, uuid) {
-    return this.userRepository.isActiveByClaims(userId, uuid);
+  async isActiveUser(userId, uuid, authorizationVersion) {
+    return this.userRepository.isActiveByClaims(userId, uuid, authorizationVersion);
   }
 
   /** Persists a revoked access-token identifier until it naturally expires. */

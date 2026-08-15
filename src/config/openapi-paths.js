@@ -198,6 +198,8 @@ export const openApiPaths = {
       operationId: 'updateUser',
       tags: ['Users'],
       summary: 'Met à jour un utilisateur et ses rôles.',
+      description:
+        'Une modification des rôles invalide les sessions actives de l’utilisateur concerné, sauf lorsqu’il s’agit de l’administrateur réalisant l’opération.',
       security: secure,
       requestBody: jsonBody('UserUpdateRequest'),
       responses: {
@@ -250,6 +252,8 @@ export const openApiPaths = {
       operationId: 'updateRole',
       tags: ['Roles'],
       summary: 'Met à jour un rôle et ses permissions.',
+      description:
+        'Une modification des permissions invalide les sessions actives des utilisateurs concernés, à l’exception de la session de l’administrateur réalisant l’opération.',
       security: secure,
       requestBody: jsonBody('RoleUpdateRequest'),
       responses: {
@@ -261,6 +265,8 @@ export const openApiPaths = {
       operationId: 'deleteRole',
       tags: ['Roles'],
       summary: 'Supprime logiquement un rôle.',
+      description:
+        'La suppression invalide les sessions actives des utilisateurs concernés, à l’exception de la session de l’administrateur réalisant l’opération.',
       security: secure,
       responses: { 204: noContent, ...resourceErrors },
     },

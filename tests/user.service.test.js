@@ -8,6 +8,8 @@ const user = {
   firstName: 'Ada',
   lastName: 'Lovelace',
   email: 'ada@greendesk.local',
+  authorizationVersion: 0,
+  roles: [],
   toJSON() {
     return { ...this, passwordHash: 'hidden' };
   },
@@ -25,6 +27,7 @@ describe('UserService', () => {
       update: jest.fn(),
       delete: jest.fn(),
       restore: jest.fn(),
+      incrementAuthorizationVersion: jest.fn(),
       withTransaction: jest.fn((callback) => callback(transaction)),
     };
     const roleRepository = {
@@ -59,6 +62,7 @@ describe('UserService', () => {
     );
     expect(userRepository.create.mock.calls[0][0].passwordHash).not.toBe('SecurePass123!');
     expect(result.passwordHash).toBeUndefined();
+    expect(service.publicUser(result).authorizationVersion).toBeUndefined();
     expect(auditService.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'USER_CREATED' }),
       { transaction },
@@ -78,6 +82,22 @@ describe('UserService', () => {
       [expect.objectContaining({ id: 3 })],
       { transaction },
     );
+    expect(userRepository.incrementAuthorizationVersion).toHaveBeenCalledWith(user.id, {
+      transaction,
+    });
+  });
+
+  it('keeps the acting administrator session when changing their own roles', async () => {
+    const { service, userRepository } = createService();
+
+    await service.update(
+      user.uuid,
+      { roleUuids: ['a5eaf09e-49b1-4fa3-a022-1a20854b06bd'] },
+      user.id,
+    );
+
+    expect(userRepository.setRoles).toHaveBeenCalled();
+    expect(userRepository.incrementAuthorizationVersion).not.toHaveBeenCalled();
   });
 
   it('allows an email normalization when the lookup returns the user being edited', async () => {

@@ -18,9 +18,12 @@ export function createAuthenticate(authRepository = new AuthRepository()) {
     } catch {
       return next(new AppError('Invalid or expired access token', HTTP_STATUS.UNAUTHORIZED));
     }
+    const authorizationVersion = Number.isSafeInteger(claims.authorizationVersion)
+      ? claims.authorizationVersion
+      : 0;
     if (
       (await authRepository.isAccessTokenRevoked(claims.jti)) ||
-      !(await authRepository.isActiveUser(claims.userId, claims.sub))
+      !(await authRepository.isActiveUser(claims.userId, claims.sub, authorizationVersion))
     ) {
       return next(new AppError('Invalid or expired access token', HTTP_STATUS.UNAUTHORIZED));
     }

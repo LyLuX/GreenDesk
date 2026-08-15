@@ -19,7 +19,9 @@ describe('RoleService', () => {
       withTransaction,
     };
     const permissionRepository = { findByUuid: jest.fn().mockResolvedValue(permission) };
-    const service = new RoleService(roleRepository, permissionRepository);
+    const service = new RoleService(roleRepository, permissionRepository, {
+      incrementAuthorizationVersionsForRole: jest.fn(),
+    });
 
     await service.create({ name: 'SUPERVISOR', permissionUuids: [permissionUuid] });
 
@@ -27,7 +29,7 @@ describe('RoleService', () => {
   });
 
   it('restores a soft-deleted role instead of creating a duplicate', async () => {
-    const role = { uuid: roleUuid, name: 'SUPERVISOR', deletedAt: new Date() };
+    const role = { id: 7, uuid: roleUuid, name: 'SUPERVISOR', deletedAt: new Date() };
     const roleRepository = {
       findByName: jest.fn().mockResolvedValue(role),
       restore: jest.fn(),
@@ -36,9 +38,10 @@ describe('RoleService', () => {
       findByUuid: jest.fn().mockResolvedValue(role),
       withTransaction,
     };
-    const service = new RoleService(roleRepository, { findByUuid: jest.fn() });
+    const userRepository = { incrementAuthorizationVersionsForRole: jest.fn() };
+    const service = new RoleService(roleRepository, { findByUuid: jest.fn() }, userRepository);
 
-    await service.create({ name: 'SUPERVISOR' });
+    await service.create({ name: 'SUPERVISOR' }, 42);
 
     expect(roleRepository.restore).toHaveBeenCalledWith(role, { transaction });
     expect(roleRepository.update).toHaveBeenCalledWith(
@@ -46,5 +49,55 @@ describe('RoleService', () => {
       { name: 'SUPERVISOR' },
       { transaction },
     );
+    expect(userRepository.incrementAuthorizationVersionsForRole).toHaveBeenCalledWith(7, {
+      excludeUserId: 42,
+      transaction,
+    });
+  });
+
+  it('invalidates affected users except the administrator when permissions change', async () => {
+    const oldPermission = { uuid: permissionUuid, name: 'materials.read' };
+    const newPermission = {
+      uuid: '9b1245ac-5d5a-4933-99b8-b86c4a026de4',
+      name: 'materials.update',
+    };
+    const role = { id: 7, uuid: roleUuid, permissions: [oldPermission] };
+    const roleRepository = {
+      findByUuid: jest.fn().mockResolvedValue(role),
+      update: jest.fn(),
+      setPermissions: jest.fn(),
+      withTransaction,
+    };
+    const permissionRepository = { findByUuid: jest.fn().mockResolvedValue(newPermission) };
+    const userRepository = { incrementAuthorizationVersionsForRole: jest.fn() };
+    const service = new RoleService(roleRepository, permissionRepository, userRepository);
+
+    await service.update(roleUuid, { permissionUuids: [newPermission.uuid] }, 42);
+
+    expect(userRepository.incrementAuthorizationVersionsForRole).toHaveBeenCalledWith(7, {
+      excludeUserId: 42,
+      transaction,
+    });
+  });
+
+  it('does not invalidate sessions when the permission assignment is unchanged', async () => {
+    const permission = { uuid: permissionUuid, name: 'materials.read' };
+    const role = { id: 7, uuid: roleUuid, permissions: [permission] };
+    const roleRepository = {
+      findByUuid: jest.fn().mockResolvedValue(role),
+      update: jest.fn(),
+      setPermissions: jest.fn(),
+      withTransaction,
+    };
+    const userRepository = { incrementAuthorizationVersionsForRole: jest.fn() };
+    const service = new RoleService(
+      roleRepository,
+      { findByUuid: jest.fn().mockResolvedValue(permission) },
+      userRepository,
+    );
+
+    await service.update(roleUuid, { permissionUuids: [permissionUuid] }, 42);
+
+    expect(userRepository.incrementAuthorizationVersionsForRole).not.toHaveBeenCalled();
   });
 });

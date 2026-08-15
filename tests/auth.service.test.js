@@ -18,6 +18,7 @@ const makeUser = async () => ({
   email: 'ada@greendesk.local',
   isActive: true,
   passwordHash: await bcrypt.hash('SecurePass123!', 4),
+  authorizationVersion: 3,
   roles: [{ name: 'USER' }],
   toJSON() {
     return {
@@ -54,6 +55,7 @@ describe('AuthService', () => {
     const result = await service.login(user.email, 'SecurePass123!');
     expect(result.accessToken).toEqual(expect.any(String));
     expect(jwt.decode(result.accessToken).jti).toEqual(expect.any(String));
+    expect(jwt.decode(result.accessToken).authorizationVersion).toBe(3);
     expect(result.user).toMatchObject({ uuid, roles: ['USER'] });
     expect(authRepository.update).toHaveBeenCalledWith(
       user,

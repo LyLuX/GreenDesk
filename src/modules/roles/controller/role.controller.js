@@ -13,15 +13,17 @@ export default class RoleController {
   async create(request, response) {
     response
       .status(HTTP_STATUS.CREATED)
-      .json(successResponse(await this.roleService.create(request.body)));
+      .json(successResponse(await this.roleService.create(request.body, request.user?.userId)));
   }
   async update(request, response) {
     response.json(
-      successResponse(await this.roleService.update(request.params.uuid, request.body)),
+      successResponse(
+        await this.roleService.update(request.params.uuid, request.body, request.user?.userId),
+      ),
     );
   }
   async remove(request, response) {
-    await this.roleService.remove(request.params.uuid);
+    await this.roleService.remove(request.params.uuid, request.user?.userId);
     response.status(HTTP_STATUS.NO_CONTENT).send();
   }
 }

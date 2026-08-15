@@ -8,6 +8,14 @@ import UserRepository from '../repository/user.repository.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 
 const PASSWORD_ROUNDS = 12;
+const sameUuids = (left = [], right = []) => {
+  const leftUuids = left.map(({ uuid }) => uuid).sort();
+  const rightUuids = right.map(({ uuid }) => uuid).sort();
+  return (
+    leftUuids.length === rightUuids.length &&
+    leftUuids.every((uuid, index) => uuid === rightUuids[index])
+  );
+};
 
 /** Business operations for GreenDesk users. */
 export default class UserService {
@@ -87,6 +95,7 @@ export default class UserService {
     const oldValues = this.publicUser(user);
     const { roleUuids, ...updateValues } = values;
     const assignedRoles = roleUuids !== undefined ? await this.findRoles(roleUuids) : null;
+    const rolesChanged = assignedRoles !== null && !sameUuids(user.roles, assignedRoles);
     if (values.email && values.email.toLowerCase() !== user.email) {
       const existingUser = await this.userRepository.findByEmail(values.email.toLowerCase());
       if (existingUser && existingUser.uuid !== user.uuid) {
@@ -100,6 +109,9 @@ export default class UserService {
     return this.userRepository.withTransaction(async (transaction) => {
       await this.userRepository.update(user, updateValues, { transaction });
       if (assignedRoles) await this.userRepository.setRoles(user, assignedRoles, { transaction });
+      if (rolesChanged && (actorUserId === null || String(user.id) !== String(actorUserId))) {
+        await this.userRepository.incrementAuthorizationVersion(user.id, { transaction });
+      }
       await this.auditService.record(
         {
           userId: actorUserId,
@@ -137,6 +149,7 @@ export default class UserService {
     const value = typeof user.toJSON === 'function' ? user.toJSON() : user;
     const safeUser = { ...value };
     delete safeUser.passwordHash;
+    delete safeUser.authorizationVersion;
     return safeUser;
   }
 

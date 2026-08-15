@@ -84,14 +84,42 @@ export default class UserRepository extends TransactionalRepository {
   async findByEmailWithPassword(email) {
     return User.scope('withPassword').findOne({ where: { email }, include: roleInclude });
   }
-  async isActiveByClaims(id, uuid) {
+  async isActiveByClaims(id, uuid, authorizationVersion) {
     if (!id || !uuid) return false;
     return Boolean(
       await User.findOne({
-        where: { id, uuid, isActive: true },
+        where: { id, uuid, isActive: true, authorizationVersion },
         attributes: ['id'],
       }),
     );
+  }
+  async incrementAuthorizationVersion(id, { transaction } = {}) {
+    return User.increment('authorizationVersion', { where: { id }, transaction });
+  }
+  async incrementAuthorizationVersionsForRole(roleId, { excludeUserId = null, transaction } = {}) {
+    const where = excludeUserId === null ? {} : { id: { [Op.ne]: excludeUserId } };
+    const users = await User.findAll({
+      attributes: ['id'],
+      where,
+      include: [
+        {
+          model: Role,
+          as: 'roles',
+          attributes: [],
+          where: { id: roleId },
+          through: { attributes: [] },
+          required: true,
+        },
+      ],
+      transaction,
+    });
+    const userIds = users.map(({ id }) => id);
+    if (!userIds.length) return 0;
+    await User.increment('authorizationVersion', {
+      where: { id: { [Op.in]: userIds } },
+      transaction,
+    });
+    return userIds.length;
   }
   async create(values, { transaction } = {}) {
     return User.create(values, { transaction });

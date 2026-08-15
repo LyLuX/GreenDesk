@@ -254,6 +254,18 @@ describe('OpenAPI contract', () => {
     expect(swaggerSpec.paths['/maintenance/{uuid}/execute'].post.responses).toHaveProperty('409');
   });
 
+  it('documents session invalidation after authorization changes', () => {
+    expect(swaggerSpec.paths['/users/{uuid}'].put.description).toContain(
+      'invalide les sessions actives',
+    );
+    expect(swaggerSpec.paths['/roles/{uuid}'].put.description).toContain(
+      'exception de la session de l’administrateur',
+    );
+    expect(swaggerSpec.paths['/roles/{uuid}'].delete.description).toContain(
+      'invalide les sessions actives',
+    );
+  });
+
   it('documents binary-signature validation on every upload endpoint', () => {
     for (const operation of [
       swaggerSpec.paths['/manufacturers/{uuid}/logo'].post,
