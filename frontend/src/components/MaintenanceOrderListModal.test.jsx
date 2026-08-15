@@ -64,13 +64,16 @@ describe('MaintenanceOrderListModal', () => {
     });
     mocks.listManufacturers.mockResolvedValue({
       data: {
-        data: [
-          {
-            uuid: 'manufacturer-uuid',
-            name: 'NGK',
-            hasLogo: true,
-          },
-        ],
+        data: {
+          items: [
+            {
+              uuid: 'manufacturer-uuid',
+              name: 'NGK',
+              hasLogo: true,
+            },
+          ],
+          pagination: { page: 1, limit: 25, total: 1, totalPages: 1 },
+        },
       },
     });
   });
@@ -80,6 +83,7 @@ describe('MaintenanceOrderListModal', () => {
 
     const dialog = screen.getByRole('dialog');
     const logo = await within(dialog).findByRole('img', { name: 'Logo NGK' });
+    expect(mocks.listManufacturers).toHaveBeenCalledWith({ limit: 25 }, expect.any(AbortSignal));
     expect(logo).toBeVisible();
     expect(logo.parentElement).toHaveClass('maintenance-order-part-summary');
     expect(within(dialog).getByRole('table')).toHaveClass('maintenance-order-list-table');

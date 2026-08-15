@@ -8,6 +8,7 @@ import useAuth from '../auth/useAuth.js';
 import { formatStockQuantity, STOCK_OPERATIONS } from '../inventory/stock-status.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import useNotification from '../notifications/useNotification.js';
+import { extractPageItems } from '../utils/pagination.js';
 import AppFooter from './AppFooter.jsx';
 import Button from './Button.jsx';
 import ConfirmDialog from './ConfirmDialog.jsx';
@@ -245,7 +246,7 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
         const [response, manufacturerResponse] = await Promise.all([
           getMaintenanceOrderList(filters, signal),
           createReferenceApi('manufacturers')
-            .list({}, signal)
+            .list({ limit: 25 }, signal)
             .catch(() => null),
         ]);
         const orderList = response.data.data;
@@ -255,7 +256,9 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
             (orderList.items ?? []).map((part) => [part.uuid, String(part.quantity)]),
           ),
         );
-        if (manufacturerResponse) setManufacturers(manufacturerResponse.data.data ?? []);
+        if (manufacturerResponse) {
+          setManufacturers(extractPageItems(manufacturerResponse.data.data));
+        }
       } catch (requestError) {
         if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
       } finally {

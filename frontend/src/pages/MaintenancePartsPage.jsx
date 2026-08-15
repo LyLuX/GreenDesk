@@ -15,9 +15,10 @@ import StockStatusBadge from '../components/StockStatusBadge.jsx';
 import StockManagementModal from '../components/StockManagementModal.jsx';
 import { formatStockQuantity } from '../inventory/stock-status.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
+import { extractPageItems } from '../utils/pagination.js';
 import MaintenanceCatalogPage from './MaintenanceCatalogPage.jsx';
 
-const directoryOptions = (items) =>
+const directoryOptions = (items = []) =>
   items.map((item) => ({
     value: item.uuid,
     label: `${item.name}${item.active ? '' : ' (inactif)'}`,
@@ -36,11 +37,11 @@ export default function MaintenancePartsPage() {
     setIsLoading(true);
     try {
       const [manufacturerResponse, supplierResponse] = await Promise.all([
-        createReferenceApi('manufacturers').list({}, signal),
-        createReferenceApi('suppliers').list({}, signal),
+        createReferenceApi('manufacturers').list({ limit: 25 }, signal),
+        createReferenceApi('suppliers').list({ limit: 25 }, signal),
       ]);
-      setManufacturers(manufacturerResponse.data.data ?? []);
-      setSuppliers(supplierResponse.data.data ?? []);
+      setManufacturers(extractPageItems(manufacturerResponse.data.data));
+      setSuppliers(extractPageItems(supplierResponse.data.data));
       setError('');
     } catch (requestError) {
       if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));

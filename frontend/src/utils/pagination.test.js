@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { paginateItems } from './pagination.js';
+import { extractPageItems, paginateItems } from './pagination.js';
 
 describe('paginateItems', () => {
   const items = Array.from({ length: 12 }, (_value, index) => index + 1);
@@ -16,5 +16,11 @@ describe('paginateItems', () => {
       items,
       pagination: { page: 1, limit: 25, total: 12, totalPages: 1 },
     });
+  });
+
+  it('extracts items safely from paginated and legacy list payloads', () => {
+    expect(extractPageItems({ items: [1, 2], pagination: {} })).toEqual([1, 2]);
+    expect(extractPageItems([3, 4])).toEqual([3, 4]);
+    expect(extractPageItems({ items: null })).toEqual([]);
   });
 });

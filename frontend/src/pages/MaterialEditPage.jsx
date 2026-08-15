@@ -6,6 +6,7 @@ import Button from '../components/Button.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
 import normalizeFormValues from '../utils/normalize-form-values.js';
+import { extractPageItems } from '../utils/pagination.js';
 
 const fields = [
   { name: 'name', label: 'Nom', required: true },
@@ -40,6 +41,11 @@ const dateIsCoherent = (values) => {
   return '';
 };
 
+const includeSelectedRelation = (items, selected) =>
+  selected?.uuid && !items.some((item) => item.uuid === selected.uuid)
+    ? [...items, selected]
+    : items;
+
 /** Dedicated edit route so a material can be amended from its detail view. */
 export default function MaterialEditPage() {
   const { uuid } = useParams();
@@ -52,13 +58,20 @@ export default function MaterialEditPage() {
     try {
       const [item, manufacturers, categories] = await Promise.all([
         createReferenceApi('materials').get(uuid),
-        createReferenceApi('manufacturers').list(),
-        createReferenceApi('categories').list(),
+        createReferenceApi('manufacturers').list({ limit: 25 }),
+        createReferenceApi('categories').list({ limit: 25 }),
       ]);
-      setMaterial(item.data.data);
+      const materialData = item.data.data;
+      setMaterial(materialData);
       setOptions({
-        manufacturers: manufacturers.data.data ?? [],
-        categories: categories.data.data ?? [],
+        manufacturers: includeSelectedRelation(
+          extractPageItems(manufacturers.data.data),
+          materialData.manufacturer,
+        ),
+        categories: includeSelectedRelation(
+          extractPageItems(categories.data.data),
+          materialData.category,
+        ),
       });
       setError('');
     } catch (requestError) {

@@ -99,20 +99,26 @@ describe('dedicated maintenance catalogue pages', () => {
     });
     mocks.listManufacturers.mockResolvedValue({
       data: {
-        data: [
-          {
-            uuid: 'manufacturer-uuid',
-            name: 'NGK',
-            notes: null,
-            active: true,
-            hasLogo: true,
-          },
-        ],
+        data: {
+          items: [
+            {
+              uuid: 'manufacturer-uuid',
+              name: 'NGK',
+              notes: null,
+              active: true,
+              hasLogo: true,
+            },
+          ],
+          pagination: { page: 1, limit: 25, total: 1, totalPages: 1 },
+        },
       },
     });
     mocks.listSuppliers.mockResolvedValue({
       data: {
-        data: [{ uuid: 'supplier-uuid', name: 'Pièces Pro', active: true }],
+        data: {
+          items: [{ uuid: 'supplier-uuid', name: 'Pièces Pro', active: true }],
+          pagination: { page: 1, limit: 25, total: 1, totalPages: 1 },
+        },
       },
     });
     mocks.createOperation.mockResolvedValue({ data: { data: {} } });
@@ -175,6 +181,8 @@ describe('dedicated maintenance catalogue pages', () => {
     render(<MaintenancePartsPage />);
 
     expect(await screen.findByRole('heading', { name: 'Pièces de maintenance' })).toBeVisible();
+    expect(mocks.listManufacturers).toHaveBeenCalledWith({ limit: 25 }, expect.any(AbortSignal));
+    expect(mocks.listSuppliers).toHaveBeenCalledWith({ limit: 25 }, expect.any(AbortSignal));
     expect(await screen.findByText('BPMR8Y')).toBeVisible();
     expect(screen.getByRole('img', { name: 'Logo NGK' })).toBeVisible();
     expect(screen.queryByText('NGK')).not.toBeInTheDocument();

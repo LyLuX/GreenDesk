@@ -11,3 +11,9 @@ export function paginateItems(items, requestedPage = 1, requestedLimit = 5) {
     pagination: { page, limit, total, totalPages },
   };
 }
+
+/** Returns collection items from either the current paginated payload or a legacy array payload. */
+export function extractPageItems(payload) {
+  if (Array.isArray(payload)) return payload;
+  return Array.isArray(payload?.items) ? payload.items : [];
+}
