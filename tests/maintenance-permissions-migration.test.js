@@ -3,6 +3,7 @@ import { jest } from '@jest/globals';
 import migration from '../migrations/20260730_add_maintenance_catalog_permissions.js';
 import planMigration from '../migrations/20260730_zz_add_maintenance_plan_permissions.js';
 import exceptionalExecutionMigration from '../migrations/20260815_zzzz_add_execute_without_part_replacement_permission.js';
+import renameSkipPartsPermissionMigration from '../migrations/20260815_zzzzz_rename_skip_parts_permission.js';
 
 const expectedNames = [
   'maintenance.operations.read',
@@ -126,6 +127,36 @@ describe('maintenance execution exception permission migration', () => {
     expect(queryInterface.sequelize.query.mock.calls[0][0]).toContain('DELETE grants');
     expect(queryInterface.bulkDelete).toHaveBeenCalledWith('permissions', {
       name: permissionName,
+    });
+  });
+});
+
+describe('maintenance skip-parts permission rename migration', () => {
+  it('renames the permission in place to preserve role grants', async () => {
+    const query = jest.fn().mockResolvedValue(undefined);
+    const queryInterface = { sequelize: { query } };
+
+    await renameSkipPartsPermissionMigration.up(queryInterface);
+
+    expect(query).toHaveBeenCalledWith(expect.stringContaining('UPDATE permissions'), {
+      replacements: expect.objectContaining({
+        previousName: 'maintenance.execute_without_part_replacement',
+        currentName: 'maintenance.execute.skip_parts',
+      }),
+    });
+  });
+
+  it('restores the previous permission name on rollback', async () => {
+    const query = jest.fn().mockResolvedValue(undefined);
+    const queryInterface = { sequelize: { query } };
+
+    await renameSkipPartsPermissionMigration.down(queryInterface);
+
+    expect(query).toHaveBeenCalledWith(expect.stringContaining('UPDATE permissions'), {
+      replacements: expect.objectContaining({
+        previousName: 'maintenance.execute_without_part_replacement',
+        currentName: 'maintenance.execute.skip_parts',
+      }),
     });
   });
 });

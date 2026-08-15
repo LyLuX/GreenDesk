@@ -288,7 +288,7 @@ describe('administrator table pagination', () => {
           { uuid: 'material-create', name: 'materials.create', description: '' },
           {
             uuid: 'maintenance-execute-without-parts',
-            name: 'maintenance.execute_without_part_replacement',
+            name: 'maintenance.execute.skip_parts',
             description: '',
           },
           { uuid: 'permission-admin', name: 'ADMIN', description: '' },

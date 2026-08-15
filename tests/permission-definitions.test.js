@@ -16,7 +16,7 @@ describe('permission definitions', () => {
         'maintenance.parts.create',
         'maintenance.parts.update',
         'maintenance.parts.delete',
-        'maintenance.execute_without_part_replacement',
+        'maintenance.execute.skip_parts',
       ]),
     );
     for (const { name, description } of permissionDefinitions) {

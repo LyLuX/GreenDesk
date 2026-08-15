@@ -243,7 +243,7 @@ describe('maintenance catalogue route permissions', () => {
 
   it('requires an additional permission to execute without replacing parts', async () => {
     const path = `/api/v1/maintenance/${uuid}/execute`;
-    const exceptionalPermission = 'maintenance.execute_without_part_replacement';
+    const exceptionalPermission = 'maintenance.execute.skip_parts';
 
     await request(app)
       .post(path)

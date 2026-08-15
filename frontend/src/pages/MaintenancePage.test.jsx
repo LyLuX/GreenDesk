@@ -465,7 +465,7 @@ describe('MaintenancePage', () => {
   it('hides execution without part replacement without its dedicated permission', async () => {
     const user = userEvent.setup();
     mocks.hasPermission.mockImplementation(
-      (permission) => permission !== 'maintenance.execute_without_part_replacement',
+      (permission) => permission !== 'maintenance.execute.skip_parts',
     );
     renderPage();
 

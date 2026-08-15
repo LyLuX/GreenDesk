@@ -233,7 +233,7 @@ describe('OpenAPI contract', () => {
     });
     expect(executeRequest.properties.comment.description).toContain('skip');
     expect(executeRequest.properties.partsAction.description).toContain(
-      'maintenance.execute_without_part_replacement',
+      'maintenance.execute.skip_parts',
     );
     expect(history.properties.executionType.enum).toEqual(['standard', 'withoutPartReplacement']);
     expect(history.properties.partsSnapshot.items.properties.quantity.minimum).toBe(1);
@@ -241,7 +241,7 @@ describe('OpenAPI contract', () => {
       'pièces non remplacées',
     );
     expect(swaggerSpec.paths['/maintenance/{uuid}/execute'].post.description).toContain(
-      'maintenance.execute_without_part_replacement',
+      'maintenance.execute.skip_parts',
     );
   });
 
