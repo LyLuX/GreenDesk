@@ -62,7 +62,7 @@ describe('dedicated maintenance catalogue pages', () => {
             uuid: 'operation-uuid',
             name: 'Vidange',
             maintenanceType: 'preventive',
-            description: 'Remplacement de l’huile',
+            description: 'Remplacement de l’huile\n- Contrôler la tension\n- Vérifier l’usure',
             active: true,
           },
           {
@@ -147,6 +147,14 @@ describe('dedicated maintenance catalogue pages', () => {
 
     expect(await screen.findByRole('heading', { name: 'Opérations de maintenance' })).toBeVisible();
     expect(screen.getByText('Vidange')).toBeVisible();
+    const description = screen.getByText(
+      (_content, element) =>
+        element.classList.contains('multiline-text') &&
+        element.textContent.startsWith('Remplacement de l’huile'),
+    );
+    expect(description.textContent).toBe(
+      'Remplacement de l’huile\n- Contrôler la tension\n- Vérifier l’usure',
+    );
 
     await user.click(screen.getByRole('button', { name: 'Créer' }));
     const designation = screen.getByLabelText('Désignation');

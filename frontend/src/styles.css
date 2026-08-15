@@ -582,6 +582,10 @@ a:hover {
   overflow-wrap: anywhere;
 }
 
+.multiline-text {
+  white-space: pre-wrap;
+}
+
 .table-shell thead th {
   border-bottom: 1px solid var(--border);
   background: #edf3e9;

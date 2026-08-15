@@ -36,4 +36,10 @@ describe('production CSS build', () => {
     expect(styles).not.toMatch(/\.history-table\s*\{[^}]*min-width:/);
     expect(styles).not.toMatch(/\.maintenance-order-list-table\s*\{[^}]*min-width:/);
   });
+
+  it('preserves user-entered line breaks in multiline content', () => {
+    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+
+    expect(styles).toMatch(/\.multiline-text\s*\{[^}]*white-space:\s*pre-wrap;/);
+  });
 });

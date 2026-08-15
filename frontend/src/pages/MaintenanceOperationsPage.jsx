@@ -35,7 +35,11 @@ export default function MaintenanceOperationsPage() {
           label: 'Type',
           render: (value) => maintenanceTypeLabels[value] ?? value,
         },
-        { key: 'description', label: 'Description' },
+        {
+          key: 'description',
+          label: 'Description',
+          render: (value) => <span className="multiline-text">{value || '—'}</span>,
+        },
         {
           key: 'active',
           label: 'Statut',
