@@ -135,11 +135,6 @@ export default function MaintenancePartsPage() {
             label: 'En stock',
             render: (value, part) => formatStockQuantity(value, part.unit),
           },
-          {
-            key: 'quantityOnOrder',
-            label: 'Commandée',
-            render: (value, part) => formatStockQuantity(value, part.unit),
-          },
         ]}
         listItems={listMaintenanceParts}
         createItem={createMaintenancePart}

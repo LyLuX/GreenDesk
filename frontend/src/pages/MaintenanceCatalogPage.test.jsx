@@ -189,6 +189,7 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(screen.getByText('À commander', { selector: 'span' })).toHaveClass('stock-to-order');
     expect(screen.getByRole('columnheader', { name: 'Actions' })).toBeVisible();
     expect(screen.queryByRole('columnheader', { name: 'Fournisseur' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Commandée' })).not.toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'Catalogue' })).not.toBeInTheDocument();
     expect(
       screen.queryByRole('columnheader', { name: 'Référence fournisseur' }),
