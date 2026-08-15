@@ -125,7 +125,6 @@ export default function MaintenancePartsPage() {
             ),
           },
           { key: 'reference', label: 'Référence' },
-          { key: 'supplier', label: 'Fournisseur' },
           {
             key: 'stockStatus',
             label: 'Stock',
