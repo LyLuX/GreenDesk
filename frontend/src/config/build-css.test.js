@@ -35,6 +35,9 @@ describe('production CSS build', () => {
     );
     expect(styles).not.toMatch(/\.history-table\s*\{[^}]*min-width:/);
     expect(styles).not.toMatch(/\.maintenance-order-list-table\s*\{[^}]*min-width:/);
+    expect(styles).toMatch(
+      /\.modal-surface\.maintenance-order-list-modal\s*\{[^}]*width:\s*fit-content;[^}]*min-width:\s*min\(51rem,\s*calc\(100vw\s*-\s*3rem\)\);[^}]*max-width:\s*min\(76rem,\s*calc\(100vw\s*-\s*3rem\)\);/,
+    );
   });
 
   it('preserves user-entered line breaks in multiline content', () => {

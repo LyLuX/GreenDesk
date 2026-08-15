@@ -796,8 +796,9 @@ body.app-scroll-locked {
 
 .modal-surface.maintenance-order-list-modal {
   display: flex;
-  width: min(76rem, calc(100vw - 3rem));
-  max-width: calc(100vw - 3rem);
+  width: fit-content;
+  min-width: min(51rem, calc(100vw - 3rem));
+  max-width: min(76rem, calc(100vw - 3rem));
   flex-direction: column;
   height: calc(90vh - 3rem);
   overflow: hidden;
