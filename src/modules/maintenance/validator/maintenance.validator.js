@@ -6,7 +6,11 @@ import {
   PUBLIC_STOCK_OPERATION_VALUES,
   STOCK_OPERATIONS,
 } from '../../../core/inventory/stock-operation.js';
-import { MAINTENANCE_PRIORITIES, MAINTENANCE_TYPES } from '../maintenance.constants.js';
+import {
+  MAINTENANCE_PART_ACTIONS,
+  MAINTENANCE_PRIORITIES,
+  MAINTENANCE_TYPES,
+} from '../maintenance.constants.js';
 
 const uuid = param('uuid').isUUID();
 const intervals = [body('intervalDays').optional({ nullable: true }).isInt({ min: 1 }).toInt()];
@@ -52,6 +56,11 @@ export const executeValidator = [
   uuid,
   body('performedAt').optional().isISO8601(),
   body('comment').optional().trim(),
+  body('partsAction').optional().isIn(Object.values(MAINTENANCE_PART_ACTIONS)),
+  body().custom((value) => {
+    if (value.partsAction !== MAINTENANCE_PART_ACTIONS.SKIP || value.comment) return true;
+    throw new Error('Un commentaire est obligatoire sans changement de pièce.');
+  }),
 ];
 export const orderListValidator = [
   query('status')

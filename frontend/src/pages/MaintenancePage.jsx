@@ -29,6 +29,7 @@ import useNotification from '../notifications/useNotification.js';
 import normalizeFormValues from '../utils/normalize-form-values.js';
 import { activityStatusFilter } from '../filters/filter-options.js';
 import {
+  maintenanceExecutionTypeLabels,
   maintenancePriorityBadgeClasses,
   maintenancePriorityLabels,
   maintenanceStatusClasses,
@@ -252,25 +253,48 @@ export default function MaintenancePage() {
       setBusy(false);
     }
   };
-  const executePlan = async (event) => {
-    event.preventDefault();
+  const executePlan = async (values, partsAction) => {
     if (busy) return;
     setBusy(true);
     setFormError('');
     try {
-      const values = Object.fromEntries(new FormData(event.currentTarget));
       await executeMaintenance(dialog.item.uuid, {
         performedAt: values.performedAt,
         comment: values.comment,
+        partsAction,
       });
-      notify('success', 'Entretien enregistré.');
+      notify(
+        'success',
+        partsAction === 'skip'
+          ? 'Entretien enregistré sans changement de pièce.'
+          : 'Entretien enregistré.',
+      );
       close();
       await loadTasks();
     } catch (requestError) {
+      if (partsAction === 'skip') {
+        setDialog({ type: 'execute', item: dialog.item, draft: values });
+      }
       setFormError(getApiErrorMessage(requestError));
     } finally {
       setBusy(false);
     }
+  };
+  const submitExecutePlan = async (event) => {
+    event.preventDefault();
+    const values = Object.fromEntries(new FormData(event.currentTarget));
+    await executePlan(values, 'consume');
+  };
+  const requestExecuteWithoutParts = (event) => {
+    const form = event.currentTarget.form;
+    if (!form?.reportValidity()) return;
+    const values = Object.fromEntries(new FormData(form));
+    if (!values.comment?.trim()) {
+      setFormError('Un commentaire est obligatoire sans changement de pièce.');
+      return;
+    }
+    setFormError('');
+    setDialog({ type: 'executeWithoutPartsConfirmation', item: dialog.item, values });
   };
   const toggle = async (item) => {
     if (busy) return false;
@@ -337,6 +361,16 @@ export default function MaintenancePage() {
     return () => controller.abort();
   }, [dialog, historyLimit, historyPage]);
   const activeItem = dialog?.item;
+  const executionPartCount = activeItem?.parts?.length ?? 0;
+  const executeWithPartsLabel =
+    executionPartCount === 1
+      ? 'Effectuer en changeant la pièce'
+      : executionPartCount > 1
+        ? 'Effectuer en changeant les pièces'
+        : 'Effectuer l’entretien';
+  const skippedPartsDescription = activeItem?.parts
+    ?.map((part) => `${part.name} × ${part.quantity}`)
+    .join(', ');
   return (
     <main className="app-page">
       <div className="page-header mb-3 d-flex flex-wrap align-items-start justify-content-between gap-3">
@@ -693,7 +727,7 @@ export default function MaintenancePage() {
         onClose={close}
         busy={busy}
       >
-        <form className="d-grid gap-3" onSubmit={executePlan}>
+        <form className="d-grid gap-3" onSubmit={submitExecutePlan}>
           {formError && (
             <p role="alert" className="alert alert-danger mb-0">
               {formError}
@@ -704,14 +738,42 @@ export default function MaintenancePage() {
             name="performedAt"
             type="date"
             required
-            defaultValue={new Date().toISOString().slice(0, 10)}
+            defaultValue={dialog?.draft?.performedAt ?? new Date().toISOString().slice(0, 10)}
           />
-          <FormField label="Commentaire" name="comment" multiline />
-          <Button type="submit" disabled={busy}>
-            {busy ? 'Validation…' : 'Valider'}
-          </Button>
+          <FormField
+            label="Commentaire"
+            name="comment"
+            multiline
+            defaultValue={dialog?.draft?.comment ?? ''}
+          />
+          <div className="d-grid gap-2">
+            <Button type="submit" disabled={busy}>
+              {busy ? 'Validation…' : executeWithPartsLabel}
+            </Button>
+            {executionPartCount > 0 && (
+              <button
+                type="button"
+                className="btn btn-outline-danger"
+                disabled={busy}
+                onClick={requestExecuteWithoutParts}
+              >
+                Effectuer sans changement de pièce
+              </button>
+            )}
+          </div>
         </form>
       </Modal>
+      <ConfirmDialog
+        open={dialog?.type === 'executeWithoutPartsConfirmation'}
+        title="Effectuer sans changement de pièce"
+        description={`Les pièces suivantes ne seront pas retirées du stock : ${skippedPartsDescription}. La prochaine échéance sera néanmoins recalculée.`}
+        confirmLabel="Confirmer sans changer les pièces"
+        busy={busy}
+        onClose={() =>
+          !busy && setDialog({ type: 'execute', item: activeItem, draft: dialog?.values ?? {} })
+        }
+        onConfirm={() => executePlan(dialog.values, 'skip')}
+      />
       <Modal
         open={dialog?.type === 'history'}
         title={`Historique - ${activeItem?.title ?? ''}`}
@@ -724,13 +786,37 @@ export default function MaintenancePage() {
         ) : (
           <ul className="maintenance-history-list">
             {history.map((entry) => (
-              <li className="py-2" key={entry.uuid}>
-                <strong>{formatDate(entry.performedAt)}</strong> ·{' '}
-                {entry.performedByUser
-                  ? `${entry.performedByUser.firstName} ${entry.performedByUser.lastName}`
-                  : 'Utilisateur supprimé'}
+              <li
+                className={`py-2 ${
+                  entry.executionType === 'withoutPartReplacement'
+                    ? 'maintenance-history-without-parts'
+                    : ''
+                }`}
+                key={entry.uuid}
+              >
+                <div className="d-flex flex-wrap align-items-center gap-2">
+                  <span>
+                    <strong>{formatDate(entry.performedAt)}</strong> ·{' '}
+                    {entry.performedByUser
+                      ? `${entry.performedByUser.firstName} ${entry.performedByUser.lastName}`
+                      : 'Utilisateur supprimé'}
+                  </span>
+                  {entry.executionType === 'withoutPartReplacement' && (
+                    <span className="status-badge maintenance-history-exception">
+                      {maintenanceExecutionTypeLabels[entry.executionType]}
+                    </span>
+                  )}
+                </div>
                 <br />
                 {entry.comment || 'Sans commentaire'}
+                {entry.executionType === 'withoutPartReplacement' &&
+                  entry.partsSnapshot?.length > 0 && (
+                    <small className="d-block text-body-secondary">
+                      {entry.partsSnapshot
+                        .map((part) => `${part.name} × ${part.quantity}`)
+                        .join(', ')}
+                    </small>
+                  )}
               </li>
             ))}
           </ul>

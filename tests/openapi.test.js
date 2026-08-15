@@ -223,6 +223,22 @@ describe('OpenAPI contract', () => {
     expect(stockStatus.schema.enum).toEqual(['inStock', 'toOrder', 'ordered']);
   });
 
+  it('documents maintenance execution without replacing parts', () => {
+    const executeRequest = swaggerSpec.components.schemas.MaintenanceExecuteRequest;
+    const history = swaggerSpec.components.schemas.MaintenanceHistory;
+
+    expect(executeRequest.properties.partsAction).toMatchObject({
+      enum: ['consume', 'skip'],
+      default: 'consume',
+    });
+    expect(executeRequest.properties.comment.description).toContain('skip');
+    expect(history.properties.executionType.enum).toEqual(['standard', 'withoutPartReplacement']);
+    expect(history.properties.partsSnapshot.items.properties.quantity.minimum).toBe(1);
+    expect(swaggerSpec.paths['/maintenance/{uuid}/execute'].post.description).toContain(
+      'pièces non remplacées',
+    );
+  });
+
   it('documents lifecycle conflicts between materials and maintenance plans', () => {
     expect(swaggerSpec.paths['/materials/{uuid}'].put.description).toContain(
       'plans actifs associés',

@@ -1,4 +1,6 @@
 import {
+  MAINTENANCE_EXECUTION_TYPES,
+  MAINTENANCE_PART_ACTIONS,
   MAINTENANCE_PRIORITIES,
   MAINTENANCE_TYPES,
 } from '../modules/maintenance/maintenance.constants.js';
@@ -299,11 +301,30 @@ const maintenanceTask = {
 
 const maintenanceHistory = {
   type: 'object',
-  required: ['uuid', 'performedAt'],
+  required: ['uuid', 'performedAt', 'executionType'],
   properties: {
     uuid,
     performedAt: date,
     comment: nullableString,
+    executionType: {
+      type: 'string',
+      enum: Object.values(MAINTENANCE_EXECUTION_TYPES),
+    },
+    partsSnapshot: {
+      type: 'array',
+      nullable: true,
+      items: {
+        type: 'object',
+        required: ['uuid', 'name', 'reference', 'unit', 'quantity'],
+        properties: {
+          uuid,
+          name: writeText(150),
+          reference: writeText(150),
+          unit: writeText(50),
+          quantity: { type: 'integer', minimum: 1, maximum: 100000 },
+        },
+      },
+    },
     performedByUser: {
       type: 'object',
       nullable: true,
@@ -632,7 +653,17 @@ export const openApiSchemas = {
     type: 'object',
     properties: {
       performedAt: date,
-      comment: { type: 'string' },
+      comment: {
+        type: 'string',
+        description: 'Obligatoire lorsque `partsAction` vaut `skip`.',
+      },
+      partsAction: {
+        type: 'string',
+        enum: Object.values(MAINTENANCE_PART_ACTIONS),
+        default: MAINTENANCE_PART_ACTIONS.CONSUME,
+        description:
+          '`consume` retire les pièces du stock. `skip` enregistre explicitement leur non-remplacement.',
+      },
     },
   },
   MaintenanceOperationCreateRequest: {

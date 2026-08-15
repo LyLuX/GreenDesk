@@ -1056,6 +1056,17 @@ body.app-scroll-locked {
   border-top: 1px solid var(--border);
 }
 
+.maintenance-history-list > li.maintenance-history-without-parts {
+  padding-inline: 0.75rem;
+  background: #fff5f5;
+  border-left: 4px solid #b64141;
+}
+
+.status-badge.maintenance-history-exception {
+  background: #f5d8d8;
+  color: #8a2525;
+}
+
 .history-table {
   margin-bottom: 0;
 }

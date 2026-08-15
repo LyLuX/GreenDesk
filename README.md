@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **5.2.4**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **5.3.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -99,6 +99,8 @@ Chaque matériel peut recevoir plusieurs plans de maintenance : préventif, insp
 La liste des plans accepte une recherche sur le nom, la description, les notes, le matériel et l’opération, ainsi que des filtres par matériel, priorité, type, échéance et statut d’activation. Dans l’interface, ces contrôles utilisent le panneau de filtres partagé. Depuis l’onglet Maintenance d’un matériel, le bouton `Voir la maintenance` ouvre cette liste préfiltrée sur le matériel concerné et affiche directement tous ses plans.
 
 Une tâche est à faire aujourd’hui lorsque sa prochaine date correspond à la date du jour, en retard lorsque cette date est dépassée, et à prévoir lorsqu’elle tombe dans les 30 prochains jours. Les dates métier sont des valeurs UTC `YYYY-MM-DD`, sans heure. L’exécution met à jour transactionnellement la tâche et son historique.
+
+Lorsqu’un plan possède des pièces, sa modale d’exécution distingue le remplacement normal de l’exécution exceptionnelle sans changement de pièce. Cette seconde action exige une justification et une confirmation explicites, recalcule l’échéance sans consommer le stock et conserve dans l’historique un instantané des pièces non remplacées. L’entrée correspondante est signalée par le libellé rouge « Pièces non remplacées ». La migration `20260815_zzz_add_maintenance_execution_tracking.js` ajoute le type d’exécution et cet instantané aux historiques existants sans modifier leur signification standard.
 
 Les pièces distinguent la quantité disponible en atelier de la quantité déjà commandée. Le badge de stock est calculé à partir de ces deux valeurs et du besoin concerné. La liste de commande agrège les besoins des plans compris dans l’horizon 30, 60, 90 ou 365 jours choisi par l’utilisateur, puis retire le stock atelier et les commandes en cours. Les ajustements, commandes, réceptions et consommations utilisent un service de stock partagé, transactionnel et historisé. Une réception transfère la quantité commandée vers l’atelier ; l’exécution d’un entretien consomme ses pièces et est refusée atomiquement lorsque le stock atelier est insuffisant.
 

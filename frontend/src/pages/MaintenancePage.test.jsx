@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   getOrderList: vi.fn(),
   createMaintenance: vi.fn(),
   executeMaintenance: vi.fn(),
+  maintenanceHistory: vi.fn(),
   hasPermission: vi.fn(),
 }));
 
@@ -22,7 +23,7 @@ vi.mock('../api/maintenance.api.js', () => ({
   listMaintenance: mocks.listMaintenance,
   listMaintenanceOperations: mocks.listOperations,
   listMaintenanceParts: mocks.listParts,
-  maintenanceHistory: vi.fn(),
+  maintenanceHistory: mocks.maintenanceHistory,
   setMaintenanceStatus: vi.fn(),
   updateMaintenance: vi.fn(),
   createMaintenanceOperation: vi.fn(),
@@ -94,6 +95,9 @@ describe('MaintenancePage', () => {
     });
     mocks.createMaintenance.mockResolvedValue({ data: { data: {} } });
     mocks.executeMaintenance.mockResolvedValue({ data: { data: {} } });
+    mocks.maintenanceHistory.mockResolvedValue({
+      data: { data: { items: [], pagination: { page: 1, limit: 5, total: 0, totalPages: 0 } } },
+    });
     mocks.listMaintenance.mockResolvedValue({
       data: {
         data: {
@@ -108,6 +112,15 @@ describe('MaintenancePage', () => {
               material: { name: 'Tondeuse' },
               nextMaintenanceDate: '2026-08-05',
               remainingDays: 12,
+              parts: [
+                {
+                  uuid: 'part-uuid',
+                  name: 'Bougie',
+                  reference: 'BPMR8Y',
+                  unit: 'pièce',
+                  quantity: 1,
+                },
+              ],
             },
           ],
           pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
@@ -389,7 +402,7 @@ describe('MaintenancePage', () => {
     expect(mocks.createMaintenance.mock.calls[0][0]).not.toHaveProperty('title');
   });
 
-  it('executes maintenance without requesting or sending engine hours', async () => {
+  it('executes maintenance with its parts from the existing table action', async () => {
     const user = userEvent.setup();
     renderPage();
 
@@ -400,13 +413,83 @@ describe('MaintenancePage', () => {
     );
 
     expect(screen.queryByLabelText('Heures moteur')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Valider' }));
+    expect(screen.getByRole('button', { name: 'Effectuer sans changement de pièce' })).toHaveClass(
+      'btn-outline-danger',
+    );
+    await user.click(screen.getByRole('button', { name: 'Effectuer en changeant la pièce' }));
 
     await waitFor(() =>
       expect(mocks.executeMaintenance).toHaveBeenCalledWith('maintenance-uuid', {
         performedAt: new Date().toISOString().slice(0, 10),
         comment: '',
+        partsAction: 'consume',
       }),
     );
+  });
+
+  it('requires a justification and confirmation to execute without changing parts', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Effectuer Vidange annuelle',
+      }),
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Effectuer sans changement de pièce' }));
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Un commentaire est obligatoire sans changement de pièce.',
+    );
+    await user.type(screen.getByLabelText('Commentaire'), 'Bougie encore en bon état');
+    await user.click(screen.getByRole('button', { name: 'Effectuer sans changement de pièce' }));
+
+    const confirmation = screen.getByRole('dialog', {
+      name: 'Effectuer sans changement de pièce',
+    });
+    expect(confirmation).toHaveTextContent('Bougie × 1');
+    expect(confirmation).toHaveTextContent('ne seront pas retirées du stock');
+    await user.click(
+      within(confirmation).getByRole('button', { name: 'Confirmer sans changer les pièces' }),
+    );
+
+    await waitFor(() =>
+      expect(mocks.executeMaintenance).toHaveBeenCalledWith('maintenance-uuid', {
+        performedAt: new Date().toISOString().slice(0, 10),
+        comment: 'Bougie encore en bon état',
+        partsAction: 'skip',
+      }),
+    );
+  });
+
+  it('highlights maintenance performed without replacing parts in history', async () => {
+    const user = userEvent.setup();
+    mocks.maintenanceHistory.mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'history-uuid',
+              performedAt: '2026-08-15',
+              comment: 'Bougie contrôlée et conservée',
+              executionType: 'withoutPartReplacement',
+              partsSnapshot: [{ name: 'Bougie', quantity: 1 }],
+              performedByUser: { firstName: 'Ada', lastName: 'Lovelace' },
+            },
+          ],
+          pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
+        },
+      },
+    });
+    renderPage();
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Voir l’historique de Vidange annuelle' }),
+    );
+
+    const badge = await screen.findByText('Pièces non remplacées');
+    expect(badge).toHaveClass('status-badge', 'maintenance-history-exception');
+    expect(badge.closest('li')).toHaveClass('maintenance-history-without-parts');
+    expect(screen.getByText('Bougie × 1', { selector: 'small' })).toBeVisible();
   });
 });

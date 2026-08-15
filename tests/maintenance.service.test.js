@@ -297,6 +297,8 @@ describe('MaintenanceService', () => {
         maintenanceTaskId: task.id,
         performedAt: today,
         comment: 'Entretien réalisé',
+        executionType: 'standard',
+        partsSnapshot: null,
         performedBy: 42,
       },
       { transaction: { id: 'transaction' } },
@@ -353,6 +355,106 @@ describe('MaintenanceService', () => {
       }),
       { transaction },
     );
+  });
+
+  it('executes maintenance without consuming parts after an explicit justified choice', async () => {
+    const today = todayDateOnly();
+    const taskPart = {
+      id: 9,
+      uuid: '99999999-9999-4999-8999-999999999999',
+      name: 'Filtre à huile',
+      reference: 'FH-100',
+      unit: 'pièce',
+      MaintenanceTaskPart: { quantity: 2 },
+    };
+    const task = {
+      id: 1,
+      uuid: '11111111-1111-4111-8111-111111111111',
+      active: true,
+      intervalDays: 30,
+      lastMaintenanceDate: addDaysDateOnly(today, -30),
+      material: { active: true },
+      parts: [taskPart],
+      toJSON: () => ({ uuid: '11111111-1111-4111-8111-111111111111' }),
+    };
+    const transaction = { id: 'transaction' };
+    const repository = {
+      withTransaction: jest.fn((callback) => callback(transaction)),
+      findByUuid: jest.fn().mockResolvedValue(task),
+      update: jest.fn(),
+      createHistory: jest.fn().mockResolvedValue({ uuid: 'history-uuid' }),
+    };
+    const catalogRepository = { findPartsByIds: jest.fn() };
+    const stockService = { apply: jest.fn() };
+    const auditService = { record: jest.fn() };
+    const service = new MaintenanceService(
+      repository,
+      {},
+      auditService,
+      catalogRepository,
+      stockService,
+    );
+
+    await service.execute(
+      task.uuid,
+      {
+        performedAt: today,
+        comment: 'Filtre encore en bon état',
+        partsAction: 'skip',
+      },
+      42,
+    );
+
+    expect(catalogRepository.findPartsByIds).not.toHaveBeenCalled();
+    expect(stockService.apply).not.toHaveBeenCalled();
+    expect(repository.createHistory).toHaveBeenCalledWith(
+      {
+        maintenanceTaskId: task.id,
+        performedAt: today,
+        comment: 'Filtre encore en bon état',
+        executionType: 'withoutPartReplacement',
+        partsSnapshot: [
+          {
+            uuid: taskPart.uuid,
+            name: taskPart.name,
+            reference: taskPart.reference,
+            unit: taskPart.unit,
+            quantity: 2,
+          },
+        ],
+        performedBy: 42,
+      },
+      { transaction },
+    );
+    expect(auditService.record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'EXECUTE_WITHOUT_PARTS' }),
+      { transaction },
+    );
+  });
+
+  it('requires a justification when maintenance is executed without changing parts', async () => {
+    const task = {
+      id: 1,
+      uuid: '11111111-1111-4111-8111-111111111111',
+      active: true,
+      intervalDays: 30,
+      material: { active: true },
+      parts: [{ id: 9 }],
+      toJSON: () => ({}),
+    };
+    const repository = {
+      withTransaction: jest.fn((callback) => callback({ id: 'transaction' })),
+      findByUuid: jest.fn().mockResolvedValue(task),
+      update: jest.fn(),
+      createHistory: jest.fn(),
+    };
+    const service = new MaintenanceService(repository, {}, { record: jest.fn() });
+
+    await expect(service.execute(task.uuid, { partsAction: 'skip' }, 42)).rejects.toMatchObject({
+      statusCode: 400,
+      message: 'Un commentaire est obligatoire sans changement de pièce.',
+    });
+    expect(repository.update).not.toHaveBeenCalled();
   });
 
   it('does not complete maintenance when a required part is unavailable', async () => {

@@ -8,6 +8,7 @@ import { normalizePagination, paginatedResult } from '../../../core/utils/pagina
 import MaterialService from '../../materials/service/material.service.js';
 import MaintenanceCatalogRepository from '../repository/maintenance-catalog.repository.js';
 import MaintenanceRepository from '../repository/maintenance.repository.js';
+import { MAINTENANCE_EXECUTION_TYPES, MAINTENANCE_PART_ACTIONS } from '../maintenance.constants.js';
 import {
   addDaysDateOnly,
   getDeadlineDetails,
@@ -228,29 +229,53 @@ export default class MaintenanceService {
           HTTP_STATUS.BAD_REQUEST,
         );
       const taskParts = task.parts ?? [];
-      const lockedParts = taskParts.length
-        ? await this.catalogRepository.findPartsByIds(
-            taskParts.map((part) => part.id),
-            { transaction, lock: true },
-          )
-        : [];
-      const lockedPartById = new Map(lockedParts.map((part) => [String(part.id), part]));
-      for (const taskPart of taskParts) {
-        const part = lockedPartById.get(String(taskPart.id));
-        if (!part) {
-          throw new AppError('Une pièce associée au plan est introuvable.', HTTP_STATUS.CONFLICT);
-        }
-        await this.stockService.apply(
-          part,
-          {
-            stockableType: STOCKABLE_TYPES.MAINTENANCE_PART,
-            operation: STOCK_OPERATIONS.CONSUME,
-            quantity: Number(taskPart.MaintenanceTaskPart?.quantity ?? 1),
-            userId,
-            source: { type: 'maintenanceTask', uuid: task.uuid },
-          },
-          { transaction },
+      const skipParts = values.partsAction === MAINTENANCE_PART_ACTIONS.SKIP;
+      if (skipParts && !values.comment?.trim()) {
+        throw new AppError(
+          'Un commentaire est obligatoire sans changement de pièce.',
+          HTTP_STATUS.BAD_REQUEST,
         );
+      }
+      if (skipParts && !taskParts.length) {
+        throw new AppError(
+          'Ce plan ne contient aucune pièce à ne pas remplacer.',
+          HTTP_STATUS.BAD_REQUEST,
+        );
+      }
+      const partsSnapshot = skipParts
+        ? taskParts.map((part) => ({
+            uuid: part.uuid,
+            name: part.name,
+            reference: part.reference,
+            unit: part.unit,
+            quantity: Number(part.MaintenanceTaskPart?.quantity ?? 1),
+          }))
+        : null;
+      if (!skipParts) {
+        const lockedParts = taskParts.length
+          ? await this.catalogRepository.findPartsByIds(
+              taskParts.map((part) => part.id),
+              { transaction, lock: true },
+            )
+          : [];
+        const lockedPartById = new Map(lockedParts.map((part) => [String(part.id), part]));
+        for (const taskPart of taskParts) {
+          const part = lockedPartById.get(String(taskPart.id));
+          if (!part) {
+            throw new AppError('Une pièce associée au plan est introuvable.', HTTP_STATUS.CONFLICT);
+          }
+          await this.stockService.apply(
+            part,
+            {
+              stockableType: STOCKABLE_TYPES.MAINTENANCE_PART,
+              operation: STOCK_OPERATIONS.CONSUME,
+              quantity: Number(taskPart.MaintenanceTaskPart?.quantity ?? 1),
+              userId,
+              source: { type: 'maintenanceTask', uuid: task.uuid },
+            },
+            { transaction },
+          );
+        }
       }
       const update = {
         lastMaintenanceDate: performedAt,
@@ -263,6 +288,10 @@ export default class MaintenanceService {
           maintenanceTaskId: task.id,
           performedAt,
           comment: values.comment ?? null,
+          executionType: skipParts
+            ? MAINTENANCE_EXECUTION_TYPES.WITHOUT_PART_REPLACEMENT
+            : MAINTENANCE_EXECUTION_TYPES.STANDARD,
+          partsSnapshot,
           performedBy: userId,
         },
         { transaction },
@@ -270,7 +299,7 @@ export default class MaintenanceService {
       await this.auditService.record(
         {
           userId,
-          action: 'EXECUTE',
+          action: skipParts ? 'EXECUTE_WITHOUT_PARTS' : 'EXECUTE',
           entity: 'MAINTENANCE_TASK',
           entityUuid: task.uuid,
           oldValues,

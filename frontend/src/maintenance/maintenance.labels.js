@@ -30,3 +30,6 @@ export const maintenanceStatusClasses = Object.freeze({
   dueToday: 'maintenance-due-today',
   overdue: 'maintenance-overdue',
 });
+export const maintenanceExecutionTypeLabels = Object.freeze({
+  withoutPartReplacement: 'Pièces non remplacées',
+});
