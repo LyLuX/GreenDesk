@@ -2,6 +2,7 @@ import { createContext, useCallback, useEffect, useMemo, useRef, useState } from
 import client from '../api/client.js';
 import { clearSession, readSession, saveSession, SESSION_STORAGE_KEY } from './auth.storage.js';
 import { isJwtExpired } from './jwt.js';
+import { clearReturnLocation } from './return-location.js';
 import {
   ACTIVITY_THROTTLE_MS,
   getLastActivityAt,
@@ -201,6 +202,7 @@ export function AuthProvider({ children }) {
     } catch {
       // Local cleanup is still required if the server cannot be reached.
     } finally {
+      clearReturnLocation();
       clearSession();
       sessionRef.current = null;
       setSession(null);

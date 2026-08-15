@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../auth/useAuth.js';
+import { consumeReturnLocation, rememberReturnLocation } from '../auth/return-location.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import PasswordInput from '../components/PasswordInput.jsx';
 import { publicRegistrationEnabled } from '../config/features.js';
@@ -14,6 +15,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    rememberReturnLocation(location.state?.from);
+  }, [location.state?.from]);
 
   useEffect(() => {
     const notification = location.state?.notification;
@@ -38,7 +43,7 @@ export default function LoginPage() {
     try {
       const session = await login(email, password);
       notify('success', `Bienvenue ${session.user.firstName}, tu es maintenant connecté.`);
-      navigate(location.state?.from || '/dashboard', { replace: true });
+      navigate(consumeReturnLocation(location.state?.from), { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {

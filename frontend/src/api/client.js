@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getAccessToken, clearSession } from '../auth/auth.storage.js';
+import { rememberCurrentReturnLocation } from '../auth/return-location.js';
 const client = axios.create({ baseURL: import.meta.env.VITE_API_URL || '/api' });
 client.interceptors.request.use((config) => {
   const token = getAccessToken();
@@ -10,6 +11,7 @@ client.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
+      rememberCurrentReturnLocation();
       clearSession();
       window.dispatchEvent(new Event('greendesk:unauthorized'));
     }
