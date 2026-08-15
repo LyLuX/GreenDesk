@@ -21,11 +21,19 @@ describe('production CSS build', () => {
     expect(purgeCssOptions.safelist.standard[0].test('app-loader-sm')).toBe(true);
   });
 
-  it('keeps responsive tables at their natural content width without wrapping cells', () => {
+  it('fits table shells to their content and prevents horizontal table overflow', () => {
     const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
 
     expect(styles).toMatch(
-      /\.table-responsive\s*>\s*\.table\s*\{[^}]*width:\s*auto;[^}]*white-space:\s*nowrap;/,
+      /\.table-shell\s*\{[^}]*width:\s*fit-content;[^}]*max-width:\s*100%;[^}]*overflow:\s*visible;/,
     );
+    expect(styles).toMatch(
+      /\.table-responsive\s*\{[^}]*max-width:\s*100%;[^}]*overflow-x:\s*visible;/,
+    );
+    expect(styles).toMatch(
+      /\.table-responsive\s*>\s*\.table\s*\{[^}]*width:\s*auto;[^}]*max-width:\s*100%;[^}]*white-space:\s*normal;/,
+    );
+    expect(styles).not.toMatch(/\.history-table\s*\{[^}]*min-width:/);
+    expect(styles).not.toMatch(/\.maintenance-order-list-table\s*\{[^}]*min-width:/);
   });
 });

@@ -53,7 +53,7 @@ export default function DataTable({
                     </td>
                   ))}
                   {hasActions ? (
-                    <td className={`${cellSpacing} text-nowrap`}>
+                    <td className={cellSpacing}>
                       {renderActions?.(row)}
                       {onView && (
                         <button

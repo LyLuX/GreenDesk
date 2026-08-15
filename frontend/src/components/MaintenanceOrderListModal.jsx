@@ -120,7 +120,7 @@ function OrderPartsTable({
                       {part.supplierReference || part.reference}
                     </small>
                   </td>
-                  <td className="text-nowrap">{formatOrderQuantity(part.quantity, part.unit)}</td>
+                  <td>{formatOrderQuantity(part.quantity, part.unit)}</td>
                   {showPlans ? (
                     <td className="maintenance-order-plans">
                       <ul className="mb-0 ps-3">
@@ -133,7 +133,7 @@ function OrderPartsTable({
                     </td>
                   ) : null}
                   {onMarkOrdered ? (
-                    <td className="text-nowrap">
+                    <td>
                       <div className="maintenance-order-command-controls d-flex align-items-end gap-2">
                         <label className="form-label mb-0 text-body-secondary">
                           <span className="visually-hidden">

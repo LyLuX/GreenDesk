@@ -211,14 +211,10 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
             <tbody>
               {movements.map((movement) => (
                 <tr key={movement.uuid}>
-                  <td className="text-nowrap">{formatDateTime(movement.createdAt)}</td>
+                  <td>{formatDateTime(movement.createdAt)}</td>
                   <td>{stockOperationPresentation[movement.operation] ?? movement.operation}</td>
-                  <td className="text-nowrap">
-                    {formatChange(movement.quantityOnHandChange, currentPart.unit)}
-                  </td>
-                  <td className="text-nowrap">
-                    {formatChange(movement.quantityOnOrderChange, currentPart.unit)}
-                  </td>
+                  <td>{formatChange(movement.quantityOnHandChange, currentPart.unit)}</td>
+                  <td>{formatChange(movement.quantityOnOrderChange, currentPart.unit)}</td>
                 </tr>
               ))}
             </tbody>

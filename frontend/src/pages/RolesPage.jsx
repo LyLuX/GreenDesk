@@ -288,7 +288,7 @@ export default function RolesPage() {
               ) : (
                 roles.map((role) => (
                   <tr key={role.uuid}>
-                    <td className="text-nowrap">
+                    <td>
                       <strong>{role.name}</strong>
                       <span className="d-block small text-body-secondary">
                         {role.description || 'Sans description'}
@@ -299,7 +299,7 @@ export default function RolesPage() {
                         ? role.permissions.map((permission) => permission.name).join(', ')
                         : 'Aucune permission'}
                     </td>
-                    <td className="text-nowrap">
+                    <td>
                       <button
                         className="btn btn-sm btn-outline-brand me-2"
                         type="button"

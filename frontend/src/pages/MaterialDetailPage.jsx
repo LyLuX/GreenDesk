@@ -654,7 +654,7 @@ export default function MaterialDetailPage() {
                     const changes = eventChanges(event);
                     return (
                       <tr key={event.uuid}>
-                        <td className="text-nowrap">{formatDateTime(event.createdAt)}</td>
+                        <td>{formatDateTime(event.createdAt)}</td>
                         <td>
                           <span
                             className={`status-badge ${auditActionClasses[event.action] ?? ''}`}
