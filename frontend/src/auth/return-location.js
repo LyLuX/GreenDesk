@@ -51,13 +51,16 @@ export const clearReturnLocation = () => {
   }
 };
 
+/** Resolves the preferred router destination without clearing it during a React render. */
+export const resolveReturnLocation = (preferredLocation, fallback = '/dashboard') =>
+  sanitizeReturnLocation(preferredLocation) ??
+  readReturnLocation() ??
+  sanitizeReturnLocation(fallback) ??
+  '/dashboard';
+
 /** Consumes the preferred router destination, then the persisted one, exactly once. */
 export const consumeReturnLocation = (preferredLocation, fallback = '/dashboard') => {
-  const destination =
-    sanitizeReturnLocation(preferredLocation) ??
-    readReturnLocation() ??
-    sanitizeReturnLocation(fallback) ??
-    '/dashboard';
+  const destination = resolveReturnLocation(preferredLocation, fallback);
   clearReturnLocation();
   return destination;
 };

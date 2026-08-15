@@ -1,7 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../auth/useAuth.js';
-import { consumeReturnLocation, rememberReturnLocation } from '../auth/return-location.js';
+import {
+  clearReturnLocation,
+  rememberReturnLocation,
+  resolveReturnLocation,
+} from '../auth/return-location.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import PasswordInput from '../components/PasswordInput.jsx';
 import { publicRegistrationEnabled } from '../config/features.js';
@@ -15,6 +19,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const postLoginDestinationRef = useRef(null);
+
+  const getPostLoginDestination = () => {
+    postLoginDestinationRef.current ??= resolveReturnLocation(location.state?.from);
+    return postLoginDestinationRef.current;
+  };
 
   useEffect(() => {
     rememberReturnLocation(location.state?.from);
@@ -31,19 +41,23 @@ export default function LoginPage() {
     });
   }, [location.pathname, location.state, navigate, notify]);
 
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  if (isAuthenticated) {
+    return <Navigate to={getPostLoginDestination()} replace />;
+  }
   const submit = async (event) => {
     event.preventDefault();
     if (!email || !password || loading) {
       setError('Saisissez votre adresse email et votre mot de passe.');
       return;
     }
+    const postLoginDestination = getPostLoginDestination();
     setLoading(true);
     setError('');
     try {
       const session = await login(email, password);
       notify('success', `Bienvenue ${session.user.firstName}, tu es maintenant connecté.`);
-      navigate(consumeReturnLocation(location.state?.from), { replace: true });
+      clearReturnLocation();
+      navigate(postLoginDestination, { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {

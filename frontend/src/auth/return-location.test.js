@@ -3,6 +3,7 @@ import {
   consumeReturnLocation,
   readReturnLocation,
   rememberReturnLocation,
+  resolveReturnLocation,
   sanitizeReturnLocation,
 } from './return-location.js';
 
@@ -33,5 +34,12 @@ describe('return location', () => {
 
     expect(consumeReturnLocation('/roles')).toBe('/roles');
     expect(readReturnLocation()).toBeNull();
+  });
+
+  it('resolves a destination without consuming it during a render', () => {
+    rememberReturnLocation('/maintenance/parts');
+
+    expect(resolveReturnLocation()).toBe('/maintenance/parts');
+    expect(readReturnLocation()).toBe('/maintenance/parts');
   });
 });
