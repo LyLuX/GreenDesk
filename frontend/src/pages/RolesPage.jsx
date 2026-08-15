@@ -15,6 +15,49 @@ import { paginateItems } from '../utils/pagination.js';
 const emptyRole = () => ({ name: '', description: '', permissionUuids: [] });
 const rolesApi = createReferenceApi('roles');
 const permissionsApi = createReferenceApi('permissions');
+const permissionsPageLimit = 25;
+const visiblePermissionCount = 6;
+
+const listAllPermissions = async (signal) => {
+  const items = [];
+  let page = 1;
+
+  while (true) {
+    const response = await permissionsApi.list({ page, limit: permissionsPageLimit }, signal);
+    const payload = response.data.data ?? [];
+    if (Array.isArray(payload)) return payload;
+
+    items.push(...(payload.items ?? []));
+    const pagination = payload.pagination;
+    if (!pagination || pagination.page >= pagination.totalPages || !payload.items?.length) {
+      return items;
+    }
+    page = pagination.page + 1;
+  }
+};
+
+const renderPermissionSummary = (permissions = []) => {
+  if (!permissions.length) return 'Aucune permission';
+  const hiddenCount = Math.max(permissions.length - visiblePermissionCount, 0);
+
+  return (
+    <>
+      {permissions
+        .slice(0, visiblePermissionCount)
+        .map((permission) => permission.name)
+        .join(', ')}
+      {hiddenCount > 0 ? (
+        <span
+          aria-label={`${hiddenCount} permission${hiddenCount > 1 ? 's' : ''} supplémentaire${hiddenCount > 1 ? 's' : ''}`}
+          className="text-body-secondary"
+          title={`${hiddenCount} autre${hiddenCount > 1 ? 's' : ''} permission${hiddenCount > 1 ? 's' : ''}`}
+        >
+          , …
+        </span>
+      ) : null}
+    </>
+  );
+};
 
 /** Administrator workspace for assigning permission codes to application roles. */
 export default function RolesPage() {
@@ -34,8 +77,7 @@ export default function RolesPage() {
   const [search, setSearch] = useState('');
   const [permissionUuid, setPermissionUuid] = useState('');
   const [pagination, setPagination] = useState(null);
-  const [permissionsPagination, setPermissionsPagination] = useState(null);
-  const [loadingMorePermissions, setLoadingMorePermissions] = useState(false);
+  const [loadingPermissions, setLoadingPermissions] = useState(true);
   const debouncedSearch = useDebouncedValue(search, 300);
   const sortedPermissions = useMemo(
     () =>
@@ -98,15 +140,16 @@ export default function RolesPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    permissionsApi
-      .list({ limit: 25 }, controller.signal)
-      .then((response) => {
-        const payload = response.data.data ?? {};
-        setPermissions(Array.isArray(payload) ? payload : (payload.items ?? []));
-        setPermissionsPagination(Array.isArray(payload) ? null : (payload.pagination ?? null));
+    setLoadingPermissions(true);
+    listAllPermissions(controller.signal)
+      .then((items) => {
+        setPermissions(items);
       })
       .catch((requestError) => {
         if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoadingPermissions(false);
       });
     return () => controller.abort();
   }, []);
@@ -131,29 +174,6 @@ export default function RolesPage() {
       permissionUuids: role.permissions?.map((permission) => permission.uuid) ?? [],
     });
     setFormError('');
-  };
-
-  const loadMorePermissions = async () => {
-    if (
-      !permissionsPagination ||
-      permissionsPagination.page >= permissionsPagination.totalPages ||
-      loadingMorePermissions
-    )
-      return;
-    setLoadingMorePermissions(true);
-    try {
-      const response = await permissionsApi.list({
-        page: permissionsPagination.page + 1,
-        limit: 25,
-      });
-      const payload = response.data.data ?? {};
-      setPermissions((current) => [...current, ...(payload.items ?? [])]);
-      setPermissionsPagination(payload.pagination ?? permissionsPagination);
-    } catch (requestError) {
-      setError(getApiErrorMessage(requestError));
-    } finally {
-      setLoadingMorePermissions(false);
-    }
   };
 
   const togglePermission = (permissionUuid) => {
@@ -247,16 +267,6 @@ export default function RolesPage() {
           },
         ]}
       />
-      {permissionsPagination?.page < permissionsPagination?.totalPages && (
-        <Button
-          className="btn-sm btn-outline-secondary mb-3"
-          type="button"
-          disabled={loadingMorePermissions}
-          onClick={loadMorePermissions}
-        >
-          {loadingMorePermissions ? 'Chargement…' : 'Charger plus de permissions'}
-        </Button>
-      )}
       {error && (
         <p className="alert alert-danger" role="alert">
           {error}
@@ -294,11 +304,7 @@ export default function RolesPage() {
                         {role.description || 'Sans description'}
                       </span>
                     </td>
-                    <td>
-                      {role.permissions?.length
-                        ? role.permissions.map((permission) => permission.name).join(', ')
-                        : 'Aucune permission'}
-                    </td>
+                    <td>{renderPermissionSummary(role.permissions)}</td>
                     <td>
                       <button
                         className="btn btn-sm btn-outline-brand me-2"
@@ -370,42 +376,36 @@ export default function RolesPage() {
               </span>
             </legend>
             <div className="permission-picker">
-              {sortedPermissions.map((permission) => {
-                const selected = form.permissionUuids.includes(permission.uuid);
-                return (
-                  <div
-                    className={`permission-option ${selected ? 'selected' : ''}`}
-                    key={permission.uuid}
-                  >
-                    <input
-                      className="form-check-input"
-                      id={`permission-${permission.uuid}`}
-                      type="checkbox"
-                      checked={selected}
-                      onChange={() => togglePermission(permission.uuid)}
-                    />
-                    <label className="form-check-label" htmlFor={`permission-${permission.uuid}`}>
-                      <span className="permission-description">
-                        {permission.description || permission.name}
-                      </span>
-                      {permission.description && (
-                        <code className="permission-code">{permission.name}</code>
-                      )}
-                    </label>
-                  </div>
-                );
-              })}
+              {loadingPermissions ? (
+                <Loader label="Chargement des permissions" />
+              ) : (
+                sortedPermissions.map((permission) => {
+                  const selected = form.permissionUuids.includes(permission.uuid);
+                  return (
+                    <div
+                      className={`permission-option ${selected ? 'selected' : ''}`}
+                      key={permission.uuid}
+                    >
+                      <input
+                        className="form-check-input"
+                        id={`permission-${permission.uuid}`}
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => togglePermission(permission.uuid)}
+                      />
+                      <label className="form-check-label" htmlFor={`permission-${permission.uuid}`}>
+                        <span className="permission-description">
+                          {permission.description || permission.name}
+                        </span>
+                        {permission.description && (
+                          <code className="permission-code">{permission.name}</code>
+                        )}
+                      </label>
+                    </div>
+                  );
+                })
+              )}
             </div>
-            {permissionsPagination?.page < permissionsPagination?.totalPages && (
-              <Button
-                className="btn-sm btn-outline-secondary mt-2"
-                type="button"
-                disabled={loadingMorePermissions}
-                onClick={loadMorePermissions}
-              >
-                {loadingMorePermissions ? 'Chargement…' : 'Charger plus de permissions'}
-              </Button>
-            )}
           </fieldset>
           <Button type="submit" disabled={saving}>
             {saving ? 'Enregistrement…' : 'Enregistrer'}

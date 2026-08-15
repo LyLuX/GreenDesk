@@ -172,6 +172,80 @@ describe('administrator table pagination', () => {
     expect(screen.queryByText('Rôle 5')).not.toBeInTheDocument();
   });
 
+  it('automatically loads every permission page without a manual load button', async () => {
+    const user = userEvent.setup();
+    mocks.referenceApis.permissions.list
+      .mockResolvedValueOnce({
+        data: {
+          data: {
+            items: [{ uuid: 'permission-alpha', name: 'alpha.read', description: '' }],
+            pagination: { page: 1, limit: 25, total: 2, totalPages: 2 },
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          data: {
+            items: [{ uuid: 'permission-beta', name: 'beta.read', description: '' }],
+            pagination: { page: 2, limit: 25, total: 2, totalPages: 2 },
+          },
+        },
+      });
+
+    render(<RolesPage />);
+
+    expect(await screen.findByRole('option', { name: 'beta.read' })).toBeVisible();
+    expect(mocks.referenceApis.permissions.list).toHaveBeenCalledWith(
+      { page: 1, limit: 25 },
+      expect.any(AbortSignal),
+    );
+    expect(mocks.referenceApis.permissions.list).toHaveBeenCalledWith(
+      { page: 2, limit: 25 },
+      expect.any(AbortSignal),
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Charger plus de permissions' }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Créer un rôle' }));
+    const dialog = within(screen.getByRole('dialog', { name: 'Créer un rôle' }));
+    expect(dialog.getByLabelText('alpha.read')).toBeVisible();
+    expect(dialog.getByLabelText('beta.read')).toBeVisible();
+    expect(
+      dialog.queryByRole('button', { name: 'Charger plus de permissions' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows only the first six role permissions followed by an ellipsis', async () => {
+    const permissions = Array.from({ length: 8 }, (_value, index) => ({
+      uuid: `permission-${index + 1}`,
+      name: `permission.${index + 1}`,
+      description: '',
+    }));
+    mocks.referenceApis.roles.list.mockResolvedValueOnce({
+      data: {
+        data: [
+          {
+            uuid: 'summarized-role',
+            name: 'Rôle résumé',
+            description: '',
+            permissions,
+          },
+        ],
+      },
+    });
+
+    render(<RolesPage />);
+
+    const row = (await screen.findByText('Rôle résumé')).closest('tr');
+    expect(row).toHaveTextContent(
+      'permission.1, permission.2, permission.3, permission.4, permission.5, permission.6, …',
+    );
+    expect(row).not.toHaveTextContent('permission.7');
+    expect(row).not.toHaveTextContent('permission.8');
+    expect(within(row).getByLabelText('2 permissions supplémentaires')).toBeVisible();
+  });
+
   it('presents permissions by description and sorts their technical names', async () => {
     const user = userEvent.setup();
     mocks.referenceApis.permissions.list.mockResolvedValueOnce({
