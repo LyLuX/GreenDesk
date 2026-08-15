@@ -393,6 +393,57 @@ a:hover {
   background: #fff;
 }
 
+.permission-action-panel {
+  background: var(--brand-mist);
+}
+
+.permission-action-panel-title {
+  flex: 0 0 100%;
+  margin: 0;
+  color: var(--brand-forest-dark);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.permission-action-panel .permission-action-option {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.permission-action-panel .permission-action-option:has(.form-check-input:focus-visible) {
+  outline: 0.2rem solid rgba(79, 122, 45, 0.25);
+  outline-offset: 0.1rem;
+}
+
+.permission-action-panel .form-check-input {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.permission-action-label {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.permission-action-count {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
 .permission-option {
   display: grid;
   grid-template-columns: auto 1fr;

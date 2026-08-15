@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import Button from '../components/Button.jsx';
@@ -17,6 +17,54 @@ const rolesApi = createReferenceApi('roles');
 const permissionsApi = createReferenceApi('permissions');
 const permissionsPageLimit = 25;
 const visiblePermissionCount = 6;
+const permissionActionOrder = ['read', 'create', 'update', 'delete', 'execute'];
+const permissionActionLabels = {
+  read: 'Lecture',
+  create: 'Création',
+  update: 'Modification',
+  delete: 'Suppression',
+  execute: 'Exécution',
+};
+
+const getPermissionAction = (permissionName = '') => {
+  const separatorIndex = permissionName.lastIndexOf('.');
+  if (separatorIndex <= 0 || separatorIndex === permissionName.length - 1) return null;
+  return permissionName.slice(separatorIndex + 1).toLocaleLowerCase('fr');
+};
+
+const formatPermissionAction = (action) =>
+  permissionActionLabels[action] ?? `${action.charAt(0).toLocaleUpperCase('fr')}${action.slice(1)}`;
+
+function PermissionActionCheckbox({ action, permissionUuids, selectedPermissionUuids, onToggle }) {
+  const checkboxRef = useRef(null);
+  const selectedCount = permissionUuids.filter((uuid) => selectedPermissionUuids.has(uuid)).length;
+  const allSelected = selectedCount === permissionUuids.length;
+  const partiallySelected = selectedCount > 0 && !allSelected;
+  const label = formatPermissionAction(action);
+
+  useEffect(() => {
+    if (checkboxRef.current) checkboxRef.current.indeterminate = partiallySelected;
+  }, [partiallySelected]);
+
+  return (
+    <label className="form-label permission-action-option mb-0">
+      <input
+        ref={checkboxRef}
+        aria-checked={partiallySelected ? 'mixed' : allSelected}
+        className="form-check-input"
+        type="checkbox"
+        checked={allSelected}
+        onChange={() => onToggle(permissionUuids)}
+      />
+      <span className="permission-action-label">
+        <span>{label}</span>
+        <span className="permission-action-count">
+          {selectedCount} sur {permissionUuids.length}
+        </span>
+      </span>
+    </label>
+  );
+}
 
 const listAllPermissions = async (signal) => {
   const items = [];
@@ -62,6 +110,7 @@ const renderPermissionSummary = (permissions = []) => {
 /** Administrator workspace for assigning permission codes to application roles. */
 export default function RolesPage() {
   const { notify } = useNotification();
+  const permissionActionsTitleId = useId();
   const [roles, setRoles] = useState([]);
   const [permissions, setPermissions] = useState([]);
   const [editing, setEditing] = useState(null);
@@ -85,6 +134,34 @@ export default function RolesPage() {
         left.name.localeCompare(right.name, 'fr', { sensitivity: 'base' }),
       ),
     [permissions],
+  );
+  const permissionActionGroups = useMemo(() => {
+    const groups = new Map();
+
+    for (const permission of sortedPermissions) {
+      const action = getPermissionAction(permission.name);
+      if (!action) continue;
+      const permissionUuids = groups.get(action) ?? [];
+      permissionUuids.push(permission.uuid);
+      groups.set(action, permissionUuids);
+    }
+
+    return [...groups.entries()]
+      .map(([action, permissionUuids]) => ({ action, permissionUuids }))
+      .sort((left, right) => {
+        const leftIndex = permissionActionOrder.indexOf(left.action);
+        const rightIndex = permissionActionOrder.indexOf(right.action);
+        if (leftIndex !== -1 || rightIndex !== -1) {
+          if (leftIndex === -1) return 1;
+          if (rightIndex === -1) return -1;
+          return leftIndex - rightIndex;
+        }
+        return left.action.localeCompare(right.action, 'fr', { sensitivity: 'base' });
+      });
+  }, [sortedPermissions]);
+  const selectedPermissionUuids = useMemo(
+    () => new Set(form.permissionUuids),
+    [form.permissionUuids],
   );
 
   const load = useCallback(
@@ -183,6 +260,19 @@ export default function RolesPage() {
         ? current.permissionUuids.filter((value) => value !== permissionUuid)
         : [...current.permissionUuids, permissionUuid],
     }));
+  };
+
+  const togglePermissionAction = (permissionUuids) => {
+    setForm((current) => {
+      const actionPermissionUuids = new Set(permissionUuids);
+      const allSelected = permissionUuids.every((uuid) => current.permissionUuids.includes(uuid));
+      return {
+        ...current,
+        permissionUuids: allSelected
+          ? current.permissionUuids.filter((uuid) => !actionPermissionUuids.has(uuid))
+          : [...new Set([...current.permissionUuids, ...permissionUuids])],
+      };
+    });
   };
 
   const save = async (event) => {
@@ -375,6 +465,25 @@ export default function RolesPage() {
                 {form.permissionUuids.length} sur {sortedPermissions.length}
               </span>
             </legend>
+            {!loadingPermissions && permissionActionGroups.length > 0 && (
+              <section
+                aria-labelledby={permissionActionsTitleId}
+                className="filter-panel permission-action-panel surface mb-3 p-3"
+              >
+                <h3 className="permission-action-panel-title" id={permissionActionsTitleId}>
+                  Sélection rapide par action
+                </h3>
+                {permissionActionGroups.map(({ action, permissionUuids }) => (
+                  <PermissionActionCheckbox
+                    action={action}
+                    key={action}
+                    permissionUuids={permissionUuids}
+                    selectedPermissionUuids={selectedPermissionUuids}
+                    onToggle={togglePermissionAction}
+                  />
+                ))}
+              </section>
+            )}
             <div className="permission-picker">
               {loadingPermissions ? (
                 <Loader label="Chargement des permissions" />

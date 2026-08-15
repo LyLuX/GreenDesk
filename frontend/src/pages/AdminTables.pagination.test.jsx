@@ -277,4 +277,53 @@ describe('administrator table pagination', () => {
     ).toEqual(['alpha.create', 'zeta.read']);
     expect(dialog.getByText('0 sur 2')).toBeVisible();
   });
+
+  it('selects permissions by action while preserving individual adjustments', async () => {
+    const user = userEvent.setup();
+    mocks.referenceApis.permissions.list.mockResolvedValueOnce({
+      data: {
+        data: [
+          { uuid: 'material-read', name: 'materials.read', description: '' },
+          { uuid: 'part-read', name: 'maintenance.parts.read', description: '' },
+          { uuid: 'material-create', name: 'materials.create', description: '' },
+          { uuid: 'permission-admin', name: 'ADMIN', description: '' },
+        ],
+      },
+    });
+    render(<RolesPage />);
+
+    await screen.findByText('Rôle 5');
+    await user.click(screen.getByRole('button', { name: 'Créer un rôle' }));
+
+    const dialog = within(screen.getByRole('dialog', { name: 'Créer un rôle' }));
+    const actionGroup = within(dialog.getByRole('region', { name: 'Sélection rapide par action' }));
+    const readAction = actionGroup.getByRole('checkbox', { name: 'Lecture 0 sur 2' });
+    const createAction = actionGroup.getByRole('checkbox', { name: 'Création 0 sur 1' });
+
+    expect(readAction).not.toBeChecked();
+    expect(createAction).not.toBeChecked();
+    expect(actionGroup.queryByText('Admin')).not.toBeInTheDocument();
+
+    await user.click(readAction);
+
+    expect(dialog.getByLabelText('materials.read')).toBeChecked();
+    expect(dialog.getByLabelText('maintenance.parts.read')).toBeChecked();
+    expect(dialog.getByLabelText('materials.create')).not.toBeChecked();
+    expect(actionGroup.getByRole('checkbox', { name: 'Lecture 2 sur 2' })).toBeChecked();
+
+    await user.click(dialog.getByLabelText('materials.read'));
+
+    const partialReadAction = actionGroup.getByRole('checkbox', { name: 'Lecture 1 sur 2' });
+    expect(partialReadAction).toBePartiallyChecked();
+
+    await user.click(partialReadAction);
+
+    expect(dialog.getByLabelText('materials.read')).toBeChecked();
+    expect(dialog.getByLabelText('maintenance.parts.read')).toBeChecked();
+
+    await user.click(actionGroup.getByRole('checkbox', { name: 'Lecture 2 sur 2' }));
+
+    expect(dialog.getByLabelText('materials.read')).not.toBeChecked();
+    expect(dialog.getByLabelText('maintenance.parts.read')).not.toBeChecked();
+  });
 });
