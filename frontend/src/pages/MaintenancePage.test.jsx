@@ -199,6 +199,23 @@ describe('MaintenancePage', () => {
     );
   });
 
+  it('shows an informational banner when a deadline filter has no matching plan', async () => {
+    mocks.listMaintenance.mockResolvedValue({
+      data: {
+        data: {
+          items: [],
+          pagination: { page: 1, limit: 5, total: 0, totalPages: 0 },
+        },
+      },
+    });
+
+    renderPage('/maintenance?status=overdue');
+
+    const emptyMessage = await screen.findByText('Aucun plan d’entretien.');
+    expect(emptyMessage.closest('[role="status"]')).toHaveClass('alert', 'alert-info');
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  });
+
   it('opens the order list with the period matching the selected deadline', async () => {
     const user = userEvent.setup();
     renderPage();

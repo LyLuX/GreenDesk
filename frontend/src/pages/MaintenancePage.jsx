@@ -452,9 +452,13 @@ export default function MaintenancePage() {
           </Button>
         </div>
       )}
-      {isLoading ? (
-        <Loader label="Chargement des plans de maintenance" />
-      ) : (
+      {isLoading && <Loader label="Chargement des plans de maintenance" />}
+      {!isLoading && !error && !catalogError && items.length === 0 && (
+        <div role="status" className="alert alert-info">
+          <p className="mb-0">Aucun plan d’entretien.</p>
+        </div>
+      )}
+      {!isLoading && items.length > 0 && (
         <div className="table-shell table-responsive">
           <table className="table table-hover align-middle">
             <thead>
@@ -469,111 +473,103 @@ export default function MaintenancePage() {
               </tr>
             </thead>
             <tbody>
-              {items.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="p-5 text-center">
-                    Aucun plan d’entretien.
+              {items.map((item) => (
+                <tr key={item.uuid}>
+                  <td>{item.material?.name}</td>
+                  <td>
+                    <strong>{item.title}</strong>
+                    <br />
+                    {maintenanceTypeLabels[item.maintenanceType]}
+                    {item.parts?.length > 0 && (
+                      <small className="d-block text-body-secondary">
+                        {item.parts
+                          .map((part) => `${part.reference} × ${part.quantity}`)
+                          .join(', ')}
+                      </small>
+                    )}
                   </td>
-                </tr>
-              ) : (
-                items.map((item) => (
-                  <tr key={item.uuid}>
-                    <td>{item.material?.name}</td>
-                    <td>
-                      <strong>{item.title}</strong>
-                      <br />
-                      {maintenanceTypeLabels[item.maintenanceType]}
-                      {item.parts?.length > 0 && (
-                        <small className="d-block text-body-secondary">
-                          {item.parts
-                            .map((part) => `${part.reference} × ${part.quantity}`)
-                            .join(', ')}
-                        </small>
-                      )}
-                    </td>
-                    <td>{formatDate(item.nextMaintenanceDate)}</td>
-                    <td>{remainingDays(item.remainingDays)}</td>
-                    <td>
-                      <span
-                        className={`status-badge ${
-                          maintenancePriorityBadgeClasses[item.priority] ?? 'priority-normal'
-                        }`}
-                      >
-                        {maintenancePriorityLabels[item.priority]}
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        className={`status-badge ${
-                          item.active ? (maintenanceStatusClasses[item.status] ?? '') : 'inactive'
-                        }`}
-                      >
-                        {maintenanceStatusLabels[item.status]}
-                        {!item.active && ' (inactif)'}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="d-flex h-100 w-100 flex-wrap align-items-center justify-content-center gap-1">
-                        {hasPermission(maintenancePermissions.plans.update) && (
-                          <button
-                            aria-label={`Modifier ${item.title}`}
-                            className="btn btn-sm btn-outline-brand flex-fill"
-                            type="button"
-                            disabled={busy}
-                            onClick={() => setDialog({ type: 'edit', item })}
-                          >
-                            Modifier
-                          </button>
-                        )}
-                        {hasPermission(maintenancePermissions.plans.update) && (
-                          <button
-                            aria-label={`${item.active ? 'Désactiver' : 'Activer'} ${item.title}`}
-                            className={`btn btn-sm ${getStatusActionButtonClass(
-                              item.active,
-                            )} flex-fill`}
-                            type="button"
-                            disabled={busy}
-                            onClick={() => setConfirmation({ action: 'status', item })}
-                          >
-                            {item.active ? 'Désactiver' : 'Activer'}
-                          </button>
-                        )}
-                        {hasPermission(maintenancePermissions.plans.execute) && item.active && (
-                          <button
-                            aria-label={`Effectuer ${item.title}`}
-                            className="btn btn-sm btn-outline-brand flex-fill"
-                            type="button"
-                            disabled={busy}
-                            onClick={() => setDialog({ type: 'execute', item })}
-                          >
-                            Effectuer
-                          </button>
-                        )}
+                  <td>{formatDate(item.nextMaintenanceDate)}</td>
+                  <td>{remainingDays(item.remainingDays)}</td>
+                  <td>
+                    <span
+                      className={`status-badge ${
+                        maintenancePriorityBadgeClasses[item.priority] ?? 'priority-normal'
+                      }`}
+                    >
+                      {maintenancePriorityLabels[item.priority]}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      className={`status-badge ${
+                        item.active ? (maintenanceStatusClasses[item.status] ?? '') : 'inactive'
+                      }`}
+                    >
+                      {maintenanceStatusLabels[item.status]}
+                      {!item.active && ' (inactif)'}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="d-flex h-100 w-100 flex-wrap align-items-center justify-content-center gap-1">
+                      {hasPermission(maintenancePermissions.plans.update) && (
                         <button
-                          aria-label={`Voir l’historique de ${item.title}`}
+                          aria-label={`Modifier ${item.title}`}
                           className="btn btn-sm btn-outline-brand flex-fill"
                           type="button"
                           disabled={busy}
-                          onClick={() => showHistory(item)}
+                          onClick={() => setDialog({ type: 'edit', item })}
                         >
-                          Historique
+                          Modifier
                         </button>
-                        {hasPermission(maintenancePermissions.plans.delete) && (
-                          <button
-                            aria-label={`Supprimer ${item.title}`}
-                            className="btn btn-sm btn-outline-danger flex-fill"
-                            type="button"
-                            disabled={busy}
-                            onClick={() => setConfirmation({ action: 'delete', item })}
-                          >
-                            Supprimer
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+                      )}
+                      {hasPermission(maintenancePermissions.plans.update) && (
+                        <button
+                          aria-label={`${item.active ? 'Désactiver' : 'Activer'} ${item.title}`}
+                          className={`btn btn-sm ${getStatusActionButtonClass(
+                            item.active,
+                          )} flex-fill`}
+                          type="button"
+                          disabled={busy}
+                          onClick={() => setConfirmation({ action: 'status', item })}
+                        >
+                          {item.active ? 'Désactiver' : 'Activer'}
+                        </button>
+                      )}
+                      {hasPermission(maintenancePermissions.plans.execute) && item.active && (
+                        <button
+                          aria-label={`Effectuer ${item.title}`}
+                          className="btn btn-sm btn-outline-brand flex-fill"
+                          type="button"
+                          disabled={busy}
+                          onClick={() => setDialog({ type: 'execute', item })}
+                        >
+                          Effectuer
+                        </button>
+                      )}
+                      <button
+                        aria-label={`Voir l’historique de ${item.title}`}
+                        className="btn btn-sm btn-outline-brand flex-fill"
+                        type="button"
+                        disabled={busy}
+                        onClick={() => showHistory(item)}
+                      >
+                        Historique
+                      </button>
+                      {hasPermission(maintenancePermissions.plans.delete) && (
+                        <button
+                          aria-label={`Supprimer ${item.title}`}
+                          className="btn btn-sm btn-outline-danger flex-fill"
+                          type="button"
+                          disabled={busy}
+                          onClick={() => setConfirmation({ action: 'delete', item })}
+                        >
+                          Supprimer
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
