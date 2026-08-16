@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **7.4.7**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **7.5.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -96,7 +96,7 @@ boutons `Activer` ou `Réactiver` utilisent le style bleu commun.
 
 Chaque matériel peut recevoir plusieurs plans de maintenance : préventif, inspection, remplacement, lubrification, nettoyage ou personnalisé. Un plan possède un intervalle en jours, une priorité et la date du dernier entretien. La prochaine échéance est recalculée à la création, à la modification et lors de l’exécution d’un entretien. La case « Intervalle de changement suivant l’usure » enregistre un intervalle à `0` et laisse la prochaine échéance vide ; le plan reste actif et exécutable manuellement. L’API expose `GET|POST /api/v1/maintenance`, `GET|PUT|DELETE /api/v1/maintenance/:uuid`, `PATCH /api/v1/maintenance/:uuid/status`, `POST /api/v1/maintenance/:uuid/execute` et `GET /api/v1/maintenance/:uuid/history`.
 
-La liste des plans accepte une recherche sur le nom, la description, les notes, le matériel et l’opération, ainsi que des filtres par matériel, priorité, type, échéance et statut d’activation. Le filtre d’échéance permet notamment d’isoler les plans « Selon l’usure », affichés sans date ni jours restants. Dans l’interface, ces contrôles utilisent le panneau de filtres partagé. Depuis l’onglet Maintenance d’un matériel, le bouton `Voir la maintenance` ouvre cette liste préfiltrée sur le matériel concerné et affiche directement tous ses plans.
+La liste des plans accepte une recherche sur le nom, la description, les notes, le matériel et l’opération, ainsi que des filtres par matériel, priorité, type, échéance et statut d’activation. Le filtre d’échéance permet notamment d’isoler les plans « Selon l’usure », affichés sans date ni jours restants. Dans l’interface, ces contrôles utilisent le panneau de filtres partagé. La modale de plan reprend la description de l’opération par défaut et ne révèle le champ « Description spécifique » que lorsque l’utilisateur choisit de la personnaliser ; décocher cette option en édition rétablit la description du catalogue. Depuis l’onglet Maintenance d’un matériel, le bouton `Voir la maintenance` ouvre cette liste préfiltrée sur le matériel concerné et affiche directement tous ses plans.
 
 Une tâche est à faire aujourd’hui lorsque sa prochaine date correspond à la date du jour, en retard lorsque cette date est dépassée, et à prévoir lorsqu’elle tombe dans les 30 prochains jours. Les dates métier sont des valeurs UTC `YYYY-MM-DD`, sans heure. L’exécution met à jour transactionnellement la tâche et son historique.
 

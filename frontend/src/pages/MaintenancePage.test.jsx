@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   listManufacturers: vi.fn(),
   getOrderList: vi.fn(),
   createMaintenance: vi.fn(),
+  updateMaintenance: vi.fn(),
   executeMaintenance: vi.fn(),
   maintenanceHistory: vi.fn(),
   hasPermission: vi.fn(),
@@ -25,7 +26,7 @@ vi.mock('../api/maintenance.api.js', () => ({
   listMaintenanceParts: mocks.listParts,
   maintenanceHistory: mocks.maintenanceHistory,
   setMaintenanceStatus: vi.fn(),
-  updateMaintenance: vi.fn(),
+  updateMaintenance: mocks.updateMaintenance,
   createMaintenanceOperation: vi.fn(),
   updateMaintenanceOperation: vi.fn(),
   deleteMaintenanceOperation: vi.fn(),
@@ -76,6 +77,7 @@ describe('MaintenancePage', () => {
           {
             uuid: 'operation-uuid',
             name: 'Vidange',
+            description: 'Description catalogue',
             maintenanceType: 'preventive',
           },
         ],
@@ -97,6 +99,7 @@ describe('MaintenancePage', () => {
       },
     });
     mocks.createMaintenance.mockResolvedValue({ data: { data: {} } });
+    mocks.updateMaintenance.mockResolvedValue({ data: { data: {} } });
     mocks.executeMaintenance.mockResolvedValue({ data: { data: {} } });
     mocks.maintenanceHistory.mockResolvedValue({
       data: { data: { items: [], pagination: { page: 1, limit: 5, total: 0, totalPages: 0 } } },
@@ -455,6 +458,97 @@ describe('MaintenancePage', () => {
       ),
     );
     expect(mocks.createMaintenance.mock.calls[0][0]).not.toHaveProperty('title');
+    expect(mocks.createMaintenance.mock.calls[0][0]).not.toHaveProperty('description');
+  });
+
+  it('hides the operation description unless it is explicitly customized', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Créer un plan' }));
+    const dialog = screen.getByRole('dialog', { name: 'Créer un plan' });
+    const customizeDescription = within(dialog).getByRole('checkbox', {
+      name: 'Personnaliser la description de l’opération',
+    });
+    expect(customizeDescription).not.toBeChecked();
+    expect(within(dialog).queryByLabelText('Description spécifique')).not.toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Notes')).toBeVisible();
+    expect(
+      within(dialog).getByText('La description de l’opération sélectionnée sera utilisée.'),
+    ).toBeVisible();
+
+    await user.selectOptions(within(dialog).getByLabelText('Matériel'), 'material-uuid');
+    await user.selectOptions(within(dialog).getByLabelText('Opération'), 'operation-uuid');
+    await user.click(customizeDescription);
+    const description = within(dialog).getByLabelText('Description spécifique');
+    expect(description).toHaveValue('Description catalogue');
+    await user.clear(description);
+    await user.type(description, 'Description propre à ce matériel');
+    await user.type(within(dialog).getByLabelText('Intervalle (jours)'), '365');
+    await user.type(within(dialog).getByLabelText('Dernier entretien'), '2026-07-01');
+    await user.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
+
+    await waitFor(() =>
+      expect(mocks.createMaintenance).toHaveBeenCalledWith(
+        expect.objectContaining({ description: 'Description propre à ce matériel' }),
+      ),
+    );
+  });
+
+  it('detects and resets an existing customized operation description', async () => {
+    const user = userEvent.setup();
+    mocks.listMaintenance.mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'maintenance-uuid',
+              title: 'Vidange annuelle',
+              description: 'Description propre à ce matériel',
+              active: true,
+              intervalDays: 365,
+              lastMaintenanceDate: '2026-07-01',
+              maintenanceType: 'preventive',
+              priority: 'normal',
+              status: 'upcoming',
+              material: { uuid: 'material-uuid', name: 'Tronçonneuse' },
+              operation: {
+                uuid: 'operation-uuid',
+                name: 'Vidange',
+                description: 'Description catalogue',
+                maintenanceType: 'preventive',
+              },
+              nextMaintenanceDate: '2027-07-01',
+              remainingDays: 320,
+              parts: [],
+            },
+          ],
+          pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
+        },
+      },
+    });
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Modifier Vidange annuelle' }));
+    const dialog = screen.getByRole('dialog', { name: 'Modifier le plan' });
+    const customizeDescription = within(dialog).getByRole('checkbox', {
+      name: 'Personnaliser la description de l’opération',
+    });
+    expect(customizeDescription).toBeChecked();
+    expect(within(dialog).getByLabelText('Description spécifique')).toHaveValue(
+      'Description propre à ce matériel',
+    );
+
+    await user.click(customizeDescription);
+    expect(within(dialog).queryByLabelText('Description spécifique')).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
+
+    await waitFor(() =>
+      expect(mocks.updateMaintenance).toHaveBeenCalledWith(
+        'maintenance-uuid',
+        expect.objectContaining({ description: 'Description catalogue' }),
+      ),
+    );
   });
 
   it('creates a wear-based plan with a zero interval', async () => {

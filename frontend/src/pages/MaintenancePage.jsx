@@ -69,6 +69,29 @@ const remainingDays = (value) => {
   return `${Number(value).toLocaleString('fr-FR')} ${Math.abs(Number(value)) === 1 ? 'jour' : 'jours'}`;
 };
 
+function CustomDescriptionField({ field, checked, value, onToggle, onChange }) {
+  return (
+    <div className="d-grid gap-2">
+      <label className="form-check mb-0">
+        <input
+          type="checkbox"
+          className="form-check-input"
+          checked={checked}
+          onChange={(event) => onToggle(event.target.checked)}
+        />
+        <span className="form-check-label">Personnaliser la description de l’opération</span>
+      </label>
+      {checked ? (
+        <FormField {...field} value={value} onChange={(event) => onChange(event.target.value)} />
+      ) : (
+        <small className="text-body-secondary">
+          La description de l’opération sélectionnée sera utilisée.
+        </small>
+      )}
+    </div>
+  );
+}
+
 /** Complete maintenance worklist backed by the existing maintenance API. */
 export default function MaintenancePage() {
   const { hasPermission } = useAuth();
@@ -112,6 +135,9 @@ export default function MaintenancePage() {
   const [selectedParts, setSelectedParts] = useState({});
   const [partQuantities, setPartQuantities] = useState({});
   const [wearBasedInterval, setWearBasedInterval] = useState(false);
+  const [selectedOperationUuid, setSelectedOperationUuid] = useState('');
+  const [customDescription, setCustomDescription] = useState(false);
+  const [customDescriptionValue, setCustomDescriptionValue] = useState('');
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
@@ -222,9 +248,16 @@ export default function MaintenancePage() {
   }, [dialog?.type, loadParts]);
   const openPlanDialog = (type, item) => {
     const assignedParts = item?.parts ?? [];
+    const planDescription = item?.description ?? '';
+    const operationDescription = item?.operation?.description ?? '';
+    const hasCustomDescription =
+      type === 'edit' && planDescription.trim() !== operationDescription.trim();
     setSelectedParts(Object.fromEntries(assignedParts.map((part) => [part.uuid, true])));
     setPartQuantities(Object.fromEntries(assignedParts.map((part) => [part.uuid, part.quantity])));
     setWearBasedInterval(Number(item?.intervalDays) === 0);
+    setSelectedOperationUuid(item?.operation?.uuid ?? '');
+    setCustomDescription(hasCustomDescription);
+    setCustomDescriptionValue(hasCustomDescription ? planDescription : operationDescription);
     setParts([]);
     setPartsPage(1);
     setPartsPagination(null);
@@ -262,6 +295,21 @@ export default function MaintenancePage() {
         ? item?.operation?.uuid
         : '') ??
     '';
+  const resolveSelectedOperation = (operationUuid) =>
+    operations.find((operation) => operation.uuid === operationUuid) ??
+    (dialog?.item?.operation?.uuid === operationUuid ? dialog.item.operation : null);
+  const toggleCustomDescription = (checked) => {
+    setCustomDescription(checked);
+    if (checked && !customDescriptionValue) {
+      setCustomDescriptionValue(resolveSelectedOperation(selectedOperationUuid)?.description ?? '');
+    }
+  };
+  const selectOperation = (operationUuid) => {
+    setSelectedOperationUuid(operationUuid);
+    if (!customDescription) {
+      setCustomDescriptionValue(resolveSelectedOperation(operationUuid)?.description ?? '');
+    }
+  };
   const savePlan = async (event) => {
     event.preventDefault();
     if (busy) return;
@@ -270,6 +318,12 @@ export default function MaintenancePage() {
     try {
       const formData = new FormData(event.currentTarget);
       const payload = normalizeFormValues(Object.fromEntries(formData), baseFields);
+      if (!customDescription) {
+        if (dialog.type === 'create') delete payload.description;
+        else
+          payload.description =
+            resolveSelectedOperation(payload.operationUuid)?.description ?? null;
+      }
       payload.intervalDays = wearBasedInterval ? 0 : payload.intervalDays;
       payload.parts = Object.keys(selectedParts).map((partUuid) => ({
         partUuid,
@@ -673,7 +727,24 @@ export default function MaintenancePage() {
             </p>
           )}
           {baseFields.map((field) =>
-            field.name === 'intervalDays' ? (
+            field.name === 'description' ? (
+              <CustomDescriptionField
+                key={field.name}
+                field={field}
+                checked={customDescription}
+                value={customDescriptionValue}
+                onToggle={toggleCustomDescription}
+                onChange={setCustomDescriptionValue}
+              />
+            ) : field.name === 'operationUuid' ? (
+              <FormField
+                key={field.name}
+                {...field}
+                value={selectedOperationUuid}
+                onChange={(event) => selectOperation(event.target.value)}
+                options={formOptions(field)}
+              />
+            ) : field.name === 'intervalDays' ? (
               <div className="d-grid gap-2" key={field.name}>
                 <label className="form-check mb-0">
                   <input
