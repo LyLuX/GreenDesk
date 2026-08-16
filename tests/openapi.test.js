@@ -154,6 +154,9 @@ describe('OpenAPI contract', () => {
     expect(maintenance.status.enum).toContain('wearBased');
     expect(maintenance).toHaveProperty('operation');
     expect(maintenance).toHaveProperty('parts');
+    expect(dashboardMaintenance.stockValues.properties).toEqual(
+      expect.objectContaining({ onHand: expect.any(Object), onOrder: expect.any(Object) }),
+    );
     expect(swaggerSpec.components.schemas.MaintenancePart.properties).toEqual(
       expect.objectContaining({
         manufacturerUuid: expect.any(Object),

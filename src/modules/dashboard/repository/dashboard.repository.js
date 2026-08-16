@@ -3,6 +3,7 @@ import Material from '../../materials/model/material.model.js';
 import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
 import sequelize from '../../../config/database.js';
 import MaintenanceRepository from '../../maintenance/repository/maintenance.repository.js';
+import MaintenancePart from '../../maintenance/model/maintenance-part.model.js';
 import MaintenancePartUsage from '../../maintenance/model/maintenance-part-usage.model.js';
 import { Op } from 'sequelize';
 
@@ -20,6 +21,7 @@ export default class DashboardRepository {
       manufacturersTotal,
       materialMetrics,
       maintenanceTasks,
+      maintenanceStockValues,
       maintenanceCosts,
     ] = await Promise.all([
       Material.count(),
@@ -52,6 +54,7 @@ export default class DashboardRepository {
         raw: true,
       }),
       includeMaintenance ? this.maintenanceRepository.findDashboard() : undefined,
+      includeMaintenance ? this.getMaintenanceStockValues() : undefined,
       includeMaintenance ? this.getMaintenanceCosts() : undefined,
     ]);
     return {
@@ -64,8 +67,19 @@ export default class DashboardRepository {
       averageCost: Number(materialMetrics.averageCost),
       averageAge: Number(materialMetrics.averageAge),
       maintenanceTasks,
+      maintenanceStockValues,
       maintenanceCosts,
     };
+  }
+
+  getMaintenanceStockValues() {
+    return MaintenancePart.findOne({
+      attributes: [
+        [sequelize.literal('COALESCE(SUM(quantity_on_hand * unit_price), 0)'), 'onHand'],
+        [sequelize.literal('COALESCE(SUM(quantity_on_order * unit_price), 0)'), 'onOrder'],
+      ],
+      raw: true,
+    });
   }
 
   getMaintenanceCosts(now = new Date()) {

@@ -16,6 +16,7 @@ const { getDashboardSummary, hasPermission } = vi.hoisted(() => ({
           overdue: 1,
           upcoming: 1,
           wearBased: 1,
+          stockValues: { onHand: 450.75, onOrder: 120.5 },
           costs: [
             { year: 2026, total: 125.5 },
             { year: 2025, total: 80 },
@@ -102,21 +103,32 @@ describe('DashboardPage', () => {
     expect(formatAverageAge(0)).toBe('0 mois');
   });
 
-  it('places annual maintenance costs above the maintenance deadline cards', async () => {
+  it('places stock values above annual maintenance costs and deadline cards', async () => {
     renderPage();
 
     const inventory = await screen.findByRole('region', {
       name: 'Matériels et catégories',
     });
     const fleet = screen.getByRole('region', { name: 'Valeur du parc' });
+    const maintenanceStock = screen.getByRole('region', {
+      name: 'Valeur du stock de maintenance',
+    });
     const maintenanceCosts = screen.getByRole('region', { name: 'Coûts de maintenance' });
     const maintenance = screen.getByRole('region', { name: 'Entretien' });
 
     expect(within(inventory).getAllByRole('article')).toHaveLength(5);
     expect(within(fleet).getAllByRole('article')).toHaveLength(3);
+    expect(within(maintenanceStock).getAllByRole('article')).toHaveLength(2);
+    expect(within(maintenanceStock).getByText('Valeur du stock actuel')).toBeVisible();
+    expect(within(maintenanceStock).getByText(/450,75/)).toBeVisible();
+    expect(within(maintenanceStock).getByText('Valeur des pièces commandées')).toBeVisible();
+    expect(within(maintenanceStock).getByText(/120,50/)).toBeVisible();
     expect(within(maintenanceCosts).getAllByRole('article')).toHaveLength(3);
     expect(within(maintenanceCosts).getByText('Dépenses de maintenance — 2026')).toBeVisible();
     expect(within(maintenanceCosts).getByText(/125,50/)).toBeVisible();
+    expect(
+      maintenanceStock.compareDocumentPosition(maintenanceCosts) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(
       maintenanceCosts.compareDocumentPosition(maintenance) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
@@ -228,6 +240,9 @@ describe('DashboardPage', () => {
 
     expect(await screen.findByRole('region', { name: 'Matériels et catégories' })).toBeVisible();
     expect(screen.queryByRole('region', { name: 'Coûts de maintenance' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('region', { name: 'Valeur du stock de maintenance' }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Entretien' })).not.toBeInTheDocument();
     expect(hasPermission).toHaveBeenCalledWith('maintenance.read');
   });

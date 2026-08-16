@@ -100,6 +100,7 @@ export default function DashboardPage() {
   const manufacturers = data.manufacturers ?? {};
   const fleet = data.fleet ?? {};
   const maintenance = data.maintenance ?? {};
+  const maintenanceStockValues = maintenance.stockValues ?? {};
   const maintenanceCosts =
     maintenance.costs ??
     Array.from({ length: 3 }, (_value, index) => ({
@@ -128,6 +129,13 @@ export default function DashboardPage() {
     },
     ...(hasPermission(maintenancePermissions.plans.read)
       ? [
+          {
+            label: 'Valeur du stock de maintenance',
+            cards: [
+              ['Valeur du stock actuel', formatCurrency(maintenanceStockValues.onHand)],
+              ['Valeur des pièces commandées', formatCurrency(maintenanceStockValues.onOrder)],
+            ],
+          },
           {
             label: 'Coûts de maintenance',
             cards: maintenanceCosts.map(({ year, total }) => [

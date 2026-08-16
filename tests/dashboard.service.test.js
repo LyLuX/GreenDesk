@@ -15,6 +15,7 @@ describe('DashboardService', () => {
         totalPurchaseValue: 1600,
         averageCost: 200,
         averageAge: 3.5,
+        maintenanceStockValues: { onHand: '450.75', onOrder: '120.50' },
         maintenanceCosts: [
           { year: currentYear, total: '125.50' },
           { year: currentYear - 1, total: '80.00' },
@@ -43,6 +44,7 @@ describe('DashboardService', () => {
         overdue: 2,
         upcoming: 1,
         wearBased: 1,
+        stockValues: { onHand: 450.75, onOrder: 120.5 },
         costs: [
           { year: currentYear, total: 125.5 },
           { year: currentYear - 1, total: 80 },

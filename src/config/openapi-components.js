@@ -995,12 +995,22 @@ export const openApiSchemas = {
       maintenance: {
         type: 'object',
         description: 'Présent uniquement lorsque l’utilisateur possède `maintenance.read`.',
-        required: ['today', 'overdue', 'upcoming', 'wearBased', 'costs', 'items'],
+        required: ['today', 'overdue', 'upcoming', 'wearBased', 'stockValues', 'costs', 'items'],
         properties: {
           today: { type: 'integer', minimum: 0 },
           overdue: { type: 'integer', minimum: 0 },
           upcoming: { type: 'integer', minimum: 0 },
           wearBased: { type: 'integer', minimum: 0 },
+          stockValues: {
+            type: 'object',
+            description:
+              'Valorisation au prix unitaire courant des quantités réellement en stock et commandées.',
+            required: ['onHand', 'onOrder'],
+            properties: {
+              onHand: { type: 'number', format: 'double', minimum: 0 },
+              onOrder: { type: 'number', format: 'double', minimum: 0 },
+            },
+          },
           costs: {
             type: 'array',
             minItems: 3,

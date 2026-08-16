@@ -16,6 +16,7 @@ export default class DashboardService {
     const maintenanceCostByYear = new Map(
       (counts.maintenanceCosts ?? []).map(({ year, total }) => [Number(year), Number(total)]),
     );
+    const maintenanceStockValues = counts.maintenanceStockValues ?? {};
     const maintenanceItems = (counts.maintenanceTasks ?? []).map((task) =>
       this.maintenanceService.toPublic(task),
     );
@@ -48,6 +49,10 @@ export default class DashboardService {
         overdue: maintenance.overdue.length,
         upcoming: maintenance.upcoming.length,
         wearBased: maintenance.wearBased.length,
+        stockValues: {
+          onHand: Number(maintenanceStockValues.onHand ?? 0),
+          onOrder: Number(maintenanceStockValues.onOrder ?? 0),
+        },
         costs: Array.from({ length: 3 }, (_value, index) => ({
           year: currentYear - index,
           total: maintenanceCostByYear.get(currentYear - index) ?? 0,
