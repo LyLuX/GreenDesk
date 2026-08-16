@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import getApiErrorMessage from '../api/get-api-error-message.js';
@@ -272,9 +272,12 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
   const [orderQuantities, setOrderQuantities] = useState({});
   const [confirmation, setConfirmation] = useState(null);
   const [actionLoadingId, setActionLoadingId] = useState(null);
+  const latestRequestId = useRef(0);
 
   const load = useCallback(
     async (signal) => {
+      const requestId = latestRequestId.current + 1;
+      latestRequestId.current = requestId;
       setLoading(true);
       setError('');
       try {
@@ -284,6 +287,7 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
             .list({ limit: 25 }, signal)
             .catch(() => null),
         ]);
+        if (requestId !== latestRequestId.current || signal?.aborted) return;
         const orderList = response.data.data;
         setData(orderList);
         setOrderQuantities(
@@ -295,9 +299,11 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
           setManufacturers(extractPageItems(manufacturerResponse.data.data));
         }
       } catch (requestError) {
-        if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
+        if (requestId === latestRequestId.current && requestError.code !== 'ERR_CANCELED') {
+          setError(getApiErrorMessage(requestError));
+        }
       } finally {
-        if (!signal?.aborted) setLoading(false);
+        if (requestId === latestRequestId.current && !signal?.aborted) setLoading(false);
       }
     },
     [filters],
@@ -307,7 +313,10 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
     if (!open) return undefined;
     const controller = new AbortController();
     load(controller.signal);
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      latestRequestId.current += 1;
+    };
   }, [load, open]);
 
   const manufacturerByUuid = new Map(

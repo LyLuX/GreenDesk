@@ -193,6 +193,47 @@ describe('MaintenanceOrderListModal', () => {
     );
   });
 
+  it('does not let an older calendar response replace wear-based results', async () => {
+    const user = userEvent.setup();
+    let resolveCalendarRequest;
+    let resolveWearBasedRequest;
+    mocks.getOrderList.mockImplementation(
+      (filters) =>
+        new Promise((resolve) => {
+          if (filters.includeWearBased) resolveWearBasedRequest = resolve;
+          else resolveCalendarRequest = resolve;
+        }),
+    );
+
+    render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Inclure les plans selon usure' }));
+    await waitFor(() => expect(resolveWearBasedRequest).toBeTypeOf('function'));
+    resolveWearBasedRequest({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'wear-based-part',
+              name: 'Lame selon usure',
+              reference: 'LAME-USURE',
+              quantity: 1,
+              unit: 'pièce',
+              plans: [],
+            },
+          ],
+        },
+      },
+    });
+
+    const dialog = screen.getByRole('dialog');
+    expect(await within(dialog).findByText('Lame selon usure')).toBeVisible();
+
+    resolveCalendarRequest({ data: { data: { items: [] } } });
+
+    await waitFor(() => expect(within(dialog).getByText('Lame selon usure')).toBeVisible());
+  });
+
   it('identifies wear-based plans in the order details', async () => {
     mocks.getOrderList.mockResolvedValue({
       data: {
