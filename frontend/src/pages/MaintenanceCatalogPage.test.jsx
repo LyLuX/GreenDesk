@@ -284,8 +284,14 @@ describe('dedicated maintenance catalogue pages', () => {
     const partReference = within(stockDialog).getByText('BPMR8Y', { selector: 'small' });
     expect(stockTitle.nextElementSibling).toBe(partReference);
     expect(partReference).toHaveClass('d-block', 'text-body-secondary');
-    expect(screen.getByLabelText('Quantité en stock')).toHaveValue(0);
-    expect(screen.getByLabelText('Quantité commandée')).toHaveValue(0);
+    const quantityOnHand = screen.getByLabelText('Quantité en stock');
+    const quantityOnOrder = screen.getByLabelText('Quantité commandée');
+    expect(quantityOnHand).toHaveValue(0);
+    expect(quantityOnOrder).toHaveValue(0);
+    expect(quantityOnHand.closest('.col-sm-5')?.parentElement).toHaveClass(
+      'justify-content-around',
+    );
+    expect(quantityOnOrder.closest('.col-sm-5')).toBeVisible();
     await user.clear(screen.getByLabelText('Quantité en stock'));
     await user.type(screen.getByLabelText('Quantité en stock'), '2');
     await user.clear(screen.getByLabelText('Quantité commandée'));
