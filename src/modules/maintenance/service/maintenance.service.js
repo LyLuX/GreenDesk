@@ -6,6 +6,7 @@ import { getStockAvailability } from '../../../core/inventory/stock-status.js';
 import AuditService from '../../audit/service/audit.service.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
+import { multiplyMoney } from '../../../core/utils/money.js';
 import MaterialService from '../../materials/service/material.service.js';
 import MaintenanceCatalogRepository from '../repository/maintenance-catalog.repository.js';
 import MaintenanceRepository from '../repository/maintenance.repository.js';
@@ -22,6 +23,19 @@ import {
 } from './maintenance-deadline.service.js';
 
 const has = (object, key) => Object.hasOwn(object, key);
+const partUsageSnapshot = (part, quantity, consumed) => {
+  const unitPrice = Number(part.unitPrice ?? 0);
+  return {
+    uuid: part.uuid,
+    name: part.name,
+    reference: part.reference,
+    unit: part.unit,
+    quantity,
+    unitPrice,
+    totalCost: consumed ? Number(multiplyMoney(unitPrice, quantity)) : 0,
+    consumed,
+  };
+};
 
 /** Calculates maintenance deadlines and records completed maintenance. */
 export default class MaintenanceService {
@@ -254,15 +268,13 @@ export default class MaintenanceService {
           HTTP_STATUS.BAD_REQUEST,
         );
       }
-      const partsSnapshot = skipParts
-        ? taskParts.map((part) => ({
-            uuid: part.uuid,
-            name: part.name,
-            reference: part.reference,
-            unit: part.unit,
-            quantity: Number(part.MaintenanceTaskPart?.quantity ?? 1),
-          }))
-        : null;
+      let partsSnapshot = taskParts.length ? [] : null;
+      const partUsages = [];
+      if (skipParts) {
+        partsSnapshot = taskParts.map((part) =>
+          partUsageSnapshot(part, Number(part.MaintenanceTaskPart?.quantity ?? 1), false),
+        );
+      }
       if (!skipParts) {
         const lockedParts = taskParts.length
           ? await this.catalogRepository.findPartsByIds(
@@ -276,12 +288,26 @@ export default class MaintenanceService {
           if (!part) {
             throw new AppError('Une pièce associée au plan est introuvable.', HTTP_STATUS.CONFLICT);
           }
+          const quantity = Number(taskPart.MaintenanceTaskPart?.quantity ?? 1);
+          const snapshot = partUsageSnapshot(part, quantity, true);
+          partsSnapshot.push(snapshot);
+          partUsages.push({
+            maintenancePartId: part.id,
+            partUuid: snapshot.uuid,
+            partName: snapshot.name,
+            partReference: snapshot.reference,
+            unit: snapshot.unit,
+            quantity: snapshot.quantity,
+            unitPrice: snapshot.unitPrice,
+            totalCost: snapshot.totalCost,
+            performedAt,
+          });
           await this.stockService.apply(
             part,
             {
               stockableType: STOCKABLE_TYPES.MAINTENANCE_PART,
               operation: STOCK_OPERATIONS.CONSUME,
-              quantity: Number(taskPart.MaintenanceTaskPart?.quantity ?? 1),
+              quantity,
               userId,
               source: { type: 'maintenanceTask', uuid: task.uuid },
             },
@@ -308,6 +334,12 @@ export default class MaintenanceService {
         },
         { transaction },
       );
+      if (partUsages.length) {
+        await this.repository.createPartUsages(
+          partUsages.map((usage) => ({ ...usage, maintenanceHistoryId: history.id })),
+          { transaction },
+        );
+      }
       await this.auditService.record(
         {
           userId,
@@ -368,6 +400,7 @@ export default class MaintenanceService {
           reference: part.reference,
           supplierReference: part.supplierReference,
           unit: part.unit,
+          unitPrice: Number(part.unitPrice ?? 0),
           quantityOnHand: part.quantityOnHand,
           quantityOnOrder: part.quantityOnOrder,
           active: part.active,
@@ -480,6 +513,7 @@ export default class MaintenanceService {
           reference: part.reference,
           supplierReference: part.supplierReference,
           unit: part.unit,
+          unitPrice: Number(part.unitPrice ?? 0),
           active: part.active,
           quantityOnHand: availability.quantityOnHand,
           quantityOnOrder: availability.quantityOnOrder,

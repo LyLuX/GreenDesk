@@ -31,6 +31,13 @@ MaintenancePart.init(
       allowNull: true,
     },
     unit: { type: DataTypes.STRING(50), allowNull: false, defaultValue: 'pièce' },
+    unitPrice: {
+      type: DataTypes.DECIMAL(12, 2),
+      field: 'unit_price',
+      allowNull: false,
+      defaultValue: 0,
+      validate: { min: 0 },
+    },
     quantityOnHand: {
       type: DataTypes.INTEGER.UNSIGNED,
       field: 'quantity_on_hand',

@@ -15,7 +15,11 @@ const catalogController = {
   ),
   updatePart: jest.fn((_request, response) => response.json({ success: true, data: {} })),
   updatePartStock: jest.fn((_request, response) => response.json({ success: true, data: {} })),
+  updatePartPrice: jest.fn((_request, response) => response.json({ success: true, data: {} })),
   partStockMovements: jest.fn((_request, response) =>
+    response.json({ success: true, data: { items: [], pagination: {} } }),
+  ),
+  partPriceHistory: jest.fn((_request, response) =>
     response.json({ success: true, data: { items: [], pagination: {} } }),
   ),
   removePart: jest.fn((_request, response) => response.status(204).send()),
@@ -59,7 +63,9 @@ jest.unstable_mockModule(
       createPart = catalogController.createPart;
       updatePart = catalogController.updatePart;
       updatePartStock = catalogController.updatePartStock;
+      updatePartPrice = catalogController.updatePartPrice;
       partStockMovements = catalogController.partStockMovements;
+      partPriceHistory = catalogController.partPriceHistory;
       removePart = catalogController.removePart;
     },
   }),
@@ -212,6 +218,12 @@ describe('maintenance catalogue route permissions', () => {
       .expect(200);
     expect(catalogController.updatePartStock).toHaveBeenCalled();
     await request(app)
+      .patch(`/api/v1/maintenance/parts/${uuid}/price`)
+      .set('Authorization', authorization(['maintenance.parts.update']))
+      .send({ unitPrice: 12.5 })
+      .expect(200);
+    expect(catalogController.updatePartPrice).toHaveBeenCalled();
+    await request(app)
       .delete(`/api/v1/maintenance/parts/${uuid}`)
       .set('Authorization', authorization(['maintenance.parts.delete']))
       .expect(204);
@@ -237,6 +249,17 @@ describe('maintenance catalogue route permissions', () => {
       .expect(200);
     await request(app)
       .get(`/api/v1/maintenance/parts/${uuid}/stock-movements`)
+      .set('Authorization', authorization(['maintenance.read']))
+      .expect(403);
+  });
+
+  it('protects the paginated price history with the part read permission', async () => {
+    await request(app)
+      .get(`/api/v1/maintenance/parts/${uuid}/price-history?page=1&limit=10`)
+      .set('Authorization', authorization(['maintenance.parts.read']))
+      .expect(200);
+    await request(app)
+      .get(`/api/v1/maintenance/parts/${uuid}/price-history`)
       .set('Authorization', authorization(['maintenance.read']))
       .expect(403);
   });

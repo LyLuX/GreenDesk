@@ -8,6 +8,7 @@ import ManufacturerRepository from '../../manufacturers/repository/manufacturer.
 import SupplierRepository from '../../suppliers/repository/supplier.repository.js';
 import MaintenanceCatalogRepository from '../repository/maintenance-catalog.repository.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
+import { normalizeMoney } from '../../../core/utils/money.js';
 
 /** Reusable operation and exact-part catalogue lifecycle. */
 export default class MaintenanceCatalogService {
@@ -227,6 +228,39 @@ export default class MaintenanceCatalogService {
     return this.toPublic(await this.repository.findPartByUuid(part.uuid));
   }
 
+  async updatePartPrice(uuid, values, userId) {
+    const unitPrice = normalizeMoney(values.unitPrice);
+    if (unitPrice === null) {
+      throw new AppError('Le prix unitaire est invalide.', HTTP_STATUS.BAD_REQUEST);
+    }
+    let part;
+    await this.repository.withTransaction(async (transaction) => {
+      part = await this.getPartEntity(uuid, { transaction, lock: true });
+      const previousUnitPrice = normalizeMoney(part.unitPrice) ?? '0.00';
+      if (previousUnitPrice === unitPrice) {
+        throw new AppError(
+          'Le nouveau prix unitaire doit être différent du prix actuel.',
+          HTTP_STATUS.BAD_REQUEST,
+        );
+      }
+      const oldValues = this.toPublic(part);
+      await this.repository.updatePart(part, { unitPrice, updatedBy: userId }, { transaction });
+      await this.repository.createPartPriceHistory(
+        {
+          maintenancePartId: part.id,
+          previousUnitPrice,
+          unitPrice,
+          changedBy: userId,
+        },
+        { transaction },
+      );
+      await this.record(userId, 'PRICE_UPDATE', 'MAINTENANCE_PART', part, oldValues, {
+        transaction,
+      });
+    });
+    return this.toPublic(await this.repository.findPartByUuid(part.uuid));
+  }
+
   async getPartStockMovements(uuid, query = {}) {
     const part = await this.getPartEntity(uuid);
     const result = await this.stockService.getMovements(
@@ -238,6 +272,14 @@ export default class MaintenanceCatalogService {
       items: result.items.map((movement) => this.toPublicStockMovement(movement)),
       pagination: result.pagination,
     };
+  }
+
+  async getPartPriceHistory(uuid, query = {}) {
+    const part = await this.getPartEntity(uuid);
+    const result = await this.repository.findPartPriceHistory(part.id, query);
+    return paginatedResult(result, normalizePagination(query), (item) =>
+      this.toPublicPriceHistory(item),
+    );
   }
 
   normalizeStockOperation(values) {
@@ -347,6 +389,8 @@ export default class MaintenanceCatalogService {
           ...publicValue,
           quantityOnHand: Number(value.quantityOnHand ?? 0),
           quantityOnOrder: Number(value.quantityOnOrder ?? 0),
+          unitPrice: Number(value.unitPrice ?? 0),
+          totalMaintenanceCost: Number(value.totalMaintenanceCost ?? 0),
           stockStatus: getStockAvailability(value).status,
           stockQuantity: Number(value.quantityOnHand ?? 0) + Number(value.quantityOnOrder ?? 0),
           manufacturerUuid,
@@ -366,6 +410,23 @@ export default class MaintenanceCatalogService {
       quantityOnOrderAfter: Number(value.quantityOnOrderAfter),
       sourceType: value.sourceType,
       sourceUuid: value.sourceUuid,
+      createdAt: value.createdAt,
+    };
+  }
+
+  toPublicPriceHistory(item) {
+    const value = typeof item.toJSON === 'function' ? item.toJSON() : item;
+    return {
+      uuid: value.uuid,
+      previousUnitPrice: Number(value.previousUnitPrice),
+      unitPrice: Number(value.unitPrice),
+      changedByUser: value.changedByUser
+        ? {
+            uuid: value.changedByUser.uuid,
+            firstName: value.changedByUser.firstName,
+            lastName: value.changedByUser.lastName,
+          }
+        : null,
       createdAt: value.createdAt,
     };
   }

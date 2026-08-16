@@ -10,6 +10,8 @@ import MaintenanceTask from '../../modules/maintenance/model/maintenance-task.mo
 import MaintenanceHistory from '../../modules/maintenance/model/maintenance-history.model.js';
 import MaintenanceOperation from '../../modules/maintenance/model/maintenance-operation.model.js';
 import MaintenancePart from '../../modules/maintenance/model/maintenance-part.model.js';
+import MaintenancePartPriceHistory from '../../modules/maintenance/model/maintenance-part-price-history.model.js';
+import MaintenancePartUsage from '../../modules/maintenance/model/maintenance-part-usage.model.js';
 import Supplier from '../../modules/suppliers/model/supplier.model.js';
 import MaintenanceTaskPart from '../../modules/maintenance/model/maintenance-task-part.model.js';
 import RevokedAccessToken from '../../modules/auth/model/revoked-access-token.model.js';
@@ -130,6 +132,39 @@ export function initializeModels() {
     onDelete: 'CASCADE',
   });
   MaintenanceHistory.belongsTo(User, { foreignKey: 'performed_by', as: 'performedByUser' });
+  MaintenanceHistory.hasMany(MaintenancePartUsage, {
+    foreignKey: 'maintenanceHistoryId',
+    as: 'partUsages',
+    onDelete: 'CASCADE',
+  });
+  MaintenancePartUsage.belongsTo(MaintenanceHistory, {
+    foreignKey: 'maintenanceHistoryId',
+    as: 'history',
+    onDelete: 'CASCADE',
+  });
+  MaintenancePart.hasMany(MaintenancePartUsage, {
+    foreignKey: 'maintenancePartId',
+    as: 'usageCosts',
+  });
+  MaintenancePartUsage.belongsTo(MaintenancePart, {
+    foreignKey: 'maintenancePartId',
+    as: 'part',
+    onDelete: 'SET NULL',
+  });
+  MaintenancePart.hasMany(MaintenancePartPriceHistory, {
+    foreignKey: 'maintenancePartId',
+    as: 'priceHistory',
+    onDelete: 'CASCADE',
+  });
+  MaintenancePartPriceHistory.belongsTo(MaintenancePart, {
+    foreignKey: 'maintenancePartId',
+    as: 'part',
+    onDelete: 'CASCADE',
+  });
+  MaintenancePartPriceHistory.belongsTo(User, {
+    foreignKey: 'changedBy',
+    as: 'changedByUser',
+  });
   StockMovement.belongsTo(User, { foreignKey: 'performedBy', as: 'performedByUser' });
 
   initialized = true;
@@ -148,6 +183,8 @@ export {
   MaintenanceHistory,
   MaintenanceOperation,
   MaintenancePart,
+  MaintenancePartPriceHistory,
+  MaintenancePartUsage,
   Supplier,
   MaintenanceTaskPart,
   RevokedAccessToken,

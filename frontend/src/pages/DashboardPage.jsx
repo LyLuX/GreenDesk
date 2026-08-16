@@ -100,6 +100,12 @@ export default function DashboardPage() {
   const manufacturers = data.manufacturers ?? {};
   const fleet = data.fleet ?? {};
   const maintenance = data.maintenance ?? {};
+  const maintenanceCosts =
+    maintenance.costs ??
+    Array.from({ length: 3 }, (_value, index) => ({
+      year: new Date().getFullYear() - index,
+      total: 0,
+    }));
   const maintenanceItems = maintenance.items?.[maintenanceDialog?.key] ?? [];
   const cardGroups = [
     {
@@ -122,6 +128,13 @@ export default function DashboardPage() {
     },
     ...(hasPermission(maintenancePermissions.plans.read)
       ? [
+          {
+            label: 'Coûts de maintenance',
+            cards: maintenanceCosts.map(({ year, total }) => [
+              `Dépenses de maintenance — ${year}`,
+              formatCurrency(total),
+            ]),
+          },
           {
             label: 'Entretien',
             cards: maintenanceCards.map((card) => ({

@@ -4,6 +4,7 @@ import DashboardService from '../src/modules/dashboard/service/dashboard.service
 
 describe('DashboardService', () => {
   it('maps repository counts to the public summary shape', async () => {
+    const currentYear = new Date().getUTCFullYear();
     const repository = {
       getCounts: jest.fn().mockResolvedValue({
         materialsTotal: 8,
@@ -14,6 +15,10 @@ describe('DashboardService', () => {
         totalPurchaseValue: 1600,
         averageCost: 200,
         averageAge: 3.5,
+        maintenanceCosts: [
+          { year: currentYear, total: '125.50' },
+          { year: currentYear - 1, total: '80.00' },
+        ],
         maintenanceTasks: [
           { uuid: 'today', status: 'dueToday' },
           { uuid: 'overdue-1', status: 'overdue' },
@@ -38,6 +43,11 @@ describe('DashboardService', () => {
         overdue: 2,
         upcoming: 1,
         wearBased: 1,
+        costs: [
+          { year: currentYear, total: 125.5 },
+          { year: currentYear - 1, total: 80 },
+          { year: currentYear - 2, total: 0 },
+        ],
         items: {
           today: [{ uuid: 'today', status: 'dueToday' }],
           overdue: [

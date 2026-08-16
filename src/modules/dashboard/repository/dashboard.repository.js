@@ -3,6 +3,8 @@ import Material from '../../materials/model/material.model.js';
 import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
 import sequelize from '../../../config/database.js';
 import MaintenanceRepository from '../../maintenance/repository/maintenance.repository.js';
+import MaintenancePartUsage from '../../maintenance/model/maintenance-part-usage.model.js';
+import { Op } from 'sequelize';
 
 /** Efficient aggregate queries used by the dashboard. */
 export default class DashboardRepository {
@@ -18,6 +20,7 @@ export default class DashboardRepository {
       manufacturersTotal,
       materialMetrics,
       maintenanceTasks,
+      maintenanceCosts,
     ] = await Promise.all([
       Material.count(),
       Material.count({ where: { active: true } }),
@@ -49,6 +52,7 @@ export default class DashboardRepository {
         raw: true,
       }),
       includeMaintenance ? this.maintenanceRepository.findDashboard() : undefined,
+      includeMaintenance ? this.getMaintenanceCosts() : undefined,
     ]);
     return {
       materialsTotal,
@@ -60,6 +64,24 @@ export default class DashboardRepository {
       averageCost: Number(materialMetrics.averageCost),
       averageAge: Number(materialMetrics.averageAge),
       maintenanceTasks,
+      maintenanceCosts,
     };
+  }
+
+  getMaintenanceCosts(now = new Date()) {
+    const currentYear = now.getUTCFullYear();
+    return MaintenancePartUsage.findAll({
+      attributes: [
+        [sequelize.fn('YEAR', sequelize.col('performed_at')), 'year'],
+        [sequelize.fn('COALESCE', sequelize.fn('SUM', sequelize.col('total_cost')), 0), 'total'],
+      ],
+      where: {
+        performedAt: {
+          [Op.between]: [`${currentYear - 2}-01-01`, `${currentYear}-12-31`],
+        },
+      },
+      group: [sequelize.fn('YEAR', sequelize.col('performed_at'))],
+      raw: true,
+    });
   }
 }

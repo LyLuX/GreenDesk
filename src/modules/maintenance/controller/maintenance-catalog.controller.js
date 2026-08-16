@@ -57,9 +57,23 @@ export default class MaintenanceCatalogController {
     );
   }
 
+  async updatePartPrice(request, response) {
+    response.json(
+      successResponse(
+        await this.service.updatePartPrice(request.params.uuid, request.body, request.user.userId),
+      ),
+    );
+  }
+
   async partStockMovements(request, response) {
     response.json(
       successResponse(await this.service.getPartStockMovements(request.params.uuid, request.query)),
+    );
+  }
+
+  async partPriceHistory(request, response) {
+    response.json(
+      successResponse(await this.service.getPartPriceHistory(request.params.uuid, request.query)),
     );
   }
 

@@ -421,9 +421,19 @@ describe('MaintenanceService', () => {
       withTransaction: jest.fn((callback) => callback(transaction)),
       findByUuid: jest.fn().mockResolvedValue(task),
       update: jest.fn(),
-      createHistory: jest.fn().mockResolvedValue({ uuid: 'history-uuid' }),
+      createHistory: jest.fn().mockResolvedValue({ id: 12, uuid: 'history-uuid' }),
+      createPartUsages: jest.fn(),
     };
-    const lockedPart = { id: 9, name: 'Filtre', quantityOnHand: 3, quantityOnOrder: 0 };
+    const lockedPart = {
+      id: 9,
+      uuid: taskPart.uuid,
+      name: 'Filtre',
+      reference: 'F-100',
+      unit: 'pièce',
+      unitPrice: 12.5,
+      quantityOnHand: 3,
+      quantityOnOrder: 0,
+    };
     const catalogRepository = { findPartsByIds: jest.fn().mockResolvedValue([lockedPart]) };
     const stockService = { apply: jest.fn() };
     const service = new MaintenanceService(
@@ -447,6 +457,19 @@ describe('MaintenanceService', () => {
         quantity: 2,
         source: { type: 'maintenanceTask', uuid: task.uuid },
       }),
+      { transaction },
+    );
+    expect(repository.createPartUsages).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          maintenanceHistoryId: 12,
+          maintenancePartId: 9,
+          quantity: 2,
+          unitPrice: 12.5,
+          totalCost: 25,
+          performedAt: today,
+        }),
+      ],
       { transaction },
     );
   });
@@ -514,6 +537,9 @@ describe('MaintenanceService', () => {
             reference: taskPart.reference,
             unit: taskPart.unit,
             quantity: 2,
+            unitPrice: 0,
+            totalCost: 0,
+            consumed: false,
           },
         ],
         performedBy: 42,

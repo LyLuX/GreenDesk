@@ -76,12 +76,26 @@ router.patch(
   validateRequest,
   asyncHandler(catalogController.updatePartStock.bind(catalogController)),
 );
+router.patch(
+  '/parts/:uuid/price',
+  authorize(maintenancePermissions.parts.update),
+  validator.updatePartPriceValidator,
+  validateRequest,
+  asyncHandler(catalogController.updatePartPrice.bind(catalogController)),
+);
 router.get(
   '/parts/:uuid/stock-movements',
   authorize(maintenancePermissions.parts.read),
   validator.stockMovementListValidator,
   validateRequest,
   asyncHandler(catalogController.partStockMovements.bind(catalogController)),
+);
+router.get(
+  '/parts/:uuid/price-history',
+  authorize(maintenancePermissions.parts.read),
+  validator.priceHistoryListValidator,
+  validateRequest,
+  asyncHandler(catalogController.partPriceHistory.bind(catalogController)),
 );
 router.delete(
   '/parts/:uuid',

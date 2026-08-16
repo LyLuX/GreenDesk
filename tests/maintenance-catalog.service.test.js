@@ -209,4 +209,43 @@ describe('MaintenanceCatalogService', () => {
       quantityOnOrder: 3,
     });
   });
+
+  it('updates a part price and records its immutable history in one transaction', async () => {
+    const transaction = { id: 'transaction' };
+    const part = {
+      id: 7,
+      uuid: '77777777-7777-4777-8777-777777777777',
+      name: 'Lame',
+      reference: 'L-42',
+      unitPrice: '10.00',
+      toJSON() {
+        return { ...this, toJSON: undefined };
+      },
+    };
+    const repository = {
+      withTransaction: jest.fn((callback) => callback(transaction)),
+      findPartByUuid: jest.fn().mockImplementation(() => Promise.resolve(part)),
+      updatePart: jest.fn((item, values) => Object.assign(item, values)),
+      createPartPriceHistory: jest.fn(),
+    };
+    const auditService = { record: jest.fn() };
+    const service = new MaintenanceCatalogService(repository, auditService);
+
+    const result = await service.updatePartPrice(part.uuid, { unitPrice: 12.5 }, 42);
+
+    expect(repository.createPartPriceHistory).toHaveBeenCalledWith(
+      {
+        maintenancePartId: part.id,
+        previousUnitPrice: '10.00',
+        unitPrice: '12.50',
+        changedBy: 42,
+      },
+      { transaction },
+    );
+    expect(auditService.record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'PRICE_UPDATE', entity: 'MAINTENANCE_PART' }),
+      { transaction },
+    );
+    expect(result.unitPrice).toBe(12.5);
+  });
 });

@@ -8,6 +8,7 @@ import {
 import { STOCK_STATUS_VALUES } from '../core/inventory/stock-status.js';
 import { STOCK_OPERATIONS, STOCK_OPERATION_VALUES } from '../core/inventory/stock-operation.js';
 import { DOCUMENT_TYPES } from '../modules/materials/material-file.constants.js';
+import { MAX_UNIT_PRICE } from '../core/utils/money.js';
 
 const uuid = { type: 'string', format: 'uuid' };
 const date = { type: 'string', format: 'date' };
@@ -216,6 +217,7 @@ const maintenancePart = {
     'name',
     'reference',
     'unit',
+    'unitPrice',
     'quantityOnHand',
     'quantityOnOrder',
     'stockStatus',
@@ -232,6 +234,13 @@ const maintenancePart = {
     reference: writeText(150),
     supplierReference: { ...nullableString, maxLength: 150 },
     unit: writeText(50),
+    unitPrice: { type: 'number', format: 'double', minimum: 0 },
+    totalMaintenanceCost: {
+      type: 'number',
+      format: 'double',
+      minimum: 0,
+      description: 'Coût cumulé des utilisations réelles de cette pièce en maintenance.',
+    },
     stockStatus: { type: 'string', enum: STOCK_STATUS_VALUES },
     stockQuantity: {
       type: 'integer',
@@ -327,6 +336,9 @@ const maintenanceHistory = {
           reference: writeText(150),
           unit: writeText(50),
           quantity: { type: 'integer', minimum: 1, maximum: 100000 },
+          unitPrice: { type: 'number', format: 'double', minimum: 0 },
+          totalCost: { type: 'number', format: 'double', minimum: 0 },
+          consumed: { type: 'boolean' },
         },
       },
     },
@@ -516,6 +528,25 @@ export const openApiSchemas = {
       quantityOnOrderAfter: { type: 'integer', minimum: 0, maximum: 1000000 },
       sourceType: nullableString,
       sourceUuid: { ...uuid, nullable: true },
+      createdAt: dateTime,
+    },
+  },
+  MaintenancePartPriceHistory: {
+    type: 'object',
+    required: ['uuid', 'previousUnitPrice', 'unitPrice', 'createdAt'],
+    properties: {
+      uuid,
+      previousUnitPrice: { type: 'number', format: 'double', minimum: 0 },
+      unitPrice: { type: 'number', format: 'double', minimum: 0 },
+      changedByUser: {
+        type: 'object',
+        nullable: true,
+        properties: {
+          uuid,
+          firstName: writeText(100),
+          lastName: writeText(100),
+        },
+      },
       createdAt: dateTime,
     },
   },
@@ -766,11 +797,27 @@ export const openApiSchemas = {
       },
     ],
   },
+  MaintenancePartPriceRequest: {
+    type: 'object',
+    required: ['unitPrice'],
+    additionalProperties: false,
+    properties: {
+      unitPrice: { type: 'number', format: 'double', minimum: 0, maximum: MAX_UNIT_PRICE },
+    },
+  },
   StockMovementPage: {
     type: 'object',
     required: ['items', 'pagination'],
     properties: {
       items: arrayOf(reference('StockMovement')),
+      pagination: reference('Pagination'),
+    },
+  },
+  MaintenancePartPriceHistoryPage: {
+    type: 'object',
+    required: ['items', 'pagination'],
+    properties: {
+      items: arrayOf(reference('MaintenancePartPriceHistory')),
       pagination: reference('Pagination'),
     },
   },
@@ -940,12 +987,25 @@ export const openApiSchemas = {
       maintenance: {
         type: 'object',
         description: 'Présent uniquement lorsque l’utilisateur possède `maintenance.read`.',
-        required: ['today', 'overdue', 'upcoming', 'wearBased', 'items'],
+        required: ['today', 'overdue', 'upcoming', 'wearBased', 'costs', 'items'],
         properties: {
           today: { type: 'integer', minimum: 0 },
           overdue: { type: 'integer', minimum: 0 },
           upcoming: { type: 'integer', minimum: 0 },
           wearBased: { type: 'integer', minimum: 0 },
+          costs: {
+            type: 'array',
+            minItems: 3,
+            maxItems: 3,
+            items: {
+              type: 'object',
+              required: ['year', 'total'],
+              properties: {
+                year: { type: 'integer', minimum: 2000 },
+                total: { type: 'number', format: 'double', minimum: 0 },
+              },
+            },
+          },
           items: {
             type: 'object',
             required: ['today', 'overdue', 'upcoming', 'wearBased'],
@@ -1000,6 +1060,7 @@ export const openApiSchemas = {
   MaintenancePartResponse: success(reference('MaintenancePart')),
   MaintenancePartListResponse: success(reference('MaintenancePartPage')),
   StockMovementListResponse: success(reference('StockMovementPage')),
+  MaintenancePartPriceHistoryListResponse: success(reference('MaintenancePartPriceHistoryPage')),
   MaintenanceOrderListResponse: success(reference('MaintenanceOrderList')),
   MaintenanceHistoryResponse: success(reference('MaintenanceHistoryPage')),
   MaintenanceExecutionResponse: success(reference('MaintenanceExecution')),

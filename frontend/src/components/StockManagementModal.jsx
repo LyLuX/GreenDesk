@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import {
+  listMaintenancePartPriceHistory,
   listMaintenancePartStockMovements,
+  updateMaintenancePartPrice,
   updateMaintenancePartStock,
 } from '../api/maintenance.api.js';
 import {
@@ -11,7 +13,7 @@ import {
   stockOperationPresentation,
 } from '../inventory/stock-status.js';
 import useNotification from '../notifications/useNotification.js';
-import { formatDateTime } from '../utils/formatters.js';
+import { formatCurrency, formatDateTime } from '../utils/formatters.js';
 import Button from './Button.jsx';
 import Loader from './Loader.jsx';
 import Modal from './Modal.jsx';
@@ -21,6 +23,7 @@ const formatChange = (quantity, unit) => {
   if (!value) return '—';
   return `${value > 0 ? '+' : '−'}${formatStockQuantity(Math.abs(value), unit)}`;
 };
+const PRICE_OPERATION = 'price';
 
 /** Shared stock-operation dialog for a maintenance part. */
 export default function StockManagementModal({ part, onClose, onUpdated }) {
@@ -30,20 +33,22 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
   const [quantity, setQuantity] = useState('1');
   const [quantityOnHand, setQuantityOnHand] = useState('0');
   const [quantityOnOrder, setQuantityOnOrder] = useState('0');
+  const [unitPrice, setUnitPrice] = useState('0');
   const [movements, setMovements] = useState([]);
+  const [priceHistory, setPriceHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const loadMovements = useCallback(async (uuid, signal) => {
+  const loadHistory = useCallback(async (uuid, signal) => {
     setLoadingHistory(true);
     try {
-      const response = await listMaintenancePartStockMovements(
-        uuid,
-        { page: 1, limit: 10 },
-        signal,
-      );
-      setMovements(response.data.data.items ?? []);
+      const [movementResponse, priceResponse] = await Promise.all([
+        listMaintenancePartStockMovements(uuid, { page: 1, limit: 10 }, signal),
+        listMaintenancePartPriceHistory(uuid, { page: 1, limit: 10 }, signal),
+      ]);
+      setMovements(movementResponse.data.data.items ?? []);
+      setPriceHistory(priceResponse.data.data.items ?? []);
     } catch (requestError) {
       if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
     } finally {
@@ -56,41 +61,49 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
     setCurrentPart(part);
     setQuantityOnHand(String(part.quantityOnHand ?? 0));
     setQuantityOnOrder(String(part.quantityOnOrder ?? 0));
+    setUnitPrice(String(part.unitPrice ?? 0));
     setQuantity('1');
     setOperation(STOCK_OPERATIONS.ADJUST);
     setError('');
     const controller = new AbortController();
-    loadMovements(part.uuid, controller.signal);
+    loadHistory(part.uuid, controller.signal);
     return () => controller.abort();
-  }, [loadMovements, part]);
+  }, [loadHistory, part]);
 
   if (!part || !currentPart) return null;
 
   const submit = async (event) => {
     event.preventDefault();
     if (busy) return;
-    const payload =
-      operation === STOCK_OPERATIONS.ADJUST
-        ? {
-            operation,
-            quantityOnHand: Number(quantityOnHand),
-            quantityOnOrder: Number(quantityOnOrder),
-          }
-        : { operation, quantity: Number(quantity) };
     setBusy(true);
     setError('');
     try {
-      const response = await updateMaintenancePartStock(part.uuid, payload);
+      const response =
+        operation === PRICE_OPERATION
+          ? await updateMaintenancePartPrice(part.uuid, { unitPrice: Number(unitPrice) })
+          : await updateMaintenancePartStock(
+              part.uuid,
+              operation === STOCK_OPERATIONS.ADJUST
+                ? {
+                    operation,
+                    quantityOnHand: Number(quantityOnHand),
+                    quantityOnOrder: Number(quantityOnOrder),
+                  }
+                : { operation, quantity: Number(quantity) },
+            );
       const updatedPart = response.data.data;
       setCurrentPart(updatedPart);
       setQuantityOnHand(String(updatedPart.quantityOnHand));
       setQuantityOnOrder(String(updatedPart.quantityOnOrder));
+      setUnitPrice(String(updatedPart.unitPrice ?? 0));
       setQuantity('1');
       notify(
         'success',
-        `Mouvement de stock enregistré : ${stockOperationPresentation[operation]}.`,
+        operation === PRICE_OPERATION
+          ? 'Prix unitaire mis à jour.'
+          : `Mouvement de stock enregistré : ${stockOperationPresentation[operation]}.`,
       );
-      await loadMovements(part.uuid);
+      await loadHistory(part.uuid);
       await onUpdated?.(updatedPart);
     } catch (requestError) {
       setError(getApiErrorMessage(requestError));
@@ -117,6 +130,18 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
           <span>Commandée</span>
           <strong>{formatStockQuantity(currentPart.quantityOnOrder, currentPart.unit)}</strong>
         </div>
+        <div className="stock-summary-card">
+          <span>Coût cumulé utilisé</span>
+          <strong>{formatCurrency(currentPart.totalMaintenanceCost ?? 0)}</strong>
+        </div>
+        <div className="stock-summary-card">
+          <span>Valeur du stock actuel</span>
+          <strong>
+            {formatCurrency(
+              Number(currentPart.quantityOnHand ?? 0) * Number(currentPart.unitPrice ?? 0),
+            )}
+          </strong>
+        </div>
       </div>
 
       {error ? (
@@ -138,10 +163,25 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
             <option value={STOCK_OPERATIONS.RECEIVE} disabled={!currentPart.quantityOnOrder}>
               Réceptionner une commande
             </option>
+            <option value={PRICE_OPERATION}>Modifier le prix unitaire</option>
           </select>
         </label>
 
-        {operation === STOCK_OPERATIONS.ADJUST ? (
+        {operation === PRICE_OPERATION ? (
+          <label className="form-label mb-0 text-body-secondary">
+            Nouveau prix unitaire (€)
+            <input
+              className="form-control"
+              type="number"
+              min="0"
+              max="9999999999.99"
+              step="0.01"
+              required
+              value={unitPrice}
+              onChange={(event) => setUnitPrice(event.target.value)}
+            />
+          </label>
+        ) : operation === STOCK_OPERATIONS.ADJUST ? (
           <div className="row g-3">
             <div className="col-sm-6">
               <label className="form-label mb-0 text-body-secondary">
@@ -191,7 +231,11 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
         )}
 
         <Button type="submit" disabled={busy}>
-          {busy ? 'Enregistrement…' : 'Enregistrer le mouvement'}
+          {busy
+            ? 'Enregistrement…'
+            : operation === PRICE_OPERATION
+              ? 'Enregistrer le prix'
+              : 'Enregistrer le mouvement'}
         </Button>
       </form>
 
@@ -223,6 +267,40 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
         </div>
       ) : (
         <p className="text-body-secondary mb-0">Aucun mouvement enregistré.</p>
+      )}
+
+      <h3 className="h6 mt-4">Historique des prix</h3>
+      {loadingHistory ? (
+        <Loader label="Chargement de l’historique des prix" />
+      ) : priceHistory.length ? (
+        <div className="table-responsive">
+          <table className="table table-sm align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Ancien prix</th>
+                <th>Nouveau prix</th>
+                <th>Utilisateur</th>
+              </tr>
+            </thead>
+            <tbody>
+              {priceHistory.map((entry) => (
+                <tr key={entry.uuid}>
+                  <td>{formatDateTime(entry.createdAt)}</td>
+                  <td>{formatCurrency(entry.previousUnitPrice)}</td>
+                  <td>{formatCurrency(entry.unitPrice)}</td>
+                  <td>
+                    {entry.changedByUser
+                      ? `${entry.changedByUser.firstName} ${entry.changedByUser.lastName}`
+                      : 'Utilisateur supprimé'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="text-body-secondary mb-0">Aucune modification de prix enregistrée.</p>
       )}
     </Modal>
   );

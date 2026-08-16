@@ -929,6 +929,41 @@ export const openApiPaths = {
       },
     },
   },
+  '/maintenance/parts/{uuid}/price': {
+    parameters: [uuidParameter],
+    patch: {
+      operationId: 'updateMaintenancePartPrice',
+      tags: ['Maintenance'],
+      summary: 'Modifie le prix unitaire courant d’une pièce.',
+      description:
+        'Nécessite `maintenance.parts.update`. Le changement est transactionnel et conserve automatiquement l’ancien et le nouveau prix.',
+      security: secure,
+      requestBody: jsonBody('MaintenancePartPriceRequest'),
+      responses: {
+        200: jsonResponse('MaintenancePartResponse', 'Prix unitaire de la pièce mis à jour.'),
+        ...writeErrors,
+      },
+    },
+  },
+  '/maintenance/parts/{uuid}/price-history': {
+    parameters: [uuidParameter],
+    get: {
+      operationId: 'listMaintenancePartPriceHistory',
+      tags: ['Maintenance'],
+      summary: 'Liste l’historique immuable des prix unitaires d’une pièce.',
+      description:
+        'Nécessite `maintenance.parts.read`. Les changements sont retournés du plus récent au plus ancien.',
+      security: secure,
+      parameters: [pageParameter, limitParameter],
+      responses: {
+        200: jsonResponse(
+          'MaintenancePartPriceHistoryListResponse',
+          'Historique des prix retourné.',
+        ),
+        ...standardErrors,
+      },
+    },
+  },
   '/maintenance/order-list': {
     get: {
       operationId: 'getMaintenanceOrderList',
@@ -1089,7 +1124,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Enregistre un entretien réalisé et recalcule l’échéance.',
       description:
-        'Nécessite `maintenance.execute`. Le plan et son matériel doivent être actifs. La date du jour est utilisée par défaut et un plan selon l’usure reste sans échéance. `partsAction=consume` retire transactionnellement les pièces du stock. `partsAction=skip` nécessite également `maintenance.execute.skip_parts`, conserve le stock, exige un commentaire et trace les pièces non remplacées dans l’historique.',
+        'Nécessite `maintenance.execute`. Le plan et son matériel doivent être actifs. La date du jour est utilisée par défaut et un plan selon l’usure reste sans échéance. `partsAction=consume` retire transactionnellement les pièces du stock et fige leur prix pour le calcul des coûts historiques. `partsAction=skip` nécessite également `maintenance.execute.skip_parts`, conserve le stock, exige un commentaire et trace les pièces non remplacées dans l’historique.',
       security: secure,
       requestBody: jsonBody('MaintenanceExecuteRequest', false),
       responses: {
@@ -1119,7 +1154,7 @@ export const openApiPaths = {
       tags: ['Dashboard'],
       summary: 'Retourne les indicateurs autorisés du tableau de bord.',
       description:
-        'Nécessite `dashboard.read`. Les indicateurs de maintenance sont inclus uniquement avec `maintenance.read` ; leurs listes `today`, `upcoming`, `overdue` et `wearBased` correspondent exactement aux compteurs affichés. Alias historique déprécié : `/api/dashboard/summary`.',
+        'Nécessite `dashboard.read`. Les indicateurs et coûts annuels de maintenance sont inclus uniquement avec `maintenance.read` ; les coûts correspondent aux pièces réellement consommées pendant l’année de réalisation. Les listes `today`, `upcoming`, `overdue` et `wearBased` correspondent exactement aux compteurs affichés. Alias historique déprécié : `/api/dashboard/summary`.',
       security: secure,
       responses: {
         200: jsonResponse('DashboardResponse', 'Synthèse retournée.'),

@@ -12,6 +12,10 @@ export default class DashboardService {
   }
   async getSummary({ includeMaintenance = true } = {}) {
     const counts = await this.repository.getCounts({ includeMaintenance });
+    const currentYear = new Date().getUTCFullYear();
+    const maintenanceCostByYear = new Map(
+      (counts.maintenanceCosts ?? []).map(({ year, total }) => [Number(year), Number(total)]),
+    );
     const maintenanceItems = (counts.maintenanceTasks ?? []).map((task) =>
       this.maintenanceService.toPublic(task),
     );
@@ -44,6 +48,10 @@ export default class DashboardService {
         overdue: maintenance.overdue.length,
         upcoming: maintenance.upcoming.length,
         wearBased: maintenance.wearBased.length,
+        costs: Array.from({ length: 3 }, (_value, index) => ({
+          year: currentYear - index,
+          total: maintenanceCostByYear.get(currentYear - index) ?? 0,
+        })),
         items: maintenance,
       };
     return summary;

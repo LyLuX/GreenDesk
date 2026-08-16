@@ -1,13 +1,16 @@
 import { Op } from 'sequelize';
 
+import sequelize from '../../../config/database.js';
 import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 import { normalizePagination } from '../../../core/utils/pagination.js';
 import MaintenanceTask from '../model/maintenance-task.model.js';
 import MaintenanceOperation from '../model/maintenance-operation.model.js';
 import MaintenancePart from '../model/maintenance-part.model.js';
+import MaintenancePartPriceHistory from '../model/maintenance-part-price-history.model.js';
 import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
 import Supplier from '../../suppliers/model/supplier.model.js';
+import User from '../../users/model/user.model.js';
 import { STOCK_STATUSES } from '../../../core/inventory/stock-status.js';
 
 const manufacturerInclude = {
@@ -21,6 +24,18 @@ const supplierInclude = {
   attributes: ['uuid', 'name'],
 };
 const partDirectoryIncludes = [manufacturerInclude, supplierInclude];
+const partCostAttributes = {
+  include: [
+    [
+      sequelize.literal(`(
+        SELECT COALESCE(SUM(usage_cost.total_cost), 0)
+        FROM maintenance_part_usages AS usage_cost
+        WHERE usage_cost.maintenance_part_id = MaintenancePart.id
+      )`),
+      'totalMaintenanceCost',
+    ],
+  ],
+};
 
 /** Persistence operations for reusable maintenance operations and exact parts. */
 export default class MaintenanceCatalogRepository extends TransactionalRepository {
@@ -101,6 +116,7 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
     }
     return MaintenancePart.findAndCountAll({
       where,
+      attributes: partCostAttributes,
       include: partDirectoryIncludes,
       order: [
         ['name', 'ASC'],
@@ -116,6 +132,7 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
   findPartByUuid(uuid, { transaction, withDeleted = false, lock = false } = {}) {
     return MaintenancePart.findOne({
       where: { uuid },
+      attributes: partCostAttributes,
       paranoid: !withDeleted,
       include: partDirectoryIncludes,
       transaction,
@@ -162,6 +179,27 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
 
   updatePart(part, values, { transaction } = {}) {
     return part.update(values, { transaction });
+  }
+
+  createPartPriceHistory(values, { transaction } = {}) {
+    return MaintenancePartPriceHistory.create(values, { transaction });
+  }
+
+  findPartPriceHistory(maintenancePartId, { page, limit } = {}) {
+    const pagination = normalizePagination({ page, limit });
+    return MaintenancePartPriceHistory.findAndCountAll({
+      where: { maintenancePartId },
+      include: [
+        {
+          model: User,
+          as: 'changedByUser',
+          attributes: ['uuid', 'firstName', 'lastName'],
+        },
+      ],
+      order: [['created_at', 'DESC']],
+      limit: pagination.limit,
+      offset: pagination.offset,
+    });
   }
 
   restorePart(part, { transaction } = {}) {

@@ -6,6 +6,7 @@ import Material from '../../materials/model/material.model.js';
 import MaintenanceHistory from '../model/maintenance-history.model.js';
 import MaintenanceOperation from '../model/maintenance-operation.model.js';
 import MaintenancePart from '../model/maintenance-part.model.js';
+import MaintenancePartUsage from '../model/maintenance-part-usage.model.js';
 import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
 import Supplier from '../../suppliers/model/supplier.model.js';
 import MaintenanceTask from '../model/maintenance-task.model.js';
@@ -34,6 +35,7 @@ const partsInclude = {
     'reference',
     'supplierReference',
     'unit',
+    'unitPrice',
     'quantityOnHand',
     'quantityOnOrder',
     'active',
@@ -181,6 +183,10 @@ export default class MaintenanceRepository extends TransactionalRepository {
   }
   async createHistory(values, options = {}) {
     return MaintenanceHistory.create(values, options);
+  }
+  async createPartUsages(values, options = {}) {
+    if (!values.length) return [];
+    return MaintenancePartUsage.bulkCreate(values, options);
   }
   async replaceParts(taskId, parts, options = {}) {
     await MaintenanceTaskPart.destroy({

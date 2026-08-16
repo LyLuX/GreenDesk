@@ -15,7 +15,9 @@ describe('MaintenanceRepository order list', () => {
 
     const query = findAll.mock.calls[0][0];
     const parts = query.include.find((item) => item.as === 'parts');
-    expect(parts.attributes).toEqual(expect.arrayContaining(['quantityOnHand', 'quantityOnOrder']));
+    expect(parts.attributes).toEqual(
+      expect.arrayContaining(['quantityOnHand', 'quantityOnOrder', 'unitPrice']),
+    );
   });
 
   it('keeps calendar horizons separate from wear-based plans', async () => {

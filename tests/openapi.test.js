@@ -159,6 +159,8 @@ describe('OpenAPI contract', () => {
         manufacturerUuid: expect.any(Object),
         supplierUuid: expect.any(Object),
         supplier: expect.any(Object),
+        unitPrice: expect.any(Object),
+        totalMaintenanceCost: expect.any(Object),
       }),
     );
     expect(swaggerSpec.paths).toHaveProperty('/manufacturers');
@@ -166,6 +168,8 @@ describe('OpenAPI contract', () => {
     expect(swaggerSpec.paths).not.toHaveProperty('/maintenance/manufacturers');
     expect(swaggerSpec.paths).not.toHaveProperty('/maintenance/suppliers');
     expect(swaggerSpec.paths).toHaveProperty('/maintenance/order-list');
+    expect(swaggerSpec.paths).toHaveProperty('/maintenance/parts/{uuid}/price');
+    expect(swaggerSpec.paths).toHaveProperty('/maintenance/parts/{uuid}/price-history');
     expect(swaggerSpec.paths['/materials/options'].get.responses[200]).toBeDefined();
     expect(swaggerSpec.components.schemas.MaterialOption.properties).toEqual({
       uuid: expect.any(Object),
@@ -186,6 +190,9 @@ describe('OpenAPI contract', () => {
         overdue: expect.any(Object),
         wearBased: expect.any(Object),
       }),
+    );
+    expect(dashboardMaintenance.costs.items.properties).toEqual(
+      expect.objectContaining({ year: expect.any(Object), total: expect.any(Object) }),
     );
     expect(
       swaggerSpec.paths['/maintenance/order-list'].get.parameters.find(

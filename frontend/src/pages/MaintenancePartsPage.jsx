@@ -16,6 +16,7 @@ import StockManagementModal from '../components/StockManagementModal.jsx';
 import { formatStockQuantity, stockStatusOptions } from '../inventory/stock-status.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import { extractPageItems } from '../utils/pagination.js';
+import { formatCurrency } from '../utils/formatters.js';
 import MaintenanceCatalogPage from './MaintenanceCatalogPage.jsx';
 
 const directoryOptions = (items = []) =>
@@ -134,6 +135,11 @@ export default function MaintenancePartsPage() {
             key: 'quantityOnHand',
             label: 'En stock',
             render: (value, part) => formatStockQuantity(value, part.unit),
+          },
+          {
+            key: 'unitPrice',
+            label: 'Prix unitaire',
+            render: (value) => formatCurrency(value),
           },
         ]}
         listItems={listMaintenanceParts}

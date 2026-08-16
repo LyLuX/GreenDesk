@@ -1,5 +1,6 @@
 import { body, param, query } from 'express-validator';
 import { paginationValidator } from '../../../core/validators/pagination.validator.js';
+import { MAX_UNIT_PRICE } from '../../../core/utils/money.js';
 import { STOCK_STATUS_VALUES } from '../../../core/inventory/stock-status.js';
 import {
   MAX_STOCK_QUANTITY,
@@ -135,3 +136,13 @@ export const updatePartStockValidator = [
   }),
 ];
 export const stockMovementListValidator = [uuid, ...paginationValidator];
+export const updatePartPriceValidator = [
+  uuid,
+  body('unitPrice')
+    .exists()
+    .isFloat({ min: 0, max: MAX_UNIT_PRICE })
+    .custom((value) => /^\d+(?:\.\d{1,2})?$/.test(String(value)))
+    .withMessage('Le prix unitaire doit comporter au maximum deux décimales.')
+    .toFloat(),
+];
+export const priceHistoryListValidator = [uuid, ...paginationValidator];

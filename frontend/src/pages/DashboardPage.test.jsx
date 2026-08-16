@@ -16,6 +16,11 @@ const { getDashboardSummary, hasPermission } = vi.hoisted(() => ({
           overdue: 1,
           upcoming: 1,
           wearBased: 1,
+          costs: [
+            { year: 2026, total: 125.5 },
+            { year: 2025, total: 80 },
+            { year: 2024, total: 20 },
+          ],
           items: {
             today: [
               {
@@ -97,17 +102,24 @@ describe('DashboardPage', () => {
     expect(formatAverageAge(0)).toBe('0 mois');
   });
 
-  it('distributes cards across the three requested dashboard rows', async () => {
+  it('places annual maintenance costs above the maintenance deadline cards', async () => {
     renderPage();
 
     const inventory = await screen.findByRole('region', {
       name: 'Matériels et catégories',
     });
     const fleet = screen.getByRole('region', { name: 'Valeur du parc' });
+    const maintenanceCosts = screen.getByRole('region', { name: 'Coûts de maintenance' });
     const maintenance = screen.getByRole('region', { name: 'Entretien' });
 
     expect(within(inventory).getAllByRole('article')).toHaveLength(5);
     expect(within(fleet).getAllByRole('article')).toHaveLength(3);
+    expect(within(maintenanceCosts).getAllByRole('article')).toHaveLength(3);
+    expect(within(maintenanceCosts).getByText('Dépenses de maintenance — 2026')).toBeVisible();
+    expect(within(maintenanceCosts).getByText(/125,50/)).toBeVisible();
+    expect(
+      maintenanceCosts.compareDocumentPosition(maintenance) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     const maintenanceCards = within(maintenance).getAllByRole('article');
     expect(maintenanceCards).toHaveLength(4);
     expect(
@@ -215,6 +227,7 @@ describe('DashboardPage', () => {
     renderPage();
 
     expect(await screen.findByRole('region', { name: 'Matériels et catégories' })).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'Coûts de maintenance' })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Entretien' })).not.toBeInTheDocument();
     expect(hasPermission).toHaveBeenCalledWith('maintenance.read');
   });

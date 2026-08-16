@@ -13,7 +13,9 @@ const mocks = vi.hoisted(() => ({
   createPart: vi.fn(),
   updatePart: vi.fn(),
   updatePartStock: vi.fn(),
+  updatePartPrice: vi.fn(),
   listPartStockMovements: vi.fn(),
+  listPartPriceHistory: vi.fn(),
   deletePart: vi.fn(),
   notify: vi.fn(),
   hasPermission: vi.fn(),
@@ -28,7 +30,9 @@ vi.mock('../api/maintenance.api.js', () => ({
   createMaintenancePart: mocks.createPart,
   updateMaintenancePart: mocks.updatePart,
   updateMaintenancePartStock: mocks.updatePartStock,
+  updateMaintenancePartPrice: mocks.updatePartPrice,
   listMaintenancePartStockMovements: mocks.listPartStockMovements,
+  listMaintenancePartPriceHistory: mocks.listPartPriceHistory,
   deleteMaintenancePart: mocks.deletePart,
 }));
 vi.mock('../api/reference.api.js', () => ({
@@ -92,6 +96,8 @@ describe('dedicated maintenance catalogue pages', () => {
             stockQuantity: 0,
             quantityOnHand: 0,
             quantityOnOrder: 0,
+            unitPrice: 10,
+            totalMaintenanceCost: 25,
             active: true,
           },
         ],
@@ -127,6 +133,9 @@ describe('dedicated maintenance catalogue pages', () => {
     mocks.listPartStockMovements.mockResolvedValue({
       data: { data: { items: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 1 } } },
     });
+    mocks.listPartPriceHistory.mockResolvedValue({
+      data: { data: { items: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 1 } } },
+    });
     mocks.updatePartStock.mockResolvedValue({
       data: {
         data: {
@@ -135,7 +144,23 @@ describe('dedicated maintenance catalogue pages', () => {
           unit: 'pièce',
           quantityOnHand: 2,
           quantityOnOrder: 3,
+          unitPrice: 10,
+          totalMaintenanceCost: 25,
           stockStatus: 'inStock',
+        },
+      },
+    });
+    mocks.updatePartPrice.mockResolvedValue({
+      data: {
+        data: {
+          uuid: 'part-uuid',
+          name: 'Bougie',
+          unit: 'pièce',
+          quantityOnHand: 0,
+          quantityOnOrder: 0,
+          unitPrice: 12.5,
+          totalMaintenanceCost: 25,
+          stockStatus: 'toOrder',
         },
       },
     });
@@ -198,6 +223,8 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(screen.getByRole('columnheader', { name: 'Actions' })).toBeVisible();
     expect(screen.queryByRole('columnheader', { name: 'Fournisseur' })).not.toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'Commandée' })).not.toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Prix unitaire' })).toBeVisible();
+    expect(screen.getByText(/10,00/)).toBeVisible();
     expect(screen.queryByRole('columnheader', { name: 'Catalogue' })).not.toBeInTheDocument();
     expect(
       screen.queryByRole('columnheader', { name: 'Référence fournisseur' }),
@@ -263,6 +290,34 @@ describe('dedicated maintenance catalogue pages', () => {
       'success',
       'Mouvement de stock enregistré : Ajustement.',
     );
+  });
+
+  it('shows separate cost cards and changes the unit price without an operation label', async () => {
+    const user = userEvent.setup();
+    render(<MaintenancePartsPage />);
+
+    await user.click(await screen.findByRole('button', { name: 'Gérer le stock de Bougie' }));
+    const stockDialog = screen.getByRole('dialog');
+    const cards = stockDialog.querySelectorAll('.stock-summary-card');
+    expect(cards).toHaveLength(4);
+    expect(
+      within(stockDialog).getByText('Coût cumulé utilisé').nextElementSibling,
+    ).toHaveTextContent('25,00 €');
+    expect(
+      within(stockDialog).getByText('Valeur du stock actuel').nextElementSibling,
+    ).toHaveTextContent('0,00 €');
+
+    await user.selectOptions(screen.getByLabelText('Opération'), 'price');
+    expect(screen.getByLabelText('Nouveau prix unitaire (€)')).toHaveValue(10);
+    expect(screen.queryByLabelText('Libellé de l’opération')).not.toBeInTheDocument();
+    await user.clear(screen.getByLabelText('Nouveau prix unitaire (€)'));
+    await user.type(screen.getByLabelText('Nouveau prix unitaire (€)'), '12.5');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer le prix' }));
+
+    await waitFor(() =>
+      expect(mocks.updatePartPrice).toHaveBeenCalledWith('part-uuid', { unitPrice: 12.5 }),
+    );
+    expect(mocks.notify).toHaveBeenCalledWith('success', 'Prix unitaire mis à jour.');
   });
 
   it('reports that no designation is proposed when the database is empty', async () => {
