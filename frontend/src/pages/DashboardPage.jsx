@@ -16,18 +16,18 @@ import { formatCurrency, formatDate } from '../utils/formatters.js';
 
 const maintenanceCards = [
   {
-    key: 'today',
-    label: 'Entretiens aujourd’hui',
-    modalTitle: 'Entretiens à faire aujourd’hui',
-    status: 'dueToday',
-    className: 'maintenance-due-today',
-  },
-  {
     key: 'upcoming',
     label: 'Entretiens sous 30 jours',
     modalTitle: 'Entretiens sous 30 jours',
     status: 'upcoming',
     className: 'maintenance-upcoming',
+  },
+  {
+    key: 'today',
+    label: 'Entretiens aujourd’hui',
+    modalTitle: 'Entretiens à faire aujourd’hui',
+    status: 'dueToday',
+    className: 'maintenance-due-today',
   },
   {
     key: 'overdue',

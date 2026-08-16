@@ -108,7 +108,16 @@ describe('DashboardPage', () => {
 
     expect(within(inventory).getAllByRole('article')).toHaveLength(5);
     expect(within(fleet).getAllByRole('article')).toHaveLength(3);
-    expect(within(maintenance).getAllByRole('article')).toHaveLength(4);
+    const maintenanceCards = within(maintenance).getAllByRole('article');
+    expect(maintenanceCards).toHaveLength(4);
+    expect(
+      maintenanceCards.map((card) => card.querySelector('.metric-label')?.textContent),
+    ).toEqual([
+      'Entretiens sous 30 jours',
+      'Entretiens aujourd’hui',
+      'Entretiens en retard',
+      'Entretien selon usure',
+    ]);
     expect(within(maintenance).getByText('Entretiens aujourd’hui').parentElement).toHaveClass(
       'maintenance-due-today',
     );

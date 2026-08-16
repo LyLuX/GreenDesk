@@ -777,7 +777,7 @@ a:hover {
 }
 
 .metric-card.maintenance-wear-based {
-  border-left-color: #6d5a91;
+  border-left-color: var(--bs-indigo);
 }
 
 .metric-card.maintenance-overdue-alert {
