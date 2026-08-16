@@ -8,7 +8,11 @@ import { normalizePagination, paginatedResult } from '../../../core/utils/pagina
 import MaterialService from '../../materials/service/material.service.js';
 import MaintenanceCatalogRepository from '../repository/maintenance-catalog.repository.js';
 import MaintenanceRepository from '../repository/maintenance.repository.js';
-import { MAINTENANCE_EXECUTION_TYPES, MAINTENANCE_PART_ACTIONS } from '../maintenance.constants.js';
+import {
+  MAINTENANCE_DEADLINE_STATUSES,
+  MAINTENANCE_EXECUTION_TYPES,
+  MAINTENANCE_PART_ACTIONS,
+} from '../maintenance.constants.js';
 import {
   addDaysDateOnly,
   getDeadlineDetails,
@@ -47,8 +51,14 @@ export default class MaintenanceService {
   }
   calculateDeadlines(values, current = {}) {
     const intervalDays = has(values, 'intervalDays') ? values.intervalDays : current.intervalDays;
-    if (!Number(intervalDays))
+    if (intervalDays === undefined || intervalDays === null || intervalDays === '')
       throw new AppError('Un intervalle en jours doit être renseigné.', HTTP_STATUS.BAD_REQUEST);
+    const normalizedInterval = Number(intervalDays);
+    if (!Number.isInteger(normalizedInterval) || normalizedInterval < 0)
+      throw new AppError(
+        'L’intervalle en jours doit être un entier positif ou nul.',
+        HTTP_STATUS.BAD_REQUEST,
+      );
     const lastMaintenanceDate = has(values, 'lastMaintenanceDate')
       ? values.lastMaintenanceDate
       : current.lastMaintenanceDate;
@@ -57,8 +67,9 @@ export default class MaintenanceService {
         'La date du dernier entretien est requise pour un intervalle en jours.',
         HTTP_STATUS.BAD_REQUEST,
       );
+    if (normalizedInterval === 0) return { nextMaintenanceDate: null };
     return {
-      nextMaintenanceDate: addDaysDateOnly(lastMaintenanceDate, intervalDays),
+      nextMaintenanceDate: addDaysDateOnly(lastMaintenanceDate, normalizedInterval),
     };
   }
   async create(values, userId) {
@@ -318,17 +329,21 @@ export default class MaintenanceService {
       this.toHistory(history),
     );
   }
-  async getOrderList({ horizonDays = 30, includeOverdue = true, status } = {}) {
+  async getOrderList({
+    horizonDays = 30,
+    includeOverdue = true,
+    includeWearBased = false,
+    status,
+  } = {}) {
     const normalizedHorizon = Math.min(Math.max(Number(horizonDays) || 0, 0), 365);
-    const normalizedStatus = ['upToDate', 'upcoming', 'dueToday', 'overdue'].includes(status)
-      ? status
-      : undefined;
+    const normalizedStatus = MAINTENANCE_DEADLINE_STATUSES.includes(status) ? status : undefined;
     const today = todayDateOnly();
     const through = addDaysDateOnly(today, normalizedHorizon);
     const tasks = await this.repository.findForOrderList({
       from: includeOverdue === false ? today : undefined,
       through,
       status: normalizedStatus,
+      includeWearBased: includeWearBased === true,
     });
     const grouped = new Map();
     for (const task of tasks.map((item) => this.toPublic(item))) {
@@ -355,6 +370,7 @@ export default class MaintenanceService {
           title: task.title,
           material: task.material,
           nextMaintenanceDate: task.nextMaintenanceDate,
+          wearBased: task.status === 'wearBased',
           quantity: Number(part.quantity),
         });
         grouped.set(part.uuid, current);
@@ -375,6 +391,7 @@ export default class MaintenanceService {
     return {
       horizonDays: normalizedHorizon,
       includeOverdue: includeOverdue !== false,
+      includeWearBased: includeWearBased === true,
       status: normalizedStatus ?? null,
       from: today,
       through,

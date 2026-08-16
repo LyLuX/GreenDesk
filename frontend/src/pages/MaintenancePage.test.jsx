@@ -249,7 +249,12 @@ describe('MaintenancePage', () => {
     expect(within(dialog).getByLabelText('Inclure les plans en retard')).not.toBeChecked();
     await waitFor(() =>
       expect(mocks.getOrderList).toHaveBeenCalledWith(
-        { status: 'upcoming', horizonDays: 30, includeOverdue: false },
+        {
+          status: 'upcoming',
+          horizonDays: 30,
+          includeOverdue: false,
+          includeWearBased: false,
+        },
         expect.any(AbortSignal),
       ),
     );
@@ -257,7 +262,7 @@ describe('MaintenancePage', () => {
     await user.selectOptions(within(dialog).getByLabelText('Échéance'), '60');
     await waitFor(() =>
       expect(mocks.getOrderList).toHaveBeenLastCalledWith(
-        { horizonDays: 60, includeOverdue: false },
+        { horizonDays: 60, includeOverdue: false, includeWearBased: false },
         expect.any(AbortSignal),
       ),
     );
@@ -450,6 +455,73 @@ describe('MaintenancePage', () => {
       ),
     );
     expect(mocks.createMaintenance.mock.calls[0][0]).not.toHaveProperty('title');
+  });
+
+  it('creates a wear-based plan with a zero interval', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Créer un plan' }));
+    const dialog = screen.getByRole('dialog', { name: 'Créer un plan' });
+    const wearBased = within(dialog).getByRole('checkbox', {
+      name: 'Intervalle de changement suivant l’usure',
+    });
+    const interval = within(dialog).getByLabelText('Intervalle (jours)');
+    expect(wearBased).not.toBeChecked();
+    expect(interval).toBeEnabled();
+
+    await user.selectOptions(within(dialog).getByLabelText('Matériel'), 'material-uuid');
+    await user.selectOptions(within(dialog).getByLabelText('Opération'), 'operation-uuid');
+    await user.type(within(dialog).getByLabelText('Dernier entretien'), '2026-07-01');
+    await user.click(wearBased);
+    expect(interval).toBeDisabled();
+    await user.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
+
+    await waitFor(() =>
+      expect(mocks.createMaintenance).toHaveBeenCalledWith(
+        expect.objectContaining({ intervalDays: 0, lastMaintenanceDate: '2026-07-01' }),
+      ),
+    );
+  });
+
+  it('displays wear-based plans without a calendar deadline', async () => {
+    const user = userEvent.setup();
+    mocks.listMaintenance.mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'wear-based-uuid',
+              title: 'Contrôle de lame',
+              active: true,
+              intervalDays: 0,
+              maintenanceType: 'inspection',
+              priority: 'normal',
+              status: 'wearBased',
+              nextMaintenanceDate: null,
+              remainingDays: null,
+              material: { name: 'Tondeuse' },
+            },
+          ],
+          pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
+        },
+      },
+    });
+    renderPage('/maintenance?status=wearBased');
+
+    expect(await screen.findByText('Contrôle de lame')).toBeVisible();
+    expect(screen.getByText('Selon l’usure', { selector: 'td' })).toBeVisible();
+    expect(screen.getByText('Selon l’usure', { selector: 'span' })).toHaveClass(
+      'maintenance-wear-based',
+    );
+    expect(screen.getByLabelText('Filtrer par échéance')).toHaveValue('wearBased');
+
+    await user.click(screen.getByRole('button', { name: 'Modifier Contrôle de lame' }));
+    expect(
+      within(screen.getByRole('dialog', { name: 'Modifier le plan' })).getByRole('checkbox', {
+        name: 'Intervalle de changement suivant l’usure',
+      }),
+    ).toBeChecked();
   });
 
   it('executes maintenance with its parts from the existing table action', async () => {

@@ -149,6 +149,9 @@ describe('OpenAPI contract', () => {
     expect(material.purchasePrice.type).toBe('string');
     expect(maintenance).toHaveProperty('intervalDays');
     expect(maintenance).toHaveProperty('nextMaintenanceDate');
+    expect(maintenance.intervalDays.minimum).toBe(0);
+    expect(maintenance.nextMaintenanceDate.nullable).toBe(true);
+    expect(maintenance.status.enum).toContain('wearBased');
     expect(maintenance).toHaveProperty('operation');
     expect(maintenance).toHaveProperty('parts');
     expect(swaggerSpec.components.schemas.MaintenancePart.properties).toEqual(
@@ -181,8 +184,14 @@ describe('OpenAPI contract', () => {
         today: expect.any(Object),
         upcoming: expect.any(Object),
         overdue: expect.any(Object),
+        wearBased: expect.any(Object),
       }),
     );
+    expect(
+      swaggerSpec.paths['/maintenance/order-list'].get.parameters.find(
+        ({ name }) => name === 'includeWearBased',
+      )?.schema,
+    ).toEqual(expect.objectContaining({ type: 'boolean', default: false }));
   });
 
   it('keeps manufacturers limited to their useful business fields', () => {

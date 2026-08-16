@@ -19,6 +19,7 @@ describe('DashboardService', () => {
           { uuid: 'overdue-1', status: 'overdue' },
           { uuid: 'overdue-2', status: 'overdue' },
           { uuid: 'upcoming', status: 'upcoming' },
+          { uuid: 'wear-based', status: 'wearBased' },
         ],
       }),
     };
@@ -36,6 +37,7 @@ describe('DashboardService', () => {
         today: 1,
         overdue: 2,
         upcoming: 1,
+        wearBased: 1,
         items: {
           today: [{ uuid: 'today', status: 'dueToday' }],
           overdue: [
@@ -43,10 +45,11 @@ describe('DashboardService', () => {
             { uuid: 'overdue-2', status: 'overdue' },
           ],
           upcoming: [{ uuid: 'upcoming', status: 'upcoming' }],
+          wearBased: [{ uuid: 'wear-based', status: 'wearBased' }],
         },
       },
     });
-    expect(maintenanceService.toPublic).toHaveBeenCalledTimes(4);
+    expect(maintenanceService.toPublic).toHaveBeenCalledTimes(5);
     expect(repository.getCounts).toHaveBeenCalledWith({ includeMaintenance: true });
   });
 

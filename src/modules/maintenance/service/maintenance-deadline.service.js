@@ -25,7 +25,8 @@ export const differenceInDays = (from, to) =>
   Math.round((parseDateOnly(to) - parseDateOnly(from)) / 86400000);
 
 /** Determines a maintenance status from its calendar deadline. */
-export function getDeadlineDetails({ nextMaintenanceDate, today = todayDateOnly() }) {
+export function getDeadlineDetails({ intervalDays, nextMaintenanceDate, today = todayDateOnly() }) {
+  if (Number(intervalDays) === 0) return { status: 'wearBased', remainingDays: null };
   const remainingDays = nextMaintenanceDate ? differenceInDays(today, nextMaintenanceDate) : null;
   const status =
     remainingDays === null

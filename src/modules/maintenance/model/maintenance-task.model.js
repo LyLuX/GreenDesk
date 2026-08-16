@@ -31,7 +31,7 @@ MaintenanceTask.init(
     nextMaintenanceDate: {
       type: DataTypes.DATEONLY,
       field: 'next_maintenance_date',
-      allowNull: false,
+      allowNull: true,
     },
     priority: {
       type: DataTypes.ENUM(...MAINTENANCE_PRIORITIES),

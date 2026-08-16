@@ -600,7 +600,11 @@ export default function MaterialDetailPage() {
                   {maintenance.map((task) => (
                     <tr key={task.uuid}>
                       <td>{task.title}</td>
-                      <td>{formatDate(task.nextMaintenanceDate)}</td>
+                      <td>
+                        {task.status === 'wearBased'
+                          ? 'Selon l’usure'
+                          : formatDate(task.nextMaintenanceDate)}
+                      </td>
                       <td>
                         <span
                           className={`status-badge ${maintenanceStatusClasses[task.status] ?? ''}`}

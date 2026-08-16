@@ -1,4 +1,5 @@
 import { jest } from '@jest/globals';
+import { Op } from 'sequelize';
 
 import MaintenanceTask from '../src/modules/maintenance/model/maintenance-task.model.js';
 import MaintenanceRepository from '../src/modules/maintenance/repository/maintenance.repository.js';
@@ -15,5 +16,32 @@ describe('MaintenanceRepository order list', () => {
     const query = findAll.mock.calls[0][0];
     const parts = query.include.find((item) => item.as === 'parts');
     expect(parts.attributes).toEqual(expect.arrayContaining(['quantityOnHand', 'quantityOnOrder']));
+  });
+
+  it('adds wear-based plans independently from the selected calendar horizon', async () => {
+    const findAll = jest.spyOn(MaintenanceTask, 'findAll').mockResolvedValue([]);
+    const repository = new MaintenanceRepository();
+
+    await repository.findForOrderList({
+      through: '2026-09-08',
+      includeWearBased: true,
+    });
+
+    const query = findAll.mock.calls[0][0];
+    expect(query.where[Op.or]).toEqual(
+      expect.arrayContaining([expect.objectContaining({ intervalDays: 0 })]),
+    );
+  });
+
+  it('filters the maintenance list to wear-based plans', async () => {
+    const findAndCountAll = jest
+      .spyOn(MaintenanceTask, 'findAndCountAll')
+      .mockResolvedValue({ count: 0, rows: [] });
+    const repository = new MaintenanceRepository();
+
+    await repository.findAll({ status: 'wearBased' });
+
+    const query = findAndCountAll.mock.calls[0][0];
+    expect(query.where[Op.and][0].val).toContain('MaintenanceTask.interval_days = 0');
   });
 });

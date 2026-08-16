@@ -32,4 +32,10 @@ describe('maintenance deadline rules', () => {
       remainingDays: 39,
     });
   });
+  it('identifies wear-based maintenance without a calendar deadline', () => {
+    expect(getDeadlineDetails({ intervalDays: 0, nextMaintenanceDate: null, today })).toEqual({
+      status: 'wearBased',
+      remainingDays: null,
+    });
+  });
 });

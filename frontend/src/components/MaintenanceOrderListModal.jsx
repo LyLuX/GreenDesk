@@ -24,15 +24,45 @@ const horizonOptions = [
   { value: 365, label: 'Sous un an' },
 ];
 
-const defaultOrderListFilters = Object.freeze({ horizonDays: 30, includeOverdue: true });
+const defaultOrderListFilters = Object.freeze({
+  horizonDays: 30,
+  includeOverdue: true,
+  includeWearBased: false,
+});
 
 /** Converts the maintenance page deadline filter into the matching order-list period. */
 export const getOrderListFiltersForDeadline = (deadlineStatus) => {
   const filtersByDeadline = {
-    overdue: { status: 'overdue', horizonDays: 0, includeOverdue: true },
-    dueToday: { status: 'dueToday', horizonDays: 0, includeOverdue: false },
-    upcoming: { status: 'upcoming', horizonDays: 30, includeOverdue: false },
-    upToDate: { status: 'upToDate', horizonDays: 365, includeOverdue: false },
+    overdue: {
+      status: 'overdue',
+      horizonDays: 0,
+      includeOverdue: true,
+      includeWearBased: false,
+    },
+    dueToday: {
+      status: 'dueToday',
+      horizonDays: 0,
+      includeOverdue: false,
+      includeWearBased: false,
+    },
+    upcoming: {
+      status: 'upcoming',
+      horizonDays: 30,
+      includeOverdue: false,
+      includeWearBased: false,
+    },
+    upToDate: {
+      status: 'upToDate',
+      horizonDays: 365,
+      includeOverdue: false,
+      includeWearBased: false,
+    },
+    wearBased: {
+      status: 'wearBased',
+      horizonDays: 30,
+      includeOverdue: false,
+      includeWearBased: true,
+    },
   };
   return filtersByDeadline[deadlineStatus] ?? { ...defaultOrderListFilters };
 };
@@ -127,6 +157,11 @@ function OrderPartsTable({
                         {part.plans.map((plan) => (
                           <li key={plan.maintenanceUuid}>
                             {plan.material?.name} — {plan.quantity}
+                            {plan.wearBased ? (
+                              <span className="status-badge maintenance-wear-based ms-2">
+                                Selon l’usure
+                              </span>
+                            ) : null}
                           </li>
                         ))}
                       </ul>
@@ -364,14 +399,31 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
               />
               <span className="form-check-label">Inclure les plans en retard</span>
             </label>
-            <Button type="button" onClick={() => load()} disabled={loading}>
-              Actualiser
-            </Button>
+            <label className="form-check mb-2">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                checked={filters.includeWearBased}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    status: undefined,
+                    includeWearBased: event.target.checked,
+                  }))
+                }
+              />
+              <span className="form-check-label">Inclure les plans selon usure</span>
+            </label>
           </div>
           {error && (
-            <p role="alert" className="alert alert-danger">
-              {error}
-            </p>
+            <div className="alert alert-danger d-flex align-items-center justify-content-between gap-3">
+              <p role="alert" className="mb-0">
+                {error}
+              </p>
+              <Button type="button" className="btn-sm" onClick={() => load()} disabled={loading}>
+                Réessayer
+              </Button>
+            </div>
           )}
           <div className="maintenance-order-list-scroll">
             {loading && !data ? (

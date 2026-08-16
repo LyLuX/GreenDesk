@@ -30,6 +30,15 @@ describe('MaintenanceService', () => {
     ).toEqual({ nextMaintenanceDate: '2026-07-31' });
   });
 
+  it('keeps wear-based maintenance without a calendar deadline', () => {
+    expect(
+      createService().calculateDeadlines({
+        intervalDays: 0,
+        lastMaintenanceDate: '2026-07-01',
+      }),
+    ).toEqual({ nextMaintenanceDate: null });
+  });
+
   it('requires a positive interval in days', () => {
     expect(() => createService().calculateDeadlines({})).toThrow(
       'Un intervalle en jours doit être renseigné.',
@@ -243,6 +252,50 @@ describe('MaintenanceService', () => {
     expect(result.status).toBe('overdue');
   });
 
+  it('optionally includes wear-based plans in the order list', async () => {
+    const repository = { findForOrderList: jest.fn().mockResolvedValue([]) };
+    const service = new MaintenanceService(repository, {}, {}, {});
+
+    const result = await service.getOrderList({ includeWearBased: true });
+
+    expect(repository.findForOrderList).toHaveBeenCalledWith(
+      expect.objectContaining({ includeWearBased: true }),
+    );
+    expect(result.includeWearBased).toBe(true);
+  });
+
+  it('identifies wear-based needs in order-list plan details', async () => {
+    const repository = {
+      findForOrderList: jest.fn().mockResolvedValue([
+        {
+          uuid: '11111111-1111-4111-8111-111111111111',
+          title: 'Contrôle de lame',
+          intervalDays: 0,
+          nextMaintenanceDate: null,
+          material: { uuid: '22222222-2222-4222-8222-222222222222', name: 'Tondeuse' },
+          parts: [
+            {
+              uuid: '33333333-3333-4333-8333-333333333333',
+              name: 'Lame',
+              reference: 'LAME-42',
+              unit: 'pièce',
+              quantityOnHand: 0,
+              quantityOnOrder: 0,
+              MaintenanceTaskPart: { quantity: 1 },
+            },
+          ],
+        },
+      ]),
+    };
+    const service = new MaintenanceService(repository, {}, {}, {});
+
+    const result = await service.getOrderList({ includeWearBased: true });
+
+    expect(result.items[0].plans[0]).toEqual(
+      expect.objectContaining({ wearBased: true, nextMaintenanceDate: null }),
+    );
+  });
+
   it('executes calendar maintenance without recording engine hours', async () => {
     const today = todayDateOnly();
     const task = {
@@ -303,6 +356,40 @@ describe('MaintenanceService', () => {
       },
       { transaction: { id: 'transaction' } },
     );
+  });
+
+  it('executes wear-based maintenance without creating a calendar deadline', async () => {
+    const today = todayDateOnly();
+    const task = {
+      id: 1,
+      uuid: '11111111-1111-4111-8111-111111111111',
+      active: true,
+      intervalDays: 0,
+      lastMaintenanceDate: addDaysDateOnly(today, -30),
+      nextMaintenanceDate: null,
+      material: { active: true },
+      parts: [],
+      toJSON() {
+        return { ...this, toJSON: undefined };
+      },
+    };
+    const repository = {
+      withTransaction: jest.fn((callback) => callback({ id: 'transaction' })),
+      findByUuid: jest.fn().mockResolvedValue(task),
+      update: jest.fn((_task, values) => Object.assign(task, values)),
+      createHistory: jest.fn().mockResolvedValue({ uuid: 'history-uuid', performedAt: today }),
+    };
+    const service = new MaintenanceService(repository, {}, { record: jest.fn() });
+
+    const result = await service.execute(task.uuid, { performedAt: today }, 42);
+
+    expect(repository.update).toHaveBeenCalledWith(
+      task,
+      { lastMaintenanceDate: today, nextMaintenanceDate: null, updatedBy: 42 },
+      { transaction: { id: 'transaction' } },
+    );
+    expect(result.task.status).toBe('wearBased');
+    expect(result.task.remainingDays).toBeNull();
   });
 
   it('consumes every required part in the same transaction as maintenance execution', async () => {

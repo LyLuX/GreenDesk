@@ -24,8 +24,8 @@ const maintenanceCards = [
   },
   {
     key: 'upcoming',
-    label: 'Entretiens prévus sous 30 jours',
-    modalTitle: 'Entretiens prévus sous 30 jours',
+    label: 'Entretiens sous 30 jours',
+    modalTitle: 'Entretiens sous 30 jours',
     status: 'upcoming',
     className: 'maintenance-upcoming',
   },
@@ -35,6 +35,13 @@ const maintenanceCards = [
     modalTitle: 'Entretiens en retard',
     status: 'overdue',
     className: 'maintenance-overdue',
+  },
+  {
+    key: 'wearBased',
+    label: 'Entretien selon usure',
+    modalTitle: 'Entretien selon usure',
+    status: 'wearBased',
+    className: 'maintenance-wear-based',
   },
 ];
 
@@ -199,7 +206,11 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <dt>Date prévue</dt>
-                    <dd>{formatDate(item.nextMaintenanceDate)}</dd>
+                    <dd>
+                      {item.status === 'wearBased'
+                        ? 'Selon l’usure'
+                        : formatDate(item.nextMaintenanceDate)}
+                    </dd>
                   </div>
                 </dl>
               </li>

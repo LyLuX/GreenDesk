@@ -107,26 +107,94 @@ describe('MaintenanceOrderListModal', () => {
       status: 'overdue',
       horizonDays: 0,
       includeOverdue: true,
+      includeWearBased: false,
     });
     expect(getOrderListFiltersForDeadline('dueToday')).toEqual({
       status: 'dueToday',
       horizonDays: 0,
       includeOverdue: false,
+      includeWearBased: false,
     });
     expect(getOrderListFiltersForDeadline('upcoming')).toEqual({
       status: 'upcoming',
       horizonDays: 30,
       includeOverdue: false,
+      includeWearBased: false,
     });
     expect(getOrderListFiltersForDeadline('upToDate')).toEqual({
       status: 'upToDate',
       horizonDays: 365,
       includeOverdue: false,
+      includeWearBased: false,
+    });
+    expect(getOrderListFiltersForDeadline('wearBased')).toEqual({
+      status: 'wearBased',
+      horizonDays: 30,
+      includeOverdue: false,
+      includeWearBased: true,
     });
     expect(getOrderListFiltersForDeadline()).toEqual({
       horizonDays: 30,
       includeOverdue: true,
+      includeWearBased: false,
     });
+  });
+
+  it('automatically reloads when wear-based plans are included without an update button', async () => {
+    const user = userEvent.setup();
+    render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
+
+    const includeWearBased = await screen.findByRole('checkbox', {
+      name: 'Inclure les plans selon usure',
+    });
+    expect(includeWearBased).not.toBeChecked();
+    expect(screen.queryByRole('button', { name: 'Actualiser' })).not.toBeInTheDocument();
+    expect(mocks.getOrderList).toHaveBeenCalledWith(
+      { horizonDays: 30, includeOverdue: true, includeWearBased: false },
+      expect.any(AbortSignal),
+    );
+
+    await user.click(includeWearBased);
+
+    await waitFor(() =>
+      expect(mocks.getOrderList).toHaveBeenLastCalledWith(
+        { horizonDays: 30, includeOverdue: true, includeWearBased: true },
+        expect.any(AbortSignal),
+      ),
+    );
+  });
+
+  it('identifies wear-based plans in the order details', async () => {
+    mocks.getOrderList.mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'part-uuid',
+              name: 'Lame',
+              reference: 'LAME-42',
+              quantity: 1,
+              unit: 'pièce',
+              plans: [
+                {
+                  maintenanceUuid: 'maintenance-uuid',
+                  material: { name: 'Tondeuse' },
+                  quantity: 1,
+                  wearBased: true,
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
+
+    expect(await screen.findByText('Selon l’usure')).toHaveClass(
+      'status-badge',
+      'maintenance-wear-based',
+    );
   });
 
   it('groups suppliers alphabetically and keeps missing suppliers together', () => {

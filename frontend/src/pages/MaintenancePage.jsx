@@ -111,6 +111,7 @@ export default function MaintenancePage() {
   const [partsError, setPartsError] = useState('');
   const [selectedParts, setSelectedParts] = useState({});
   const [partQuantities, setPartQuantities] = useState({});
+  const [wearBasedInterval, setWearBasedInterval] = useState(false);
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
@@ -223,6 +224,7 @@ export default function MaintenancePage() {
     const assignedParts = item?.parts ?? [];
     setSelectedParts(Object.fromEntries(assignedParts.map((part) => [part.uuid, true])));
     setPartQuantities(Object.fromEntries(assignedParts.map((part) => [part.uuid, part.quantity])));
+    setWearBasedInterval(Number(item?.intervalDays) === 0);
     setParts([]);
     setPartsPage(1);
     setPartsPagination(null);
@@ -268,6 +270,7 @@ export default function MaintenancePage() {
     try {
       const formData = new FormData(event.currentTarget);
       const payload = normalizeFormValues(Object.fromEntries(formData), baseFields);
+      payload.intervalDays = wearBasedInterval ? 0 : payload.intervalDays;
       payload.parts = Object.keys(selectedParts).map((partUuid) => ({
         partUuid,
         quantity: Number(partQuantities[partUuid]) || 1,
@@ -558,8 +561,12 @@ export default function MaintenancePage() {
                       </small>
                     )}
                   </td>
-                  <td>{formatDate(item.nextMaintenanceDate)}</td>
-                  <td>{remainingDays(item.remainingDays)}</td>
+                  <td>
+                    {item.status === 'wearBased'
+                      ? 'Selon l’usure'
+                      : formatDate(item.nextMaintenanceDate)}
+                  </td>
+                  <td>{item.status === 'wearBased' ? '—' : remainingDays(item.remainingDays)}</td>
                   <td>
                     <span
                       className={`status-badge ${
@@ -665,14 +672,34 @@ export default function MaintenancePage() {
               {formError}
             </p>
           )}
-          {baseFields.map((field) => (
-            <FormField
-              key={field.name}
-              {...field}
-              defaultValue={formDefault(activeItem, field)}
-              options={formOptions(field)}
-            />
-          ))}
+          {baseFields.map((field) =>
+            field.name === 'intervalDays' ? (
+              <div className="d-grid gap-2" key={field.name}>
+                <label className="form-check mb-0">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    checked={wearBasedInterval}
+                    onChange={(event) => setWearBasedInterval(event.target.checked)}
+                  />
+                  <span className="form-check-label">Intervalle de changement suivant l’usure</span>
+                </label>
+                <FormField
+                  {...field}
+                  disabled={wearBasedInterval}
+                  required={!wearBasedInterval}
+                  defaultValue={formDefault(activeItem, field)}
+                />
+              </div>
+            ) : (
+              <FormField
+                key={field.name}
+                {...field}
+                defaultValue={formDefault(activeItem, field)}
+                options={formOptions(field)}
+              />
+            ),
+          )}
           <div className="d-flex flex-wrap gap-2">
             {[
               ['materials', 'matériels'],

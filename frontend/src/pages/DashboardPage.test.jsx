@@ -15,6 +15,7 @@ const { getDashboardSummary, hasPermission } = vi.hoisted(() => ({
           today: 1,
           overdue: 1,
           upcoming: 1,
+          wearBased: 1,
           items: {
             today: [
               {
@@ -44,6 +45,17 @@ const { getDashboardSummary, hasPermission } = vi.hoisted(() => ({
                 priority: 'normal',
                 nextMaintenanceDate: '2025-09-29',
                 material: { name: 'EP-534 THX' },
+              },
+            ],
+            wearBased: [
+              {
+                uuid: 'maintenance-wear-based',
+                title: 'Contrôle de lame',
+                maintenanceType: 'inspection',
+                priority: 'normal',
+                status: 'wearBased',
+                nextMaintenanceDate: null,
+                material: { name: 'Tondeuse 03' },
               },
             ],
           },
@@ -96,16 +108,19 @@ describe('DashboardPage', () => {
 
     expect(within(inventory).getAllByRole('article')).toHaveLength(5);
     expect(within(fleet).getAllByRole('article')).toHaveLength(3);
-    expect(within(maintenance).getAllByRole('article')).toHaveLength(3);
+    expect(within(maintenance).getAllByRole('article')).toHaveLength(4);
     expect(within(maintenance).getByText('Entretiens aujourd’hui').parentElement).toHaveClass(
       'maintenance-due-today',
     );
-    expect(
-      within(maintenance).getByText('Entretiens prévus sous 30 jours').parentElement,
-    ).toHaveClass('maintenance-upcoming');
+    expect(within(maintenance).getByText('Entretiens sous 30 jours').parentElement).toHaveClass(
+      'maintenance-upcoming',
+    );
     expect(within(maintenance).getByText('Entretiens en retard').parentElement).toHaveClass(
       'maintenance-overdue',
       'maintenance-overdue-alert',
+    );
+    expect(within(maintenance).getByText('Entretien selon usure').parentElement).toHaveClass(
+      'maintenance-wear-based',
     );
     expect(screen.queryByText('Entretiens réalisés ce mois')).not.toBeInTheDocument();
   });
@@ -131,13 +146,20 @@ describe('DashboardPage', () => {
       'dueToday',
     ],
     [
-      'Entretiens prévus sous 30 jours',
-      'Entretiens prévus sous 30 jours',
+      'Entretiens sous 30 jours',
+      'Entretiens sous 30 jours',
       'Contrôle général',
       'Tracteur 02',
       'upcoming',
     ],
     ['Entretiens en retard', 'Entretiens en retard', 'Bougie', 'EP-534 THX', 'overdue'],
+    [
+      'Entretien selon usure',
+      'Entretien selon usure',
+      'Contrôle de lame',
+      'Tondeuse 03',
+      'wearBased',
+    ],
   ])('opens the list matching the "%s" counter', async (label, title, task, material, status) => {
     const user = userEvent.setup();
     renderPage();
@@ -163,7 +185,9 @@ describe('DashboardPage', () => {
 
   it('does not make an empty maintenance counter clickable', async () => {
     getDashboardSummary.mockResolvedValueOnce({
-      data: { data: { maintenance: { today: 0, overdue: 0, upcoming: 0 } } },
+      data: {
+        data: { maintenance: { today: 0, overdue: 0, upcoming: 0, wearBased: 0 } },
+      },
     });
 
     renderPage();

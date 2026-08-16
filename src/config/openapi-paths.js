@@ -1,4 +1,5 @@
 import { STOCK_STATUS_VALUES } from '../core/inventory/stock-status.js';
+import { MAINTENANCE_DEADLINE_STATUSES } from '../modules/maintenance/maintenance.constants.js';
 
 const schemaRef = (name) => ({ $ref: `#/components/schemas/${name}` });
 const responseRef = (name) => ({ $ref: `#/components/responses/${name}` });
@@ -932,9 +933,9 @@ export const openApiPaths = {
     get: {
       operationId: 'getMaintenanceOrderList',
       tags: ['Maintenance'],
-      summary: 'Agrège les pièces nécessaires aux plans arrivant à échéance.',
+      summary: 'Agrège les pièces nécessaires aux échéances et aux plans selon l’usure.',
       description:
-        'Nécessite `maintenance.read`. Une échéance correspond à un besoin de pièces. La quantité en stock atelier ou déjà commandée est déduite du besoin agrégé ; seules les quantités restant à commander sont retournées. Une pièce désactivée reste comptée lorsqu’un besoin non couvert subsiste. Le filtre `status`, lorsqu’il est renseigné, prend la priorité sur la période.',
+        'Nécessite `maintenance.read`. Une échéance correspond à un besoin de pièces. La quantité en stock atelier ou déjà commandée est déduite du besoin agrégé ; seules les quantités restant à commander sont retournées. Une pièce désactivée reste comptée lorsqu’un besoin non couvert subsiste. Le filtre `status`, lorsqu’il est renseigné, prend la priorité sur la période. `includeWearBased` ajoute une fois les besoins de chaque plan actif suivi selon l’usure.',
       security: secure,
       parameters: [
         {
@@ -943,7 +944,7 @@ export const openApiPaths = {
           description: 'Statut exact d’échéance, partagé avec le filtre de la page Maintenance.',
           schema: {
             type: 'string',
-            enum: ['upToDate', 'upcoming', 'dueToday', 'overdue'],
+            enum: MAINTENANCE_DEADLINE_STATUSES,
           },
         },
         {
@@ -955,6 +956,11 @@ export const openApiPaths = {
           name: 'includeOverdue',
           in: 'query',
           schema: { type: 'boolean', default: true },
+        },
+        {
+          name: 'includeWearBased',
+          in: 'query',
+          schema: { type: 'boolean', default: false },
         },
       ],
       responses: {
@@ -999,7 +1005,7 @@ export const openApiPaths = {
           in: 'query',
           schema: {
             type: 'string',
-            enum: ['upToDate', 'upcoming', 'dueToday', 'overdue'],
+            enum: MAINTENANCE_DEADLINE_STATUSES,
           },
         },
         { name: 'active', in: 'query', schema: { type: 'boolean' } },
@@ -1016,7 +1022,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Crée un plan depuis une opération et calcule sa prochaine échéance.',
       description:
-        'Nécessite `maintenance.create`. Le matériel associé doit être actif. Le payload historique avec intitulé libre reste accepté pour compatibilité.',
+        'Nécessite `maintenance.create`. Le matériel associé doit être actif. Un intervalle à `0` crée un plan selon l’usure sans échéance calendaire. Le payload historique avec intitulé libre reste accepté pour compatibilité.',
       security: secure,
       requestBody: jsonBody('MaintenanceCreateRequest'),
       responses: {
@@ -1042,7 +1048,8 @@ export const openApiPaths = {
       operationId: 'updateMaintenanceTask',
       tags: ['Maintenance'],
       summary: 'Met à jour un plan et recalcule son échéance.',
-      description: 'Nécessite `maintenance.update`.',
+      description:
+        'Nécessite `maintenance.update`. Un intervalle à `0` conserve le plan sans échéance calendaire.',
       security: secure,
       requestBody: jsonBody('MaintenanceUpdateRequest'),
       responses: {
@@ -1082,7 +1089,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Enregistre un entretien réalisé et recalcule l’échéance.',
       description:
-        'Nécessite `maintenance.execute`. Le plan et son matériel doivent être actifs. La date du jour est utilisée par défaut. `partsAction=consume` retire transactionnellement les pièces du stock. `partsAction=skip` nécessite également `maintenance.execute.skip_parts`, conserve le stock, exige un commentaire et trace les pièces non remplacées dans l’historique.',
+        'Nécessite `maintenance.execute`. Le plan et son matériel doivent être actifs. La date du jour est utilisée par défaut et un plan selon l’usure reste sans échéance. `partsAction=consume` retire transactionnellement les pièces du stock. `partsAction=skip` nécessite également `maintenance.execute.skip_parts`, conserve le stock, exige un commentaire et trace les pièces non remplacées dans l’historique.',
       security: secure,
       requestBody: jsonBody('MaintenanceExecuteRequest', false),
       responses: {
@@ -1112,7 +1119,7 @@ export const openApiPaths = {
       tags: ['Dashboard'],
       summary: 'Retourne les indicateurs autorisés du tableau de bord.',
       description:
-        'Nécessite `dashboard.read`. Les indicateurs de maintenance sont inclus uniquement avec `maintenance.read` ; leurs listes `today`, `upcoming` et `overdue` correspondent exactement aux compteurs affichés. Alias historique déprécié : `/api/dashboard/summary`.',
+        'Nécessite `dashboard.read`. Les indicateurs de maintenance sont inclus uniquement avec `maintenance.read` ; leurs listes `today`, `upcoming`, `overdue` et `wearBased` correspondent exactement aux compteurs affichés. Alias historique déprécié : `/api/dashboard/summary`.',
       security: secure,
       responses: {
         200: jsonResponse('DashboardResponse', 'Synthèse retournée.'),

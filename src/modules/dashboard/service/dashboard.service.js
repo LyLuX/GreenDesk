@@ -19,6 +19,7 @@ export default class DashboardService {
       today: maintenanceItems.filter(({ status }) => status === 'dueToday'),
       overdue: maintenanceItems.filter(({ status }) => status === 'overdue'),
       upcoming: maintenanceItems.filter(({ status }) => status === 'upcoming'),
+      wearBased: maintenanceItems.filter(({ status }) => status === 'wearBased'),
     };
     const summary = {
       materials: {
@@ -42,6 +43,7 @@ export default class DashboardService {
         today: maintenance.today.length,
         overdue: maintenance.overdue.length,
         upcoming: maintenance.upcoming.length,
+        wearBased: maintenance.wearBased.length,
         items: maintenance,
       };
     return summary;

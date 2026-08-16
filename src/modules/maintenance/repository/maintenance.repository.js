@@ -55,13 +55,13 @@ const partsInclude = {
 
 const getStatusConditions = ({ taskAlias = 'MaintenanceTask', today, upcoming }) => {
   const overdue =
-    `${taskAlias}.next_maintenance_date IS NOT NULL AND ` +
+    `${taskAlias}.interval_days > 0 AND ${taskAlias}.next_maintenance_date IS NOT NULL AND ` +
     `${taskAlias}.next_maintenance_date < '${today}'`;
   const dueToday =
-    `${taskAlias}.next_maintenance_date IS NOT NULL AND ` +
+    `${taskAlias}.interval_days > 0 AND ${taskAlias}.next_maintenance_date IS NOT NULL AND ` +
     `${taskAlias}.next_maintenance_date = '${today}'`;
   const upcomingCondition =
-    `${taskAlias}.next_maintenance_date IS NOT NULL AND ` +
+    `${taskAlias}.interval_days > 0 AND ${taskAlias}.next_maintenance_date IS NOT NULL AND ` +
     `${taskAlias}.next_maintenance_date > '${today}' AND ` +
     `${taskAlias}.next_maintenance_date <= '${upcoming}'`;
   return { overdue, dueToday, upcoming: upcomingCondition };
@@ -79,9 +79,11 @@ const getStatusFilter = (status) => {
   if (status === 'overdue') return Sequelize.literal(`(${conditions.overdue})`);
   if (status === 'dueToday') return Sequelize.literal(`(${conditions.dueToday})`);
   if (status === 'upcoming') return Sequelize.literal(`(${conditions.upcoming})`);
+  if (status === 'wearBased') return Sequelize.literal('MaintenanceTask.interval_days = 0');
   if (status === 'upToDate')
     return Sequelize.literal(
-      `NOT (${conditions.overdue}) AND NOT (${conditions.dueToday}) AND ` +
+      `MaintenanceTask.interval_days > 0 AND NOT (${conditions.overdue}) AND ` +
+        `NOT (${conditions.dueToday}) AND ` +
         `NOT (${conditions.upcoming})`,
     );
   return null;
@@ -154,7 +156,8 @@ export default class MaintenanceRepository extends TransactionalRepository {
         active: true,
         [Op.and]: [
           Sequelize.literal(
-            `(${conditions.overdue}) OR (${conditions.dueToday}) OR (${conditions.upcoming})`,
+            `(${conditions.overdue}) OR (${conditions.dueToday}) OR ` +
+              `(${conditions.upcoming}) OR MaintenanceTask.interval_days = 0`,
           ),
         ],
       },
@@ -194,19 +197,21 @@ export default class MaintenanceRepository extends TransactionalRepository {
       { transaction: options.transaction },
     );
   }
-  async findForOrderList({ from, through, status }) {
+  async findForOrderList({ from, through, status, includeWearBased = false }) {
     const statusFilter = getStatusFilter(status);
+    const deadlineFilter = statusFilter
+      ? { [Op.and]: [statusFilter] }
+      : {
+          intervalDays: { [Op.gt]: 0 },
+          nextMaintenanceDate: {
+            ...(from ? { [Op.gte]: from } : {}),
+            [Op.lte]: through,
+          },
+        };
     return MaintenanceTask.findAll({
       where: {
         active: true,
-        ...(statusFilter
-          ? { [Op.and]: [statusFilter] }
-          : {
-              nextMaintenanceDate: {
-                ...(from ? { [Op.gte]: from } : {}),
-                [Op.lte]: through,
-              },
-            }),
+        ...(includeWearBased ? { [Op.or]: [deadlineFilter, { intervalDays: 0 }] } : deadlineFilter),
       },
       include: [materialInclude, operationInclude, partsInclude],
       order: [['next_maintenance_date', 'ASC']],

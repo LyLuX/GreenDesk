@@ -23,12 +23,14 @@ export const maintenanceStatusLabels = Object.freeze({
   upcoming: 'Sous 30 jours',
   dueToday: 'À faire aujourd’hui',
   overdue: 'En retard',
+  wearBased: 'Selon l’usure',
 });
 export const maintenanceStatusClasses = Object.freeze({
   upToDate: '',
   upcoming: 'maintenance-upcoming',
   dueToday: 'maintenance-due-today',
   overdue: 'maintenance-overdue',
+  wearBased: 'maintenance-wear-based',
 });
 export const maintenanceExecutionTypeLabels = Object.freeze({
   withoutPartReplacement: 'Pièces non remplacées',

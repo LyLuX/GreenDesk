@@ -7,13 +7,14 @@ import {
   STOCK_OPERATIONS,
 } from '../../../core/inventory/stock-operation.js';
 import {
+  MAINTENANCE_DEADLINE_STATUSES,
   MAINTENANCE_PART_ACTIONS,
   MAINTENANCE_PRIORITIES,
   MAINTENANCE_TYPES,
 } from '../maintenance.constants.js';
 
 const uuid = param('uuid').isUUID();
-const intervals = [body('intervalDays').optional({ nullable: true }).isInt({ min: 1 }).toInt()];
+const intervals = [body('intervalDays').optional({ nullable: true }).isInt({ min: 0 }).toInt()];
 const fields = [
   body('operationUuid').optional().isUUID(),
   body('title').optional().trim().notEmpty().isLength({ max: 150 }),
@@ -32,9 +33,7 @@ export const listValidator = [
   query('materialUuid').optional({ values: 'falsy' }).isUUID(),
   query('priority').optional({ values: 'falsy' }).isIn(MAINTENANCE_PRIORITIES),
   query('maintenanceType').optional({ values: 'falsy' }).isIn(MAINTENANCE_TYPES),
-  query('status')
-    .optional({ values: 'falsy' })
-    .isIn(['upToDate', 'upcoming', 'dueToday', 'overdue']),
+  query('status').optional({ values: 'falsy' }).isIn(MAINTENANCE_DEADLINE_STATUSES),
   query('active').optional({ values: 'falsy' }).isBoolean().toBoolean(),
   query('overdue').optional({ values: 'falsy' }).isBoolean().toBoolean(),
   query('upcoming').optional({ values: 'falsy' }).isBoolean().toBoolean(),
@@ -63,11 +62,10 @@ export const executeValidator = [
   }),
 ];
 export const orderListValidator = [
-  query('status')
-    .optional({ values: 'falsy' })
-    .isIn(['upToDate', 'upcoming', 'dueToday', 'overdue']),
+  query('status').optional({ values: 'falsy' }).isIn(MAINTENANCE_DEADLINE_STATUSES),
   query('horizonDays').optional().isInt({ min: 0, max: 365 }).toInt(),
   query('includeOverdue').optional().isBoolean().toBoolean(),
+  query('includeWearBased').optional().isBoolean().toBoolean(),
 ];
 export const catalogListValidator = [
   query('search').optional({ values: 'falsy' }).trim().isLength({ max: 150 }),

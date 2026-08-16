@@ -776,6 +776,10 @@ a:hover {
   border-left-color: #b64141;
 }
 
+.metric-card.maintenance-wear-based {
+  border-left-color: #6d5a91;
+}
+
 .metric-card.maintenance-overdue-alert {
   animation: maintenance-overdue-border-pulse 1s ease-in-out infinite;
 }
@@ -810,6 +814,11 @@ a:hover {
 .status-badge.maintenance-overdue {
   background: #f5d8d8;
   color: #8a2525;
+}
+
+.status-badge.maintenance-wear-based {
+  background: #eee8f7;
+  color: #574474;
 }
 
 .modal-backdrop-custom {

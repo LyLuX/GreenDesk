@@ -1,4 +1,5 @@
 import {
+  MAINTENANCE_DEADLINE_STATUSES,
   MAINTENANCE_EXECUTION_TYPES,
   MAINTENANCE_PART_ACTIONS,
   MAINTENANCE_PRIORITIES,
@@ -265,9 +266,13 @@ const maintenanceTask = {
     title: writeText(150),
     description: nullableString,
     maintenanceType: { type: 'string', enum: MAINTENANCE_TYPES },
-    intervalDays: { type: 'integer', minimum: 1 },
+    intervalDays: {
+      type: 'integer',
+      minimum: 0,
+      description: '`0` indique un plan déclenché selon l’usure, sans échéance calendaire.',
+    },
     lastMaintenanceDate: date,
-    nextMaintenanceDate: date,
+    nextMaintenanceDate: nullableDate,
     priority: { type: 'string', enum: MAINTENANCE_PRIORITIES },
     active: { type: 'boolean' },
     notes: nullableString,
@@ -292,7 +297,7 @@ const maintenanceTask = {
     },
     status: {
       type: 'string',
-      enum: ['upToDate', 'upcoming', 'dueToday', 'overdue'],
+      enum: MAINTENANCE_DEADLINE_STATUSES,
     },
     remainingDays: { type: 'integer', nullable: true },
     ...timestamps,
@@ -413,7 +418,11 @@ const maintenanceWriteProperties = {
     deprecated: true,
     description: 'Déduit automatiquement de l’opération sélectionnée.',
   },
-  intervalDays: { type: 'integer', minimum: 1 },
+  intervalDays: {
+    type: 'integer',
+    minimum: 0,
+    description: '`0` désactive le calcul calendaire et active le suivi selon l’usure.',
+  },
   lastMaintenanceDate: date,
   priority: { type: 'string', enum: MAINTENANCE_PRIORITIES, default: 'normal' },
   notes: nullableString,
@@ -829,15 +838,24 @@ export const openApiSchemas = {
   },
   MaintenanceOrderList: {
     type: 'object',
-    required: ['status', 'horizonDays', 'includeOverdue', 'from', 'through', 'items'],
+    required: [
+      'status',
+      'horizonDays',
+      'includeOverdue',
+      'includeWearBased',
+      'from',
+      'through',
+      'items',
+    ],
     properties: {
       status: {
         type: 'string',
-        enum: ['upToDate', 'upcoming', 'dueToday', 'overdue'],
+        enum: MAINTENANCE_DEADLINE_STATUSES,
         nullable: true,
       },
       horizonDays: { type: 'integer', minimum: 0, maximum: 365 },
       includeOverdue: { type: 'boolean' },
+      includeWearBased: { type: 'boolean' },
       from: date,
       through: date,
       items: {
@@ -859,7 +877,13 @@ export const openApiSchemas = {
                   type: 'array',
                   items: {
                     type: 'object',
-                    required: ['maintenanceUuid', 'title', 'nextMaintenanceDate', 'quantity'],
+                    required: [
+                      'maintenanceUuid',
+                      'title',
+                      'nextMaintenanceDate',
+                      'wearBased',
+                      'quantity',
+                    ],
                     properties: {
                       maintenanceUuid: uuid,
                       title: writeText(150),
@@ -868,7 +892,8 @@ export const openApiSchemas = {
                         nullable: true,
                         properties: { uuid, name: writeText(150) },
                       },
-                      nextMaintenanceDate: date,
+                      nextMaintenanceDate: nullableDate,
+                      wearBased: { type: 'boolean' },
                       quantity: { type: 'integer', minimum: 1 },
                     },
                   },
@@ -915,18 +940,20 @@ export const openApiSchemas = {
       maintenance: {
         type: 'object',
         description: 'Présent uniquement lorsque l’utilisateur possède `maintenance.read`.',
-        required: ['today', 'overdue', 'upcoming', 'items'],
+        required: ['today', 'overdue', 'upcoming', 'wearBased', 'items'],
         properties: {
           today: { type: 'integer', minimum: 0 },
           overdue: { type: 'integer', minimum: 0 },
           upcoming: { type: 'integer', minimum: 0 },
+          wearBased: { type: 'integer', minimum: 0 },
           items: {
             type: 'object',
-            required: ['today', 'overdue', 'upcoming'],
+            required: ['today', 'overdue', 'upcoming', 'wearBased'],
             properties: {
               today: arrayOf(reference('MaintenanceTask')),
               overdue: arrayOf(reference('MaintenanceTask')),
               upcoming: arrayOf(reference('MaintenanceTask')),
+              wearBased: arrayOf(reference('MaintenanceTask')),
             },
           },
         },

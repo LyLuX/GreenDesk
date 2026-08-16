@@ -17,6 +17,7 @@ describe('maintenance priority badge classes', () => {
       upcoming: 'maintenance-upcoming',
       dueToday: 'maintenance-due-today',
       overdue: 'maintenance-overdue',
+      wearBased: 'maintenance-wear-based',
     });
   });
 });
