@@ -13,6 +13,7 @@ import {
   stockOperationPresentation,
 } from '../inventory/stock-status.js';
 import useNotification from '../notifications/useNotification.js';
+import { MAX_MAINTENANCE_PART_UNIT_PRICE } from '../maintenance/maintenance-costs.js';
 import { formatCurrency, formatDateTime } from '../utils/formatters.js';
 import Button from './Button.jsx';
 import Loader from './Loader.jsx';
@@ -174,7 +175,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
               className="form-control"
               type="number"
               min="0"
-              max="9999999999.99"
+              max={MAX_MAINTENANCE_PART_UNIT_PRICE}
               step="0.01"
               required
               value={unitPrice}

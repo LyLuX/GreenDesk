@@ -163,6 +163,9 @@ describe('OpenAPI contract', () => {
         totalMaintenanceCost: expect.any(Object),
       }),
     );
+    expect(swaggerSpec.components.schemas.MaintenancePartCreateRequest.properties).toHaveProperty(
+      'unitPrice',
+    );
     expect(swaggerSpec.paths).toHaveProperty('/manufacturers');
     expect(swaggerSpec.paths).toHaveProperty('/suppliers');
     expect(swaggerSpec.paths).not.toHaveProperty('/maintenance/manufacturers');

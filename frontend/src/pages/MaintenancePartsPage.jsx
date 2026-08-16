@@ -17,6 +17,7 @@ import { formatStockQuantity, stockStatusOptions } from '../inventory/stock-stat
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import { extractPageItems } from '../utils/pagination.js';
 import { formatCurrency } from '../utils/formatters.js';
+import { MAX_MAINTENANCE_PART_UNIT_PRICE } from '../maintenance/maintenance-costs.js';
 import MaintenanceCatalogPage from './MaintenanceCatalogPage.jsx';
 
 const directoryOptions = (items = []) =>
@@ -103,6 +104,18 @@ export default function MaintenancePartsPage() {
     },
     { name: 'supplierReference', label: 'Référence fournisseur' },
     { name: 'unit', label: 'Unité', required: true, defaultValue: 'pièce' },
+    {
+      name: 'unitPrice',
+      label: 'Prix unitaire (€)',
+      type: 'number',
+      min: 0,
+      max: MAX_MAINTENANCE_PART_UNIT_PRICE,
+      step: '0.01',
+      required: true,
+      defaultValue: '0.00',
+      valueType: 'number',
+      createOnly: true,
+    },
   ];
   const manufacturerByUuid = new Map(
     manufacturers.map((manufacturer) => [manufacturer.uuid, manufacturer]),

@@ -82,6 +82,15 @@ const optionalText = (name, maxLength) =>
     .optional({ nullable: true })
     .customSanitizer((value) => (typeof value === 'string' ? value.trim() || null : value))
     .isLength({ max: maxLength });
+const unitPriceValidator = ({ optional = false } = {}) => {
+  let validator = body('unitPrice');
+  validator = optional ? validator.optional() : validator.exists();
+  return validator
+    .isFloat({ min: 0, max: MAX_UNIT_PRICE })
+    .custom((value) => /^\d+(?:\.\d{1,2})?$/.test(String(value)))
+    .withMessage('Le prix unitaire doit comporter au maximum deux décimales.')
+    .toFloat();
+};
 export const createOperationValidator = [
   body('name').trim().notEmpty().isLength({ max: 150 }),
   body('description').optional({ nullable: true }).trim(),
@@ -102,6 +111,7 @@ export const createPartValidator = [
   body('reference').trim().notEmpty().isLength({ max: 150 }),
   optionalText('supplierReference', 150),
   body('unit').optional().trim().notEmpty().isLength({ max: 50 }),
+  unitPriceValidator({ optional: true }),
 ];
 export const updatePartValidator = [
   uuid,
@@ -136,13 +146,5 @@ export const updatePartStockValidator = [
   }),
 ];
 export const stockMovementListValidator = [uuid, ...paginationValidator];
-export const updatePartPriceValidator = [
-  uuid,
-  body('unitPrice')
-    .exists()
-    .isFloat({ min: 0, max: MAX_UNIT_PRICE })
-    .custom((value) => /^\d+(?:\.\d{1,2})?$/.test(String(value)))
-    .withMessage('Le prix unitaire doit comporter au maximum deux décimales.')
-    .toFloat(),
-];
+export const updatePartPriceValidator = [uuid, unitPriceValidator()];
 export const priceHistoryListValidator = [uuid, ...paginationValidator];

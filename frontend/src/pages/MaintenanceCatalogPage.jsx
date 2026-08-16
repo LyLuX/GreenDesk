@@ -294,20 +294,25 @@ export default function MaintenanceCatalogPage({
               {formError}
             </p>
           )}
-          {fields.map((field) => {
-            const { suggestionsFromRecords, ...fieldProps } = field;
-            const defaultValue = editing?.[field.name] ?? field.defaultValue ?? '';
-            return suggestionsFromRecords ? (
-              <AutocompleteField
-                key={field.name}
-                {...fieldProps}
-                defaultValue={defaultValue}
-                suggestions={rows.map((row) => row[field.name])}
-              />
-            ) : (
-              <FormField key={field.name} {...fieldProps} defaultValue={defaultValue} />
-            );
-          })}
+          {fields
+            .filter((field) => !field.createOnly || !editing?.uuid)
+            .map((field) => {
+              const { suggestionsFromRecords } = field;
+              const fieldProps = { ...field };
+              delete fieldProps.suggestionsFromRecords;
+              delete fieldProps.createOnly;
+              const defaultValue = editing?.[field.name] ?? field.defaultValue ?? '';
+              return suggestionsFromRecords ? (
+                <AutocompleteField
+                  key={field.name}
+                  {...fieldProps}
+                  defaultValue={defaultValue}
+                  suggestions={rows.map((row) => row[field.name])}
+                />
+              ) : (
+                <FormField key={field.name} {...fieldProps} defaultValue={defaultValue} />
+              );
+            })}
           <Button type="submit" disabled={busy}>
             {busy ? 'Enregistrement…' : 'Enregistrer'}
           </Button>

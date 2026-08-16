@@ -137,6 +137,7 @@ describe('MaintenanceCatalogService', () => {
         reference: 'BPMR8Y',
         manufacturerUuid: manufacturer.uuid,
         supplierUuid: supplier.uuid,
+        unitPrice: 12.5,
       },
       42,
     );
@@ -147,6 +148,7 @@ describe('MaintenanceCatalogService', () => {
         manufacturer: manufacturer.name,
         supplierId: supplier.id,
         supplier: supplier.name,
+        unitPrice: '12.50',
       }),
       { transaction },
     );

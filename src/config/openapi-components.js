@@ -740,6 +740,14 @@ export const openApiSchemas = {
       reference: writeText(150),
       supplierReference: { ...nullableString, maxLength: 150 },
       unit: { ...writeText(50), default: 'pièce' },
+      unitPrice: {
+        type: 'number',
+        format: 'double',
+        minimum: 0,
+        maximum: MAX_UNIT_PRICE,
+        default: 0,
+        description: 'Prix unitaire initial en euros. Les changements ultérieurs sont historisés.',
+      },
     },
   },
   MaintenancePartUpdateRequest: {

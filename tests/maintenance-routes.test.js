@@ -195,7 +195,7 @@ describe('maintenance catalogue route permissions', () => {
   });
 
   it('requires part-specific permissions for part writes', async () => {
-    const payload = { name: 'Bougie', reference: 'BPMR8Y', unit: 'pièce' };
+    const payload = { name: 'Bougie', reference: 'BPMR8Y', unit: 'pièce', unitPrice: 12.5 };
     await request(app)
       .post('/api/v1/maintenance/parts')
       .set('Authorization', authorization(['maintenance.create']))
@@ -206,6 +206,11 @@ describe('maintenance catalogue route permissions', () => {
       .set('Authorization', authorization(['maintenance.parts.create']))
       .send(payload)
       .expect(201);
+    await request(app)
+      .post('/api/v1/maintenance/parts')
+      .set('Authorization', authorization(['maintenance.parts.create']))
+      .send({ ...payload, unitPrice: 12.345 })
+      .expect(400);
     await request(app)
       .put(`/api/v1/maintenance/parts/${uuid}`)
       .set('Authorization', authorization(['maintenance.parts.update']))

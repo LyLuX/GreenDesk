@@ -245,6 +245,8 @@ describe('dedicated maintenance catalogue pages', () => {
     await user.selectOptions(screen.getByLabelText('Fabricant'), 'manufacturer-uuid');
     await user.type(screen.getByLabelText('Référence fabricant'), 'OF-123');
     await user.selectOptions(screen.getByLabelText('Fournisseur'), 'supplier-uuid');
+    await user.clear(screen.getByLabelText('Prix unitaire (€)'));
+    await user.type(screen.getByLabelText('Prix unitaire (€)'), '12.50');
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
 
     await waitFor(() =>
@@ -255,8 +257,19 @@ describe('dedicated maintenance catalogue pages', () => {
         supplierUuid: 'supplier-uuid',
         supplierReference: null,
         unit: 'pièce',
+        unitPrice: 12.5,
       }),
     );
+  });
+
+  it('keeps tracked price changes out of the general part edit form', async () => {
+    const user = userEvent.setup();
+    render(<MaintenancePartsPage />);
+
+    await user.click(await screen.findByRole('button', { name: 'Modifier Bougie' }));
+
+    expect(screen.getByRole('dialog')).toBeVisible();
+    expect(screen.queryByLabelText('Prix unitaire (€)')).not.toBeInTheDocument();
   });
 
   it('manages workshop and ordered quantities from a dedicated reusable action', async () => {

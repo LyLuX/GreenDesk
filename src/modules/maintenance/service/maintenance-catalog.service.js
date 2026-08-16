@@ -135,7 +135,9 @@ export default class MaintenanceCatalogService {
 
   async createPart(values, userId) {
     const prepared = await this.repository.withTransaction(async (transaction) => {
-      const partValues = await this.preparePartValues(values, transaction);
+      const partValues = await this.preparePartValues(values, transaction, null, {
+        includeUnitPrice: true,
+      });
       const existing = await this.repository.findPartByIdentity(
         partValues.reference,
         {
@@ -305,7 +307,12 @@ export default class MaintenanceCatalogService {
     };
   }
 
-  async preparePartValues(values, transaction, currentPart = null) {
+  async preparePartValues(
+    values,
+    transaction,
+    currentPart = null,
+    { includeUnitPrice = false } = {},
+  ) {
     const partValues = { ...values };
     delete partValues.manufacturerUuid;
     delete partValues.supplierUuid;
@@ -313,6 +320,15 @@ export default class MaintenanceCatalogService {
     delete partValues.stockQuantity;
     delete partValues.quantityOnHand;
     delete partValues.quantityOnOrder;
+    delete partValues.unitPrice;
+
+    if (includeUnitPrice) {
+      const unitPrice = normalizeMoney(values.unitPrice ?? 0);
+      if (unitPrice === null) {
+        throw new AppError('Le prix unitaire est invalide.', HTTP_STATUS.BAD_REQUEST);
+      }
+      partValues.unitPrice = unitPrice;
+    }
 
     if (Object.hasOwn(values, 'manufacturerUuid')) {
       const manufacturer = values.manufacturerUuid
