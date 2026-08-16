@@ -53,10 +53,13 @@ describe('production CSS build', () => {
 
     expect(styles).toMatch(/--maintenance-wear-based-color:\s*var\(--bs-purple\);/);
     expect(styles).toMatch(
+      /--maintenance-wear-based-background:\s*color-mix\(\s*in srgb,\s*var\(--maintenance-wear-based-color\) 15%,\s*#fff\s*\);/,
+    );
+    expect(styles).toMatch(
       /\.metric-card\.maintenance-wear-based\s*\{[^}]*border-left-color:\s*var\(--maintenance-wear-based-color\);/,
     );
     expect(styles).toMatch(
-      /\.status-badge\.maintenance-wear-based\s*\{[^}]*background:\s*var\(--maintenance-wear-based-color\);[^}]*color:\s*#fff;/,
+      /\.status-badge\.maintenance-wear-based\s*\{[^}]*background:\s*var\(--maintenance-wear-based-background\);[^}]*color:\s*var\(--maintenance-wear-based-color\);/,
     );
   });
 });

@@ -9,6 +9,11 @@
   --brand-blue-dark: #20566b;
   --brand-mist: #f3f6f1;
   --maintenance-wear-based-color: var(--bs-purple);
+  --maintenance-wear-based-background: color-mix(
+    in srgb,
+    var(--maintenance-wear-based-color) 15%,
+    #fff
+  );
   --ink: #1f2a25;
   --muted: #64716a;
   --border: #dbe3dc;
@@ -818,8 +823,8 @@ a:hover {
 }
 
 .status-badge.maintenance-wear-based {
-  background: var(--maintenance-wear-based-color);
-  color: #fff;
+  background: var(--maintenance-wear-based-background);
+  color: var(--maintenance-wear-based-color);
 }
 
 .modal-backdrop-custom {
