@@ -256,11 +256,17 @@ describe('MaintenanceService', () => {
     const repository = { findForOrderList: jest.fn().mockResolvedValue([]) };
     const service = new MaintenanceService(repository, {}, {}, {});
 
-    const result = await service.getOrderList({ includeWearBased: true });
+    const result = await service.getOrderList({
+      horizonDays: 60,
+      includeOverdue: false,
+      includeWearBased: true,
+    });
 
-    expect(repository.findForOrderList).toHaveBeenCalledWith(
-      expect.objectContaining({ includeWearBased: true }),
+    expect(repository.findForOrderList).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ through: expect.any(String), from: expect.any(String) }),
     );
+    expect(repository.findForOrderList).toHaveBeenNthCalledWith(2, { status: 'wearBased' });
     expect(result.includeWearBased).toBe(true);
   });
 

@@ -197,7 +197,7 @@ export default class MaintenanceRepository extends TransactionalRepository {
       { transaction: options.transaction },
     );
   }
-  async findForOrderList({ from, through, status, includeWearBased = false }) {
+  async findForOrderList({ from, through, status }) {
     const statusFilter = getStatusFilter(status);
     const deadlineFilter = statusFilter
       ? { [Op.and]: [statusFilter] }
@@ -211,7 +211,7 @@ export default class MaintenanceRepository extends TransactionalRepository {
     return MaintenanceTask.findAll({
       where: {
         active: true,
-        ...(includeWearBased ? { [Op.or]: [deadlineFilter, { intervalDays: 0 }] } : deadlineFilter),
+        ...deadlineFilter,
       },
       include: [materialInclude, operationInclude, partsInclude],
       order: [['next_maintenance_date', 'ASC']],

@@ -339,12 +339,20 @@ export default class MaintenanceService {
     const normalizedStatus = MAINTENANCE_DEADLINE_STATUSES.includes(status) ? status : undefined;
     const today = todayDateOnly();
     const through = addDaysDateOnly(today, normalizedHorizon);
-    const tasks = await this.repository.findForOrderList({
-      from: includeOverdue === false ? today : undefined,
-      through,
-      status: normalizedStatus,
-      includeWearBased: includeWearBased === true,
-    });
+    const includeWearBasedPlans = includeWearBased === true;
+    const [deadlineTasks, wearBasedTasks] = await Promise.all([
+      this.repository.findForOrderList({
+        from: includeOverdue === false ? today : undefined,
+        through,
+        status: normalizedStatus,
+      }),
+      includeWearBasedPlans && normalizedStatus !== 'wearBased'
+        ? this.repository.findForOrderList({ status: 'wearBased' })
+        : Promise.resolve([]),
+    ]);
+    const tasks = [
+      ...new Map([...deadlineTasks, ...wearBasedTasks].map((task) => [task.uuid, task])).values(),
+    ];
     const grouped = new Map();
     for (const task of tasks.map((item) => this.toPublic(item))) {
       for (const part of task.parts ?? []) {
@@ -391,7 +399,7 @@ export default class MaintenanceService {
     return {
       horizonDays: normalizedHorizon,
       includeOverdue: includeOverdue !== false,
-      includeWearBased: includeWearBased === true,
+      includeWearBased: includeWearBasedPlans,
       status: normalizedStatus ?? null,
       from: today,
       through,

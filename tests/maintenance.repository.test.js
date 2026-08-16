@@ -18,18 +18,18 @@ describe('MaintenanceRepository order list', () => {
     expect(parts.attributes).toEqual(expect.arrayContaining(['quantityOnHand', 'quantityOnOrder']));
   });
 
-  it('adds wear-based plans independently from the selected calendar horizon', async () => {
+  it('keeps calendar horizons separate from wear-based plans', async () => {
     const findAll = jest.spyOn(MaintenanceTask, 'findAll').mockResolvedValue([]);
     const repository = new MaintenanceRepository();
 
-    await repository.findForOrderList({
-      through: '2026-09-08',
-      includeWearBased: true,
-    });
+    await repository.findForOrderList({ through: '2026-09-08' });
 
-    const query = findAll.mock.calls[0][0];
-    expect(query.where[Op.or]).toEqual(
-      expect.arrayContaining([expect.objectContaining({ intervalDays: 0 })]),
+    expect(findAll.mock.calls[0][0].where.intervalDays).toEqual({ [Op.gt]: 0 });
+
+    await repository.findForOrderList({ status: 'wearBased' });
+
+    expect(findAll.mock.calls[1][0].where[Op.and][0].val).toContain(
+      'MaintenanceTask.interval_days = 0',
     );
   });
 

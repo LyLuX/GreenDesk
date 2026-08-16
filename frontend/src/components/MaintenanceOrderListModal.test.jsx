@@ -140,9 +140,15 @@ describe('MaintenanceOrderListModal', () => {
     });
   });
 
-  it('automatically reloads when wear-based plans are included without an update button', async () => {
+  it('keeps wear-based plans included when the deadline and overdue filters change', async () => {
     const user = userEvent.setup();
-    render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
+    render(
+      <MaintenanceOrderListModal
+        open
+        onClose={vi.fn()}
+        initialFilters={getOrderListFiltersForDeadline('upcoming')}
+      />,
+    );
 
     const includeWearBased = await screen.findByRole('checkbox', {
       name: 'Inclure les plans selon usure',
@@ -150,7 +156,12 @@ describe('MaintenanceOrderListModal', () => {
     expect(includeWearBased).not.toBeChecked();
     expect(screen.queryByRole('button', { name: 'Actualiser' })).not.toBeInTheDocument();
     expect(mocks.getOrderList).toHaveBeenCalledWith(
-      { horizonDays: 30, includeOverdue: true, includeWearBased: false },
+      {
+        status: 'upcoming',
+        horizonDays: 30,
+        includeOverdue: false,
+        includeWearBased: false,
+      },
       expect.any(AbortSignal),
     );
 
@@ -158,7 +169,25 @@ describe('MaintenanceOrderListModal', () => {
 
     await waitFor(() =>
       expect(mocks.getOrderList).toHaveBeenLastCalledWith(
+        { horizonDays: 30, includeOverdue: false, includeWearBased: true },
+        expect.any(AbortSignal),
+      ),
+    );
+
+    await user.click(screen.getByRole('checkbox', { name: 'Inclure les plans en retard' }));
+
+    await waitFor(() =>
+      expect(mocks.getOrderList).toHaveBeenLastCalledWith(
         { horizonDays: 30, includeOverdue: true, includeWearBased: true },
+        expect.any(AbortSignal),
+      ),
+    );
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Échéance' }), '60');
+
+    await waitFor(() =>
+      expect(mocks.getOrderList).toHaveBeenLastCalledWith(
+        { horizonDays: 60, includeOverdue: true, includeWearBased: true },
         expect.any(AbortSignal),
       ),
     );
