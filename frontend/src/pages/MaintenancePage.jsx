@@ -104,6 +104,13 @@ export default function MaintenancePage() {
   const [catalogError, setCatalogError] = useState('');
   const [catalogPagination, setCatalogPagination] = useState({});
   const [loadingMoreCatalog, setLoadingMoreCatalog] = useState('');
+  const [partsPage, setPartsPage] = useState(1);
+  const [partsLimit, setPartsLimit] = useState(5);
+  const [partsPagination, setPartsPagination] = useState(null);
+  const [partsLoading, setPartsLoading] = useState(false);
+  const [partsError, setPartsError] = useState('');
+  const [selectedParts, setSelectedParts] = useState({});
+  const [partQuantities, setPartQuantities] = useState({});
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
@@ -138,25 +145,21 @@ export default function MaintenancePage() {
   }, [loadTasks]);
   const loadCatalogs = useCallback(async (signal) => {
     try {
-      const [materialList, operationList, partList] = await Promise.all([
+      const [materialList, operationList] = await Promise.all([
         listMaterialOptions({ limit: 25 }, signal),
         listMaintenanceOperations({ limit: 25 }, signal),
-        listMaintenanceParts({ limit: 25 }, signal),
       ]);
       const materialPayload = materialList.data.data ?? {};
       const operationPayload = operationList.data.data ?? {};
-      const partPayload = partList.data.data ?? {};
       setMaterials(
         Array.isArray(materialPayload) ? materialPayload : (materialPayload.items ?? []),
       );
       setOperations(
         Array.isArray(operationPayload) ? operationPayload : (operationPayload.items ?? []),
       );
-      setParts(Array.isArray(partPayload) ? partPayload : (partPayload.items ?? []));
       setCatalogPagination({
         materials: Array.isArray(materialPayload) ? null : (materialPayload.pagination ?? null),
         operations: Array.isArray(operationPayload) ? null : (operationPayload.pagination ?? null),
-        parts: Array.isArray(partPayload) ? null : (partPayload.pagination ?? null),
       });
       setCatalogError('');
     } catch (requestError) {
@@ -178,14 +181,12 @@ export default function MaintenancePage() {
       const request = {
         materials: listMaterialOptions,
         operations: listMaintenanceOperations,
-        parts: listMaintenanceParts,
       }[catalog];
       const response = await request({ page: current.page + 1, limit: 25 });
       const payload = response.data.data ?? {};
       const setters = {
         materials: setMaterials,
         operations: setOperations,
-        parts: setParts,
       };
       setters[catalog]((items) => [...items, ...(payload.items ?? [])]);
       setCatalogPagination((pages) => ({ ...pages, [catalog]: payload.pagination ?? current }));
@@ -194,6 +195,40 @@ export default function MaintenancePage() {
     } finally {
       setLoadingMoreCatalog('');
     }
+  };
+  const loadParts = useCallback(
+    async (signal) => {
+      setPartsLoading(true);
+      try {
+        const response = await listMaintenanceParts({ page: partsPage, limit: partsLimit }, signal);
+        const payload = response.data.data ?? {};
+        setParts(Array.isArray(payload) ? payload : (payload.items ?? []));
+        setPartsPagination(Array.isArray(payload) ? null : (payload.pagination ?? null));
+        setPartsError('');
+      } catch (requestError) {
+        if (requestError.code !== 'ERR_CANCELED') setPartsError(getApiErrorMessage(requestError));
+      } finally {
+        if (!signal?.aborted) setPartsLoading(false);
+      }
+    },
+    [partsLimit, partsPage],
+  );
+  useEffect(() => {
+    if (dialog?.type !== 'create' && dialog?.type !== 'edit') return undefined;
+    const controller = new AbortController();
+    loadParts(controller.signal);
+    return () => controller.abort();
+  }, [dialog?.type, loadParts]);
+  const openPlanDialog = (type, item) => {
+    const assignedParts = item?.parts ?? [];
+    setSelectedParts(Object.fromEntries(assignedParts.map((part) => [part.uuid, true])));
+    setPartQuantities(Object.fromEntries(assignedParts.map((part) => [part.uuid, part.quantity])));
+    setParts([]);
+    setPartsPage(1);
+    setPartsPagination(null);
+    setPartsLoading(true);
+    setPartsError('');
+    setDialog({ type, ...(item ? { item } : {}) });
   };
   const close = () => {
     if (!busy) {
@@ -233,12 +268,10 @@ export default function MaintenancePage() {
     try {
       const formData = new FormData(event.currentTarget);
       const payload = normalizeFormValues(Object.fromEntries(formData), baseFields);
-      payload.parts = parts
-        .filter((part) => formData.has(`part:${part.uuid}`))
-        .map((part) => ({
-          partUuid: part.uuid,
-          quantity: Number(formData.get(`quantity:${part.uuid}`)) || 1,
-        }));
+      payload.parts = Object.keys(selectedParts).map((partUuid) => ({
+        partUuid,
+        quantity: Number(partQuantities[partUuid]) || 1,
+      }));
       if (dialog.type === 'edit') await updateMaintenance(dialog.item.uuid, payload);
       else await createMaintenance(payload);
       notify(
@@ -390,7 +423,7 @@ export default function MaintenancePage() {
             Pièces à commander
           </button>
           {hasPermission(maintenancePermissions.plans.create) && (
-            <Button onClick={() => setDialog({ type: 'create' })}>Créer un plan</Button>
+            <Button onClick={() => openPlanDialog('create')}>Créer un plan</Button>
           )}
         </div>
       </div>
@@ -554,7 +587,7 @@ export default function MaintenancePage() {
                           className="btn btn-sm btn-outline-brand flex-fill"
                           type="button"
                           disabled={busy}
-                          onClick={() => setDialog({ type: 'edit', item })}
+                          onClick={() => openPlanDialog('edit', item)}
                         >
                           Modifier
                         </button>
@@ -644,7 +677,6 @@ export default function MaintenancePage() {
             {[
               ['materials', 'matériels'],
               ['operations', 'opérations'],
-              ['parts', 'pièces'],
             ].map(([catalog, label]) =>
               catalogPagination[catalog]?.page < catalogPagination[catalog]?.totalPages ? (
                 <Button
@@ -661,11 +693,23 @@ export default function MaintenancePage() {
           </div>
           <fieldset className="surface d-grid gap-2 p-3">
             <legend className="h6 mb-0">Pièces nécessaires</legend>
-            {parts.length === 0 ? (
+            {partsError && (
+              <div className="alert alert-danger d-flex align-items-center justify-content-between gap-3 mb-0">
+                <p role="alert" className="mb-0">
+                  {partsError}
+                </p>
+                <Button type="button" className="btn-sm" onClick={() => loadParts()}>
+                  Réessayer
+                </Button>
+              </div>
+            )}
+            {partsLoading && <Loader label="Chargement des pièces" />}
+            {!partsLoading && !partsError && parts.length === 0 ? (
               <p className="mb-0 text-body-secondary">
                 Aucune pièce dans le catalogue. Vous pouvez enregistrer le plan sans pièce.
               </p>
-            ) : (
+            ) : null}
+            {!partsLoading && !partsError && parts.length > 0 ? (
               <div
                 className="maintenance-plan-parts d-grid gap-2"
                 role="region"
@@ -690,7 +734,15 @@ export default function MaintenancePage() {
                             type="checkbox"
                             className="form-check-input"
                             name={`part:${part.uuid}`}
-                            defaultChecked={Boolean(assigned)}
+                            checked={Boolean(selectedParts[part.uuid])}
+                            onChange={(event) =>
+                              setSelectedParts((current) => {
+                                if (event.target.checked) return { ...current, [part.uuid]: true };
+                                const next = { ...current };
+                                delete next[part.uuid];
+                                return next;
+                              })
+                            }
                           />
                           <span className="form-check-label">
                             {part.name} — {part.reference}
@@ -703,16 +755,39 @@ export default function MaintenancePage() {
                             type="number"
                             name={`quantity:${part.uuid}`}
                             min="1"
-                            defaultValue={assigned?.quantity ?? 1}
+                            value={partQuantities[part.uuid] ?? assigned?.quantity ?? 1}
+                            onChange={(event) =>
+                              setPartQuantities((current) => ({
+                                ...current,
+                                [part.uuid]: event.target.value,
+                              }))
+                            }
                           />
                         </label>
                       </div>
                     );
                   })}
               </div>
+            ) : null}
+            {parts.length > 0 && (
+              <PaginationControls
+                pagination={partsPagination}
+                limit={partsLimit}
+                itemLabel="pièce(s)"
+                disabled={partsLoading}
+                onLimitChange={(value) => {
+                  setPartsLoading(true);
+                  setPartsLimit(value);
+                  setPartsPage(1);
+                }}
+                onPageChange={(page) => {
+                  setPartsLoading(true);
+                  setPartsPage(page);
+                }}
+              />
             )}
           </fieldset>
-          <Button type="submit" disabled={busy}>
+          <Button type="submit" disabled={busy || partsLoading || Boolean(partsError)}>
             {busy ? 'Enregistrement…' : 'Enregistrer'}
           </Button>
         </form>

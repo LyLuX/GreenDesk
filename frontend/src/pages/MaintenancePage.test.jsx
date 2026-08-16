@@ -83,14 +83,17 @@ describe('MaintenancePage', () => {
     });
     mocks.listParts.mockResolvedValue({
       data: {
-        data: [
-          {
-            uuid: 'part-uuid',
-            name: 'Bougie',
-            reference: 'BPMR8Y',
-            unit: 'pièce',
-          },
-        ],
+        data: {
+          items: [
+            {
+              uuid: 'part-uuid',
+              name: 'Bougie',
+              reference: 'BPMR8Y',
+              unit: 'pièce',
+            },
+          ],
+          pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
+        },
       },
     });
     mocks.createMaintenance.mockResolvedValue({ data: { data: {} } });
@@ -184,7 +187,7 @@ describe('MaintenancePage', () => {
     );
     expect(mocks.listMaterials).toHaveBeenCalledTimes(1);
     expect(mocks.listOperations).toHaveBeenCalledTimes(1);
-    expect(mocks.listParts).toHaveBeenCalledTimes(1);
+    expect(mocks.listParts).not.toHaveBeenCalled();
   });
 
   it('loads all plans for the material provided by the detail page', async () => {
@@ -373,6 +376,53 @@ describe('MaintenancePage', () => {
     const partsRegion = screen.getByRole('region', { name: 'Pièces nécessaires' });
     expect(partsRegion).toHaveClass('maintenance-plan-parts');
     expect(within(partsRegion).getAllByRole('checkbox')).toHaveLength(catalogueParts.length);
+  });
+
+  it('paginates catalogue parts in the modal and preserves selections between pages', async () => {
+    const user = userEvent.setup();
+    mocks.listParts.mockImplementation(({ page, limit }) =>
+      Promise.resolve({
+        data: {
+          data: {
+            items: [
+              {
+                uuid: `part-${page}`,
+                name: `Pièce ${page}`,
+                reference: `REF-${page}`,
+                unit: 'pièce',
+              },
+            ],
+            pagination: { page, limit, total: 2, totalPages: 2 },
+          },
+        },
+      }),
+    );
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Créer un plan' }));
+    const dialog = screen.getByRole('dialog', { name: 'Créer un plan' });
+    const firstPart = await within(dialog).findByRole('checkbox', {
+      name: 'Pièce 1 — REF-1',
+    });
+    expect(mocks.listParts).toHaveBeenCalledWith({ page: 1, limit: 5 }, expect.any(AbortSignal));
+    expect(within(dialog).queryByRole('button', { name: 'Charger plus de pièces' })).toBeNull();
+
+    await user.click(firstPart);
+    const firstQuantity = within(dialog).getByLabelText('Quantité');
+    await user.clear(firstQuantity);
+    await user.type(firstQuantity, '3');
+    await user.click(within(dialog).getByRole('button', { name: 'Suivant' }));
+    expect(
+      await within(dialog).findByRole('checkbox', { name: 'Pièce 2 — REF-2' }),
+    ).toBeInTheDocument();
+    expect(mocks.listParts).toHaveBeenLastCalledWith(
+      { page: 2, limit: 5 },
+      expect.any(AbortSignal),
+    );
+
+    await user.click(within(dialog).getByRole('button', { name: 'Précédent' }));
+    expect(await within(dialog).findByRole('checkbox', { name: 'Pièce 1 — REF-1' })).toBeChecked();
+    expect(within(dialog).getByLabelText('Quantité')).toHaveValue(3);
   });
 
   it('creates a plan with its operation and exact part instead of a free title', async () => {
