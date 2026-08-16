@@ -290,6 +290,7 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(quantityOnOrder).toHaveValue(0);
     expect(quantityOnHand.closest('.col-sm-5')?.parentElement).toHaveClass(
       'justify-content-around',
+      'text-center',
     );
     expect(quantityOnOrder.closest('.col-sm-5')).toBeVisible();
     await user.clear(screen.getByLabelText('Quantité en stock'));

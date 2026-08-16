@@ -183,7 +183,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
             />
           </label>
         ) : operation === STOCK_OPERATIONS.ADJUST ? (
-          <div className="row g-3 justify-content-around">
+          <div className="row g-3 justify-content-around text-center">
             <div className="col-sm-5">
               <label className="form-label mb-0 text-body-secondary">
                 Quantité en stock
