@@ -400,6 +400,11 @@ a:hover {
 }
 
 .permission-action-panel {
+  align-content: flex-start;
+  height: clamp(8rem, 22vh, 11.25rem);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
   background: var(--brand-mist);
 }
 
