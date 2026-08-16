@@ -903,6 +903,10 @@ body.app-scroll-locked {
   flex-wrap: wrap;
 }
 
+.maintenance-order-plan-wear-based {
+  color: var(--maintenance-wear-based-color);
+}
+
 .maintenance-order-list-actions {
   flex: 0 0 auto;
 }

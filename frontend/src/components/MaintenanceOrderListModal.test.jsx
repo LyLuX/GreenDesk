@@ -283,7 +283,7 @@ describe('MaintenanceOrderListModal', () => {
     await waitFor(() => expect(within(dialog).getByText('Lame selon usure')).toBeVisible());
   });
 
-  it('identifies wear-based plans in the order details', async () => {
+  it('colors wear-based plan details without displaying a status badge', async () => {
     mocks.getOrderList.mockResolvedValue({
       data: {
         data: {
@@ -310,10 +310,10 @@ describe('MaintenanceOrderListModal', () => {
 
     render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
 
-    expect(await screen.findByText('Selon l’usure')).toHaveClass(
-      'status-badge',
-      'maintenance-wear-based',
+    expect(await screen.findByText('Tondeuse — 1')).toHaveClass(
+      'maintenance-order-plan-wear-based',
     );
+    expect(screen.queryByText('Selon l’usure')).not.toBeInTheDocument();
   });
 
   it('groups suppliers alphabetically and keeps missing suppliers together', () => {

@@ -61,5 +61,8 @@ describe('production CSS build', () => {
     expect(styles).toMatch(
       /\.status-badge\.maintenance-wear-based\s*\{[^}]*background:\s*var\(--maintenance-wear-based-background\);[^}]*color:\s*var\(--maintenance-wear-based-color\);/,
     );
+    expect(styles).toMatch(
+      /\.maintenance-order-plan-wear-based\s*\{[^}]*color:\s*var\(--maintenance-wear-based-color\);/,
+    );
   });
 });

@@ -155,13 +155,13 @@ function OrderPartsTable({
                     <td className="maintenance-order-plans">
                       <ul className="mb-0 ps-3">
                         {part.plans.map((plan) => (
-                          <li key={plan.maintenanceUuid}>
+                          <li
+                            key={plan.maintenanceUuid}
+                            className={
+                              plan.wearBased ? 'maintenance-order-plan-wear-based' : undefined
+                            }
+                          >
                             {plan.material?.name} — {plan.quantity}
-                            {plan.wearBased ? (
-                              <span className="status-badge maintenance-wear-based ms-2">
-                                Selon l’usure
-                              </span>
-                            ) : null}
                           </li>
                         ))}
                       </ul>
