@@ -193,6 +193,55 @@ describe('MaintenanceOrderListModal', () => {
     );
   });
 
+  it('restores wear-based parts after the inclusion filter is unchecked and checked again', async () => {
+    const user = userEvent.setup();
+    mocks.getOrderList.mockImplementation((filters) =>
+      Promise.resolve({
+        data: {
+          data: {
+            items: filters.includeWearBased
+              ? [
+                  {
+                    uuid: 'wear-based-part',
+                    name: 'Lame selon usure',
+                    reference: 'LAME-USURE',
+                    quantity: 1,
+                    unit: 'pièce',
+                    plans: [],
+                  },
+                ]
+              : [],
+          },
+        },
+      }),
+    );
+
+    render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
+
+    const dialog = screen.getByRole('dialog');
+    const includeWearBased = screen.getByRole('checkbox', {
+      name: 'Inclure les plans selon usure',
+    });
+    expect(
+      await within(dialog).findByText('Aucune pièce à commander sur cette période.'),
+    ).toBeVisible();
+
+    await user.click(includeWearBased);
+    expect(await within(dialog).findByText('Lame selon usure')).toBeVisible();
+
+    await user.click(includeWearBased);
+    expect(
+      await within(dialog).findByText('Aucune pièce à commander sur cette période.'),
+    ).toBeVisible();
+
+    await user.click(includeWearBased);
+    expect(await within(dialog).findByText('Lame selon usure')).toBeVisible();
+    expect(mocks.getOrderList).toHaveBeenLastCalledWith(
+      { horizonDays: 30, includeOverdue: true, includeWearBased: true },
+      expect.any(AbortSignal),
+    );
+  });
+
   it('does not let an older calendar response replace wear-based results', async () => {
     const user = userEvent.setup();
     let resolveCalendarRequest;

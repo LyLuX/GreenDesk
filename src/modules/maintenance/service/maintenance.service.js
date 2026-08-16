@@ -5,6 +5,7 @@ import StockService from '../../../core/inventory/stock.service.js';
 import { getStockAvailability } from '../../../core/inventory/stock-status.js';
 import AuditService from '../../audit/service/audit.service.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
+import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 import MaterialService from '../../materials/service/material.service.js';
 import MaintenanceCatalogRepository from '../repository/maintenance-catalog.repository.js';
 import MaintenanceRepository from '../repository/maintenance.repository.js';
@@ -337,12 +338,13 @@ export default class MaintenanceService {
   } = {}) {
     const normalizedHorizon = Math.min(Math.max(Number(horizonDays) || 0, 0), 365);
     const normalizedStatus = MAINTENANCE_DEADLINE_STATUSES.includes(status) ? status : undefined;
+    const normalizedIncludeOverdue = normalizeBooleanFilter(includeOverdue) ?? true;
     const today = todayDateOnly();
     const through = addDaysDateOnly(today, normalizedHorizon);
-    const includeWearBasedPlans = includeWearBased === true;
+    const includeWearBasedPlans = normalizeBooleanFilter(includeWearBased) ?? false;
     const [deadlineTasks, wearBasedTasks] = await Promise.all([
       this.repository.findForOrderList({
-        from: includeOverdue === false ? today : undefined,
+        from: normalizedIncludeOverdue ? undefined : today,
         through,
         status: normalizedStatus,
       }),
@@ -398,7 +400,7 @@ export default class MaintenanceService {
       .sort((left, right) => left.name.localeCompare(right.name, 'fr'));
     return {
       horizonDays: normalizedHorizon,
-      includeOverdue: includeOverdue !== false,
+      includeOverdue: normalizedIncludeOverdue,
       includeWearBased: includeWearBasedPlans,
       status: normalizedStatus ?? null,
       from: today,

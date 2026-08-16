@@ -258,8 +258,8 @@ describe('MaintenanceService', () => {
 
     const result = await service.getOrderList({
       horizonDays: 60,
-      includeOverdue: false,
-      includeWearBased: true,
+      includeOverdue: 'false',
+      includeWearBased: 'true',
     });
 
     expect(repository.findForOrderList).toHaveBeenNthCalledWith(
@@ -267,6 +267,7 @@ describe('MaintenanceService', () => {
       expect.objectContaining({ through: expect.any(String), from: expect.any(String) }),
     );
     expect(repository.findForOrderList).toHaveBeenNthCalledWith(2, { status: 'wearBased' });
+    expect(result.includeOverdue).toBe(false);
     expect(result.includeWearBased).toBe(true);
   });
 
