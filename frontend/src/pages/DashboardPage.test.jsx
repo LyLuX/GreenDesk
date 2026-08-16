@@ -103,34 +103,34 @@ describe('DashboardPage', () => {
     expect(formatAverageAge(0)).toBe('0 mois');
   });
 
-  it('places stock values above annual maintenance costs and deadline cards', async () => {
+  it('groups maintenance deadlines, stock values and annual costs in visible sections', async () => {
     renderPage();
 
     const inventory = await screen.findByRole('region', {
-      name: 'Matériels et catégories',
+      name: 'Inventaire',
     });
-    const fleet = screen.getByRole('region', { name: 'Valeur du parc' });
-    const maintenanceStock = screen.getByRole('region', {
-      name: 'Valeur du stock de maintenance',
-    });
-    const maintenanceCosts = screen.getByRole('region', { name: 'Coûts de maintenance' });
-    const maintenance = screen.getByRole('region', { name: 'Entretien' });
+    const fleet = screen.getByRole('region', { name: 'Valorisation' });
+    const maintenance = screen.getByRole('region', { name: 'Entretiens des matériels' });
+    const maintenanceStock = screen.getByRole('region', { name: 'Pièces en stock' });
+    const maintenanceCosts = screen.getByRole('region', { name: 'Dépenses de maintenance' });
 
+    expect(screen.getByRole('region', { name: 'Parc matériel' })).toBeVisible();
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeVisible();
     expect(within(inventory).getAllByRole('article')).toHaveLength(5);
     expect(within(fleet).getAllByRole('article')).toHaveLength(3);
     expect(within(maintenanceStock).getAllByRole('article')).toHaveLength(2);
-    expect(within(maintenanceStock).getByText('Valeur du stock actuel')).toBeVisible();
+    expect(within(maintenanceStock).getByText('Valeur du stock')).toBeVisible();
     expect(within(maintenanceStock).getByText(/450,75/)).toBeVisible();
-    expect(within(maintenanceStock).getByText('Valeur des pièces commandées')).toBeVisible();
+    expect(within(maintenanceStock).getByText('Valeur commandée')).toBeVisible();
     expect(within(maintenanceStock).getByText(/120,50/)).toBeVisible();
     expect(within(maintenanceCosts).getAllByRole('article')).toHaveLength(3);
-    expect(within(maintenanceCosts).getByText('Dépenses de maintenance — 2026')).toBeVisible();
+    expect(within(maintenanceCosts).getByText('Dépenses 2026')).toBeVisible();
     expect(within(maintenanceCosts).getByText(/125,50/)).toBeVisible();
     expect(
-      maintenanceStock.compareDocumentPosition(maintenanceCosts) & Node.DOCUMENT_POSITION_FOLLOWING,
+      maintenance.compareDocumentPosition(maintenanceStock) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      maintenanceCosts.compareDocumentPosition(maintenance) & Node.DOCUMENT_POSITION_FOLLOWING,
+      maintenanceStock.compareDocumentPosition(maintenanceCosts) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     const maintenanceCards = within(maintenance).getAllByRole('article');
     expect(maintenanceCards).toHaveLength(4);
@@ -142,31 +142,30 @@ describe('DashboardPage', () => {
       'Entretiens en retard',
       'Entretien selon usure',
     ]);
-    expect(within(maintenance).getByText('Entretiens aujourd’hui').parentElement).toHaveClass(
+    expect(within(maintenance).getByText('Entretiens aujourd’hui').closest('article')).toHaveClass(
       'maintenance-due-today',
     );
-    expect(within(maintenance).getByText('Entretiens sous 30 jours').parentElement).toHaveClass(
-      'maintenance-upcoming',
-    );
-    expect(within(maintenance).getByText('Entretiens en retard').parentElement).toHaveClass(
+    expect(
+      within(maintenance).getByText('Entretiens sous 30 jours').closest('article'),
+    ).toHaveClass('maintenance-upcoming');
+    expect(within(maintenance).getByText('Entretiens en retard').closest('article')).toHaveClass(
       'maintenance-overdue',
-      'maintenance-overdue-alert',
     );
-    expect(within(maintenance).getByText('Entretien selon usure').parentElement).toHaveClass(
+    expect(within(maintenance).getByText('Entretien selon usure').closest('article')).toHaveClass(
       'maintenance-wear-based',
     );
     expect(screen.queryByText('Entretiens réalisés ce mois')).not.toBeInTheDocument();
   });
 
-  it('does not animate the overdue border when no maintenance is overdue', async () => {
+  it('visually tones down empty maintenance counters', async () => {
     getDashboardSummary.mockResolvedValueOnce({
       data: { data: { maintenance: { overdue: 0 } } },
     });
 
     renderPage();
 
-    expect((await screen.findByText('Entretiens en retard')).parentElement).not.toHaveClass(
-      'maintenance-overdue-alert',
+    expect((await screen.findByText('Entretiens en retard')).closest('article')).toHaveClass(
+      'metric-card-empty',
     );
   });
 
@@ -238,12 +237,15 @@ describe('DashboardPage', () => {
 
     renderPage();
 
-    expect(await screen.findByRole('region', { name: 'Matériels et catégories' })).toBeVisible();
-    expect(screen.queryByRole('region', { name: 'Coûts de maintenance' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'Parc matériel' })).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'Maintenance' })).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('region', { name: 'Valeur du stock de maintenance' }),
+      screen.queryByRole('region', { name: 'Dépenses de maintenance' }),
     ).not.toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Entretien' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Pièces en stock' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('region', { name: 'Entretiens des matériels' }),
+    ).not.toBeInTheDocument();
     expect(hasPermission).toHaveBeenCalledWith('maintenance.read');
   });
 });

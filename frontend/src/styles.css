@@ -8,6 +8,7 @@
   --brand-blue: #2c7189;
   --brand-blue-dark: #20566b;
   --brand-mist: #f3f6f1;
+  --dashboard-background: color-mix(in srgb, var(--brand-mist) 92%, var(--brand-forest) 8%);
   --maintenance-wear-based-color: var(--bs-purple);
   --maintenance-wear-based-background: color-mix(
     in srgb,
@@ -562,24 +563,81 @@ a:hover {
 }
 
 .metric-card {
-  min-height: 132px;
+  --metric-card-accent: var(--brand-leaf);
+
+  display: flex;
+  min-height: 108px;
+  overflow: hidden;
   border: 1px solid var(--border);
-  border-left: 4px solid var(--brand-leaf);
+  border-left: 4px solid var(--metric-card-accent);
   border-radius: 0.45rem;
-  background: #fff;
-  box-shadow: 0 0.18rem 0.7rem rgba(21, 54, 37, 0.04);
+  background: color-mix(in srgb, var(--metric-card-accent) 10%, #fff);
+  box-shadow: 0 0.35rem 1rem rgba(21, 54, 37, 0.12);
+}
+
+.app-content:has(> .dashboard-page),
+.dashboard-page,
+.loading-page.dashboard-page {
+  background: var(--dashboard-background);
+}
+
+.dashboard-page {
+  min-height: 100%;
+}
+
+.dashboard-sections {
+  display: grid;
+  gap: 2rem;
+}
+
+.dashboard-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.dashboard-section-title {
+  margin: 0;
+  padding-bottom: 0.55rem;
+  border-bottom: 2px solid var(--border);
+  color: var(--brand-forest-dark);
+  font-size: 1.15rem;
+  font-weight: 700;
 }
 
 .dashboard-card-groups {
   display: grid;
-  gap: 1rem;
+  gap: 1.5rem;
+}
+
+.dashboard-card-group {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.dashboard-group-title {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .dashboard-card-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  grid-template-columns: 1fr;
   gap: 1rem;
   width: 100%;
+}
+
+.metric-card-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 1rem 1.25rem;
 }
 
 .metric-label {
@@ -594,22 +652,26 @@ a:hover {
   font-weight: 700;
 }
 
-.metric-value-button {
-  padding: 0;
+.metric-card-button {
+  width: 100%;
   border: 0;
+  color: inherit;
+  text-align: left;
   background: transparent;
-  line-height: 1.15;
   cursor: pointer;
 }
 
-.metric-value-button:hover {
+.metric-card-button:hover .metric-value {
   color: var(--brand-forest);
 }
 
-.metric-value-button:focus-visible {
-  border-radius: 0.2rem;
+.metric-card-button:focus-visible {
   outline: 3px solid rgba(242, 190, 34, 0.45);
-  outline-offset: 0.2rem;
+  outline-offset: -0.3rem;
+}
+
+.metric-card-empty {
+  opacity: 0.68;
 }
 
 .table-shell {
@@ -782,40 +844,19 @@ a:hover {
 }
 
 .metric-card.maintenance-upcoming {
-  border-left-color: var(--brand-leaf);
+  --metric-card-accent: var(--brand-leaf);
 }
 
 .metric-card.maintenance-due-today {
-  border-left-color: var(--brand-sun);
+  --metric-card-accent: var(--brand-sun);
 }
 
 .metric-card.maintenance-overdue {
-  border-left-color: #b64141;
+  --metric-card-accent: #b64141;
 }
 
 .metric-card.maintenance-wear-based {
-  border-left-color: var(--maintenance-wear-based-color);
-}
-
-.metric-card.maintenance-overdue-alert {
-  animation: maintenance-overdue-border-pulse 1s ease-in-out infinite;
-}
-
-@keyframes maintenance-overdue-border-pulse {
-  0%,
-  100% {
-    border-left-color: #b64141;
-  }
-
-  50% {
-    border-left-color: #f5d8d8;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .metric-card.maintenance-overdue-alert {
-    animation: none;
-  }
+  --metric-card-accent: var(--maintenance-wear-based-color);
 }
 
 .status-badge.maintenance-upcoming {
@@ -1300,12 +1341,38 @@ body.app-scroll-locked {
 }
 
 @media (min-width: 576px) {
+  .dashboard-card-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .filter-panel .form-label {
     flex-basis: calc((100% - 2rem) / 2);
   }
 
   .material-photo-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .dashboard-card-row-1 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-card-row-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-card-row-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dashboard-card-row-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .dashboard-card-row-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 

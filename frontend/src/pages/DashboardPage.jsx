@@ -78,7 +78,7 @@ export default function DashboardPage() {
   }, [load]);
   if (error)
     return (
-      <main className="loading-page d-grid align-items-center justify-content-center">
+      <main className="loading-page dashboard-page d-grid align-items-center justify-content-center">
         <StatusPanel as="div">
           <p role="alert" className="text-danger mb-3">
             {error}
@@ -91,7 +91,7 @@ export default function DashboardPage() {
     );
   if (!data)
     return (
-      <main className="loading-page d-grid align-items-center justify-content-center">
+      <main className="loading-page dashboard-page d-grid align-items-center justify-content-center">
         <Loader label="Chargement du tableau de bord" />
       </main>
     );
@@ -108,93 +108,139 @@ export default function DashboardPage() {
       total: 0,
     }));
   const maintenanceItems = maintenance.items?.[maintenanceDialog?.key] ?? [];
-  const cardGroups = [
+  const dashboardSections = [
     {
-      label: 'Matériels et catégories',
-      cards: [
-        ['Matériels', materials.total ?? 0],
-        ['Matériels actifs', materials.active ?? 0],
-        ['Matériels inactifs', materials.inactive ?? 0],
-        ['Catégories', categories.total ?? 0],
-        ['Fabricants', manufacturers.total ?? 0],
-      ],
-    },
-    {
-      label: 'Valeur du parc',
-      cards: [
-        ['Valeur du parc', formatCurrency(fleet.totalPurchaseValue)],
-        ['Valeur moyennne', formatCurrency(fleet.averageCost)],
-        ['Âge moyen', formatAverageAge(fleet.averageAge)],
+      label: 'Parc matériel',
+      groups: [
+        {
+          label: 'Inventaire',
+          cards: [
+            ['Matériels', materials.total ?? 0],
+            ['Matériels actifs', materials.active ?? 0],
+            ['Matériels inactifs', materials.inactive ?? 0],
+            ['Catégories', categories.total ?? 0],
+            ['Fabricants', manufacturers.total ?? 0],
+          ],
+        },
+        {
+          label: 'Valorisation',
+          cards: [
+            ['Valeur du parc', formatCurrency(fleet.totalPurchaseValue)],
+            ['Valeur moyenne', formatCurrency(fleet.averageCost)],
+            ['Âge moyen', formatAverageAge(fleet.averageAge)],
+          ],
+        },
       ],
     },
     ...(hasPermission(maintenancePermissions.plans.read)
       ? [
           {
-            label: 'Valeur du stock de maintenance',
-            cards: [
-              ['Valeur du stock actuel', formatCurrency(maintenanceStockValues.onHand)],
-              ['Valeur des pièces commandées', formatCurrency(maintenanceStockValues.onOrder)],
+            label: 'Maintenance',
+            groups: [
+              {
+                label: 'Entretiens des matériels',
+                cards: maintenanceCards.map((card) => ({
+                  ...card,
+                  value: maintenance[card.key] ?? 0,
+                })),
+              },
+              {
+                label: 'Pièces en stock',
+                cards: [
+                  ['Valeur du stock', formatCurrency(maintenanceStockValues.onHand)],
+                  ['Valeur commandée', formatCurrency(maintenanceStockValues.onOrder)],
+                ],
+              },
+              {
+                label: 'Dépenses de maintenance',
+                cards: maintenanceCosts.map(({ year, total }) => [
+                  `Dépenses ${year}`,
+                  formatCurrency(total),
+                ]),
+              },
             ],
-          },
-          {
-            label: 'Coûts de maintenance',
-            cards: maintenanceCosts.map(({ year, total }) => [
-              `Dépenses de maintenance — ${year}`,
-              formatCurrency(total),
-            ]),
-          },
-          {
-            label: 'Entretien',
-            cards: maintenanceCards.map((card) => ({
-              ...card,
-              value: maintenance[card.key] ?? 0,
-              className: `${card.className} ${
-                card.key === 'overdue' && Number(maintenance.overdue ?? 0) > 0
-                  ? 'maintenance-overdue-alert'
-                  : ''
-              }`,
-            })),
           },
         ]
       : []),
   ];
   return (
-    <main className="app-page">
+    <main className="app-page dashboard-page">
       <div className="page-header mb-3">
         <h1 className="page-title">Tableau de bord</h1>
         <p className="page-subtitle">Vue d’ensemble du parc matériel et des opérations à suivre.</p>
       </div>
-      <div className="dashboard-card-groups">
-        {cardGroups.map((group) => (
-          <section aria-label={group.label} className="dashboard-card-row" key={group.label}>
-            {group.cards.map((card) => {
-              const normalizedCard = Array.isArray(card)
-                ? { label: card[0], value: card[1], className: card[2] ?? '' }
-                : card;
-              const count = Number(normalizedCard.value);
-              return (
-                <article
-                  className={`metric-card h-100 p-4 ${normalizedCard.className}`}
-                  key={normalizedCard.label}
-                >
-                  <p className="metric-label mb-2">{normalizedCard.label}</p>
-                  {normalizedCard.status && count > 0 ? (
-                    <button
-                      type="button"
-                      className="metric-value metric-value-button"
-                      aria-label={`Voir les entretiens concernés : ${normalizedCard.label}`}
-                      onClick={() => setMaintenanceDialog(normalizedCard)}
+      <div className="dashboard-sections">
+        {dashboardSections.map((section, sectionIndex) => {
+          const sectionTitleId = `dashboard-section-${sectionIndex}`;
+          return (
+            <section
+              aria-labelledby={sectionTitleId}
+              className="dashboard-section"
+              key={section.label}
+            >
+              <h2 className="dashboard-section-title" id={sectionTitleId}>
+                {section.label}
+              </h2>
+              <div className="dashboard-card-groups">
+                {section.groups.map((group, groupIndex) => {
+                  const groupTitleId = `dashboard-group-${sectionIndex}-${groupIndex}`;
+                  return (
+                    <section
+                      aria-labelledby={groupTitleId}
+                      className="dashboard-card-group"
+                      key={group.label}
                     >
-                      {normalizedCard.value}
-                    </button>
-                  ) : (
-                    <strong className="metric-value">{normalizedCard.value}</strong>
-                  )}
-                </article>
-              );
-            })}
-          </section>
-        ))}
+                      <h3 className="dashboard-group-title" id={groupTitleId}>
+                        {group.label}
+                      </h3>
+                      <div
+                        className={`dashboard-card-row dashboard-card-row-${Math.min(
+                          group.cards.length,
+                          5,
+                        )}`}
+                      >
+                        {group.cards.map((card) => {
+                          const normalizedCard = Array.isArray(card)
+                            ? { label: card[0], value: card[1], className: card[2] ?? '' }
+                            : card;
+                          const count = Number(normalizedCard.value);
+                          const isEmptyMaintenanceCard = normalizedCard.status && count <= 0;
+                          const content = (
+                            <>
+                              <span className="metric-label">{normalizedCard.label}</span>
+                              <strong className="metric-value">{normalizedCard.value}</strong>
+                            </>
+                          );
+                          return (
+                            <article
+                              className={`metric-card h-100 ${normalizedCard.className} ${
+                                isEmptyMaintenanceCard ? 'metric-card-empty' : ''
+                              }`}
+                              key={normalizedCard.label}
+                            >
+                              {normalizedCard.status && count > 0 ? (
+                                <button
+                                  type="button"
+                                  className="metric-card-content metric-card-button"
+                                  aria-label={`Voir les entretiens concernés : ${normalizedCard.label}`}
+                                  onClick={() => setMaintenanceDialog(normalizedCard)}
+                                >
+                                  {content}
+                                </button>
+                              ) : (
+                                <div className="metric-card-content">{content}</div>
+                              )}
+                            </article>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
       </div>
       <Modal
         open={Boolean(maintenanceDialog)}

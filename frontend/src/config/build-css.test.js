@@ -56,6 +56,23 @@ describe('production CSS build', () => {
     );
   });
 
+  it('visually separates dashboard cards from their dedicated background', () => {
+    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+
+    expect(styles).toMatch(
+      /--dashboard-background:\s*color-mix\(\s*in srgb,\s*var\(--brand-mist\) 92%,\s*var\(--brand-forest\) 8%\s*\);/,
+    );
+    expect(styles).toMatch(
+      /\.app-content:has\(> \.dashboard-page\)[^{]*\{[^}]*background:\s*var\(--dashboard-background\);/,
+    );
+    expect(styles).toMatch(
+      /\.metric-card\s*\{[^}]*box-shadow:\s*0 0\.35rem 1rem rgba\(21,\s*54,\s*37,\s*0\.12\);/,
+    );
+    expect(styles).toMatch(
+      /\.metric-card\s*\{[^}]*--metric-card-accent:\s*var\(--brand-leaf\);[^}]*border-left:\s*4px solid var\(--metric-card-accent\);[^}]*background:\s*color-mix\(\s*in srgb,\s*var\(--metric-card-accent\) 10%,\s*#fff\s*\);/,
+    );
+  });
+
   it('uses one shared color for every wear-based maintenance indicator', () => {
     const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
 
@@ -64,7 +81,7 @@ describe('production CSS build', () => {
       /--maintenance-wear-based-background:\s*color-mix\(\s*in srgb,\s*var\(--maintenance-wear-based-color\) 15%,\s*#fff\s*\);/,
     );
     expect(styles).toMatch(
-      /\.metric-card\.maintenance-wear-based\s*\{[^}]*border-left-color:\s*var\(--maintenance-wear-based-color\);/,
+      /\.metric-card\.maintenance-wear-based\s*\{[^}]*--metric-card-accent:\s*var\(--maintenance-wear-based-color\);/,
     );
     expect(styles).toMatch(
       /\.status-badge\.maintenance-wear-based\s*\{[^}]*background:\s*var\(--maintenance-wear-based-background\);[^}]*color:\s*var\(--maintenance-wear-based-color\);/,
