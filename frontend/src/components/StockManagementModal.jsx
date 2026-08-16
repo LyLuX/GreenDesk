@@ -103,6 +103,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
     <Modal
       open
       title={`Gérer le stock — ${part.name}`}
+      subtitle={part.reference}
       onClose={onClose}
       busy={busy}
       className="stock-management-modal"

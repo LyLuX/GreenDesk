@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **7.3.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **7.3.1**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -108,7 +108,7 @@ Les plans utilisent `maintenance.read`, `maintenance.create`, `maintenance.updat
 
 Les intitulés répétitifs sont centralisés dans un catalogue d’opérations accessible via `/api/v1/maintenance/operations`. Les références réellement commandables sont enregistrées dans `/api/v1/maintenance/parts`, puis associées aux plans avec une quantité. Une même opération, par exemple le remplacement d’une bougie, peut ainsi utiliser des références différentes selon le matériel. Dans la modale d’un plan, les pièces sont directement présentées dans une liste paginée ; les sélections et quantités sont conservées pendant la navigation entre les pages. `GET /api/v1/maintenance/order-list` regroupe les quantités nécessaires aux plans arrivant à échéance sur un horizon configurable ou selon un statut d’échéance exact. La modale « Pièces à commander » reprend le filtre d’échéance courant de la page Maintenance à son ouverture ; ses horizons libres restent ensuite modifiables indépendamment. Elle accorde le libellé `pièce` à la quantité et permet d’imprimer une liste dédiée, sans les contrôles de l’interface. L’impression génère autant de pages A4 que nécessaire pour chaque fournisseur, à raison de 13 pièces au maximum par page, avec le bandeau GreenDesk, le tableau métier sans détail des plans et le footer commun ancré en bas de chaque page. Le fabricant y apparaît sous la pièce en texte secondaire, sans son logo.
 
-L’interface sépare les opérations et les pièces sur les pages `/maintenance/operations` et `/maintenance/parts`. Les fabricants et les fournisseurs sont des référentiels globaux accessibles sur `/manufacturers` et `/suppliers`, avec leurs permissions dédiées. Une pièce référence ainsi un fabricant et un fournisseur enregistrés, en plus de ses références fabricant et fournisseur.
+L’interface sépare les opérations et les pièces sur les pages `/maintenance/operations` et `/maintenance/parts`. Les fabricants et les fournisseurs sont des référentiels globaux accessibles sur `/manufacturers` et `/suppliers`, avec leurs permissions dédiées. Une pièce référence ainsi un fabricant et un fournisseur enregistrés, en plus de ses références fabricant et fournisseur. La modale de gestion du stock rappelle la référence de la pièce sous son titre.
 
 Les migrations `20260727_zz_add_maintenance_catalogs.js` et `20260727_zzz_add_part_manufacturers_suppliers.js` sont additives : elles conservent les intitulés, les fabricants saisis auparavant et toutes les données historiques des plans. Leur annulation retire uniquement les nouveaux catalogues et leurs associations, ce qui permet de revenir au fonctionnement précédent sans perdre un plan ni son ancien fabricant texte. Les migrations `20260730_add_maintenance_catalog_permissions.js` et `20260730_zz_add_maintenance_plan_permissions.js` ajoutent toutes les permissions de maintenance aux bases existantes ; les attributions génériques déjà présentes sont recopiées vers les catalogues pour préserver les accès lors du déploiement.
 

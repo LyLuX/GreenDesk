@@ -7,6 +7,7 @@ import { lockPageScroll } from '../utils/page-scroll-lock.js';
  * @param {object} props Component properties.
  * @param {boolean} props.open Whether the modal is visible.
  * @param {string} props.title Modal title.
+ * @param {React.ReactNode} [props.subtitle] Optional secondary text displayed below the title.
  * @param {React.ReactNode} props.children Modal content.
  * @param {() => void} props.onClose Callback used to close the modal.
  * @param {boolean} [props.busy=false] Prevents the modal from closing while an action is running.
@@ -17,6 +18,7 @@ import { lockPageScroll } from '../utils/page-scroll-lock.js';
 export default function Modal({
   open,
   title,
+  subtitle,
   children,
   onClose,
   busy = false,
@@ -58,9 +60,12 @@ export default function Modal({
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="mb-4 d-flex align-items-center justify-content-between">
-          <h2 id={titleId} className="h5 mb-0 fw-semibold">
-            {title}
-          </h2>
+          <div>
+            <h2 id={titleId} className="h5 mb-0 fw-semibold">
+              {title}
+            </h2>
+            {subtitle ? <small className="d-block text-body-secondary">{subtitle}</small> : null}
+          </div>
           <button
             aria-label="Fermer"
             className="btn-close"

@@ -237,7 +237,13 @@ describe('dedicated maintenance catalogue pages', () => {
     render(<MaintenancePartsPage />);
 
     await user.click(await screen.findByRole('button', { name: 'Gérer le stock de Bougie' }));
-    expect(screen.getByRole('dialog')).toHaveTextContent('Gérer le stock — Bougie');
+    const stockDialog = screen.getByRole('dialog');
+    const stockTitle = within(stockDialog).getByRole('heading', {
+      name: 'Gérer le stock — Bougie',
+    });
+    const partReference = within(stockDialog).getByText('BPMR8Y', { selector: 'small' });
+    expect(stockTitle.nextElementSibling).toBe(partReference);
+    expect(partReference).toHaveClass('d-block', 'text-body-secondary');
     expect(screen.getByLabelText('Quantité en stock')).toHaveValue(0);
     expect(screen.getByLabelText('Quantité commandée')).toHaveValue(0);
     await user.clear(screen.getByLabelText('Quantité en stock'));
