@@ -47,4 +47,16 @@ describe('production CSS build', () => {
 
     expect(styles).toMatch(/\.multiline-text\s*\{[^}]*white-space:\s*pre-wrap;/);
   });
+
+  it('uses one shared color for every wear-based maintenance indicator', () => {
+    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+
+    expect(styles).toMatch(/--maintenance-wear-based-color:\s*var\(--bs-purple\);/);
+    expect(styles).toMatch(
+      /\.metric-card\.maintenance-wear-based\s*\{[^}]*border-left-color:\s*var\(--maintenance-wear-based-color\);/,
+    );
+    expect(styles).toMatch(
+      /\.status-badge\.maintenance-wear-based\s*\{[^}]*background:\s*var\(--maintenance-wear-based-color\);[^}]*color:\s*#fff;/,
+    );
+  });
 });

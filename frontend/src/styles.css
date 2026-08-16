@@ -8,6 +8,7 @@
   --brand-blue: #2c7189;
   --brand-blue-dark: #20566b;
   --brand-mist: #f3f6f1;
+  --maintenance-wear-based-color: var(--bs-purple);
   --ink: #1f2a25;
   --muted: #64716a;
   --border: #dbe3dc;
@@ -777,7 +778,7 @@ a:hover {
 }
 
 .metric-card.maintenance-wear-based {
-  border-left-color: var(--bs-purple);
+  border-left-color: var(--maintenance-wear-based-color);
 }
 
 .metric-card.maintenance-overdue-alert {
@@ -817,8 +818,8 @@ a:hover {
 }
 
 .status-badge.maintenance-wear-based {
-  background: #eee8f7;
-  color: #574474;
+  background: var(--maintenance-wear-based-color);
+  color: #fff;
 }
 
 .modal-backdrop-custom {
