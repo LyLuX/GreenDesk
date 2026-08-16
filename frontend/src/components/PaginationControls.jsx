@@ -12,7 +12,7 @@ export default function PaginationControls({
   if (!pagination) return null;
 
   return (
-    <div className="mt-4 d-flex flex-wrap align-items-center justify-content-between gap-3 text-body-secondary small">
+    <div className="mt-2 d-flex flex-wrap align-items-center justify-content-between gap-3 text-body-secondary small">
       <span>
         {pagination.total} {itemLabel}, page {pagination.page} sur {pagination.totalPages}
       </span>

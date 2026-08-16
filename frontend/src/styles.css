@@ -937,7 +937,7 @@ body.app-scroll-locked {
 }
 
 .maintenance-plan-parts {
-  max-height: min(18rem, 16vh);
+  max-height: min(11.25rem, 10vh);
   overflow: auto;
   padding: 0.15rem 0.35rem 0.15rem 0.15rem;
   scrollbar-gutter: stable;
