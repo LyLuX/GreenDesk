@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import getApiErrorMessage from '../api/get-api-error-message.js';
+import useAuth from '../auth/useAuth.js';
 import {
   listMaintenancePartPriceHistory,
   listMaintenancePartStockMovements,
@@ -14,6 +15,7 @@ import {
 } from '../inventory/stock-status.js';
 import useNotification from '../notifications/useNotification.js';
 import { MAX_MAINTENANCE_PART_UNIT_PRICE } from '../maintenance/maintenance-costs.js';
+import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import { formatCurrency, formatDateTime } from '../utils/formatters.js';
 import Button from './Button.jsx';
 import Loader from './Loader.jsx';
@@ -28,7 +30,24 @@ const PRICE_OPERATION = 'price';
 
 /** Shared stock-operation dialog for a maintenance part. */
 export default function StockManagementModal({ part, onClose, onUpdated }) {
+  const { hasPermission } = useAuth();
   const { notify } = useNotification();
+  const canAdjustOnHand = hasPermission(maintenancePermissions.parts.stock.adjustOnHand);
+  const canAdjustOnOrder = hasPermission(maintenancePermissions.parts.stock.adjustOnOrder);
+  const canOrder = hasPermission(maintenancePermissions.parts.stock.order);
+  const canReceive = hasPermission(maintenancePermissions.parts.stock.receive);
+  const canUpdatePrice = hasPermission(maintenancePermissions.parts.price.update);
+  const permittedOperations = [
+    ...(canAdjustOnHand || canAdjustOnOrder
+      ? [{ value: STOCK_OPERATIONS.ADJUST, label: 'Corriger les quantités' }]
+      : []),
+    ...(canOrder ? [{ value: STOCK_OPERATIONS.ORDER, label: 'Enregistrer une commande' }] : []),
+    ...(canReceive
+      ? [{ value: STOCK_OPERATIONS.RECEIVE, label: 'Réceptionner une commande' }]
+      : []),
+    ...(canUpdatePrice ? [{ value: PRICE_OPERATION, label: 'Modifier le prix unitaire' }] : []),
+  ];
+  const initialOperation = permittedOperations[0]?.value ?? '';
   const [currentPart, setCurrentPart] = useState(part);
   const [operation, setOperation] = useState(STOCK_OPERATIONS.ADJUST);
   const [quantity, setQuantity] = useState('1');
@@ -64,12 +83,12 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
     setQuantityOnOrder(String(part.quantityOnOrder ?? 0));
     setUnitPrice(String(part.unitPrice ?? 0));
     setQuantity('1');
-    setOperation(STOCK_OPERATIONS.ADJUST);
+    setOperation(initialOperation);
     setError('');
     const controller = new AbortController();
     loadHistory(part.uuid, controller.signal);
     return () => controller.abort();
-  }, [loadHistory, part]);
+  }, [initialOperation, loadHistory, part]);
 
   if (!part || !currentPart) return null;
 
@@ -79,19 +98,17 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
     setBusy(true);
     setError('');
     try {
+      const stockPayload = { operation };
+      if (operation === STOCK_OPERATIONS.ADJUST) {
+        if (canAdjustOnHand) stockPayload.quantityOnHand = Number(quantityOnHand);
+        if (canAdjustOnOrder) stockPayload.quantityOnOrder = Number(quantityOnOrder);
+      } else {
+        stockPayload.quantity = Number(quantity);
+      }
       const response =
         operation === PRICE_OPERATION
           ? await updateMaintenancePartPrice(part.uuid, { unitPrice: Number(unitPrice) })
-          : await updateMaintenancePartStock(
-              part.uuid,
-              operation === STOCK_OPERATIONS.ADJUST
-                ? {
-                    operation,
-                    quantityOnHand: Number(quantityOnHand),
-                    quantityOnOrder: Number(quantityOnOrder),
-                  }
-                : { operation, quantity: Number(quantity) },
-            );
+          : await updateMaintenancePartStock(part.uuid, stockPayload);
       const updatedPart = response.data.data;
       setCurrentPart(updatedPart);
       setQuantityOnHand(String(updatedPart.quantityOnHand));
@@ -151,94 +168,118 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
         </p>
       ) : null}
 
-      <form className="d-grid gap-3" onSubmit={submit}>
-        <label className="form-label mb-0 text-body-secondary">
-          Opération
-          <select
-            className="form-select"
-            value={operation}
-            onChange={(event) => setOperation(event.target.value)}
+      {permittedOperations.length ? (
+        <form className="d-grid gap-3" onSubmit={submit}>
+          <label className="form-label mb-0 text-body-secondary">
+            Opération
+            <select
+              className="form-select"
+              value={operation}
+              onChange={(event) => setOperation(event.target.value)}
+            >
+              {permittedOperations.map((option) => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                  disabled={
+                    option.value === STOCK_OPERATIONS.RECEIVE && !currentPart.quantityOnOrder
+                  }
+                >
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {operation === PRICE_OPERATION ? (
+            <label className="form-label mb-0 text-body-secondary">
+              Nouveau prix unitaire (€)
+              <input
+                className="form-control"
+                type="number"
+                min="0"
+                max={MAX_MAINTENANCE_PART_UNIT_PRICE}
+                step="0.01"
+                required
+                value={unitPrice}
+                onChange={(event) => setUnitPrice(event.target.value)}
+              />
+            </label>
+          ) : operation === STOCK_OPERATIONS.ADJUST ? (
+            <div className="row g-3 justify-content-around text-center">
+              {canAdjustOnHand ? (
+                <div className="col-sm-5">
+                  <label className="form-label mb-0 text-body-secondary">
+                    Quantité en stock
+                    <input
+                      className="form-control"
+                      type="number"
+                      min="0"
+                      max="1000000"
+                      step="1"
+                      required
+                      value={quantityOnHand}
+                      onChange={(event) => setQuantityOnHand(event.target.value)}
+                    />
+                  </label>
+                </div>
+              ) : null}
+              {canAdjustOnOrder ? (
+                <div className="col-sm-5">
+                  <label className="form-label mb-0 text-body-secondary">
+                    Quantité commandée
+                    <input
+                      className="form-control"
+                      type="number"
+                      min="0"
+                      max="1000000"
+                      step="1"
+                      required
+                      value={quantityOnOrder}
+                      onChange={(event) => setQuantityOnOrder(event.target.value)}
+                    />
+                  </label>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <label className="form-label mb-0 text-body-secondary">
+              {operation === STOCK_OPERATIONS.RECEIVE ? 'Quantité reçue' : 'Quantité commandée'}
+              <input
+                className="form-control"
+                type="number"
+                min="1"
+                max={operation === STOCK_OPERATIONS.RECEIVE ? currentPart.quantityOnOrder : 1000000}
+                step="1"
+                required
+                value={quantity}
+                onChange={(event) => setQuantity(event.target.value)}
+              />
+            </label>
+          )}
+
+          {operation === STOCK_OPERATIONS.RECEIVE && !currentPart.quantityOnOrder ? (
+            <p className="alert alert-info mb-0">
+              Aucune commande n’est actuellement à réceptionner.
+            </p>
+          ) : null}
+
+          <Button
+            type="submit"
+            disabled={
+              busy || (operation === STOCK_OPERATIONS.RECEIVE && !currentPart.quantityOnOrder)
+            }
           >
-            <option value={STOCK_OPERATIONS.ADJUST}>Corriger les quantités</option>
-            <option value={STOCK_OPERATIONS.ORDER}>Enregistrer une commande</option>
-            <option value={STOCK_OPERATIONS.RECEIVE} disabled={!currentPart.quantityOnOrder}>
-              Réceptionner une commande
-            </option>
-            <option value={PRICE_OPERATION}>Modifier le prix unitaire</option>
-          </select>
-        </label>
-
-        {operation === PRICE_OPERATION ? (
-          <label className="form-label mb-0 text-body-secondary">
-            Nouveau prix unitaire (€)
-            <input
-              className="form-control"
-              type="number"
-              min="0"
-              max={MAX_MAINTENANCE_PART_UNIT_PRICE}
-              step="0.01"
-              required
-              value={unitPrice}
-              onChange={(event) => setUnitPrice(event.target.value)}
-            />
-          </label>
-        ) : operation === STOCK_OPERATIONS.ADJUST ? (
-          <div className="row g-3 justify-content-around text-center">
-            <div className="col-sm-5">
-              <label className="form-label mb-0 text-body-secondary">
-                Quantité en stock
-                <input
-                  className="form-control"
-                  type="number"
-                  min="0"
-                  max="1000000"
-                  step="1"
-                  required
-                  value={quantityOnHand}
-                  onChange={(event) => setQuantityOnHand(event.target.value)}
-                />
-              </label>
-            </div>
-            <div className="col-sm-5">
-              <label className="form-label mb-0 text-body-secondary">
-                Quantité commandée
-                <input
-                  className="form-control"
-                  type="number"
-                  min="0"
-                  max="1000000"
-                  step="1"
-                  required
-                  value={quantityOnOrder}
-                  onChange={(event) => setQuantityOnOrder(event.target.value)}
-                />
-              </label>
-            </div>
-          </div>
-        ) : (
-          <label className="form-label mb-0 text-body-secondary">
-            {operation === STOCK_OPERATIONS.RECEIVE ? 'Quantité reçue' : 'Quantité commandée'}
-            <input
-              className="form-control"
-              type="number"
-              min="1"
-              max={operation === STOCK_OPERATIONS.RECEIVE ? currentPart.quantityOnOrder : 1000000}
-              step="1"
-              required
-              value={quantity}
-              onChange={(event) => setQuantity(event.target.value)}
-            />
-          </label>
-        )}
-
-        <Button type="submit" disabled={busy}>
-          {busy
-            ? 'Enregistrement…'
-            : operation === PRICE_OPERATION
-              ? 'Enregistrer le prix'
-              : 'Enregistrer le mouvement'}
-        </Button>
-      </form>
+            {busy
+              ? 'Enregistrement…'
+              : operation === PRICE_OPERATION
+                ? 'Enregistrer le prix'
+                : 'Enregistrer le mouvement'}
+          </Button>
+        </form>
+      ) : (
+        <p className="alert alert-info">Aucune opération de stock ne vous est autorisée.</p>
+      )}
 
       <h3 className="h6 mt-4">Derniers mouvements</h3>
       {loadingHistory ? (

@@ -188,6 +188,21 @@ describe('OpenAPI contract', () => {
     expect(swaggerSpec.paths['/maintenance/parts'].post.description).toContain(
       '`maintenance.parts.create`',
     );
+    expect(swaggerSpec.paths['/maintenance/parts/{uuid}/stock'].patch.description).toContain(
+      '`maintenance.parts.stock.adjust_on_hand`',
+    );
+    expect(swaggerSpec.paths['/maintenance/parts/{uuid}/stock'].patch.description).toContain(
+      '`maintenance.parts.stock.adjust_on_order`',
+    );
+    expect(swaggerSpec.paths['/maintenance/parts/{uuid}/stock'].patch.description).toContain(
+      '`maintenance.parts.stock.order`',
+    );
+    expect(swaggerSpec.paths['/maintenance/parts/{uuid}/stock'].patch.description).toContain(
+      '`maintenance.parts.stock.receive`',
+    );
+    expect(swaggerSpec.paths['/maintenance/parts/{uuid}/price'].patch.description).toContain(
+      '`maintenance.parts.price.update`',
+    );
     expect(swaggerSpec.components.schemas.DashboardSummary.required).not.toContain('maintenance');
     expect(dashboardMaintenance.items.properties).toEqual(
       expect.objectContaining({

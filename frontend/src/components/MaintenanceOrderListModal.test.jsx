@@ -431,8 +431,10 @@ describe('MaintenanceOrderListModal', () => {
     expect(mocks.notify).toHaveBeenCalledWith('success', 'Bougie marquée commandée (3 pièce).');
   });
 
-  it('hides stock update actions without the part update permission', async () => {
-    mocks.hasPermission.mockReturnValue(false);
+  it('does not expose order actions through the general part-update permission', async () => {
+    mocks.hasPermission.mockImplementation(
+      (permission) => permission === 'maintenance.parts.update',
+    );
 
     render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
 

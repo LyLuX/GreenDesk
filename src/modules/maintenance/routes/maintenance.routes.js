@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../../../core/middlewares/auth.middleware.js';
-import { authorize } from '../../../core/middlewares/authorization.middleware.js';
+import { authorize, authorizeAll } from '../../../core/middlewares/authorization.middleware.js';
+import { STOCK_OPERATIONS } from '../../../core/inventory/stock-operation.js';
 import { validateRequest } from '../../../core/middlewares/validate-request.js';
 import { asyncHandler } from '../../../core/utils/async-handler.js';
 import MaintenanceCatalogController from '../controller/maintenance-catalog.controller.js';
@@ -18,6 +19,25 @@ const authorizeWithoutPartReplacement = authorize(
 const requireWithoutPartReplacementPermission = (request, response, next) => {
   if (request.body?.partsAction !== MAINTENANCE_PART_ACTIONS.SKIP) return next();
   return authorizeWithoutPartReplacement(request, response, next);
+};
+const partStockPermissions = Object.values(maintenancePermissions.parts.stock);
+const authorizePartStockAction = authorize(...partStockPermissions);
+const requirePartStockActionPermission = (request, response, next) => {
+  const { operation } = request.body;
+  if (operation === STOCK_OPERATIONS.ORDER) {
+    return authorizeAll(maintenancePermissions.parts.stock.order)(request, response, next);
+  }
+  if (operation === STOCK_OPERATIONS.RECEIVE) {
+    return authorizeAll(maintenancePermissions.parts.stock.receive)(request, response, next);
+  }
+  const requiredPermissions = [];
+  if (!operation || Object.hasOwn(request.body, 'quantityOnHand')) {
+    requiredPermissions.push(maintenancePermissions.parts.stock.adjustOnHand);
+  }
+  if (!operation || Object.hasOwn(request.body, 'quantityOnOrder')) {
+    requiredPermissions.push(maintenancePermissions.parts.stock.adjustOnOrder);
+  }
+  return authorizeAll(...requiredPermissions)(request, response, next);
 };
 router.use(authenticate);
 router.get(
@@ -71,14 +91,15 @@ router.put(
 );
 router.patch(
   '/parts/:uuid/stock',
-  authorize(maintenancePermissions.parts.update),
+  authorizePartStockAction,
   validator.updatePartStockValidator,
   validateRequest,
+  requirePartStockActionPermission,
   asyncHandler(catalogController.updatePartStock.bind(catalogController)),
 );
 router.patch(
   '/parts/:uuid/price',
-  authorize(maintenancePermissions.parts.update),
+  authorize(maintenancePermissions.parts.price.update),
   validator.updatePartPriceValidator,
   validateRequest,
   asyncHandler(catalogController.updatePartPrice.bind(catalogController)),

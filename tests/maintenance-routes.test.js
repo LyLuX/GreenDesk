@@ -217,21 +217,81 @@ describe('maintenance catalogue route permissions', () => {
       .send({ name: 'Bougie moteur' })
       .expect(200);
     await request(app)
-      .patch(`/api/v1/maintenance/parts/${uuid}/stock`)
-      .set('Authorization', authorization(['maintenance.parts.update']))
-      .send({ operation: 'order', quantity: 3 })
-      .expect(200);
-    expect(catalogController.updatePartStock).toHaveBeenCalled();
-    await request(app)
-      .patch(`/api/v1/maintenance/parts/${uuid}/price`)
-      .set('Authorization', authorization(['maintenance.parts.update']))
-      .send({ unitPrice: 12.5 })
-      .expect(200);
-    expect(catalogController.updatePartPrice).toHaveBeenCalled();
-    await request(app)
       .delete(`/api/v1/maintenance/parts/${uuid}`)
       .set('Authorization', authorization(['maintenance.parts.delete']))
       .expect(204);
+  });
+
+  it('requires the permission matching each stock operation', async () => {
+    const path = `/api/v1/maintenance/parts/${uuid}/stock`;
+    const permissions = {
+      adjustOnHand: 'maintenance.parts.stock.adjust_on_hand',
+      adjustOnOrder: 'maintenance.parts.stock.adjust_on_order',
+      order: 'maintenance.parts.stock.order',
+      receive: 'maintenance.parts.stock.receive',
+    };
+
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization(['maintenance.parts.update']))
+      .send({ operation: 'order', quantity: 3 })
+      .expect(403);
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization([permissions.order]))
+      .send({ operation: 'order', quantity: 3 })
+      .expect(200);
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization([permissions.order]))
+      .send({ operation: 'receive', quantity: 1 })
+      .expect(403);
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization([permissions.receive]))
+      .send({ operation: 'receive', quantity: 1 })
+      .expect(200);
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization([permissions.adjustOnHand]))
+      .send({ operation: 'adjust', quantityOnHand: 4 })
+      .expect(200);
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization([permissions.adjustOnOrder]))
+      .send({ operation: 'adjust', quantityOnOrder: 2 })
+      .expect(200);
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization([permissions.adjustOnHand]))
+      .send({ operation: 'adjust', quantityOnHand: 4, quantityOnOrder: 2 })
+      .expect(403);
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization([permissions.adjustOnHand, permissions.adjustOnOrder]))
+      .send({ operation: 'adjust', quantityOnHand: 4, quantityOnOrder: 2 })
+      .expect(200);
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization([permissions.adjustOnHand, permissions.adjustOnOrder]))
+      .send({ stockStatus: 'inStock', stockQuantity: 4 })
+      .expect(200);
+    expect(catalogController.updatePartStock).toHaveBeenCalled();
+  });
+
+  it('requires the dedicated price-update permission', async () => {
+    const path = `/api/v1/maintenance/parts/${uuid}/price`;
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization(['maintenance.parts.update']))
+      .send({ unitPrice: 12.5 })
+      .expect(403);
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization(['maintenance.parts.price.update']))
+      .send({ unitPrice: 12.5 })
+      .expect(200);
+    expect(catalogController.updatePartPrice).toHaveBeenCalled();
   });
 
   it('validates stock updates and rejects unrelated permissions', async () => {
@@ -242,7 +302,7 @@ describe('maintenance catalogue route permissions', () => {
       .expect(403);
     await request(app)
       .patch(`/api/v1/maintenance/parts/${uuid}/stock`)
-      .set('Authorization', authorization(['maintenance.parts.update']))
+      .set('Authorization', authorization(['maintenance.parts.stock.receive']))
       .send({ operation: 'receive', quantity: -1 })
       .expect(400);
   });

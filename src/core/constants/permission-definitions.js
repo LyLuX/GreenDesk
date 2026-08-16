@@ -142,6 +142,26 @@ const permissionDefinitions = [
     name: maintenancePermissions.parts.delete,
     description: 'Supprimer les pièces de maintenance qui ne sont utilisées par aucun plan.',
   },
+  {
+    name: maintenancePermissions.parts.stock.adjustOnHand,
+    description: 'Corriger directement la quantité réellement disponible dans le stock atelier.',
+  },
+  {
+    name: maintenancePermissions.parts.stock.adjustOnOrder,
+    description: 'Corriger directement la quantité actuellement enregistrée comme commandée.',
+  },
+  {
+    name: maintenancePermissions.parts.stock.order,
+    description: 'Enregistrer une nouvelle commande de pièces destinées à la maintenance.',
+  },
+  {
+    name: maintenancePermissions.parts.stock.receive,
+    description: 'Réceptionner des pièces commandées et les transférer dans le stock atelier.',
+  },
+  {
+    name: maintenancePermissions.parts.price.update,
+    description: 'Modifier le prix unitaire courant d’une pièce de maintenance.',
+  },
 ];
 
 export default permissionDefinitions;

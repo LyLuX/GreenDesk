@@ -19,6 +19,15 @@ const maintenancePermissions = Object.freeze({
     create: 'maintenance.parts.create',
     update: 'maintenance.parts.update',
     delete: 'maintenance.parts.delete',
+    stock: Object.freeze({
+      adjustOnHand: 'maintenance.parts.stock.adjust_on_hand',
+      adjustOnOrder: 'maintenance.parts.stock.adjust_on_order',
+      order: 'maintenance.parts.stock.order',
+      receive: 'maintenance.parts.stock.receive',
+    }),
+    price: Object.freeze({
+      update: 'maintenance.parts.price.update',
+    }),
   }),
 });
 

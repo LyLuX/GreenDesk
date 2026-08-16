@@ -14,6 +14,14 @@ export const authorize =
     return next(new AppError('Insufficient permissions', HTTP_STATUS.FORBIDDEN));
   };
 
+/** Requires every listed permission, while preserving the administrator bypass. */
+export const authorizeAll =
+  (...permissions) =>
+  (request, _response, next) => {
+    if (permissions.every((permission) => hasPermission(request, permission))) return next();
+    return next(new AppError('Insufficient permissions', HTTP_STATUS.FORBIDDEN));
+  };
+
 /** Restricts an operation to one of the specified application roles. */
 export const authorizeRole =
   (...roles) =>

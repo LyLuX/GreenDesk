@@ -323,7 +323,7 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
   );
   const supplierGroups = groupOrderPartsBySupplier(data?.items);
   const supplierPages = paginateSupplierGroups(supplierGroups);
-  const canUpdateStock = hasPermission(maintenancePermissions.parts.update);
+  const canOrderParts = hasPermission(maintenancePermissions.parts.stock.order);
 
   const requestMarkOrdered = (part) => {
     const quantity = Number(orderQuantities[part.uuid]);
@@ -439,12 +439,12 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
                 manufacturerByUuid={manufacturerByUuid}
                 orderQuantities={orderQuantities}
                 onOrderQuantityChange={
-                  canUpdateStock
+                  canOrderParts
                     ? (uuid, value) =>
                         setOrderQuantities((current) => ({ ...current, [uuid]: value }))
                     : undefined
                 }
-                onMarkOrdered={canUpdateStock ? requestMarkOrdered : undefined}
+                onMarkOrdered={canOrderParts ? requestMarkOrdered : undefined}
                 actionLoadingId={actionLoadingId}
               />
             ) : (

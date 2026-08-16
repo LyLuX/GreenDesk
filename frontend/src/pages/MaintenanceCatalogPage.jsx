@@ -33,6 +33,7 @@ export default function MaintenanceCatalogPage({
   permissions,
   compactTable = false,
   renderRowActions,
+  rowActionPermissions,
   additionalFilters = [],
 }) {
   const { hasPermission } = useAuth();
@@ -57,6 +58,11 @@ export default function MaintenanceCatalogPage({
   const agreement = feminine
     ? { saved: 'enregistrée', deleted: 'supprimée', disabled: 'désactivée', enabled: 'réactivée' }
     : { saved: 'enregistré', deleted: 'supprimé', disabled: 'désactivé', enabled: 'réactivé' };
+  const canRenderRowActions =
+    Boolean(renderRowActions) &&
+    (rowActionPermissions?.length
+      ? rowActionPermissions.some((permission) => hasPermission(permission))
+      : hasPermission(permissions.update));
 
   const load = useCallback(
     async (signal) => {
@@ -244,9 +250,7 @@ export default function MaintenanceCatalogPage({
           actionLoadingId={busy ? confirmation?.row.uuid : null}
           compact={compactTable}
           renderActions={
-            renderRowActions && hasPermission(permissions.update)
-              ? (row) => renderRowActions(row, { reload: load })
-              : undefined
+            canRenderRowActions ? (row) => renderRowActions(row, { reload: load }) : undefined
           }
           onEdit={
             hasPermission(permissions.update)

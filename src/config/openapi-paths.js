@@ -904,7 +904,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Applique une opération atomique au stock d’une pièce.',
       description:
-        'Nécessite `maintenance.parts.update`. `adjust` corrige les compteurs, `order` ajoute une commande et `receive` transfère une quantité commandée vers le stock atelier. Les écritures sont transactionnelles et historisées.',
+        '`adjust` nécessite `maintenance.parts.stock.adjust_on_hand` pour `quantityOnHand` et `maintenance.parts.stock.adjust_on_order` pour `quantityOnOrder`. Fournir les deux quantités nécessite les deux permissions. Le format historique `stockStatus`/`stockQuantity`, qui corrige les deux compteurs, nécessite également les deux permissions. `order` nécessite `maintenance.parts.stock.order`. `receive` nécessite `maintenance.parts.stock.receive`. Les écritures sont transactionnelles et historisées.',
       security: secure,
       requestBody: jsonBody('MaintenancePartStockRequest'),
       responses: {
@@ -936,7 +936,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Modifie le prix unitaire courant d’une pièce.',
       description:
-        'Nécessite `maintenance.parts.update`. Le changement est transactionnel et conserve automatiquement l’ancien et le nouveau prix.',
+        'Nécessite `maintenance.parts.price.update`. Le changement est transactionnel et conserve automatiquement l’ancien et le nouveau prix.',
       security: secure,
       requestBody: jsonBody('MaintenancePartPriceRequest'),
       responses: {

@@ -17,11 +17,26 @@ const rolesApi = createReferenceApi('roles');
 const permissionsApi = createReferenceApi('permissions');
 const permissionsPageLimit = 25;
 const visiblePermissionCount = 6;
-const permissionActionOrder = ['read', 'create', 'update', 'delete', 'execute', 'skip_parts'];
+const permissionActionOrder = [
+  'read',
+  'create',
+  'update',
+  'adjust_on_hand',
+  'adjust_on_order',
+  'order',
+  'receive',
+  'delete',
+  'execute',
+  'skip_parts',
+];
 const permissionActionLabels = {
   read: 'Lecture',
   create: 'Création',
   update: 'Modification',
+  adjust_on_hand: 'Correction du stock',
+  adjust_on_order: 'Correction des quantités commandées',
+  order: 'Enregistrement des commandes',
+  receive: 'Réception des commandes',
   delete: 'Suppression',
   execute: 'Exécution',
   skip_parts: 'Exécution sans changement de pièce',

@@ -36,6 +36,10 @@ const stockFilters = [
     options: stockStatusOptions,
   },
 ];
+const stockActionPermissions = [
+  ...Object.values(maintenancePermissions.parts.stock),
+  maintenancePermissions.parts.price.update,
+];
 
 /** Dedicated exact maintenance-part management page. */
 export default function MaintenancePartsPage() {
@@ -162,6 +166,7 @@ export default function MaintenancePartsPage() {
         permissions={maintenancePermissions.parts}
         additionalFilters={stockFilters}
         compactTable
+        rowActionPermissions={stockActionPermissions}
         renderRowActions={(part, { reload }) => (
           <button
             type="button"

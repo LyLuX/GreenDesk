@@ -312,6 +312,45 @@ describe('dedicated maintenance catalogue pages', () => {
     );
   });
 
+  it('submits only the stock quantity covered by the user permission', async () => {
+    const user = userEvent.setup();
+    mocks.hasPermission.mockImplementation(
+      (permission) => permission === 'maintenance.parts.stock.adjust_on_hand',
+    );
+    render(<MaintenancePartsPage />);
+
+    await user.click(await screen.findByRole('button', { name: 'Gérer le stock de Bougie' }));
+    expect(screen.getByRole('option', { name: 'Corriger les quantités' })).toBeVisible();
+    expect(
+      screen.queryByRole('option', { name: 'Enregistrer une commande' }),
+    ).not.toBeInTheDocument();
+    const quantityOnHand = screen.getByLabelText('Quantité en stock');
+    expect(screen.queryByLabelText('Quantité commandée')).not.toBeInTheDocument();
+
+    await user.clear(quantityOnHand);
+    await user.type(quantityOnHand, '4');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer le mouvement' }));
+
+    await waitFor(() =>
+      expect(mocks.updatePartStock).toHaveBeenCalledWith('part-uuid', {
+        operation: 'adjust',
+        quantityOnHand: 4,
+      }),
+    );
+  });
+
+  it('does not expose stock actions through the general part-update permission', async () => {
+    mocks.hasPermission.mockImplementation(
+      (permission) => permission === 'maintenance.parts.update',
+    );
+    render(<MaintenancePartsPage />);
+
+    expect(await screen.findByRole('button', { name: 'Modifier Bougie' })).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Gérer le stock de Bougie' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('shows separate cost cards and changes the unit price without an operation label', async () => {
     const user = userEvent.setup();
     render(<MaintenancePartsPage />);

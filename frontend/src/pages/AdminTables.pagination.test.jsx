@@ -287,6 +287,16 @@ describe('administrator table pagination', () => {
           { uuid: 'part-read', name: 'maintenance.parts.read', description: '' },
           { uuid: 'material-create', name: 'materials.create', description: '' },
           {
+            uuid: 'maintenance-adjust-on-hand',
+            name: 'maintenance.parts.stock.adjust_on_hand',
+            description: '',
+          },
+          {
+            uuid: 'maintenance-order',
+            name: 'maintenance.parts.stock.order',
+            description: '',
+          },
+          {
             uuid: 'maintenance-execute-without-parts',
             name: 'maintenance.execute.skip_parts',
             description: '',
@@ -307,10 +317,18 @@ describe('administrator table pagination', () => {
     const exceptionalExecutionAction = actionGroup.getByRole('checkbox', {
       name: 'Exécution sans changement de pièce 0 sur 1',
     });
+    const adjustOnHandAction = actionGroup.getByRole('checkbox', {
+      name: 'Correction du stock 0 sur 1',
+    });
+    const orderAction = actionGroup.getByRole('checkbox', {
+      name: 'Enregistrement des commandes 0 sur 1',
+    });
 
     expect(readAction).not.toBeChecked();
     expect(createAction).not.toBeChecked();
     expect(exceptionalExecutionAction).not.toBeChecked();
+    expect(adjustOnHandAction).not.toBeChecked();
+    expect(orderAction).not.toBeChecked();
     expect(actionGroup.queryByText('Admin')).not.toBeInTheDocument();
 
     await user.click(readAction);
