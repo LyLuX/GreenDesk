@@ -28,7 +28,6 @@ vi.mock('../notifications/useNotification.js', () => ({
 }));
 
 import MaintenanceOrderListModal, {
-  formatOrderQuantity,
   getOrderListFiltersForDeadline,
   groupOrderPartsBySupplier,
   paginateSupplierGroups,
@@ -87,7 +86,7 @@ describe('MaintenanceOrderListModal', () => {
     expect(logo).toBeVisible();
     expect(logo.parentElement).toHaveClass('maintenance-order-part-summary');
     expect(within(dialog).getByRole('table')).toHaveClass('maintenance-order-list-table');
-    expect(within(dialog).getByText('2 pièces').closest('td')).not.toHaveClass('text-nowrap');
+    expect(within(dialog).getByText('2 pièce').closest('td')).not.toHaveClass('text-nowrap');
     expect(within(dialog).queryByText('NGK')).not.toBeInTheDocument();
 
     const printPage = document.querySelector('.maintenance-order-print-page');
@@ -95,11 +94,6 @@ describe('MaintenanceOrderListModal', () => {
     expect(printPage.querySelector('.maintenance-order-print-manufacturer')).toHaveTextContent(
       'NGK',
     );
-  });
-
-  it('pluralizes the default part unit according to the ordered quantity', () => {
-    expect(formatOrderQuantity(1, 'pièce')).toBe('1 pièce');
-    expect(formatOrderQuantity(2, 'pièce')).toBe('2 pièces');
   });
 
   it('matches maintenance deadline filters with order-list periods', () => {
@@ -366,7 +360,7 @@ describe('MaintenanceOrderListModal', () => {
     render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
 
     const dialog = screen.getByRole('dialog');
-    expect(await within(dialog).findByText('2 pièces')).toBeVisible();
+    expect(await within(dialog).findByText('2 pièce')).toBeVisible();
     const printButton = screen.getByRole('button', { name: 'Imprimer la liste' });
     expect(printButton).toHaveClass('btn', 'btn-brand');
     expect(printButton.parentElement).toHaveClass('justify-content-end');
@@ -379,9 +373,10 @@ describe('MaintenanceOrderListModal', () => {
     expect(printHeader).toHaveTextContent('GreenDesk');
     expect(printHeader).toHaveTextContent('EI BOURNAZEL Paul');
     expect(printHeader).not.toHaveTextContent('Échéance');
-    expect(document.querySelector('.maintenance-order-print-page')).not.toHaveTextContent(
-      'Plans concernés',
-    );
+    const printPage = document.querySelector('.maintenance-order-print-page');
+    expect(printPage).toHaveTextContent('2 pièce');
+    expect(printPage).not.toHaveTextContent('2 pièces');
+    expect(printPage).not.toHaveTextContent('Plans concernés');
     const printFooter = document.querySelector('.maintenance-order-print-footer .app-footer');
     expect(printFooter).toHaveTextContent('EI BOURNAZEL Paul');
     expect(printFooter).toHaveTextContent('GreenDesk · version');
@@ -423,7 +418,7 @@ describe('MaintenanceOrderListModal', () => {
     expect(orderButton).toHaveTextContent('Commander');
     expect(orderButton.parentElement).toHaveClass('maintenance-order-command-controls');
     await user.click(orderButton);
-    expect(screen.getByText(/Quantité commandée : 3 pièces/)).toBeVisible();
+    expect(screen.getByText(/Quantité commandée : 3 pièce/)).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Marquer commandée' }));
 
     await waitFor(() =>
@@ -433,7 +428,7 @@ describe('MaintenanceOrderListModal', () => {
       }),
     );
     expect(await screen.findByText('Aucune pièce à commander sur cette période.')).toBeVisible();
-    expect(mocks.notify).toHaveBeenCalledWith('success', 'Bougie marquée commandée (3 pièces).');
+    expect(mocks.notify).toHaveBeenCalledWith('success', 'Bougie marquée commandée (3 pièce).');
   });
 
   it('hides stock update actions without the part update permission', async () => {

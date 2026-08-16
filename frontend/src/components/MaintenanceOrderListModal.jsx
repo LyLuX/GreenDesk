@@ -5,7 +5,7 @@ import getApiErrorMessage from '../api/get-api-error-message.js';
 import { getMaintenanceOrderList, updateMaintenancePartStock } from '../api/maintenance.api.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
-import { formatStockQuantity, STOCK_OPERATIONS } from '../inventory/stock-status.js';
+import { STOCK_OPERATIONS } from '../inventory/stock-status.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import useNotification from '../notifications/useNotification.js';
 import { extractPageItems } from '../utils/pagination.js';
@@ -66,9 +66,6 @@ export const getOrderListFiltersForDeadline = (deadlineStatus) => {
   };
   return filtersByDeadline[deadlineStatus] ?? { ...defaultOrderListFilters };
 };
-
-/** Formats the default part unit with its French plural when required. */
-export const formatOrderQuantity = formatStockQuantity;
 
 /** Groups ordered parts by supplier for one printed page per supplier. */
 export const groupOrderPartsBySupplier = (parts = []) => {
@@ -150,7 +147,9 @@ function OrderPartsTable({
                       {part.supplierReference || part.reference}
                     </small>
                   </td>
-                  <td>{formatOrderQuantity(part.quantity, part.unit)}</td>
+                  <td>
+                    {part.quantity} {part.unit}
+                  </td>
                   {showPlans ? (
                     <td className="maintenance-order-plans">
                       <ul className="mb-0 ps-3">
@@ -347,10 +346,7 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
       });
       notify(
         'success',
-        `${confirmation.part.name} marquée commandée (${formatOrderQuantity(
-          confirmation.quantity,
-          confirmation.part.unit,
-        )}).`,
+        `${confirmation.part.name} marquée commandée (${confirmation.quantity} ${confirmation.part.unit}).`,
       );
       setConfirmation(null);
       await load();
@@ -478,10 +474,7 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
         title="Marquer la pièce commandée"
         description={
           confirmation
-            ? `« ${confirmation.part.name} » sera retirée de la liste des pièces à commander. Quantité commandée : ${formatOrderQuantity(
-                confirmation.quantity,
-                confirmation.part.unit,
-              )}.`
+            ? `« ${confirmation.part.name} » sera retirée de la liste des pièces à commander. Quantité commandée : ${confirmation.quantity} ${confirmation.part.unit}.`
             : ''
         }
         confirmLabel="Marquer commandée"
