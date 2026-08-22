@@ -62,7 +62,10 @@ describe('DashboardService', () => {
       },
     });
     expect(maintenanceService.toPublic).toHaveBeenCalledTimes(5);
-    expect(repository.getCounts).toHaveBeenCalledWith({ includeMaintenance: true });
+    expect(repository.getCounts).toHaveBeenCalledWith({
+      includeMaintenance: true,
+      includeFinancial: true,
+    });
   });
 
   it('omits maintenance data when the caller lacks maintenance access', async () => {
@@ -90,7 +93,53 @@ describe('DashboardService', () => {
       manufacturers: { total: 2 },
       fleet: { totalPurchaseValue: 1600, averageCost: 200, averageAge: 3.5 },
     });
-    expect(repository.getCounts).toHaveBeenCalledWith({ includeMaintenance: false });
+    expect(repository.getCounts).toHaveBeenCalledWith({
+      includeMaintenance: false,
+      includeFinancial: true,
+    });
     expect(maintenanceService.toPublic).not.toHaveBeenCalled();
+  });
+
+  it('omits every financial value when the caller lacks financial access', async () => {
+    const repository = {
+      getCounts: jest.fn().mockResolvedValue({
+        materialsTotal: 8,
+        materialsActive: 6,
+        materialsInactive: 2,
+        categoriesTotal: 3,
+        manufacturersTotal: 2,
+        averageAge: 3.5,
+        maintenanceTasks: [{ uuid: 'today', status: 'dueToday' }],
+      }),
+    };
+    const maintenanceService = { toPublic: jest.fn((task) => task) };
+
+    await expect(
+      new DashboardService(repository, maintenanceService).getSummary({
+        includeMaintenance: true,
+        includeFinancial: false,
+      }),
+    ).resolves.toEqual({
+      materials: { total: 8, active: 6, inactive: 2 },
+      categories: { total: 3 },
+      manufacturers: { total: 2 },
+      fleet: { averageAge: 3.5 },
+      maintenance: {
+        today: 1,
+        overdue: 0,
+        upcoming: 0,
+        wearBased: 0,
+        items: {
+          today: [{ uuid: 'today', status: 'dueToday' }],
+          overdue: [],
+          upcoming: [],
+          wearBased: [],
+        },
+      },
+    });
+    expect(repository.getCounts).toHaveBeenCalledWith({
+      includeMaintenance: true,
+      includeFinancial: false,
+    });
   });
 });

@@ -12,6 +12,7 @@ import {
   maintenanceTypeLabels,
 } from '../maintenance/maintenance.labels.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
+import dashboardPermissions from '../dashboard/dashboard.permissions.js';
 import { formatCurrency, formatDate } from '../utils/formatters.js';
 
 const maintenanceCards = [
@@ -100,6 +101,7 @@ export default function DashboardPage() {
   const manufacturers = data.manufacturers ?? {};
   const fleet = data.fleet ?? {};
   const maintenance = data.maintenance ?? {};
+  const canReadFinancialIndicators = hasPermission(dashboardPermissions.financial);
   const maintenanceStockValues = maintenance.stockValues ?? {};
   const maintenanceCosts =
     maintenance.costs ??
@@ -125,8 +127,12 @@ export default function DashboardPage() {
         {
           label: 'Valorisation',
           cards: [
-            ['Valeur du parc', formatCurrency(fleet.totalPurchaseValue)],
-            ['Valeur moyenne', formatCurrency(fleet.averageCost)],
+            ...(canReadFinancialIndicators
+              ? [
+                  ['Valeur du parc', formatCurrency(fleet.totalPurchaseValue)],
+                  ['Valeur moyenne', formatCurrency(fleet.averageCost)],
+                ]
+              : []),
             ['Âge moyen', formatAverageAge(fleet.averageAge)],
           ],
         },
@@ -144,20 +150,24 @@ export default function DashboardPage() {
                   value: maintenance[card.key] ?? 0,
                 })),
               },
-              {
-                label: 'Pièces en stock',
-                cards: [
-                  ['Valeur du stock', formatCurrency(maintenanceStockValues.onHand)],
-                  ['Valeur commandée', formatCurrency(maintenanceStockValues.onOrder)],
-                ],
-              },
-              {
-                label: 'Dépenses de maintenance',
-                cards: maintenanceCosts.map(({ year, total }) => [
-                  `Dépenses ${year}`,
-                  formatCurrency(total),
-                ]),
-              },
+              ...(canReadFinancialIndicators
+                ? [
+                    {
+                      label: 'Pièces en stock',
+                      cards: [
+                        ['Valeur du stock', formatCurrency(maintenanceStockValues.onHand)],
+                        ['Valeur commandée', formatCurrency(maintenanceStockValues.onOrder)],
+                      ],
+                    },
+                    {
+                      label: 'Dépenses de maintenance',
+                      cards: maintenanceCosts.map(({ year, total }) => [
+                        `Dépenses ${year}`,
+                        formatCurrency(total),
+                      ]),
+                    },
+                  ]
+                : []),
             ],
           },
         ]

@@ -2,14 +2,16 @@ import { jest } from '@jest/globals';
 
 import DashboardController from '../src/modules/dashboard/controller/dashboard.controller.js';
 
-describe('DashboardController maintenance permissions', () => {
+describe('DashboardController permissions', () => {
   it.each([
-    [[], [], false],
-    [[], ['maintenance.read'], true],
-    [['ADMIN'], [], true],
+    [[], [], false, false],
+    [[], ['maintenance.read'], true, false],
+    [[], ['dashboard.read.financial'], false, true],
+    [[], ['maintenance.read', 'dashboard.read.financial'], true, true],
+    [['ADMIN'], [], true, true],
   ])(
     'requests only the dashboard sections authorized for the user',
-    async (roles, permissions, includeMaintenance) => {
+    async (roles, permissions, includeMaintenance, includeFinancial) => {
       const service = {
         getSummary: jest.fn().mockResolvedValue({ materials: { total: 0 } }),
       };
@@ -18,7 +20,7 @@ describe('DashboardController maintenance permissions', () => {
 
       await controller.summary({ user: { roles, permissions } }, response);
 
-      expect(service.getSummary).toHaveBeenCalledWith({ includeMaintenance });
+      expect(service.getSummary).toHaveBeenCalledWith({ includeMaintenance, includeFinancial });
       expect(response.json).toHaveBeenCalledWith({
         success: true,
         data: { materials: { total: 0 } },

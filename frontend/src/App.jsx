@@ -9,6 +9,7 @@ import { publicRegistrationEnabled } from './config/features.js';
 import AppLayout from './layouts/AppLayout.jsx';
 import maintenancePermissions from './maintenance/maintenance.permissions.js';
 import historyPermissions from './history/history.permissions.js';
+import dashboardPermissions from './dashboard/dashboard.permissions.js';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'));
 const ForbiddenPage = lazy(() => import('./pages/ForbiddenPage.jsx'));
@@ -89,7 +90,10 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/403" element={<ForbiddenPage />} />
             <Route element={<AppLayout />}>
-              <Route path="/dashboard" element={secure('dashboard.read', <DashboardPage />)} />
+              <Route
+                path="/dashboard"
+                element={secure(dashboardPermissions.read, <DashboardPage />)}
+              />
               <Route path="/categories" element={secure('categories.read', <CategoriesPage />)} />
               <Route path="/materials" element={secure('materials.read', <MaterialsPage />)} />
               <Route

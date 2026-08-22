@@ -1,5 +1,6 @@
 import maintenancePermissions from './maintenance/maintenance.permissions.js';
 import historyPermissions from './history/history.permissions.js';
+import dashboardPermissions from './dashboard/dashboard.permissions.js';
 
 /** Hierarchical navigation model shared by the sidebar and its tests. */
 export const navigationSections = [
@@ -8,7 +9,7 @@ export const navigationSections = [
     item: {
       label: 'Tableau de bord',
       path: '/dashboard',
-      permission: 'dashboard.read',
+      permission: dashboardPermissions.read,
     },
   },
   {

@@ -1123,17 +1123,23 @@ export const openApiSchemas = {
       },
       fleet: {
         type: 'object',
-        required: ['totalPurchaseValue', 'averageCost', 'averageAge'],
+        required: ['averageAge'],
         properties: {
-          totalPurchaseValue: { type: 'number' },
-          averageCost: { type: 'number' },
+          totalPurchaseValue: {
+            type: 'number',
+            description: 'Présent uniquement avec `dashboard.read.financial`.',
+          },
+          averageCost: {
+            type: 'number',
+            description: 'Présent uniquement avec `dashboard.read.financial`.',
+          },
           averageAge: { type: 'number' },
         },
       },
       maintenance: {
         type: 'object',
         description: 'Présent uniquement lorsque l’utilisateur possède `maintenance.read`.',
-        required: ['today', 'overdue', 'upcoming', 'wearBased', 'stockValues', 'costs', 'items'],
+        required: ['today', 'overdue', 'upcoming', 'wearBased', 'items'],
         properties: {
           today: { type: 'integer', minimum: 0 },
           overdue: { type: 'integer', minimum: 0 },
@@ -1142,7 +1148,7 @@ export const openApiSchemas = {
           stockValues: {
             type: 'object',
             description:
-              'Valorisation au prix unitaire courant des quantités réellement en stock et commandées.',
+              'Présent uniquement avec `dashboard.read.financial`. Valorisation au prix unitaire courant des quantités réellement en stock et commandées.',
             required: ['onHand', 'onOrder'],
             properties: {
               onHand: { type: 'number', format: 'double', minimum: 0 },
@@ -1151,6 +1157,7 @@ export const openApiSchemas = {
           },
           costs: {
             type: 'array',
+            description: 'Présent uniquement avec `dashboard.read.financial`.',
             minItems: 3,
             maxItems: 3,
             items: {

@@ -1,5 +1,6 @@
 import maintenancePermissions from '../../modules/maintenance/maintenance.permissions.js';
 import historyPermissions from '../../modules/audit/history.permissions.js';
+import dashboardPermissions from '../../modules/dashboard/dashboard.permissions.js';
 
 /** Canonical permission descriptions displayed when administrators configure roles. */
 const permissionDefinitions = [
@@ -52,8 +53,12 @@ const permissionDefinitions = [
     description: 'Retirer des matériels du parc.',
   },
   {
-    name: 'dashboard.read',
+    name: dashboardPermissions.read,
     description: 'Consulter les indicateurs du tableau de bord.',
+  },
+  {
+    name: dashboardPermissions.financial,
+    description: 'Consulter les indicateurs financiers du tableau de bord.',
   },
   {
     name: 'manufacturers.read',

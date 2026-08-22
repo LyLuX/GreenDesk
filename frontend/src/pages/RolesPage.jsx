@@ -19,6 +19,7 @@ const permissionsPageLimit = 25;
 const visiblePermissionCount = 6;
 const permissionActionOrder = [
   'read',
+  'financial',
   'create',
   'update',
   'adjust_on_hand',
@@ -32,6 +33,7 @@ const permissionActionOrder = [
 ];
 const permissionActionLabels = {
   read: 'Lecture',
+  financial: 'Données financières',
   create: 'Création',
   update: 'Modification',
   adjust_on_hand: 'Correction du stock',

@@ -12,7 +12,29 @@ export default class DashboardRepository {
   constructor(maintenanceRepository = new MaintenanceRepository()) {
     this.maintenanceRepository = maintenanceRepository;
   }
-  async getCounts({ includeMaintenance = true } = {}) {
+  async getCounts({ includeMaintenance = true, includeFinancial = true } = {}) {
+    const materialAttributes = [
+      [
+        sequelize.fn(
+          'COALESCE',
+          sequelize.fn('AVG', sequelize.literal('TIMESTAMPDIFF(YEAR, purchase_date, CURDATE())')),
+          0,
+        ),
+        'averageAge',
+      ],
+    ];
+    if (includeFinancial) {
+      materialAttributes.unshift(
+        [
+          sequelize.fn('COALESCE', sequelize.fn('SUM', sequelize.col('purchase_price')), 0),
+          'totalPurchaseValue',
+        ],
+        [
+          sequelize.fn('COALESCE', sequelize.fn('AVG', sequelize.col('purchase_price')), 0),
+          'averageCost',
+        ],
+      );
+    }
     const [
       materialsTotal,
       materialsActive,
@@ -30,46 +52,31 @@ export default class DashboardRepository {
       Category.count(),
       PartManufacturer.count(),
       Material.findOne({
-        attributes: [
-          [
-            sequelize.fn('COALESCE', sequelize.fn('SUM', sequelize.col('purchase_price')), 0),
-            'totalPurchaseValue',
-          ],
-          [
-            sequelize.fn('COALESCE', sequelize.fn('AVG', sequelize.col('purchase_price')), 0),
-            'averageCost',
-          ],
-          [
-            sequelize.fn(
-              'COALESCE',
-              sequelize.fn(
-                'AVG',
-                sequelize.literal('TIMESTAMPDIFF(YEAR, purchase_date, CURDATE())'),
-              ),
-              0,
-            ),
-            'averageAge',
-          ],
-        ],
+        attributes: materialAttributes,
         raw: true,
       }),
       includeMaintenance ? this.maintenanceRepository.findDashboard() : undefined,
-      includeMaintenance ? this.getMaintenanceStockValues() : undefined,
-      includeMaintenance ? this.getMaintenanceCosts() : undefined,
+      includeMaintenance && includeFinancial ? this.getMaintenanceStockValues() : undefined,
+      includeMaintenance && includeFinancial ? this.getMaintenanceCosts() : undefined,
     ]);
-    return {
+    const counts = {
       materialsTotal,
       materialsActive,
       materialsInactive,
       categoriesTotal,
       manufacturersTotal,
-      totalPurchaseValue: Number(materialMetrics.totalPurchaseValue),
-      averageCost: Number(materialMetrics.averageCost),
       averageAge: Number(materialMetrics.averageAge),
-      maintenanceTasks,
-      maintenanceStockValues,
-      maintenanceCosts,
     };
+    if (includeFinancial) {
+      counts.totalPurchaseValue = Number(materialMetrics.totalPurchaseValue);
+      counts.averageCost = Number(materialMetrics.averageCost);
+    }
+    if (includeMaintenance) counts.maintenanceTasks = maintenanceTasks;
+    if (includeMaintenance && includeFinancial) {
+      counts.maintenanceStockValues = maintenanceStockValues;
+      counts.maintenanceCosts = maintenanceCosts;
+    }
+    return counts;
   }
 
   getMaintenanceStockValues() {

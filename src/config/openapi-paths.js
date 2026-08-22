@@ -1193,7 +1193,7 @@ export const openApiPaths = {
       tags: ['Dashboard'],
       summary: 'Retourne les indicateurs autorisés du tableau de bord.',
       description:
-        'Nécessite `dashboard.read`. Les indicateurs et coûts annuels de maintenance sont inclus uniquement avec `maintenance.read` ; les coûts correspondent aux pièces réellement consommées pendant l’année de réalisation. Les listes `today`, `upcoming`, `overdue` et `wearBased` correspondent exactement aux compteurs affichés. Alias historique déprécié : `/api/dashboard/summary`.',
+        'Nécessite `dashboard.read`. Les valorisations du parc nécessitent en plus `dashboard.read.financial`. Les indicateurs de maintenance sont inclus uniquement avec `maintenance.read` ; leurs valorisations de stock et coûts annuels nécessitent également `dashboard.read.financial`. Les coûts correspondent aux pièces réellement consommées pendant l’année de réalisation. Les listes `today`, `upcoming`, `overdue` et `wearBased` correspondent exactement aux compteurs affichés. Alias historique déprécié : `/api/dashboard/summary`.',
       security: secure,
       responses: {
         200: jsonResponse('DashboardResponse', 'Synthèse retournée.'),

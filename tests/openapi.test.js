@@ -210,6 +210,16 @@ describe('OpenAPI contract', () => {
       '`maintenance.parts.stock.consume`',
     );
     expect(swaggerSpec.components.schemas.DashboardSummary.required).not.toContain('maintenance');
+    expect(swaggerSpec.components.schemas.DashboardSummary.properties.fleet.required).toEqual([
+      'averageAge',
+    ]);
+    const requiredDashboardMaintenanceFields =
+      swaggerSpec.components.schemas.DashboardSummary.properties.maintenance.required;
+    expect(requiredDashboardMaintenanceFields).not.toContain('stockValues');
+    expect(requiredDashboardMaintenanceFields).not.toContain('costs');
+    expect(swaggerSpec.paths['/dashboard/summary'].get.description).toContain(
+      '`dashboard.read.financial`',
+    );
     expect(dashboardMaintenance.items.properties).toEqual(
       expect.objectContaining({
         today: expect.any(Object),

@@ -169,6 +169,24 @@ describe('DashboardPage', () => {
     );
   });
 
+  it('hides monetary cards without financial dashboard access', async () => {
+    hasPermission.mockImplementation((permission) => permission !== 'dashboard.read.financial');
+
+    renderPage();
+
+    const fleet = await screen.findByRole('region', { name: 'Valorisation' });
+    expect(within(fleet).getAllByRole('article')).toHaveLength(1);
+    expect(within(fleet).getByText('Âge moyen')).toBeVisible();
+    expect(screen.queryByText('Valeur du parc')).not.toBeInTheDocument();
+    expect(screen.queryByText('Valeur moyenne')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Pièces en stock' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('region', { name: 'Dépenses de maintenance' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Entretiens des matériels' })).toBeVisible();
+    expect(hasPermission).toHaveBeenCalledWith('dashboard.read.financial');
+  });
+
   it.each([
     [
       'Entretiens aujourd’hui',
