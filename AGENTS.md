@@ -2,6 +2,10 @@
 
 - Keep every change strictly scoped to the user's request. Do not modify files, behavior, or
   features that are unrelated to the requested outcome.
+- Never run GreenDesk npm scripts that start a server, watcher, or other persistent runtime
+  process, including `npm run dev`, `npm run dev:lan`, `npm start`, and `npm run start`. The user
+  manages these processes from an external command prompt. Non-server scripts such as tests,
+  linting, documentation checks, builds, and migrations may still be run by agents as required.
 - Prefer reusable, readable, and maintainable code. Extract shared components or helpers when they
   reduce duplication without expanding the requested scope.
 - Keep visual formatting and interaction patterns consistent across the entire application for
