@@ -24,6 +24,9 @@ vi.mock('./pages/MaintenanceOperationsPage.jsx', () => ({
 vi.mock('./pages/MaintenancePartsPage.jsx', () => ({
   default: () => <h1>Pièces de maintenance</h1>,
 }));
+vi.mock('./pages/HistoryPage.jsx', () => ({
+  default: ({ section }) => <h1>Historique {section}</h1>,
+}));
 vi.mock('./pages/ReferencePage.jsx', () => ({
   default: (properties) => {
     referencePage(properties);
@@ -60,6 +63,23 @@ describe('root route', () => {
     );
 
     expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
+    expect(screen.getByTestId(permission)).toBeInTheDocument();
+  });
+
+  it.each([
+    ['/history/fleet', 'fleet', 'history.fleet.read'],
+    ['/history/maintenance', 'maintenance', 'history.maintenance.read'],
+    ['/history/administration', 'administration', 'history.administration.read'],
+  ])('protects %s with its history permission', async (path, section, permission) => {
+    render(
+      <MemoryRouter initialEntries={[path]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: `Historique ${section}` }),
+    ).toBeInTheDocument();
     expect(screen.getByTestId(permission)).toBeInTheDocument();
   });
 

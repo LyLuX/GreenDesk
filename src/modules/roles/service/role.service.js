@@ -2,6 +2,7 @@ import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import PermissionRepository from '../../permissions/repository/permission.repository.js';
 import UserRepository from '../../users/repository/user.repository.js';
+import AuditService from '../../audit/service/audit.service.js';
 import RoleRepository from '../repository/role.repository.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 
@@ -13,6 +14,16 @@ const sameUuids = (left = [], right = []) => {
     leftUuids.every((uuid, index) => uuid === rightUuids[index])
   );
 };
+const publicRole = (role) => {
+  const value = typeof role?.toJSON === 'function' ? role.toJSON() : role;
+  if (!value) return null;
+  return {
+    uuid: value.uuid,
+    name: value.name,
+    description: value.description ?? null,
+    permissions: (value.permissions || []).map(({ uuid, name }) => ({ uuid, name })),
+  };
+};
 
 /** Business operations for roles. */
 export default class RoleService {
@@ -20,10 +31,12 @@ export default class RoleService {
     roleRepository = new RoleRepository(),
     permissionRepository = new PermissionRepository(),
     userRepository = new UserRepository(),
+    auditService = new AuditService(),
   ) {
     this.roleRepository = roleRepository;
     this.permissionRepository = permissionRepository;
     this.userRepository = userRepository;
+    this.auditService = auditService;
   }
   async getAll(query = {}) {
     const result = await this.roleRepository.findAll(query);
@@ -47,6 +60,7 @@ export default class RoleService {
       if (existingRole && !existingRole.deletedAt)
         throw new AppError('Role name is already in use', HTTP_STATUS.CONFLICT);
       if (existingRole) {
+        const oldValues = publicRole(existingRole);
         await this.roleRepository.restore(existingRole, { transaction });
         await this.roleRepository.update(existingRole, roleValues, { transaction });
         if (permissions)
@@ -55,11 +69,34 @@ export default class RoleService {
           excludeUserId: actorUserId,
           transaction,
         });
-        return this.roleRepository.findByUuid(existingRole.uuid, { transaction });
+        const restored = await this.roleRepository.findByUuid(existingRole.uuid, { transaction });
+        await this.auditService.record(
+          {
+            userId: actorUserId,
+            action: 'RESTORE',
+            entity: 'ROLE',
+            entityUuid: restored.uuid,
+            oldValues,
+            newValues: publicRole(restored),
+          },
+          { transaction },
+        );
+        return restored;
       }
       const role = await this.roleRepository.create(roleValues, { transaction });
       if (permissions) await this.roleRepository.setPermissions(role, permissions, { transaction });
-      return this.roleRepository.findByUuid(role.uuid, { transaction });
+      const created = await this.roleRepository.findByUuid(role.uuid, { transaction });
+      await this.auditService.record(
+        {
+          userId: actorUserId,
+          action: 'CREATE',
+          entity: 'ROLE',
+          entityUuid: created.uuid,
+          newValues: publicRole(created),
+        },
+        { transaction },
+      );
+      return created;
     });
   }
   async update(uuid, values, actorUserId = null) {
@@ -68,6 +105,7 @@ export default class RoleService {
     const permissions =
       permissionUuids !== undefined ? await this.findPermissions(permissionUuids) : null;
     const permissionsChanged = permissions !== null && !sameUuids(role.permissions, permissions);
+    const oldValues = publicRole(role);
     return this.roleRepository.withTransaction(async (transaction) => {
       await this.roleRepository.update(role, roleValues, { transaction });
       if (permissions) await this.roleRepository.setPermissions(role, permissions, { transaction });
@@ -77,7 +115,19 @@ export default class RoleService {
           transaction,
         });
       }
-      return this.roleRepository.findByUuid(uuid, { transaction });
+      const updated = await this.roleRepository.findByUuid(uuid, { transaction });
+      await this.auditService.record(
+        {
+          userId: actorUserId,
+          action: 'UPDATE',
+          entity: 'ROLE',
+          entityUuid: updated.uuid,
+          oldValues,
+          newValues: publicRole(updated),
+        },
+        { transaction },
+      );
+      return updated;
     });
   }
   async remove(uuid, actorUserId = null) {
@@ -88,6 +138,16 @@ export default class RoleService {
         transaction,
       });
       await this.roleRepository.delete(role, { transaction });
+      await this.auditService.record(
+        {
+          userId: actorUserId,
+          action: 'DELETE',
+          entity: 'ROLE',
+          entityUuid: role.uuid,
+          oldValues: publicRole(role),
+        },
+        { transaction },
+      );
     });
   }
 

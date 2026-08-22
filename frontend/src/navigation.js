@@ -1,4 +1,5 @@
 import maintenancePermissions from './maintenance/maintenance.permissions.js';
+import historyPermissions from './history/history.permissions.js';
 
 /** Hierarchical navigation model shared by the sidebar and its tests. */
 export const navigationSections = [
@@ -38,6 +39,27 @@ export const navigationSections = [
         label: 'Pièces',
         path: '/maintenance/parts',
         permission: maintenancePermissions.parts.read,
+      },
+    ],
+  },
+  {
+    key: 'history',
+    label: 'Historique',
+    items: [
+      {
+        label: 'Gestion du parc',
+        path: '/history/fleet',
+        permission: historyPermissions.fleet,
+      },
+      {
+        label: 'Maintenance',
+        path: '/history/maintenance',
+        permission: historyPermissions.maintenance,
+      },
+      {
+        label: 'Administration',
+        path: '/history/administration',
+        permission: historyPermissions.administration,
       },
     ],
   },

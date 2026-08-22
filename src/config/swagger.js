@@ -32,6 +32,7 @@ const swaggerSpec = {
     { name: 'Materials', description: 'Gestion du parc matériel.' },
     { name: 'Material files', description: 'Photos et documents protégés des matériels.' },
     { name: 'Maintenance', description: 'Plans et historique d’entretien.' },
+    { name: 'History', description: 'Historiques consolidés par domaine.' },
     { name: 'Dashboard', description: 'Indicateurs du tableau de bord.' },
   ],
   components: {

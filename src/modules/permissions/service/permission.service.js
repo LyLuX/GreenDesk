@@ -1,12 +1,17 @@
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import PermissionRepository from '../repository/permission.repository.js';
+import AuditService from '../../audit/service/audit.service.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 
 /** Business operations for permissions. */
 export default class PermissionService {
-  constructor(permissionRepository = new PermissionRepository()) {
+  constructor(
+    permissionRepository = new PermissionRepository(),
+    auditService = new AuditService(),
+  ) {
     this.permissionRepository = permissionRepository;
+    this.auditService = auditService;
   }
   async getAll(query = {}) {
     const result = await this.permissionRepository.findAll(query);
@@ -17,7 +22,7 @@ export default class PermissionService {
     if (!permission) throw new AppError('Permission not found', HTTP_STATUS.NOT_FOUND);
     return permission;
   }
-  async create(values) {
+  async create(values, actorUserId = null) {
     return this.permissionRepository.withTransaction(async (transaction) => {
       const existingPermission = await this.permissionRepository.findByName(values.name, {
         withDeleted: true,
@@ -26,23 +31,71 @@ export default class PermissionService {
       if (existingPermission && !existingPermission.deletedAt)
         throw new AppError('Permission name is already in use', HTTP_STATUS.CONFLICT);
       if (existingPermission) {
+        const oldValues = existingPermission.toJSON?.() ?? existingPermission;
         await this.permissionRepository.restore(existingPermission, { transaction });
-        return this.permissionRepository.update(existingPermission, values, { transaction });
+        const restored = await this.permissionRepository.update(existingPermission, values, {
+          transaction,
+        });
+        await this.auditService.record(
+          {
+            userId: actorUserId,
+            action: 'RESTORE',
+            entity: 'PERMISSION',
+            entityUuid: restored.uuid,
+            oldValues,
+            newValues: restored.toJSON?.() ?? restored,
+          },
+          { transaction },
+        );
+        return restored;
       }
-      return this.permissionRepository.create(values, { transaction });
-    });
-  }
-  async update(uuid, values) {
-    const permission = await this.getByUuid(uuid);
-    return this.permissionRepository.withTransaction(async (transaction) => {
-      await this.permissionRepository.update(permission, values, { transaction });
+      const permission = await this.permissionRepository.create(values, { transaction });
+      await this.auditService.record(
+        {
+          userId: actorUserId,
+          action: 'CREATE',
+          entity: 'PERMISSION',
+          entityUuid: permission.uuid,
+          newValues: permission.toJSON?.() ?? permission,
+        },
+        { transaction },
+      );
       return permission;
     });
   }
-  async remove(uuid) {
+  async update(uuid, values, actorUserId = null) {
     const permission = await this.getByUuid(uuid);
-    await this.permissionRepository.withTransaction((transaction) =>
-      this.permissionRepository.delete(permission, { transaction }),
-    );
+    const oldValues = permission.toJSON?.() ?? { ...permission };
+    return this.permissionRepository.withTransaction(async (transaction) => {
+      await this.permissionRepository.update(permission, values, { transaction });
+      await this.auditService.record(
+        {
+          userId: actorUserId,
+          action: 'UPDATE',
+          entity: 'PERMISSION',
+          entityUuid: permission.uuid,
+          oldValues,
+          newValues: permission.toJSON?.() ?? permission,
+        },
+        { transaction },
+      );
+      return permission;
+    });
+  }
+  async remove(uuid, actorUserId = null) {
+    const permission = await this.getByUuid(uuid);
+    await this.permissionRepository.withTransaction(async (transaction) => {
+      await this.permissionRepository.delete(permission, { transaction });
+      await this.auditService.record(
+        {
+          userId: actorUserId,
+          action: 'DELETE',
+          entity: 'PERMISSION',
+          entityUuid: permission.uuid,
+          oldValues: permission.toJSON?.() ?? permission,
+        },
+        { transaction },
+      );
+    });
   }
 }

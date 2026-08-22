@@ -1203,6 +1203,58 @@ export const openApiPaths = {
       },
     },
   },
+  '/history/{section}': {
+    get: {
+      operationId: 'listConsolidatedHistory',
+      tags: ['History'],
+      summary: 'Liste l’historique consolidé d’une section avec pagination.',
+      description:
+        'Nécessite la permission dédiée correspondant à la section : `history.fleet.read`, `history.maintenance.read` ou `history.administration.read`. La maintenance consolide les audits, entretiens planifiés, interventions hors plan, mouvements de stock et changements de prix sans doublons.',
+      security: secure,
+      parameters: [
+        {
+          name: 'section',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', enum: ['fleet', 'maintenance', 'administration'] },
+        },
+        searchParameter,
+        {
+          name: 'type',
+          in: 'query',
+          schema: {
+            type: 'string',
+            enum: [
+              'material',
+              'category',
+              'manufacturer',
+              'supplier',
+              'maintenance_plan',
+              'planned_execution',
+              'unplanned_intervention',
+              'maintenance_operation',
+              'maintenance_part',
+              'stock_movement',
+              'price_change',
+              'user',
+              'role',
+              'permission',
+            ],
+          },
+        },
+        { name: 'action', in: 'query', schema: { type: 'string', maxLength: 100 } },
+        { name: 'userUuid', in: 'query', schema: { type: 'string', format: 'uuid' } },
+        { name: 'from', in: 'query', schema: { type: 'string', format: 'date' } },
+        { name: 'through', in: 'query', schema: { type: 'string', format: 'date' } },
+        pageParameter,
+        limitParameter,
+      ],
+      responses: {
+        200: jsonResponse('HistoryEventListResponse', 'Page d’événements retournée.'),
+        ...standardErrors,
+      },
+    },
+  },
 };
 
 // Every documented `/api/v1` operation is covered by the application-wide API quota.

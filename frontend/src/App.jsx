@@ -8,6 +8,7 @@ import Loader from './components/Loader.jsx';
 import { publicRegistrationEnabled } from './config/features.js';
 import AppLayout from './layouts/AppLayout.jsx';
 import maintenancePermissions from './maintenance/maintenance.permissions.js';
+import historyPermissions from './history/history.permissions.js';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'));
 const ForbiddenPage = lazy(() => import('./pages/ForbiddenPage.jsx'));
@@ -26,6 +27,7 @@ const CategoriesPage = lazy(() => import('./pages/CategoriesPage.jsx'));
 const UsersPage = lazy(() => import('./pages/UsersPage.jsx'));
 const RolesPage = lazy(() => import('./pages/RolesPage.jsx'));
 const PermissionsPage = lazy(() => import('./pages/PermissionsPage.jsx'));
+const HistoryPage = lazy(() => import('./pages/HistoryPage.jsx'));
 const secure = (permission, page) => (
   <PermissionRoute permission={permission}>{page}</PermissionRoute>
 );
@@ -52,6 +54,9 @@ export const getModuleTitle = (pathname) => {
       '/users': 'Utilisateurs',
       '/roles': 'Rôles',
       '/permissions': 'Permissions',
+      '/history/fleet': 'Historique de la gestion du parc',
+      '/history/maintenance': 'Historique de la maintenance',
+      '/history/administration': 'Historique de l’administration',
     }[pathname] ?? 'Page introuvable'
   );
 };
@@ -124,6 +129,24 @@ export default function App() {
               <Route path="/users" element={adminOnly(<UsersPage />)} />
               <Route path="/roles" element={adminOnly(<RolesPage />)} />
               <Route path="/permissions" element={adminOnly(<PermissionsPage />)} />
+              <Route
+                path="/history/fleet"
+                element={secure(historyPermissions.fleet, <HistoryPage section="fleet" />)}
+              />
+              <Route
+                path="/history/maintenance"
+                element={secure(
+                  historyPermissions.maintenance,
+                  <HistoryPage section="maintenance" />,
+                )}
+              />
+              <Route
+                path="/history/administration"
+                element={secure(
+                  historyPermissions.administration,
+                  <HistoryPage section="administration" />,
+                )}
+              />
             </Route>
             <Route path="*" element={<NotFoundPage />} />
           </Route>

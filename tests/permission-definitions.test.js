@@ -5,7 +5,7 @@ describe('permission definitions', () => {
     const names = permissionDefinitions.map(({ name }) => name);
 
     expect(new Set(names).size).toBe(names.length);
-    expect(names).toHaveLength(41);
+    expect(names).toHaveLength(44);
     expect(names).toEqual(
       expect.arrayContaining([
         'maintenance.operations.read',
@@ -23,6 +23,9 @@ describe('permission definitions', () => {
         'maintenance.parts.stock.consume',
         'maintenance.parts.price.update',
         'maintenance.execute.skip_parts',
+        'history.fleet.read',
+        'history.maintenance.read',
+        'history.administration.read',
       ]),
     );
     for (const { name, description } of permissionDefinitions) {

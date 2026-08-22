@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { navigationItems, navigationSections } from './navigation.js';
 import client from './api/client.js';
 
-describe('frontend reference navigation', () => {
-  it('declares the three business reference routes', () => {
+describe('frontend navigation', () => {
+  it('declares every business and history route', () => {
     expect(navigationItems.map((item) => item.path)).toEqual([
       '/dashboard',
       '/materials',
@@ -13,18 +13,39 @@ describe('frontend reference navigation', () => {
       '/maintenance',
       '/maintenance/operations',
       '/maintenance/parts',
+      '/history/fleet',
+      '/history/maintenance',
+      '/history/administration',
       '/users',
       '/roles',
       '/permissions',
     ]);
   });
 
-  it('groups the sidebar into fleet, maintenance and administration dropdowns', () => {
+  it('groups the sidebar into business, history and administration dropdowns', () => {
     expect(navigationSections.map((section) => section.item?.label ?? section.label)).toEqual([
       'Tableau de bord',
       'Gestion du parc',
       'Maintenance',
+      'Historique',
       'Administration',
+    ]);
+    expect(navigationSections.find((section) => section.key === 'history').items).toEqual([
+      {
+        label: 'Gestion du parc',
+        path: '/history/fleet',
+        permission: 'history.fleet.read',
+      },
+      {
+        label: 'Maintenance',
+        path: '/history/maintenance',
+        permission: 'history.maintenance.read',
+      },
+      {
+        label: 'Administration',
+        path: '/history/administration',
+        permission: 'history.administration.read',
+      },
     ]);
     expect(navigationSections.find((section) => section.key === 'maintenance').items).toEqual([
       {

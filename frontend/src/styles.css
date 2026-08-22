@@ -709,6 +709,14 @@ a:hover {
   white-space: pre-wrap;
 }
 
+.history-details {
+  display: block;
+  min-width: 12rem;
+  max-width: 28rem;
+  color: var(--bs-secondary-color);
+  font-size: 0.875rem;
+}
+
 .table-shell thead th {
   border-bottom: 1px solid var(--border);
   background: #edf3e9;

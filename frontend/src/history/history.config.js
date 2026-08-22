@@ -1,0 +1,68 @@
+export const historySectionConfig = Object.freeze({
+  fleet: Object.freeze({
+    title: 'Historique de la gestion du parc',
+    subtitle: 'Matériels et référentiels du parc',
+    itemLabel: 'événement(s)',
+    types: Object.freeze([
+      { value: 'material', label: 'Matériel' },
+      { value: 'category', label: 'Catégorie' },
+      { value: 'manufacturer', label: 'Fabricant' },
+      { value: 'supplier', label: 'Fournisseur' },
+    ]),
+  }),
+  maintenance: Object.freeze({
+    title: 'Historique de la maintenance',
+    subtitle: 'Plans, interventions, pièces, stocks et prix',
+    itemLabel: 'événement(s)',
+    types: Object.freeze([
+      { value: 'maintenance_plan', label: 'Plan de maintenance' },
+      { value: 'planned_execution', label: 'Entretien planifié' },
+      { value: 'unplanned_intervention', label: 'Intervention hors plan' },
+      { value: 'maintenance_operation', label: 'Opération' },
+      { value: 'maintenance_part', label: 'Pièce' },
+      { value: 'stock_movement', label: 'Mouvement de stock' },
+      { value: 'price_change', label: 'Changement de prix' },
+    ]),
+  }),
+  administration: Object.freeze({
+    title: 'Historique de l’administration',
+    subtitle: 'Utilisateurs, rôles et permissions',
+    itemLabel: 'événement(s)',
+    types: Object.freeze([
+      { value: 'user', label: 'Utilisateur' },
+      { value: 'role', label: 'Rôle' },
+      { value: 'permission', label: 'Permission' },
+    ]),
+  }),
+});
+
+export const historyTypeLabels = Object.freeze(
+  Object.fromEntries(
+    Object.values(historySectionConfig)
+      .flatMap(({ types }) => types)
+      .map(({ value, label }) => [value, label]),
+  ),
+);
+
+export const historyActionLabels = Object.freeze({
+  CREATE: 'Création',
+  USER_CREATED: 'Création',
+  RESTORE: 'Restauration',
+  USER_RESTORED: 'Restauration',
+  UPDATE: 'Modification',
+  USER_UPDATED: 'Modification',
+  STATUS_CHANGE: 'Changement de statut',
+  DELETE: 'Suppression',
+  USER_DELETED: 'Suppression',
+  LOGIN_SUCCESS: 'Connexion',
+  LOGOUT_SUCCESS: 'Déconnexion',
+  EXECUTE: 'Entretien réalisé',
+  EXECUTE_WITHOUT_PARTS: 'Entretien sans remplacement',
+  INTERVENTION: 'Intervention réalisée',
+  ORDER: 'Commande',
+  RECEIVE: 'Réception',
+  CONSUME: 'Utilisation',
+  ADJUST: 'Correction de stock',
+  MIGRATE: 'Reprise de stock',
+  PRICE_UPDATE: 'Changement de prix',
+});

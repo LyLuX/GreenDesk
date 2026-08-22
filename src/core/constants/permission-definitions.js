@@ -1,4 +1,5 @@
 import maintenancePermissions from '../../modules/maintenance/maintenance.permissions.js';
+import historyPermissions from '../../modules/audit/history.permissions.js';
 
 /** Canonical permission descriptions displayed when administrators configure roles. */
 const permissionDefinitions = [
@@ -166,6 +167,18 @@ const permissionDefinitions = [
   {
     name: maintenancePermissions.parts.price.update,
     description: 'Modifier le prix unitaire courant d’une pièce de maintenance.',
+  },
+  {
+    name: historyPermissions.fleet,
+    description: 'Consulter l’historique consolidé de la gestion du parc.',
+  },
+  {
+    name: historyPermissions.maintenance,
+    description: 'Consulter l’historique consolidé de la maintenance et des stocks de pièces.',
+  },
+  {
+    name: historyPermissions.administration,
+    description: 'Consulter l’historique consolidé des actions d’administration.',
   },
 ];
 

@@ -13,15 +13,23 @@ export default class PermissionController {
   async create(request, response) {
     response
       .status(HTTP_STATUS.CREATED)
-      .json(successResponse(await this.permissionService.create(request.body)));
+      .json(
+        successResponse(await this.permissionService.create(request.body, request.user?.userId)),
+      );
   }
   async update(request, response) {
     response.json(
-      successResponse(await this.permissionService.update(request.params.uuid, request.body)),
+      successResponse(
+        await this.permissionService.update(
+          request.params.uuid,
+          request.body,
+          request.user?.userId,
+        ),
+      ),
     );
   }
   async remove(request, response) {
-    await this.permissionService.remove(request.params.uuid);
+    await this.permissionService.remove(request.params.uuid, request.user?.userId);
     response.status(HTTP_STATUS.NO_CONTENT).send();
   }
 }

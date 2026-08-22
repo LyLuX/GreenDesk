@@ -3,6 +3,7 @@ import healthRoutes from './health.routes.js';
 import authRoutes from '../modules/auth/routes/auth.routes.js';
 import categoryRoutes from '../modules/categories/routes/category.routes.js';
 import dashboardRoutes from '../modules/dashboard/routes/dashboard.routes.js';
+import historyRoutes from '../modules/audit/routes/history.routes.js';
 import maintenanceRoutes from '../modules/maintenance/routes/maintenance.routes.js';
 import manufacturerRoutes from '../modules/manufacturers/routes/manufacturer.routes.js';
 import materialFileRoutes from '../modules/materials/routes/material-file.routes.js';
@@ -40,6 +41,7 @@ export const routeRegistry = [
     openApiBasePath: '/materials',
   },
   { mountPath: '/api/v1/dashboard', router: dashboardRoutes, openApiBasePath: '/dashboard' },
+  { mountPath: '/api/v1/history', router: historyRoutes, openApiBasePath: '/history' },
   {
     mountPath: '/api/v1/manufacturers',
     router: manufacturerRoutes,
