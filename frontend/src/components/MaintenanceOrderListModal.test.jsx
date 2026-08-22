@@ -55,7 +55,15 @@ describe('MaintenanceOrderListModal', () => {
               reference: 'BPMR8Y',
               quantity: 2,
               unit: 'pièce',
-              plans: [],
+              plans: [
+                {
+                  maintenanceUuid: 'maintenance-uuid',
+                  title: 'Remplacement des bougies',
+                  material: { name: 'Tronçonneuse 1' },
+                  quantity: 2,
+                  wearBased: false,
+                },
+              ],
             },
           ],
         },
@@ -376,6 +384,10 @@ describe('MaintenanceOrderListModal', () => {
     const printPage = document.querySelector('.maintenance-order-print-page');
     expect(printPage).toHaveTextContent('2 pièce');
     expect(printPage).not.toHaveTextContent('2 pièces');
+    expect(
+      [...printPage.querySelectorAll('th')].map((heading) => heading.textContent),
+    ).toEqual(['Pièce', 'Référence fournisseur', 'Plan concerné', 'Quantité']);
+    expect(printPage).toHaveTextContent('Remplacement des bougies — Tronçonneuse 1');
     expect(printPage).not.toHaveTextContent('Plans concernés');
     const printFooter = document.querySelector('.maintenance-order-print-footer .app-footer');
     expect(printFooter).toHaveTextContent('EI BOURNAZEL Paul');

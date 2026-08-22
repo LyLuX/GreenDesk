@@ -100,6 +100,7 @@ function OrderPartsTable({
   manufacturerByUuid,
   showSupplier = true,
   showPlans = true,
+  printPlans = false,
   showManufacturerLogo = true,
   orderQuantities = {},
   onOrderQuantityChange,
@@ -114,8 +115,9 @@ function OrderPartsTable({
             <tr>
               <th>Pièce</th>
               <th>{showSupplier ? 'Fournisseur / référence' : 'Référence fournisseur'}</th>
+              {showPlans && printPlans ? <th>Plan concerné</th> : null}
               <th>Quantité</th>
-              {showPlans ? <th>Plans concernés</th> : null}
+              {showPlans && !printPlans ? <th>Plans concernés</th> : null}
               {onMarkOrdered ? <th>Commande</th> : null}
             </tr>
           </thead>
@@ -147,10 +149,22 @@ function OrderPartsTable({
                       {part.supplierReference || part.reference}
                     </small>
                   </td>
+                  {showPlans && printPlans ? (
+                    <td className="maintenance-order-plans">
+                      <ul className="mb-0 ps-3">
+                        {part.plans.map((plan) => (
+                          <li key={plan.maintenanceUuid}>
+                            {plan.title}
+                            {plan.material?.name ? ` — ${plan.material.name}` : null}
+                          </li>
+                        ))}
+                      </ul>
+                    </td>
+                  ) : null}
                   <td>
                     {part.quantity} {part.unit}
                   </td>
-                  {showPlans ? (
+                  {showPlans && !printPlans ? (
                     <td className="maintenance-order-plans">
                       <ul className="mb-0 ps-3">
                         {part.plans.map((plan) => (
@@ -243,7 +257,7 @@ function MaintenanceOrderPrintPages({ supplierPages, manufacturerByUuid }) {
               parts={page.parts}
               manufacturerByUuid={manufacturerByUuid}
               showSupplier={false}
-              showPlans={false}
+              printPlans
               showManufacturerLogo={false}
             />
           </main>
