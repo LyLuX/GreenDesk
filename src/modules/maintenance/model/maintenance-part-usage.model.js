@@ -13,7 +13,12 @@ MaintenancePartUsage.init(
     maintenanceHistoryId: {
       type: DataTypes.BIGINT.UNSIGNED,
       field: 'maintenance_history_id',
-      allowNull: false,
+      allowNull: true,
+    },
+    maintenanceInterventionId: {
+      type: DataTypes.BIGINT.UNSIGNED,
+      field: 'maintenance_intervention_id',
+      allowNull: true,
     },
     maintenancePartId: {
       type: DataTypes.BIGINT.UNSIGNED,
@@ -39,6 +44,17 @@ MaintenancePartUsage.init(
     tableName: 'maintenance_part_usages',
     updatedAt: false,
     paranoid: false,
+    validate: {
+      exactlyOneMaintenanceParent() {
+        const hasHistory =
+          this.maintenanceHistoryId !== null && this.maintenanceHistoryId !== undefined;
+        const hasIntervention =
+          this.maintenanceInterventionId !== null && this.maintenanceInterventionId !== undefined;
+        if (hasHistory === hasIntervention) {
+          throw new Error('A part usage must belong to exactly one maintenance record.');
+        }
+      },
+    },
   },
 );
 

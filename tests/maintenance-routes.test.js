@@ -28,6 +28,10 @@ const maintenanceController = {
   getAll: jest.fn((_request, response) => response.json({ success: true, data: [] })),
   getByUuid: jest.fn((_request, response) => response.json({ success: true, data: {} })),
   orderList: jest.fn((_request, response) => response.json({ success: true, data: [] })),
+  interventions: jest.fn((_request, response) => response.json({ success: true, data: [] })),
+  createIntervention: jest.fn((_request, response) =>
+    response.status(201).json({ success: true, data: {} }),
+  ),
   create: jest.fn((_request, response) => response.status(201).json({ success: true, data: {} })),
   update: jest.fn((_request, response) => response.json({ success: true, data: {} })),
   status: jest.fn((_request, response) => response.json({ success: true, data: {} })),
@@ -75,6 +79,8 @@ jest.unstable_mockModule('../src/modules/maintenance/controller/maintenance.cont
     getAll = maintenanceController.getAll;
     getByUuid = maintenanceController.getByUuid;
     orderList = maintenanceController.orderList;
+    interventions = maintenanceController.interventions;
+    createIntervention = maintenanceController.createIntervention;
     create = maintenanceController.create;
     update = maintenanceController.update;
     status = maintenanceController.status;
@@ -365,5 +371,35 @@ describe('maintenance catalogue route permissions', () => {
       .expect(200);
 
     expect(maintenanceController.execute).toHaveBeenCalledTimes(2);
+  });
+
+  it('protects unplanned interventions with their dedicated permissions', async () => {
+    const path = '/api/v1/maintenance/interventions';
+    const payload = {
+      materialUuid: uuid,
+      description: 'Remplacement d’une grille cassée.',
+      performedAt: '2026-08-20',
+      parts: [{ partUuid: uuid, quantity: 1 }],
+    };
+
+    await request(app)
+      .get(`${path}?materialUuid=${uuid}&page=1&limit=5`)
+      .set('Authorization', authorization(['maintenance.read']))
+      .expect(200);
+    await request(app)
+      .post(path)
+      .set('Authorization', authorization(['maintenance.execute']))
+      .send(payload)
+      .expect(403);
+    await request(app)
+      .post(path)
+      .set('Authorization', authorization(['maintenance.parts.stock.consume']))
+      .send(payload)
+      .expect(201);
+    await request(app)
+      .post(path)
+      .set('Authorization', authorization(['maintenance.parts.stock.consume']))
+      .send({ ...payload, description: '' })
+      .expect(400);
   });
 });

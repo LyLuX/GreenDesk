@@ -555,6 +555,51 @@ export const openApiSchemas = {
   },
   MaintenanceTask: maintenanceTask,
   MaintenanceHistory: maintenanceHistory,
+  MaintenanceInterventionPart: {
+    type: 'object',
+    required: [
+      'uuid',
+      'partUuid',
+      'name',
+      'reference',
+      'unit',
+      'quantity',
+      'unitPrice',
+      'totalCost',
+    ],
+    properties: {
+      uuid,
+      partUuid: uuid,
+      name: writeText(150),
+      reference: writeText(150),
+      unit: writeText(50),
+      quantity: { type: 'integer', minimum: 1, maximum: 1000000 },
+      unitPrice: { type: 'number', format: 'double', minimum: 0 },
+      totalCost: { type: 'number', format: 'double', minimum: 0 },
+    },
+  },
+  MaintenanceIntervention: {
+    type: 'object',
+    required: ['uuid', 'material', 'description', 'performedAt', 'parts', 'totalCost', 'createdAt'],
+    properties: {
+      uuid,
+      material: {
+        type: 'object',
+        nullable: true,
+        properties: { uuid, name: writeText(150) },
+      },
+      description: writeText(2000),
+      performedAt: date,
+      performedByUser: {
+        type: 'object',
+        nullable: true,
+        properties: { uuid, firstName: writeText(100), lastName: writeText(100) },
+      },
+      parts: arrayOf(reference('MaintenanceInterventionPart')),
+      totalCost: { type: 'number', format: 'double', minimum: 0 },
+      createdAt: dateTime,
+    },
+  },
   RegisterRequest: {
     type: 'object',
     required: ['firstName', 'lastName', 'email', 'password'],
@@ -709,6 +754,28 @@ export const openApiSchemas = {
       },
     },
   },
+  MaintenanceInterventionCreateRequest: {
+    type: 'object',
+    required: ['materialUuid', 'description', 'parts'],
+    properties: {
+      materialUuid: uuid,
+      description: writeText(2000),
+      performedAt: date,
+      parts: {
+        type: 'array',
+        minItems: 1,
+        maxItems: 50,
+        items: {
+          type: 'object',
+          required: ['partUuid', 'quantity'],
+          properties: {
+            partUuid: uuid,
+            quantity: { type: 'integer', minimum: 1, maximum: 1000000 },
+          },
+        },
+      },
+    },
+  },
   MaintenanceOperationCreateRequest: {
     type: 'object',
     required: ['name', 'maintenanceType'],
@@ -833,6 +900,14 @@ export const openApiSchemas = {
     required: ['items', 'pagination'],
     properties: {
       items: arrayOf(reference('MaintenancePartPriceHistory')),
+      pagination: reference('Pagination'),
+    },
+  },
+  MaintenanceInterventionPage: {
+    type: 'object',
+    required: ['items', 'pagination'],
+    properties: {
+      items: arrayOf(reference('MaintenanceIntervention')),
       pagination: reference('Pagination'),
     },
   },
@@ -1089,6 +1164,8 @@ export const openApiSchemas = {
   MaintenanceOrderListResponse: success(reference('MaintenanceOrderList')),
   MaintenanceHistoryResponse: success(reference('MaintenanceHistoryPage')),
   MaintenanceExecutionResponse: success(reference('MaintenanceExecution')),
+  MaintenanceInterventionResponse: success(reference('MaintenanceIntervention')),
+  MaintenanceInterventionListResponse: success(reference('MaintenanceInterventionPage')),
   DashboardResponse: success(reference('DashboardSummary')),
 };
 

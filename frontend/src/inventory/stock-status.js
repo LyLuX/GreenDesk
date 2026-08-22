@@ -8,6 +8,7 @@ export const STOCK_OPERATIONS = Object.freeze({
   ADJUST: 'adjust',
   ORDER: 'order',
   RECEIVE: 'receive',
+  CONSUME: 'consume',
 });
 
 export const stockOperationPresentation = Object.freeze({

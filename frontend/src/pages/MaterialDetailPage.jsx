@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import getApiErrorMessage from '../api/get-api-error-message.js';
-import { listMaintenance } from '../api/maintenance.api.js';
+import { listMaintenance, listMaintenanceInterventions } from '../api/maintenance.api.js';
 import {
   deleteMaterialFile,
   downloadMaterialFile,
@@ -120,6 +120,10 @@ export default function MaterialDetailPage() {
   const [maintenancePage, setMaintenancePage] = useState(1);
   const [maintenanceLimit, setMaintenanceLimit] = useState(5);
   const [maintenancePagination, setMaintenancePagination] = useState(null);
+  const [interventions, setInterventions] = useState([]);
+  const [interventionPage, setInterventionPage] = useState(1);
+  const [interventionLimit, setInterventionLimit] = useState(5);
+  const [interventionPagination, setInterventionPagination] = useState(null);
   const [activeTab, setActiveTab] = useState('details');
   const [error, setError] = useState('');
   const [selectedPhotos, setSelectedPhotos] = useState([]);
@@ -176,6 +180,20 @@ export default function MaterialDetailPage() {
       .catch(() => {});
     return () => controller.abort();
   }, [hasPermission, maintenanceLimit, maintenancePage, uuid]);
+  useEffect(() => {
+    if (!hasPermission(maintenancePermissions.plans.read)) return undefined;
+    const controller = new AbortController();
+    listMaintenanceInterventions(
+      { materialUuid: uuid, page: interventionPage, limit: interventionLimit },
+      controller.signal,
+    )
+      .then((response) => {
+        setInterventions(response.data.data?.items ?? []);
+        setInterventionPagination(response.data.data?.pagination ?? null);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [hasPermission, interventionLimit, interventionPage, uuid]);
   useEffect(() => () => previewsRef.current.forEach((url) => URL.revokeObjectURL(url)), []);
 
   const photos = useMemo(
@@ -634,6 +652,53 @@ export default function MaterialDetailPage() {
           >
             Voir la maintenance
           </Link>
+          <h3 className="h5 mb-3 mt-5">Interventions ponctuelles</h3>
+          {interventions.length === 0 ? (
+            <p className="text-body-secondary">Aucune intervention ponctuelle enregistrée.</p>
+          ) : (
+            <div className="table-shell table-responsive">
+              <table className="table table-hover align-middle">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Pièces utilisées</th>
+                    <th>Coût</th>
+                    <th>Utilisateur</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {interventions.map((intervention) => (
+                    <tr key={intervention.uuid}>
+                      <td>{formatDate(intervention.performedAt)}</td>
+                      <td>{intervention.description}</td>
+                      <td>
+                        {(intervention.parts ?? [])
+                          .map((part) => `${part.name} (${part.quantity} ${part.unit})`)
+                          .join(', ')}
+                      </td>
+                      <td>{formatCurrency(intervention.totalCost)}</td>
+                      <td>
+                        {intervention.performedByUser
+                          ? `${intervention.performedByUser.firstName} ${intervention.performedByUser.lastName}`
+                          : 'Utilisateur supprimé'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <PaginationControls
+            pagination={interventionPagination}
+            limit={interventionLimit}
+            itemLabel="intervention(s) ponctuelle(s)"
+            onLimitChange={(value) => {
+              setInterventionLimit(value);
+              setInterventionPage(1);
+            }}
+            onPageChange={setInterventionPage}
+          />
         </section>
       ) : (
         <section className="mt-4">

@@ -159,6 +159,11 @@ const permissionDefinitions = [
     description: 'Réceptionner des pièces commandées et les transférer dans le stock atelier.',
   },
   {
+    name: maintenancePermissions.parts.stock.consume,
+    description:
+      'Enregistrer une pièce utilisée lors d’une intervention de maintenance ponctuelle.',
+  },
+  {
     name: maintenancePermissions.parts.price.update,
     description: 'Modifier le prix unitaire courant d’une pièce de maintenance.',
   },

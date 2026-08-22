@@ -550,7 +550,7 @@ export const openApiPaths = {
       tags: ['Materials'],
       summary: 'Retourne les matériels destinés aux listes de sélection.',
       description:
-        'Nécessite `materials.read` ou `maintenance.read`. La réponse légère ne contient que l’identifiant, le nom et le statut.',
+        'Nécessite `materials.read`, `maintenance.read` ou `maintenance.parts.stock.consume`. La réponse légère ne contient que l’identifiant, le nom et le statut.',
       security: secure,
       parameters: [
         searchParameter,
@@ -1001,6 +1001,45 @@ export const openApiPaths = {
       responses: {
         200: jsonResponse('MaintenanceOrderListResponse', 'Liste de commande calculée.'),
         ...standardErrors,
+      },
+    },
+  },
+  '/maintenance/interventions': {
+    get: {
+      operationId: 'listMaintenanceInterventions',
+      tags: ['Maintenance'],
+      summary: 'Liste les interventions ponctuelles de maintenance.',
+      description:
+        'Nécessite `maintenance.read`. Les interventions sont triées par date de réalisation décroissante et peuvent être filtrées par matériel.',
+      security: secure,
+      parameters: [
+        {
+          name: 'materialUuid',
+          in: 'query',
+          schema: { type: 'string', format: 'uuid' },
+        },
+        pageParameter,
+        limitParameter,
+      ],
+      responses: {
+        200: jsonResponse(
+          'MaintenanceInterventionListResponse',
+          'Page d’interventions ponctuelles retournée.',
+        ),
+        ...standardErrors,
+      },
+    },
+    post: {
+      operationId: 'createMaintenanceIntervention',
+      tags: ['Maintenance'],
+      summary: 'Enregistre une intervention ponctuelle et consomme ses pièces.',
+      description:
+        'Nécessite `maintenance.parts.stock.consume`. L’intervention, les coûts et les mouvements de stock sont enregistrés dans une transaction unique. La date du jour est utilisée par défaut et une date future est refusée.',
+      security: secure,
+      requestBody: jsonBody('MaintenanceInterventionCreateRequest'),
+      responses: {
+        201: jsonResponse('MaintenanceInterventionResponse', 'Intervention ponctuelle créée.'),
+        ...writeErrors,
       },
     },
   },

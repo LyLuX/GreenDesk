@@ -16,6 +16,8 @@ const mocks = vi.hoisted(() => ({
   updatePartPrice: vi.fn(),
   listPartStockMovements: vi.fn(),
   listPartPriceHistory: vi.fn(),
+  createIntervention: vi.fn(),
+  listMaterials: vi.fn(),
   deletePart: vi.fn(),
   notify: vi.fn(),
   hasPermission: vi.fn(),
@@ -33,9 +35,11 @@ vi.mock('../api/maintenance.api.js', () => ({
   updateMaintenancePartPrice: mocks.updatePartPrice,
   listMaintenancePartStockMovements: mocks.listPartStockMovements,
   listMaintenancePartPriceHistory: mocks.listPartPriceHistory,
+  createMaintenanceIntervention: mocks.createIntervention,
   deleteMaintenancePart: mocks.deletePart,
 }));
 vi.mock('../api/reference.api.js', () => ({
+  listMaterialOptions: mocks.listMaterials,
   createReferenceApi: (resource) => ({
     list: resource === 'manufacturers' ? mocks.listManufacturers : mocks.listSuppliers,
   }),
@@ -161,6 +165,15 @@ describe('dedicated maintenance catalogue pages', () => {
           unitPrice: 12.5,
           totalMaintenanceCost: 25,
           stockStatus: 'toOrder',
+        },
+      },
+    });
+    mocks.createIntervention.mockResolvedValue({ data: { data: { uuid: 'intervention-uuid' } } });
+    mocks.listMaterials.mockResolvedValue({
+      data: {
+        data: {
+          items: [{ uuid: 'material-uuid', name: 'Tondeuse', active: true }],
+          pagination: { page: 1, limit: 25, total: 1, totalPages: 1 },
         },
       },
     });
@@ -344,6 +357,47 @@ describe('dedicated maintenance catalogue pages', () => {
         quantityOnHand: 4,
       }),
     );
+  });
+
+  it('records an unplanned maintenance intervention from the stock dialog', async () => {
+    const user = userEvent.setup();
+    mocks.listParts.mockResolvedValue({
+      data: {
+        data: [
+          {
+            uuid: 'part-uuid',
+            name: 'Bougie',
+            reference: 'BPMR8Y',
+            unit: 'pièce',
+            quantityOnHand: 2,
+            quantityOnOrder: 0,
+            unitPrice: 10,
+            totalMaintenanceCost: 25,
+            active: true,
+          },
+        ],
+      },
+    });
+    render(<MaintenancePartsPage />);
+
+    await user.click(await screen.findByRole('button', { name: 'Gérer le stock de Bougie' }));
+    await user.selectOptions(screen.getByLabelText(/^Opération/), 'consume');
+    await screen.findByRole('option', { name: 'Tondeuse' });
+    await user.selectOptions(screen.getByLabelText('Matériel concerné'), 'material-uuid');
+    await user.clear(screen.getByLabelText('Quantité utilisée'));
+    await user.type(screen.getByLabelText('Quantité utilisée'), '2');
+    await user.type(screen.getByLabelText('Description de l’intervention'), 'Grille cassée');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer l’intervention' }));
+
+    await waitFor(() =>
+      expect(mocks.createIntervention).toHaveBeenCalledWith({
+        materialUuid: 'material-uuid',
+        description: 'Grille cassée',
+        performedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+        parts: [{ partUuid: 'part-uuid', quantity: 2 }],
+      }),
+    );
+    expect(mocks.notify).toHaveBeenCalledWith('success', 'Intervention ponctuelle enregistrée.');
   });
 
   it('does not expose stock actions through the general part-update permission', async () => {

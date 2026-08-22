@@ -62,6 +62,10 @@ describe('reference routes authorization and validation', () => {
       .get('/api/v1/materials/options')
       .set('Authorization', `Bearer ${tokenFor(['maintenance.read'])}`)
       .expect(200);
+    await request(app)
+      .get('/api/v1/materials/options')
+      .set('Authorization', `Bearer ${tokenFor(['maintenance.parts.stock.consume'])}`)
+      .expect(200);
     findAll.mockRestore();
   });
 

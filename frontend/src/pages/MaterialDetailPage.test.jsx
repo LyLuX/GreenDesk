@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   hasPermission: vi.fn(),
   history: [],
   listMaintenance: vi.fn(),
+  listInterventions: vi.fn(),
   uploadPhoto: vi.fn(),
 }));
 
@@ -26,6 +27,7 @@ vi.mock('../api/material-files.api.js', () => ({
 }));
 vi.mock('../api/maintenance.api.js', () => ({
   listMaintenance: mocks.listMaintenance,
+  listMaintenanceInterventions: mocks.listInterventions,
 }));
 vi.mock('../components/ManufacturerLogo.jsx', () => ({
   default: ({ manufacturer }) => <img alt={`Logo ${manufacturer.name}`} />,
@@ -43,6 +45,7 @@ describe('MaterialDetailPage', () => {
     mocks.history = [];
     mocks.hasPermission.mockReturnValue(false);
     mocks.listMaintenance.mockResolvedValue({ data: { data: { items: [] } } });
+    mocks.listInterventions.mockResolvedValue({ data: { data: { items: [] } } });
     mocks.getReference.mockImplementation((path) =>
       Promise.resolve({
         data: {
@@ -254,6 +257,46 @@ describe('MaterialDetailPage', () => {
     expect(screen.getByRole('link', { name: 'Voir la maintenance' })).toHaveAttribute(
       'href',
       '/maintenance?materialUuid=material-uuid',
+    );
+  });
+
+  it('shows unplanned interventions in the material maintenance history', async () => {
+    mocks.hasPermission.mockImplementation((permission) => permission === 'maintenance.read');
+    mocks.listInterventions.mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'intervention-uuid',
+              description: 'Remplacement d’une grille cassée',
+              performedAt: '2026-08-20',
+              parts: [{ name: 'Grille', quantity: 1, unit: 'pièce' }],
+              totalCost: 18.5,
+              performedByUser: { firstName: 'Paul', lastName: 'Bournazel' },
+            },
+          ],
+          pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
+        },
+      },
+    });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/materials/material-uuid']}>
+        <Routes>
+          <Route path="/materials/:uuid" element={<MaterialDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole('img', { name: 'Logo Green' });
+    await user.click(screen.getByRole('tab', { name: 'Maintenance' }));
+
+    expect(await screen.findByText('Remplacement d’une grille cassée')).toBeVisible();
+    expect(screen.getByText('Grille (1 pièce)')).toBeVisible();
+    expect(screen.getByText('Paul Bournazel')).toBeVisible();
+    expect(mocks.listInterventions).toHaveBeenCalledWith(
+      { materialUuid: 'material-uuid', page: 1, limit: 5 },
+      expect.any(AbortSignal),
     );
   });
 });

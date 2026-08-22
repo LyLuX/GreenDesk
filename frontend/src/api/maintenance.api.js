@@ -15,6 +15,13 @@ export const maintenanceHistory = (uuid, params, signal) =>
     params: compactQueryParams(params),
     signal,
   });
+export const listMaintenanceInterventions = (params, signal) =>
+  client.get('/v1/maintenance/interventions', {
+    params: compactQueryParams(params),
+    signal,
+  });
+export const createMaintenanceIntervention = (payload) =>
+  client.post('/v1/maintenance/interventions', payload);
 export const listMaintenanceOperations = (params, signal) =>
   client.get('/v1/maintenance/operations', { params: compactQueryParams(params), signal });
 export const createMaintenanceOperation = (payload) =>

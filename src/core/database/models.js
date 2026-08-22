@@ -8,6 +8,7 @@ import MaterialFile from '../../modules/materials/model/material-file.model.js';
 import PartManufacturer from '../../modules/manufacturers/model/part-manufacturer.model.js';
 import MaintenanceTask from '../../modules/maintenance/model/maintenance-task.model.js';
 import MaintenanceHistory from '../../modules/maintenance/model/maintenance-history.model.js';
+import MaintenanceIntervention from '../../modules/maintenance/model/maintenance-intervention.model.js';
 import MaintenanceOperation from '../../modules/maintenance/model/maintenance-operation.model.js';
 import MaintenancePart from '../../modules/maintenance/model/maintenance-part.model.js';
 import MaintenancePartPriceHistory from '../../modules/maintenance/model/maintenance-part-price-history.model.js';
@@ -132,6 +133,28 @@ export function initializeModels() {
     onDelete: 'CASCADE',
   });
   MaintenanceHistory.belongsTo(User, { foreignKey: 'performed_by', as: 'performedByUser' });
+  Material.hasMany(MaintenanceIntervention, {
+    foreignKey: 'materialId',
+    as: 'maintenanceInterventions',
+  });
+  MaintenanceIntervention.belongsTo(Material, {
+    foreignKey: 'materialId',
+    as: 'material',
+  });
+  MaintenanceIntervention.belongsTo(User, {
+    foreignKey: 'performedBy',
+    as: 'performedByUser',
+  });
+  MaintenanceIntervention.hasMany(MaintenancePartUsage, {
+    foreignKey: 'maintenanceInterventionId',
+    as: 'partUsages',
+    onDelete: 'CASCADE',
+  });
+  MaintenancePartUsage.belongsTo(MaintenanceIntervention, {
+    foreignKey: 'maintenanceInterventionId',
+    as: 'intervention',
+    onDelete: 'CASCADE',
+  });
   MaintenanceHistory.hasMany(MaintenancePartUsage, {
     foreignKey: 'maintenanceHistoryId',
     as: 'partUsages',
@@ -181,6 +204,7 @@ export {
   MaterialFile,
   MaintenanceTask,
   MaintenanceHistory,
+  MaintenanceIntervention,
   MaintenanceOperation,
   MaintenancePart,
   MaintenancePartPriceHistory,

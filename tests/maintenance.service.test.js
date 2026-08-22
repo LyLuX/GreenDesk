@@ -610,6 +610,101 @@ describe('MaintenanceService', () => {
     expect(repository.createHistory).not.toHaveBeenCalled();
   });
 
+  it('records an unplanned intervention and its part cost in one transaction', async () => {
+    const today = todayDateOnly();
+    const transaction = { id: 'transaction' };
+    const material = {
+      id: 7,
+      uuid: '77777777-7777-4777-8777-777777777777',
+      active: true,
+    };
+    const part = {
+      id: 9,
+      uuid: '99999999-9999-4999-8999-999999999999',
+      name: 'Grille',
+      reference: 'GR-100',
+      unit: 'pièce',
+      unitPrice: 18.5,
+      quantityOnHand: 2,
+    };
+    const intervention = {
+      id: 12,
+      uuid: '12121212-1212-4212-8212-121212121212',
+    };
+    const fullIntervention = {
+      ...intervention,
+      material: { uuid: material.uuid, name: 'Tondeuse' },
+      description: 'Grille cassée',
+      performedAt: today,
+      partUsages: [
+        {
+          uuid: '13131313-1313-4313-8313-131313131313',
+          partUuid: part.uuid,
+          partName: part.name,
+          partReference: part.reference,
+          unit: part.unit,
+          quantity: 1,
+          unitPrice: '18.50',
+          totalCost: '18.50',
+        },
+      ],
+    };
+    const repository = {
+      withTransaction: jest.fn((callback) => callback(transaction)),
+      createIntervention: jest.fn().mockResolvedValue(intervention),
+      createPartUsages: jest.fn(),
+      findInterventionByUuid: jest.fn().mockResolvedValue(fullIntervention),
+    };
+    const stockService = { apply: jest.fn() };
+    const auditService = { record: jest.fn() };
+    const service = new MaintenanceService(
+      repository,
+      { getEntityByUuid: jest.fn().mockResolvedValue(material) },
+      auditService,
+      { findPartsByUuids: jest.fn().mockResolvedValue([part]) },
+      stockService,
+    );
+
+    const result = await service.createIntervention(
+      {
+        materialUuid: material.uuid,
+        description: '  Grille cassée  ',
+        performedAt: today,
+        parts: [{ partUuid: part.uuid, quantity: 1 }],
+      },
+      42,
+    );
+
+    expect(repository.createIntervention).toHaveBeenCalledWith(
+      { materialId: 7, description: 'Grille cassée', performedAt: today, performedBy: 42 },
+      { transaction },
+    );
+    expect(stockService.apply).toHaveBeenCalledWith(
+      part,
+      expect.objectContaining({
+        operation: 'consume',
+        quantity: 1,
+        source: { type: 'maintenanceIntervention', uuid: intervention.uuid },
+      }),
+      { transaction },
+    );
+    expect(repository.createPartUsages).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          maintenanceInterventionId: 12,
+          maintenancePartId: 9,
+          totalCost: 18.5,
+        }),
+      ],
+      { transaction },
+    );
+    expect(result).toEqual(expect.objectContaining({ totalCost: 18.5 }));
+    expect(auditService.record).toHaveBeenCalledWith(
+      expect.objectContaining({ entity: 'MAINTENANCE_INTERVENTION' }),
+      { transaction },
+    );
+  });
+
   it('refuses to create a plan for an inactive material', async () => {
     const repository = {
       create: jest.fn(),

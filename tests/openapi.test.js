@@ -203,6 +203,12 @@ describe('OpenAPI contract', () => {
     expect(swaggerSpec.paths['/maintenance/parts/{uuid}/price'].patch.description).toContain(
       '`maintenance.parts.price.update`',
     );
+    expect(swaggerSpec.paths['/maintenance/interventions'].post.description).toContain(
+      '`maintenance.parts.stock.consume`',
+    );
+    expect(swaggerSpec.paths['/materials/options'].get.description).toContain(
+      '`maintenance.parts.stock.consume`',
+    );
     expect(swaggerSpec.components.schemas.DashboardSummary.required).not.toContain('maintenance');
     expect(dashboardMaintenance.items.properties).toEqual(
       expect.objectContaining({
@@ -279,6 +285,18 @@ describe('OpenAPI contract', () => {
     );
     expect(swaggerSpec.paths['/maintenance/{uuid}/execute'].post.description).toContain(
       'maintenance.execute.skip_parts',
+    );
+  });
+
+  it('documents unplanned maintenance interventions and their consumed parts', () => {
+    const request = swaggerSpec.components.schemas.MaintenanceInterventionCreateRequest;
+    const intervention = swaggerSpec.components.schemas.MaintenanceIntervention;
+
+    expect(request.required).toEqual(['materialUuid', 'description', 'parts']);
+    expect(request.properties.parts.minItems).toBe(1);
+    expect(intervention.required).toContain('totalCost');
+    expect(swaggerSpec.paths['/maintenance/interventions'].get.parameters).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: 'materialUuid', in: 'query' })]),
     );
   });
 

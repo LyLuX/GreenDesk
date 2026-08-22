@@ -4,6 +4,7 @@ import { normalizePagination } from '../../../core/utils/pagination.js';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 import Material from '../../materials/model/material.model.js';
 import MaintenanceHistory from '../model/maintenance-history.model.js';
+import MaintenanceIntervention from '../model/maintenance-intervention.model.js';
 import MaintenanceOperation from '../model/maintenance-operation.model.js';
 import MaintenancePart from '../model/maintenance-part.model.js';
 import MaintenancePartUsage from '../model/maintenance-part-usage.model.js';
@@ -184,9 +185,42 @@ export default class MaintenanceRepository extends TransactionalRepository {
   async createHistory(values, options = {}) {
     return MaintenanceHistory.create(values, options);
   }
+  async createIntervention(values, options = {}) {
+    return MaintenanceIntervention.create(values, options);
+  }
+  async findInterventions({ materialUuid, page, limit } = {}) {
+    const pagination = normalizePagination({ page, limit });
+    return MaintenanceIntervention.findAndCountAll({
+      include: [
+        {
+          ...materialInclude,
+          ...(materialUuid ? { where: { uuid: materialUuid }, required: true } : {}),
+        },
+        { model: User, as: 'performedByUser', attributes: ['uuid', 'firstName', 'lastName'] },
+        { model: MaintenancePartUsage, as: 'partUsages' },
+      ],
+      order: [
+        ['performedAt', 'DESC'],
+        ['createdAt', 'DESC'],
+      ],
+      limit: pagination.limit,
+      offset: pagination.offset,
+      distinct: true,
+    });
+  }
+  async findInterventionByUuid(uuid) {
+    return MaintenanceIntervention.findOne({
+      where: { uuid },
+      include: [
+        materialInclude,
+        { model: User, as: 'performedByUser', attributes: ['uuid', 'firstName', 'lastName'] },
+        { model: MaintenancePartUsage, as: 'partUsages' },
+      ],
+    });
+  }
   async createPartUsages(values, options = {}) {
     if (!values.length) return [];
-    return MaintenancePartUsage.bulkCreate(values, options);
+    return MaintenancePartUsage.bulkCreate(values, { ...options, validate: true });
   }
   async replaceParts(taskId, parts, options = {}) {
     await MaintenanceTaskPart.destroy({

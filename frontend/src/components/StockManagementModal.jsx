@@ -3,11 +3,13 @@ import { useCallback, useEffect, useState } from 'react';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import useAuth from '../auth/useAuth.js';
 import {
+  createMaintenanceIntervention,
   listMaintenancePartPriceHistory,
   listMaintenancePartStockMovements,
   updateMaintenancePartPrice,
   updateMaintenancePartStock,
 } from '../api/maintenance.api.js';
+import { listMaterialOptions } from '../api/reference.api.js';
 import {
   formatStockQuantity,
   STOCK_OPERATIONS,
@@ -51,6 +53,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
   const canAdjustOnOrder = hasPermission(maintenancePermissions.parts.stock.adjustOnOrder);
   const canOrder = hasPermission(maintenancePermissions.parts.stock.order);
   const canReceive = hasPermission(maintenancePermissions.parts.stock.receive);
+  const canConsume = hasPermission(maintenancePermissions.parts.stock.consume);
   const canUpdatePrice = hasPermission(maintenancePermissions.parts.price.update);
   const permittedOperations = [
     ...(canAdjustOnHand || canAdjustOnOrder
@@ -60,6 +63,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
     ...(canReceive
       ? [{ value: STOCK_OPERATIONS.RECEIVE, label: 'Réceptionner une commande' }]
       : []),
+    ...(canConsume ? [{ value: STOCK_OPERATIONS.CONSUME, label: 'Utiliser en maintenance' }] : []),
     ...(canUpdatePrice ? [{ value: PRICE_OPERATION, label: 'Modifier le prix unitaire' }] : []),
   ];
   const initialOperation = permittedOperations[0]?.value ?? '';
@@ -70,6 +74,10 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
   const [quantityOnOrder, setQuantityOnOrder] = useState('0');
   const [unitPrice, setUnitPrice] = useState('0');
   const [performedAt, setPerformedAt] = useState(getCurrentOperationDate);
+  const [materialUuid, setMaterialUuid] = useState('');
+  const [materialSearch, setMaterialSearch] = useState('');
+  const [description, setDescription] = useState('');
+  const [materials, setMaterials] = useState([]);
   const [movements, setMovements] = useState([]);
   const [priceHistory, setPriceHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -100,12 +108,34 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
     setUnitPrice(String(part.unitPrice ?? 0));
     setPerformedAt(getCurrentOperationDate());
     setQuantity('1');
+    setMaterialUuid('');
+    setMaterialSearch('');
+    setDescription('');
     setOperation(initialOperation);
     setError('');
     const controller = new AbortController();
     loadHistory(part.uuid, controller.signal);
     return () => controller.abort();
   }, [initialOperation, loadHistory, part]);
+
+  useEffect(() => {
+    if (!part || !canConsume) return undefined;
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      listMaterialOptions(
+        { active: true, search: materialSearch, page: 1, limit: 25 },
+        controller.signal,
+      )
+        .then((response) => setMaterials(response.data.data?.items ?? []))
+        .catch((requestError) => {
+          if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
+        });
+    }, 200);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [canConsume, materialSearch, part]);
 
   if (!part || !currentPart) return null;
 
@@ -115,6 +145,29 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
     setBusy(true);
     setError('');
     try {
+      if (operation === STOCK_OPERATIONS.CONSUME) {
+        await createMaintenanceIntervention({
+          materialUuid,
+          description,
+          performedAt,
+          parts: [{ partUuid: part.uuid, quantity: Number(quantity) }],
+        });
+        const updatedPart = {
+          ...currentPart,
+          quantityOnHand: Number(currentPart.quantityOnHand) - Number(quantity),
+          totalMaintenanceCost:
+            Number(currentPart.totalMaintenanceCost ?? 0) +
+            Number(currentPart.unitPrice ?? 0) * Number(quantity),
+        };
+        setCurrentPart(updatedPart);
+        setQuantityOnHand(String(updatedPart.quantityOnHand));
+        setQuantity('1');
+        setDescription('');
+        notify('success', 'Intervention ponctuelle enregistrée.');
+        await loadHistory(part.uuid);
+        await onUpdated?.(updatedPart);
+        return;
+      }
       const stockPayload = { operation, performedAt };
       if (operation === STOCK_OPERATIONS.ADJUST) {
         if (canAdjustOnHand) stockPayload.quantityOnHand = Number(quantityOnHand);
@@ -202,7 +255,8 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                   key={option.value}
                   value={option.value}
                   disabled={
-                    option.value === STOCK_OPERATIONS.RECEIVE && !currentPart.quantityOnOrder
+                    (option.value === STOCK_OPERATIONS.RECEIVE && !currentPart.quantityOnOrder) ||
+                    (option.value === STOCK_OPERATIONS.CONSUME && !currentPart.quantityOnHand)
                   }
                 >
                   {option.label}
@@ -223,7 +277,59 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
             />
           </label>
 
-          {operation === PRICE_OPERATION ? (
+          {operation === STOCK_OPERATIONS.CONSUME ? (
+            <>
+              <label className="form-label mb-0 text-body-secondary">
+                Rechercher un matériel
+                <input
+                  className="form-control"
+                  type="search"
+                  value={materialSearch}
+                  onChange={(event) => setMaterialSearch(event.target.value)}
+                />
+              </label>
+              <label className="form-label mb-0 text-body-secondary">
+                Matériel concerné
+                <select
+                  className="form-select"
+                  required
+                  value={materialUuid}
+                  onChange={(event) => setMaterialUuid(event.target.value)}
+                >
+                  <option value="">Sélectionner un matériel</option>
+                  {materials.map((material) => (
+                    <option key={material.uuid} value={material.uuid}>
+                      {material.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="form-label mb-0 text-body-secondary">
+                Quantité utilisée
+                <input
+                  className="form-control"
+                  type="number"
+                  min="1"
+                  max={currentPart.quantityOnHand}
+                  step="1"
+                  required
+                  value={quantity}
+                  onChange={(event) => setQuantity(event.target.value)}
+                />
+              </label>
+              <label className="form-label mb-0 text-body-secondary">
+                Description de l’intervention
+                <textarea
+                  className="form-control"
+                  rows="3"
+                  maxLength="2000"
+                  required
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                />
+              </label>
+            </>
+          ) : operation === PRICE_OPERATION ? (
             <label className="form-label mb-0 text-body-secondary">
               Nouveau prix unitaire (€)
               <input
@@ -295,18 +401,25 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
               Aucune commande n’est actuellement à réceptionner.
             </p>
           ) : null}
+          {operation === STOCK_OPERATIONS.CONSUME && !currentPart.quantityOnHand ? (
+            <p className="alert alert-info mb-0">Aucune pièce n’est disponible en stock.</p>
+          ) : null}
 
           <Button
             type="submit"
             disabled={
-              busy || (operation === STOCK_OPERATIONS.RECEIVE && !currentPart.quantityOnOrder)
+              busy ||
+              (operation === STOCK_OPERATIONS.RECEIVE && !currentPart.quantityOnOrder) ||
+              (operation === STOCK_OPERATIONS.CONSUME && !currentPart.quantityOnHand)
             }
           >
             {busy
               ? 'Enregistrement…'
               : operation === PRICE_OPERATION
                 ? 'Enregistrer le prix'
-                : 'Enregistrer le mouvement'}
+                : operation === STOCK_OPERATIONS.CONSUME
+                  ? 'Enregistrer l’intervention'
+                  : 'Enregistrer le mouvement'}
           </Button>
         </form>
       ) : (

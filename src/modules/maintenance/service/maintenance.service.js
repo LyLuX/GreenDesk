@@ -363,6 +363,114 @@ export default class MaintenanceService {
       this.toHistory(history),
     );
   }
+  async createIntervention(values, userId) {
+    const performedAt = values.performedAt ?? todayDateOnly();
+    if (parseDateOnly(performedAt) > parseDateOnly(todayDateOnly())) {
+      throw new AppError(
+        'Une intervention ne peut pas être réalisée dans le futur.',
+        HTTP_STATUS.BAD_REQUEST,
+      );
+    }
+    const description = values.description?.trim();
+    if (!description) {
+      throw new AppError('Une description de l’intervention est requise.', HTTP_STATUS.BAD_REQUEST);
+    }
+    const requestedParts = values.parts ?? [];
+    const partUuids = requestedParts.map(({ partUuid }) => partUuid);
+    if (!partUuids.length || new Set(partUuids).size !== partUuids.length) {
+      throw new AppError(
+        partUuids.length
+          ? 'Une pièce ne peut apparaître qu’une fois.'
+          : 'Au moins une pièce utilisée doit être renseignée.',
+        HTTP_STATUS.BAD_REQUEST,
+      );
+    }
+
+    const interventionUuid = await this.repository.withTransaction(async (transaction) => {
+      const material = await this.materialService.getEntityByUuid(values.materialUuid, {
+        transaction,
+        lock: true,
+      });
+      if (!material.active) {
+        throw new AppError(
+          'Une intervention ne peut pas être enregistrée sur un matériel inactif.',
+          HTTP_STATUS.CONFLICT,
+        );
+      }
+      const parts = await this.catalogRepository.findPartsByUuids(partUuids, {
+        transaction,
+        lock: true,
+      });
+      if (parts.length !== partUuids.length) {
+        throw new AppError(
+          'Une ou plusieurs pièces sont introuvables ou inactives.',
+          HTTP_STATUS.BAD_REQUEST,
+        );
+      }
+      const partByUuid = new Map(parts.map((part) => [part.uuid, part]));
+      const intervention = await this.repository.createIntervention(
+        { materialId: material.id, description, performedAt, performedBy: userId },
+        { transaction },
+      );
+      const usages = [];
+      for (const requestedPart of requestedParts) {
+        const part = partByUuid.get(requestedPart.partUuid);
+        const quantity = Number(requestedPart.quantity);
+        if (!Number.isInteger(quantity) || quantity < 1) {
+          throw new AppError('Les quantités de pièces sont invalides.', HTTP_STATUS.BAD_REQUEST);
+        }
+        const snapshot = partUsageSnapshot(part, quantity, true);
+        usages.push({
+          maintenanceInterventionId: intervention.id,
+          maintenancePartId: part.id,
+          partUuid: snapshot.uuid,
+          partName: snapshot.name,
+          partReference: snapshot.reference,
+          unit: snapshot.unit,
+          quantity,
+          unitPrice: snapshot.unitPrice,
+          totalCost: snapshot.totalCost,
+          performedAt,
+        });
+        await this.stockService.apply(
+          part,
+          {
+            stockableType: STOCKABLE_TYPES.MAINTENANCE_PART,
+            operation: STOCK_OPERATIONS.CONSUME,
+            quantity,
+            performedAt,
+            userId,
+            source: { type: 'maintenanceIntervention', uuid: intervention.uuid },
+          },
+          { transaction },
+        );
+      }
+      await this.repository.createPartUsages(usages, { transaction });
+      await this.auditService.record(
+        {
+          userId,
+          action: 'CREATE',
+          entity: 'MAINTENANCE_INTERVENTION',
+          entityUuid: intervention.uuid,
+          newValues: {
+            materialUuid: material.uuid,
+            description,
+            performedAt,
+            parts: requestedParts,
+          },
+        },
+        { transaction },
+      );
+      return intervention.uuid;
+    });
+    return this.toIntervention(await this.repository.findInterventionByUuid(interventionUuid));
+  }
+  async getInterventions(query = {}) {
+    const result = await this.repository.findInterventions(query);
+    return paginatedResult(result, normalizePagination(query), (intervention) =>
+      this.toIntervention(intervention),
+    );
+  }
   async getOrderList({
     horizonDays = 30,
     includeOverdue = true,
@@ -541,6 +649,35 @@ export default class MaintenanceService {
             lastName: value.performedByUser.lastName,
           }
         : null,
+    };
+  }
+  toIntervention(intervention) {
+    const value = typeof intervention.toJSON === 'function' ? intervention.toJSON() : intervention;
+    const parts = (value.partUsages ?? []).map((usage) => ({
+      uuid: usage.uuid,
+      partUuid: usage.partUuid,
+      name: usage.partName,
+      reference: usage.partReference,
+      unit: usage.unit,
+      quantity: Number(usage.quantity),
+      unitPrice: Number(usage.unitPrice),
+      totalCost: Number(usage.totalCost),
+    }));
+    return {
+      uuid: value.uuid,
+      material: value.material ? { uuid: value.material.uuid, name: value.material.name } : null,
+      description: value.description,
+      performedAt: value.performedAt,
+      performedByUser: value.performedByUser
+        ? {
+            uuid: value.performedByUser.uuid,
+            firstName: value.performedByUser.firstName,
+            lastName: value.performedByUser.lastName,
+          }
+        : null,
+      parts,
+      totalCost: parts.reduce((sum, usage) => sum + usage.totalCost, 0),
+      createdAt: value.createdAt,
     };
   }
 }

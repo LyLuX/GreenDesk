@@ -140,11 +140,13 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
     });
   }
 
-  findPartsByUuids(uuids, { transaction } = {}) {
+  findPartsByUuids(uuids, { transaction, lock = false } = {}) {
     return MaintenancePart.findAll({
       where: { uuid: { [Op.in]: uuids }, active: true },
       include: partDirectoryIncludes,
       transaction,
+      lock: lock ? transaction?.LOCK.UPDATE : undefined,
+      order: [['id', 'ASC']],
     });
   }
 

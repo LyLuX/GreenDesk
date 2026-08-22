@@ -24,6 +24,7 @@ const maintenancePermissions = Object.freeze({
       adjustOnOrder: 'maintenance.parts.stock.adjust_on_order',
       order: 'maintenance.parts.stock.order',
       receive: 'maintenance.parts.stock.receive',
+      consume: 'maintenance.parts.stock.consume',
     }),
     price: Object.freeze({
       update: 'maintenance.parts.price.update',

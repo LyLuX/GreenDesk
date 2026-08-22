@@ -51,6 +51,21 @@ export const createValidator = [
 export const updateValidator = [uuid, ...fields];
 export const uuidValidator = [uuid];
 export const historyValidator = [uuid, ...paginationValidator];
+export const interventionListValidator = [
+  query('materialUuid').optional({ values: 'falsy' }).isUUID(),
+  ...paginationValidator,
+];
+export const createInterventionValidator = [
+  body('materialUuid').isUUID(),
+  body('description').trim().notEmpty().isLength({ max: 2000 }),
+  body('performedAt')
+    .optional()
+    .isISO8601({ strict: true })
+    .matches(/^\d{4}-\d{2}-\d{2}$/),
+  body('parts').isArray({ min: 1, max: 50 }),
+  body('parts.*.partUuid').isUUID(),
+  body('parts.*.quantity').isInt({ min: 1, max: MAX_STOCK_QUANTITY }).toInt(),
+];
 export const statusValidator = [uuid, body('active').isBoolean().toBoolean()];
 export const executeValidator = [
   uuid,

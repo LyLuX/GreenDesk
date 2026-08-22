@@ -133,6 +133,20 @@ router.get(
   asyncHandler(controller.orderList.bind(controller)),
 );
 router.get(
+  '/interventions',
+  authorize(maintenancePermissions.plans.read),
+  validator.interventionListValidator,
+  validateRequest,
+  asyncHandler(controller.interventions.bind(controller)),
+);
+router.post(
+  '/interventions',
+  authorize(maintenancePermissions.parts.stock.consume),
+  validator.createInterventionValidator,
+  validateRequest,
+  asyncHandler(controller.createIntervention.bind(controller)),
+);
+router.get(
   '/',
   authorize(maintenancePermissions.plans.read),
   validator.listValidator,

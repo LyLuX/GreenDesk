@@ -18,7 +18,11 @@ router.get(
 );
 router.get(
   '/options',
-  authorize('materials.read', maintenancePermissions.plans.read),
+  authorize(
+    'materials.read',
+    maintenancePermissions.plans.read,
+    maintenancePermissions.parts.stock.consume,
+  ),
   validator.optionsValidator,
   validateRequest,
   asyncHandler(controller.getOptions.bind(controller)),
