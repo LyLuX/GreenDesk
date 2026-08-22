@@ -33,6 +33,33 @@ describe('HistoryService', () => {
     expect(result.pagination).toEqual({ page: 1, limit: 5, total: 1, totalPages: 1 });
   });
 
+  it.each([
+    ['Matériel actuel', 'material-1', 'Matériel actuel'],
+    [null, 'material-1', 'Matériel supprimé'],
+  ])(
+    'uses a joined business label and never exposes the entity UUID',
+    async (subjectLabel, entityUuid, expectedLabel) => {
+      const repository = {
+        findAuditEvents: jest.fn().mockResolvedValue({
+          count: 1,
+          rows: [
+            auditRow({
+              subjectLabel,
+              entityUuid,
+              oldValues: null,
+              newValues: null,
+            }),
+          ],
+        }),
+      };
+
+      const result = await new HistoryService(repository).list('fleet');
+
+      expect(result.items[0].subject.label).toBe(expectedLabel);
+      expect(result.items[0].subject.label).not.toBe(entityUuid);
+    },
+  );
+
   it('globally sorts and paginates every maintenance journal', async () => {
     const repository = {
       findAuditEvents: jest.fn().mockResolvedValue({

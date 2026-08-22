@@ -210,6 +210,9 @@ describe('OpenAPI contract', () => {
       '`maintenance.parts.stock.consume`',
     );
     expect(swaggerSpec.components.schemas.DashboardSummary.required).not.toContain('maintenance');
+    expect(
+      swaggerSpec.components.schemas.HistoryEvent.properties.subject.properties.label.description,
+    ).toContain('jamais un UUID technique');
     expect(swaggerSpec.components.schemas.DashboardSummary.properties.fleet.required).toEqual([
       'averageAge',
     ]);

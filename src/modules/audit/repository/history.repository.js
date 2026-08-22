@@ -1,5 +1,6 @@
 import { Op, Sequelize } from 'sequelize';
 
+import sequelize from '../../../config/database.js';
 import { STOCKABLE_TYPES } from '../../../core/inventory/stock-operation.js';
 import StockMovement from '../../../core/inventory/stock-movement.model.js';
 import Material from '../../materials/model/material.model.js';
@@ -35,6 +36,49 @@ const SECTION_ENTITIES = Object.freeze({
 
 const userAttributes = ['uuid', 'firstName', 'lastName', 'email'];
 const auditExcludedActions = ['EXECUTE', 'EXECUTE_WITHOUT_PARTS', 'STOCK_UPDATE', 'PRICE_UPDATE'];
+const auditSubjectJoinQuery = `
+  SELECT
+    auditLogs.uuid AS auditUuid,
+    CASE auditLogs.entity
+      WHEN 'MATERIAL' THEN materials.name
+      WHEN 'CATEGORY' THEN categories.name
+      WHEN 'MANUFACTURER' THEN manufacturers.name
+      WHEN 'SUPPLIER' THEN suppliers.name
+      WHEN 'MAINTENANCE_TASK' THEN maintenanceTasks.title
+      WHEN 'MAINTENANCE_OPERATION' THEN maintenanceOperations.name
+      WHEN 'MAINTENANCE_PART' THEN CONCAT(maintenanceParts.name, ' (', maintenanceParts.reference, ')')
+      WHEN 'USER' THEN COALESCE(
+        NULLIF(TRIM(CONCAT_WS(' ', auditUsers.first_name, auditUsers.last_name)), ''),
+        auditUsers.email
+      )
+      WHEN 'ROLE' THEN roles.name
+      WHEN 'PERMISSION' THEN COALESCE(NULLIF(permissions.description, ''), permissions.name)
+      ELSE NULL
+    END AS subjectLabel
+  FROM audit_logs AS auditLogs
+  LEFT JOIN materials AS materials
+    ON auditLogs.entity = 'MATERIAL' AND materials.uuid = auditLogs.entity_uuid
+  LEFT JOIN categories AS categories
+    ON auditLogs.entity = 'CATEGORY' AND categories.uuid = auditLogs.entity_uuid
+  LEFT JOIN part_manufacturers AS manufacturers
+    ON auditLogs.entity = 'MANUFACTURER' AND manufacturers.uuid = auditLogs.entity_uuid
+  LEFT JOIN suppliers AS suppliers
+    ON auditLogs.entity = 'SUPPLIER' AND suppliers.uuid = auditLogs.entity_uuid
+  LEFT JOIN maintenance_tasks AS maintenanceTasks
+    ON auditLogs.entity = 'MAINTENANCE_TASK' AND maintenanceTasks.uuid = auditLogs.entity_uuid
+  LEFT JOIN maintenance_operations AS maintenanceOperations
+    ON auditLogs.entity = 'MAINTENANCE_OPERATION'
+    AND maintenanceOperations.uuid = auditLogs.entity_uuid
+  LEFT JOIN maintenance_parts AS maintenanceParts
+    ON auditLogs.entity = 'MAINTENANCE_PART' AND maintenanceParts.uuid = auditLogs.entity_uuid
+  LEFT JOIN users AS auditUsers
+    ON auditLogs.entity = 'USER' AND auditUsers.uuid = auditLogs.entity_uuid
+  LEFT JOIN roles AS roles
+    ON auditLogs.entity = 'ROLE' AND roles.uuid = auditLogs.entity_uuid
+  LEFT JOIN permissions AS permissions
+    ON auditLogs.entity = 'PERMISSION' AND permissions.uuid = auditLogs.entity_uuid
+  WHERE auditLogs.uuid IN (:auditUuids)
+`;
 
 const dateOnlyWhere = ({ from, through }) => ({
   ...(from ? { [Op.gte]: from } : {}),
@@ -97,7 +141,7 @@ export default class HistoryRepository {
       ];
     }
 
-    return AuditLog.findAndCountAll({
+    const result = await AuditLog.findAndCountAll({
       where,
       include: [userInclude('user', query.userUuid)],
       order: [
@@ -108,6 +152,22 @@ export default class HistoryRepository {
       distinct: true,
       subQuery: false,
     });
+    if (!result.rows.length) return result;
+
+    const auditUuids = result.rows.map((item) => item.uuid);
+    const [subjects] = await sequelize.query(auditSubjectJoinQuery, {
+      replacements: { auditUuids },
+    });
+    const subjectByAuditUuid = new Map(
+      subjects.map(({ auditUuid, subjectLabel }) => [auditUuid, subjectLabel]),
+    );
+    return {
+      ...result,
+      rows: result.rows.map((item) => {
+        const value = typeof item.toJSON === 'function' ? item.toJSON() : item;
+        return { ...value, subjectLabel: subjectByAuditUuid.get(value.uuid) ?? null };
+      }),
+    };
   }
 
   async findPlannedExecutions(query, fetchLimit) {

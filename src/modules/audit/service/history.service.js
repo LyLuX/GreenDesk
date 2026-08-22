@@ -28,16 +28,29 @@ const publicUser = (user) => {
       }
     : null;
 };
+const auditSubjectFallbacks = Object.freeze({
+  MATERIAL: 'Matériel supprimé',
+  CATEGORY: 'Catégorie supprimée',
+  MANUFACTURER: 'Fabricant supprimé',
+  SUPPLIER: 'Fournisseur supprimé',
+  MAINTENANCE_TASK: 'Plan de maintenance supprimé',
+  MAINTENANCE_OPERATION: 'Opération supprimée',
+  MAINTENANCE_PART: 'Pièce supprimée',
+  USER: 'Utilisateur supprimé',
+  ROLE: 'Rôle supprimé',
+  PERMISSION: 'Permission supprimée',
+});
 const auditSubject = (row) => {
   const values = row.newValues || row.oldValues || {};
   const label =
+    row.subjectLabel ||
     values.name ||
     values.title ||
     [values.firstName, values.lastName].filter(Boolean).join(' ') ||
     values.email ||
     values.reference ||
-    row.entityUuid ||
-    'Élément supprimé';
+    auditSubjectFallbacks[row.entity] ||
+    'Élément indisponible';
   return { uuid: row.entityUuid, label };
 };
 const auditTypes = Object.freeze({

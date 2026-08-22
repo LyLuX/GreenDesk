@@ -538,7 +538,13 @@ export const openApiSchemas = {
       subject: {
         type: 'object',
         required: ['uuid', 'label'],
-        properties: { uuid: { ...uuid, nullable: true }, label: { type: 'string' } },
+        properties: {
+          uuid: { ...uuid, nullable: true },
+          label: {
+            type: 'string',
+            description: 'Libellé métier résolu pour l’utilisateur, jamais un UUID technique.',
+          },
+        },
       },
       context: {
         type: 'object',
