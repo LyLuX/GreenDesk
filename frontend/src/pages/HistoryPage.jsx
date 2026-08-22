@@ -143,11 +143,17 @@ export default function HistoryPage({ section }) {
   const [type, setType] = useState('');
   const [from, setFrom] = useState('');
   const [through, setThrough] = useState('');
-  const [page, setPage] = useState(1);
+  const [pageState, setPageState] = useState({ section, page: 1 });
   const [limit, setLimit] = useState(5);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const debouncedSearch = useDebouncedValue(search, 300);
+  const page = pageState.section === section ? pageState.page : 1;
+  const setPage = (nextPage) => setPageState({ section, page: nextPage });
+
+  useEffect(() => {
+    setPageState((current) => (current.section === section ? current : { section, page: 1 }));
+  }, [section]);
 
   const load = useCallback(
     async (signal) => {

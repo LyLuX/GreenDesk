@@ -52,4 +52,48 @@ describe('HistoryPage', () => {
       ),
     );
   });
+
+  it('returns to the first page when the history section changes', async () => {
+    const user = userEvent.setup();
+    listHistory.mockImplementation((section, { page, limit }) =>
+      Promise.resolve({
+        data: {
+          data: {
+            items: [],
+            pagination: { page, limit, total: 15, totalPages: 3 },
+          },
+        },
+      }),
+    );
+    const { rerender } = render(<HistoryPage section="maintenance" />);
+
+    await user.click(await screen.findByRole('button', { name: 'Aller à la page 2' }));
+    await waitFor(() =>
+      expect(listHistory).toHaveBeenLastCalledWith(
+        'maintenance',
+        expect.objectContaining({ page: 2 }),
+        expect.any(AbortSignal),
+      ),
+    );
+
+    rerender(<HistoryPage section="fleet" />);
+
+    await waitFor(() =>
+      expect(listHistory).toHaveBeenLastCalledWith(
+        'fleet',
+        expect.objectContaining({ page: 1 }),
+        expect.any(AbortSignal),
+      ),
+    );
+
+    rerender(<HistoryPage section="maintenance" />);
+
+    await waitFor(() =>
+      expect(listHistory).toHaveBeenLastCalledWith(
+        'maintenance',
+        expect.objectContaining({ page: 1 }),
+        expect.any(AbortSignal),
+      ),
+    );
+  });
 });
