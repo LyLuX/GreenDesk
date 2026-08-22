@@ -16,10 +16,12 @@ import {
   stockOperationPresentation,
 } from '../inventory/stock-status.js';
 import useNotification from '../notifications/useNotification.js';
+import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import { MAX_MAINTENANCE_PART_UNIT_PRICE } from '../maintenance/maintenance-costs.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import { formatCurrency, formatDate } from '../utils/formatters.js';
 import Button from './Button.jsx';
+import AutocompleteField from './AutocompleteField.jsx';
 import Loader from './Loader.jsx';
 import Modal from './Modal.jsx';
 
@@ -29,6 +31,8 @@ const formatChange = (quantity, unit) => {
   return `${value > 0 ? '+' : '−'}${formatStockQuantity(Math.abs(value), unit)}`;
 };
 const PRICE_OPERATION = 'price';
+const getMaterialLabel = (material) => material.name;
+const getMaterialKey = (material) => material.uuid;
 const operationDateFormatter = new Intl.DateTimeFormat('fr-FR', {
   day: '2-digit',
   month: '2-digit',
@@ -78,11 +82,13 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
   const [materialSearch, setMaterialSearch] = useState('');
   const [description, setDescription] = useState('');
   const [materials, setMaterials] = useState([]);
+  const [loadingMaterials, setLoadingMaterials] = useState(false);
   const [movements, setMovements] = useState([]);
   const [priceHistory, setPriceHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const debouncedMaterialSearch = useDebouncedValue(materialSearch, 300);
 
   const loadHistory = useCallback(async (uuid, signal) => {
     setLoadingHistory(true);
@@ -120,28 +126,36 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
 
   useEffect(() => {
     if (!part || !canConsume) return undefined;
+    if (!debouncedMaterialSearch.trim()) {
+      setMaterials([]);
+      setLoadingMaterials(false);
+      return undefined;
+    }
     const controller = new AbortController();
-    const timer = setTimeout(() => {
-      listMaterialOptions(
-        { active: true, search: materialSearch, page: 1, limit: 25 },
-        controller.signal,
-      )
-        .then((response) => setMaterials(response.data.data?.items ?? []))
-        .catch((requestError) => {
-          if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
-        });
-    }, 200);
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [canConsume, materialSearch, part]);
+    setLoadingMaterials(true);
+    listMaterialOptions(
+      { active: true, search: debouncedMaterialSearch, page: 1, limit: 25 },
+      controller.signal,
+    )
+      .then((response) => setMaterials(response.data.data?.items ?? []))
+      .catch((requestError) => {
+        if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoadingMaterials(false);
+      });
+    return () => controller.abort();
+  }, [canConsume, debouncedMaterialSearch, part]);
 
   if (!part || !currentPart) return null;
 
   const submit = async (event) => {
     event.preventDefault();
     if (busy) return;
+    if (operation === STOCK_OPERATIONS.CONSUME && !materialUuid) {
+      setError('Sélectionnez un matériel parmi les propositions.');
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -279,31 +293,25 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
 
           {operation === STOCK_OPERATIONS.CONSUME ? (
             <>
-              <label className="form-label mb-0 text-body-secondary">
-                Rechercher un matériel
-                <input
-                  className="form-control"
-                  type="search"
-                  value={materialSearch}
-                  onChange={(event) => setMaterialSearch(event.target.value)}
-                />
-              </label>
-              <label className="form-label mb-0 text-body-secondary">
-                Matériel concerné
-                <select
-                  className="form-select"
-                  required
-                  value={materialUuid}
-                  onChange={(event) => setMaterialUuid(event.target.value)}
-                >
-                  <option value="">Sélectionner un matériel</option>
-                  {materials.map((material) => (
-                    <option key={material.uuid} value={material.uuid}>
-                      {material.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <AutocompleteField
+                label="Rechercher un matériel"
+                type="search"
+                required
+                value={materialSearch}
+                suggestions={materials}
+                getSuggestionKey={getMaterialKey}
+                getSuggestionLabel={getMaterialLabel}
+                loading={loadingMaterials}
+                emptyMessage="Aucun matériel trouvé"
+                onChange={(event) => {
+                  setMaterialSearch(event.target.value);
+                  setMaterialUuid('');
+                }}
+                onSelect={(material) => {
+                  setMaterialSearch(material.name);
+                  setMaterialUuid(material.uuid);
+                }}
+              />
               <label className="form-label mb-0 text-body-secondary">
                 Quantité utilisée
                 <input

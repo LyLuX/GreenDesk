@@ -1,46 +1,57 @@
 import { useId, useMemo, useState } from 'react';
 
 const normalize = (value) => String(value).trim().toLocaleLowerCase('fr');
+const defaultSuggestionLabel = (suggestion) => String(suggestion ?? '').trim();
 
 /** Text field proposing existing values as the user types. */
 export default function AutocompleteField({
   label,
   suggestions = [],
   defaultValue = '',
+  value: controlledValue,
+  getSuggestionLabel = defaultSuggestionLabel,
+  getSuggestionKey,
+  loading = false,
+  emptyMessage = 'Aucune proposition',
   onChange,
+  onSelect,
   ...inputProps
 }) {
   const id = useId();
   const listboxId = `${id}-suggestions`;
-  const [value, setValue] = useState(String(defaultValue));
+  const [internalValue, setInternalValue] = useState(String(defaultValue));
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const value = controlledValue === undefined ? internalValue : String(controlledValue ?? '');
 
   const uniqueSuggestions = useMemo(() => {
-    const valuesByNormalizedName = new Map();
+    const suggestionsByNormalizedLabel = new Map();
     suggestions.forEach((suggestion) => {
-      const text = String(suggestion ?? '').trim();
-      const normalized = normalize(text);
-      if (normalized && !valuesByNormalizedName.has(normalized)) {
-        valuesByNormalizedName.set(normalized, text);
+      const label = getSuggestionLabel(suggestion);
+      const normalized = normalize(label);
+      if (normalized && !suggestionsByNormalizedLabel.has(normalized)) {
+        suggestionsByNormalizedLabel.set(normalized, suggestion);
       }
     });
-    return [...valuesByNormalizedName.values()].sort((left, right) =>
-      left.localeCompare(right, 'fr'),
+    return [...suggestionsByNormalizedLabel.values()].sort((left, right) =>
+      getSuggestionLabel(left).localeCompare(getSuggestionLabel(right), 'fr'),
     );
-  }, [suggestions]);
+  }, [getSuggestionLabel, suggestions]);
 
   const matches = useMemo(() => {
     const query = normalize(value);
     if (!query) return [];
-    return uniqueSuggestions.filter((suggestion) => normalize(suggestion).includes(query));
-  }, [uniqueSuggestions, value]);
+    return uniqueSuggestions.filter((suggestion) =>
+      normalize(getSuggestionLabel(suggestion)).includes(query),
+    );
+  }, [getSuggestionLabel, uniqueSuggestions, value]);
 
   const suggestionsVisible = open && Boolean(value.trim());
   const selectSuggestion = (suggestion) => {
-    setValue(suggestion);
+    if (controlledValue === undefined) setInternalValue(getSuggestionLabel(suggestion));
     setOpen(false);
     setActiveIndex(-1);
+    onSelect?.(suggestion);
   };
 
   const handleKeyDown = (event) => {
@@ -86,7 +97,7 @@ export default function AutocompleteField({
             setActiveIndex(-1);
           }}
           onChange={(event) => {
-            setValue(event.target.value);
+            if (controlledValue === undefined) setInternalValue(event.target.value);
             setOpen(true);
             setActiveIndex(-1);
             onChange?.(event);
@@ -99,7 +110,11 @@ export default function AutocompleteField({
             className="autocomplete-options list-group position-absolute start-0 end-0"
             role="listbox"
           >
-            {matches.length ? (
+            {loading ? (
+              <span className="autocomplete-empty list-group-item" role="status">
+                Recherche…
+              </span>
+            ) : matches.length ? (
               matches.map((suggestion, index) => (
                 <button
                   id={`${listboxId}-option-${index}`}
@@ -109,19 +124,19 @@ export default function AutocompleteField({
                   type="button"
                   role="option"
                   aria-selected={activeIndex === index}
-                  key={normalize(suggestion)}
+                  key={getSuggestionKey?.(suggestion) ?? normalize(getSuggestionLabel(suggestion))}
                   onMouseEnter={() => setActiveIndex(index)}
                   onMouseDown={(event) => {
                     event.preventDefault();
                     selectSuggestion(suggestion);
                   }}
                 >
-                  {suggestion}
+                  {getSuggestionLabel(suggestion)}
                 </button>
               ))
             ) : (
               <span className="autocomplete-empty list-group-item" role="status">
-                Aucune proposition
+                {emptyMessage}
               </span>
             )}
           </div>

@@ -382,8 +382,16 @@ describe('dedicated maintenance catalogue pages', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Gérer le stock de Bougie' }));
     await user.selectOptions(screen.getByLabelText(/^Opération/), 'consume');
+    const materialSearch = screen.getByRole('combobox', { name: 'Rechercher un matériel' });
+    await user.type(materialSearch, 'Ton');
     await screen.findByRole('option', { name: 'Tondeuse' });
-    await user.selectOptions(screen.getByLabelText('Matériel concerné'), 'material-uuid');
+    expect(mocks.listMaterials).toHaveBeenCalledWith(
+      { active: true, search: 'Ton', page: 1, limit: 25 },
+      expect.any(AbortSignal),
+    );
+    await user.click(screen.getByRole('option', { name: 'Tondeuse' }));
+    expect(materialSearch).toHaveValue('Tondeuse');
+    expect(screen.queryByLabelText('Matériel concerné')).not.toBeInTheDocument();
     await user.clear(screen.getByLabelText('Quantité utilisée'));
     await user.type(screen.getByLabelText('Quantité utilisée'), '2');
     await user.type(screen.getByLabelText('Description de l’intervention'), 'Grille cassée');
