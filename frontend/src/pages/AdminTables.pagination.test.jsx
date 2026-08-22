@@ -297,6 +297,11 @@ describe('administrator table pagination', () => {
             description: '',
           },
           {
+            uuid: 'maintenance-consume',
+            name: 'maintenance.parts.stock.consume',
+            description: '',
+          },
+          {
             uuid: 'maintenance-execute-without-parts',
             name: 'maintenance.execute.skip_parts',
             description: '',
@@ -323,13 +328,23 @@ describe('administrator table pagination', () => {
     const orderAction = actionGroup.getByRole('checkbox', {
       name: 'Enregistrement des commandes 0 sur 1',
     });
+    const consumeAction = actionGroup.getByRole('checkbox', {
+      name: 'Utilisation en maintenance 0 sur 1',
+    });
 
     expect(readAction).not.toBeChecked();
     expect(createAction).not.toBeChecked();
     expect(exceptionalExecutionAction).not.toBeChecked();
     expect(adjustOnHandAction).not.toBeChecked();
     expect(orderAction).not.toBeChecked();
+    expect(consumeAction).not.toBeChecked();
     expect(actionGroup.queryByText('Admin')).not.toBeInTheDocument();
+
+    await user.click(consumeAction);
+    expect(dialog.getByLabelText('maintenance.parts.stock.consume')).toBeChecked();
+    expect(
+      actionGroup.getByRole('checkbox', { name: 'Utilisation en maintenance 1 sur 1' }),
+    ).toBeChecked();
 
     await user.click(readAction);
 
