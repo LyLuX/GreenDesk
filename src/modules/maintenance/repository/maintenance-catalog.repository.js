@@ -196,7 +196,10 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
           attributes: ['uuid', 'firstName', 'lastName'],
         },
       ],
-      order: [['created_at', 'DESC']],
+      order: [
+        ['performedAt', 'DESC'],
+        ['createdAt', 'DESC'],
+      ],
       limit: pagination.limit,
       offset: pagination.offset,
     });

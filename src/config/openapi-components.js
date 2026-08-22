@@ -517,6 +517,7 @@ export const openApiSchemas = {
       'quantityOnOrderChange',
       'quantityOnHandAfter',
       'quantityOnOrderAfter',
+      'performedAt',
       'createdAt',
     ],
     properties: {
@@ -528,16 +529,18 @@ export const openApiSchemas = {
       quantityOnOrderAfter: { type: 'integer', minimum: 0, maximum: 1000000 },
       sourceType: nullableString,
       sourceUuid: { ...uuid, nullable: true },
+      performedAt: date,
       createdAt: dateTime,
     },
   },
   MaintenancePartPriceHistory: {
     type: 'object',
-    required: ['uuid', 'previousUnitPrice', 'unitPrice', 'createdAt'],
+    required: ['uuid', 'previousUnitPrice', 'unitPrice', 'performedAt', 'createdAt'],
     properties: {
       uuid,
       previousUnitPrice: { type: 'number', format: 'double', minimum: 0 },
       unitPrice: { type: 'number', format: 'double', minimum: 0 },
+      performedAt: date,
       changedByUser: {
         type: 'object',
         nullable: true,
@@ -775,6 +778,7 @@ export const openApiSchemas = {
         required: ['operation'],
         properties: {
           operation: { type: 'string', enum: [STOCK_OPERATIONS.ADJUST] },
+          performedAt: date,
           quantityOnHand: { type: 'integer', minimum: 0, maximum: 1000000 },
           quantityOnOrder: { type: 'integer', minimum: 0, maximum: 1000000 },
         },
@@ -789,6 +793,7 @@ export const openApiSchemas = {
             type: 'string',
             enum: [STOCK_OPERATIONS.ORDER, STOCK_OPERATIONS.RECEIVE],
           },
+          performedAt: date,
           quantity: { type: 'integer', minimum: 1, maximum: 1000000 },
         },
         additionalProperties: false,
@@ -800,6 +805,7 @@ export const openApiSchemas = {
         properties: {
           stockStatus: { type: 'string', enum: STOCK_STATUS_VALUES },
           stockQuantity: { type: 'integer', minimum: 0, maximum: 1000000 },
+          performedAt: date,
         },
         additionalProperties: false,
       },
@@ -811,6 +817,7 @@ export const openApiSchemas = {
     additionalProperties: false,
     properties: {
       unitPrice: { type: 'number', format: 'double', minimum: 0, maximum: MAX_UNIT_PRICE },
+      performedAt: date,
     },
   },
   StockMovementPage: {

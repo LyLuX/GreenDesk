@@ -183,7 +183,11 @@ describe('MaintenanceCatalogService', () => {
     };
     const service = new MaintenanceCatalogService(repository, auditService, {}, {}, stockService);
 
-    await service.updatePartStock(part.uuid, { operation: 'order', quantity: 4 }, 42);
+    await service.updatePartStock(
+      part.uuid,
+      { operation: 'order', quantity: 4, performedAt: '2026-08-20' },
+      42,
+    );
 
     expect(repository.findPartByUuid).toHaveBeenCalledWith(part.uuid, {
       transaction: { id: 'transaction' },
@@ -195,6 +199,7 @@ describe('MaintenanceCatalogService', () => {
         stockableType: 'maintenancePart',
         operation: 'order',
         quantity: 4,
+        performedAt: '2026-08-20',
         userId: 42,
       }),
       { transaction: { id: 'transaction' } },
@@ -233,13 +238,18 @@ describe('MaintenanceCatalogService', () => {
     const auditService = { record: jest.fn() };
     const service = new MaintenanceCatalogService(repository, auditService);
 
-    const result = await service.updatePartPrice(part.uuid, { unitPrice: 12.5 }, 42);
+    const result = await service.updatePartPrice(
+      part.uuid,
+      { unitPrice: 12.5, performedAt: '2026-08-19' },
+      42,
+    );
 
     expect(repository.createPartPriceHistory).toHaveBeenCalledWith(
       {
         maintenancePartId: part.id,
         previousUnitPrice: '10.00',
         unitPrice: '12.50',
+        performedAt: '2026-08-19',
         changedBy: 42,
       },
       { transaction },
@@ -249,5 +259,19 @@ describe('MaintenanceCatalogService', () => {
       { transaction },
     );
     expect(result.unitPrice).toBe(12.5);
+  });
+
+  it('rejects future business dates before changing stock', async () => {
+    const stockService = { apply: jest.fn() };
+    const service = new MaintenanceCatalogService({}, {}, {}, {}, stockService);
+
+    await expect(
+      service.updatePartStock(
+        '66666666-6666-4666-8666-666666666666',
+        { operation: 'order', quantity: 1, performedAt: '2999-01-01' },
+        42,
+      ),
+    ).rejects.toMatchObject({ statusCode: 400 });
+    expect(stockService.apply).not.toHaveBeenCalled();
   });
 });

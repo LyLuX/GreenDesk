@@ -55,6 +55,11 @@ StockMovement.init(
       field: 'performed_by',
       allowNull: true,
     },
+    performedAt: {
+      type: DataTypes.DATEONLY,
+      field: 'performed_at',
+      allowNull: false,
+    },
   },
   {
     sequelize,

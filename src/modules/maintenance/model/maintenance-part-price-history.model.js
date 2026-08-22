@@ -22,6 +22,11 @@ MaintenancePartPriceHistory.init(
     },
     unitPrice: { type: DataTypes.DECIMAL(12, 2), field: 'unit_price', allowNull: false },
     changedBy: { type: DataTypes.BIGINT.UNSIGNED, field: 'changed_by', allowNull: true },
+    performedAt: {
+      type: DataTypes.DATEONLY,
+      field: 'performed_at',
+      allowNull: false,
+    },
   },
   {
     sequelize,

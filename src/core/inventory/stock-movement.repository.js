@@ -11,7 +11,10 @@ export default class StockMovementRepository {
     const normalizedPage = Math.max(Number(page) || 1, 1);
     const result = await StockMovement.findAndCountAll({
       where: { stockableType, stockableId },
-      order: [['created_at', 'DESC']],
+      order: [
+        ['performedAt', 'DESC'],
+        ['createdAt', 'DESC'],
+      ],
       limit: normalizedLimit,
       offset: (normalizedPage - 1) * normalizedLimit,
     });

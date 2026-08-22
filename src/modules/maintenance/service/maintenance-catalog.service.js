@@ -9,6 +9,7 @@ import SupplierRepository from '../../suppliers/repository/supplier.repository.j
 import MaintenanceCatalogRepository from '../repository/maintenance-catalog.repository.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 import { normalizeMoney } from '../../../core/utils/money.js';
+import { parseDateOnly, todayDateOnly } from './maintenance-deadline.service.js';
 
 /** Reusable operation and exact-part catalogue lifecycle. */
 export default class MaintenanceCatalogService {
@@ -209,6 +210,7 @@ export default class MaintenanceCatalogService {
   }
 
   async updatePartStock(uuid, values, userId) {
+    const performedAt = this.normalizePerformedAt(values.performedAt);
     let part;
     let oldValues;
     await this.repository.withTransaction(async (transaction) => {
@@ -219,6 +221,7 @@ export default class MaintenanceCatalogService {
         {
           stockableType: STOCKABLE_TYPES.MAINTENANCE_PART,
           ...this.normalizeStockOperation(values),
+          performedAt,
           userId,
         },
         { transaction },
@@ -235,6 +238,7 @@ export default class MaintenanceCatalogService {
     if (unitPrice === null) {
       throw new AppError('Le prix unitaire est invalide.', HTTP_STATUS.BAD_REQUEST);
     }
+    const performedAt = this.normalizePerformedAt(values.performedAt);
     let part;
     await this.repository.withTransaction(async (transaction) => {
       part = await this.getPartEntity(uuid, { transaction, lock: true });
@@ -252,6 +256,7 @@ export default class MaintenanceCatalogService {
           maintenancePartId: part.id,
           previousUnitPrice,
           unitPrice,
+          performedAt,
           changedBy: userId,
         },
         { transaction },
@@ -305,6 +310,17 @@ export default class MaintenanceCatalogService {
       quantityOnHand: 0,
       quantityOnOrder: 0,
     };
+  }
+
+  normalizePerformedAt(value) {
+    const performedAt = value ?? todayDateOnly();
+    if (parseDateOnly(performedAt) > parseDateOnly(todayDateOnly())) {
+      throw new AppError(
+        'La date de l’opération ne peut pas être dans le futur.',
+        HTTP_STATUS.BAD_REQUEST,
+      );
+    }
+    return performedAt;
   }
 
   async preparePartValues(
@@ -426,6 +442,7 @@ export default class MaintenanceCatalogService {
       quantityOnOrderAfter: Number(value.quantityOnOrderAfter),
       sourceType: value.sourceType,
       sourceUuid: value.sourceUuid,
+      performedAt: value.performedAt,
       createdAt: value.createdAt,
     };
   }
@@ -436,6 +453,7 @@ export default class MaintenanceCatalogService {
       uuid: value.uuid,
       previousUnitPrice: Number(value.previousUnitPrice),
       unitPrice: Number(value.unitPrice),
+      performedAt: value.performedAt,
       changedByUser: value.changedByUser
         ? {
             uuid: value.changedByUser.uuid,

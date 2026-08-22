@@ -904,7 +904,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Applique une opération atomique au stock d’une pièce.',
       description:
-        '`adjust` nécessite `maintenance.parts.stock.adjust_on_hand` pour `quantityOnHand` et `maintenance.parts.stock.adjust_on_order` pour `quantityOnOrder`. Fournir les deux quantités nécessite les deux permissions. Le format historique `stockStatus`/`stockQuantity`, qui corrige les deux compteurs, nécessite également les deux permissions. `order` nécessite `maintenance.parts.stock.order`. `receive` nécessite `maintenance.parts.stock.receive`. Les écritures sont transactionnelles et historisées.',
+        '`adjust` nécessite `maintenance.parts.stock.adjust_on_hand` pour `quantityOnHand` et `maintenance.parts.stock.adjust_on_order` pour `quantityOnOrder`. Fournir les deux quantités nécessite les deux permissions. Le format historique `stockStatus`/`stockQuantity`, qui corrige les deux compteurs, nécessite également les deux permissions. `order` nécessite `maintenance.parts.stock.order`. `receive` nécessite `maintenance.parts.stock.receive`. `performedAt` indique la date métier du mouvement, prend la date du jour par défaut et ne peut pas être dans le futur. Les écritures sont transactionnelles et historisées.',
       security: secure,
       requestBody: jsonBody('MaintenancePartStockRequest'),
       responses: {
@@ -920,7 +920,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Liste les mouvements de stock d’une pièce.',
       description:
-        'Nécessite `maintenance.parts.read`. Les mouvements sont retournés du plus récent au plus ancien.',
+        'Nécessite `maintenance.parts.read`. Les mouvements sont retournés de la date métier la plus récente à la plus ancienne, puis par date de création.',
       security: secure,
       parameters: [pageParameter, limitParameter],
       responses: {
@@ -936,7 +936,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Modifie le prix unitaire courant d’une pièce.',
       description:
-        'Nécessite `maintenance.parts.price.update`. Le changement est transactionnel et conserve automatiquement l’ancien et le nouveau prix.',
+        'Nécessite `maintenance.parts.price.update`. `performedAt` indique la date métier du changement, prend la date du jour par défaut et ne peut pas être dans le futur. Le changement est transactionnel et conserve automatiquement l’ancien et le nouveau prix.',
       security: secure,
       requestBody: jsonBody('MaintenancePartPriceRequest'),
       responses: {
@@ -952,7 +952,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Liste l’historique immuable des prix unitaires d’une pièce.',
       description:
-        'Nécessite `maintenance.parts.read`. Les changements sont retournés du plus récent au plus ancien.',
+        'Nécessite `maintenance.parts.read`. Les changements sont retournés de la date métier la plus récente à la plus ancienne, puis par date de création.',
       security: secure,
       parameters: [pageParameter, limitParameter],
       responses: {

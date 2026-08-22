@@ -308,6 +308,7 @@ export default class MaintenanceService {
               stockableType: STOCKABLE_TYPES.MAINTENANCE_PART,
               operation: STOCK_OPERATIONS.CONSUME,
               quantity,
+              performedAt,
               userId,
               source: { type: 'maintenanceTask', uuid: task.uuid },
             },

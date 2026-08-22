@@ -16,7 +16,7 @@ import {
 import useNotification from '../notifications/useNotification.js';
 import { MAX_MAINTENANCE_PART_UNIT_PRICE } from '../maintenance/maintenance-costs.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
-import { formatCurrency, formatDateTime } from '../utils/formatters.js';
+import { formatCurrency, formatDate } from '../utils/formatters.js';
 import Button from './Button.jsx';
 import Loader from './Loader.jsx';
 import Modal from './Modal.jsx';
@@ -27,6 +27,21 @@ const formatChange = (quantity, unit) => {
   return `${value > 0 ? '+' : '−'}${formatStockQuantity(Math.abs(value), unit)}`;
 };
 const PRICE_OPERATION = 'price';
+const operationDateFormatter = new Intl.DateTimeFormat('fr-FR', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  timeZone: 'Europe/Paris',
+});
+const getCurrentOperationDate = (now = new Date()) => {
+  const parts = Object.fromEntries(
+    operationDateFormatter
+      .formatToParts(now)
+      .filter(({ type }) => type !== 'literal')
+      .map(({ type, value }) => [type, value]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day}`;
+};
 
 /** Shared stock-operation dialog for a maintenance part. */
 export default function StockManagementModal({ part, onClose, onUpdated }) {
@@ -54,6 +69,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
   const [quantityOnHand, setQuantityOnHand] = useState('0');
   const [quantityOnOrder, setQuantityOnOrder] = useState('0');
   const [unitPrice, setUnitPrice] = useState('0');
+  const [performedAt, setPerformedAt] = useState(getCurrentOperationDate);
   const [movements, setMovements] = useState([]);
   const [priceHistory, setPriceHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -82,6 +98,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
     setQuantityOnHand(String(part.quantityOnHand ?? 0));
     setQuantityOnOrder(String(part.quantityOnOrder ?? 0));
     setUnitPrice(String(part.unitPrice ?? 0));
+    setPerformedAt(getCurrentOperationDate());
     setQuantity('1');
     setOperation(initialOperation);
     setError('');
@@ -98,7 +115,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
     setBusy(true);
     setError('');
     try {
-      const stockPayload = { operation };
+      const stockPayload = { operation, performedAt };
       if (operation === STOCK_OPERATIONS.ADJUST) {
         if (canAdjustOnHand) stockPayload.quantityOnHand = Number(quantityOnHand);
         if (canAdjustOnOrder) stockPayload.quantityOnOrder = Number(quantityOnOrder);
@@ -107,7 +124,10 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
       }
       const response =
         operation === PRICE_OPERATION
-          ? await updateMaintenancePartPrice(part.uuid, { unitPrice: Number(unitPrice) })
+          ? await updateMaintenancePartPrice(part.uuid, {
+              unitPrice: Number(unitPrice),
+              performedAt,
+            })
           : await updateMaintenancePartStock(part.uuid, stockPayload);
       const updatedPart = response.data.data;
       setCurrentPart(updatedPart);
@@ -189,6 +209,18 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                 </option>
               ))}
             </select>
+          </label>
+
+          <label className="form-label mb-0 text-body-secondary">
+            Date de l’opération
+            <input
+              className="form-control"
+              type="date"
+              max={getCurrentOperationDate()}
+              required
+              value={performedAt}
+              onChange={(event) => setPerformedAt(event.target.value)}
+            />
           </label>
 
           {operation === PRICE_OPERATION ? (
@@ -298,7 +330,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
             <tbody>
               {movements.map((movement) => (
                 <tr key={movement.uuid}>
-                  <td>{formatDateTime(movement.createdAt)}</td>
+                  <td>{formatDate(movement.performedAt)}</td>
                   <td>{stockOperationPresentation[movement.operation] ?? movement.operation}</td>
                   <td>{formatChange(movement.quantityOnHandChange, currentPart.unit)}</td>
                   <td>{formatChange(movement.quantityOnOrderChange, currentPart.unit)}</td>
@@ -328,7 +360,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
             <tbody>
               {priceHistory.map((entry) => (
                 <tr key={entry.uuid}>
-                  <td>{formatDateTime(entry.createdAt)}</td>
+                  <td>{formatDate(entry.performedAt)}</td>
                   <td>{formatCurrency(entry.previousUnitPrice)}</td>
                   <td>{formatCurrency(entry.unitPrice)}</td>
                   <td>

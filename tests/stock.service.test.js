@@ -21,7 +21,13 @@ describe('StockService', () => {
 
     await service.apply(
       item,
-      { stockableType: 'maintenancePart', operation: 'order', quantity: 4, userId: 42 },
+      {
+        stockableType: 'maintenancePart',
+        operation: 'order',
+        quantity: 4,
+        performedAt: '2026-08-20',
+        userId: 42,
+      },
       { transaction: { id: 'transaction' } },
     );
 
@@ -33,6 +39,7 @@ describe('StockService', () => {
         quantityOnOrderChange: 4,
         quantityOnHandAfter: 2,
         quantityOnOrderAfter: 7,
+        performedAt: '2026-08-20',
       }),
       { transaction: { id: 'transaction' } },
     );

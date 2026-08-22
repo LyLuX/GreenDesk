@@ -23,7 +23,16 @@ export default class StockService {
 
   async apply(
     item,
-    { stockableType, operation, quantity, quantityOnHand, quantityOnOrder, userId, source },
+    {
+      stockableType,
+      operation,
+      quantity,
+      quantityOnHand,
+      quantityOnOrder,
+      performedAt,
+      userId,
+      source,
+    },
     { transaction } = {},
   ) {
     const currentOnHand = Number(item.quantityOnHand ?? 0);
@@ -92,6 +101,7 @@ export default class StockService {
         sourceType: source?.type ?? null,
         sourceUuid: source?.uuid ?? null,
         performedBy: userId ?? null,
+        performedAt: performedAt ?? new Date().toISOString().slice(0, 10),
       },
       { transaction },
     );

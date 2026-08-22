@@ -455,6 +455,7 @@ describe('MaintenanceService', () => {
       expect.objectContaining({
         operation: 'consume',
         quantity: 2,
+        performedAt: today,
         source: { type: 'maintenanceTask', uuid: task.uuid },
       }),
       { transaction },

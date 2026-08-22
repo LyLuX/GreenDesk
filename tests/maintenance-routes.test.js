@@ -239,7 +239,7 @@ describe('maintenance catalogue route permissions', () => {
     await request(app)
       .patch(path)
       .set('Authorization', authorization([permissions.order]))
-      .send({ operation: 'order', quantity: 3 })
+      .send({ operation: 'order', quantity: 3, performedAt: '2026-08-20' })
       .expect(200);
     await request(app)
       .patch(path)
@@ -289,8 +289,13 @@ describe('maintenance catalogue route permissions', () => {
     await request(app)
       .patch(path)
       .set('Authorization', authorization(['maintenance.parts.price.update']))
-      .send({ unitPrice: 12.5 })
+      .send({ unitPrice: 12.5, performedAt: '2026-08-19' })
       .expect(200);
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization(['maintenance.parts.price.update']))
+      .send({ unitPrice: 12.5, performedAt: '19/08/2026' })
+      .expect(400);
     expect(catalogController.updatePartPrice).toHaveBeenCalled();
   });
 
@@ -304,6 +309,11 @@ describe('maintenance catalogue route permissions', () => {
       .patch(`/api/v1/maintenance/parts/${uuid}/stock`)
       .set('Authorization', authorization(['maintenance.parts.stock.receive']))
       .send({ operation: 'receive', quantity: -1 })
+      .expect(400);
+    await request(app)
+      .patch(`/api/v1/maintenance/parts/${uuid}/stock`)
+      .set('Authorization', authorization(['maintenance.parts.stock.order']))
+      .send({ operation: 'order', quantity: 3, performedAt: '20/08/2026' })
       .expect(400);
   });
 

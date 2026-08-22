@@ -286,6 +286,9 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(partReference).toHaveClass('d-block', 'text-body-secondary');
     const quantityOnHand = screen.getByLabelText('Quantité en stock');
     const quantityOnOrder = screen.getByLabelText('Quantité commandée');
+    const operationDate = screen.getByLabelText('Date de l’opération');
+    expect(operationDate.value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(operationDate).toHaveAttribute('max', operationDate.value);
     expect(quantityOnHand).toHaveValue(0);
     expect(quantityOnOrder).toHaveValue(0);
     expect(quantityOnHand.closest('.col-sm-5')?.parentElement).toHaveClass(
@@ -297,11 +300,14 @@ describe('dedicated maintenance catalogue pages', () => {
     await user.type(screen.getByLabelText('Quantité en stock'), '2');
     await user.clear(screen.getByLabelText('Quantité commandée'));
     await user.type(screen.getByLabelText('Quantité commandée'), '3');
+    await user.clear(operationDate);
+    await user.type(operationDate, '2026-08-20');
     await user.click(screen.getByRole('button', { name: 'Enregistrer le mouvement' }));
 
     await waitFor(() =>
       expect(mocks.updatePartStock).toHaveBeenCalledWith('part-uuid', {
         operation: 'adjust',
+        performedAt: '2026-08-20',
         quantityOnHand: 2,
         quantityOnOrder: 3,
       }),
@@ -334,6 +340,7 @@ describe('dedicated maintenance catalogue pages', () => {
     await waitFor(() =>
       expect(mocks.updatePartStock).toHaveBeenCalledWith('part-uuid', {
         operation: 'adjust',
+        performedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
         quantityOnHand: 4,
       }),
     );
@@ -366,15 +373,21 @@ describe('dedicated maintenance catalogue pages', () => {
       within(stockDialog).getByText('Valeur du stock actuel').nextElementSibling,
     ).toHaveTextContent('0,00 €');
 
-    await user.selectOptions(screen.getByLabelText('Opération'), 'price');
+    await user.selectOptions(screen.getByLabelText(/^Opération/), 'price');
     expect(screen.getByLabelText('Nouveau prix unitaire (€)')).toHaveValue(10);
+    const operationDate = screen.getByLabelText('Date de l’opération');
+    await user.clear(operationDate);
+    await user.type(operationDate, '2026-08-19');
     expect(screen.queryByLabelText('Libellé de l’opération')).not.toBeInTheDocument();
     await user.clear(screen.getByLabelText('Nouveau prix unitaire (€)'));
     await user.type(screen.getByLabelText('Nouveau prix unitaire (€)'), '12.5');
     await user.click(screen.getByRole('button', { name: 'Enregistrer le prix' }));
 
     await waitFor(() =>
-      expect(mocks.updatePartPrice).toHaveBeenCalledWith('part-uuid', { unitPrice: 12.5 }),
+      expect(mocks.updatePartPrice).toHaveBeenCalledWith('part-uuid', {
+        unitPrice: 12.5,
+        performedAt: '2026-08-19',
+      }),
     );
     expect(mocks.notify).toHaveBeenCalledWith('success', 'Prix unitaire mis à jour.');
   });

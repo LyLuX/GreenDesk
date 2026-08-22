@@ -126,6 +126,10 @@ export const updatePartValidator = [
 ];
 export const updatePartStockValidator = [
   uuid,
+  body('performedAt')
+    .optional()
+    .isISO8601({ strict: true })
+    .matches(/^\d{4}-\d{2}-\d{2}$/),
   body('operation').optional().isIn(PUBLIC_STOCK_OPERATION_VALUES),
   body('quantity').optional().isInt({ min: 1, max: MAX_STOCK_QUANTITY }).toInt(),
   body('quantityOnHand').optional().isInt({ min: 0, max: MAX_STOCK_QUANTITY }).toInt(),
@@ -146,5 +150,12 @@ export const updatePartStockValidator = [
   }),
 ];
 export const stockMovementListValidator = [uuid, ...paginationValidator];
-export const updatePartPriceValidator = [uuid, unitPriceValidator()];
+export const updatePartPriceValidator = [
+  uuid,
+  unitPriceValidator(),
+  body('performedAt')
+    .optional()
+    .isISO8601({ strict: true })
+    .matches(/^\d{4}-\d{2}-\d{2}$/),
+];
 export const priceHistoryListValidator = [uuid, ...paginationValidator];
