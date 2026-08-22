@@ -701,10 +701,6 @@ a:hover {
   white-space: normal;
 }
 
-.table-responsive > .table > :not(caption) > * > * {
-  overflow-wrap: anywhere;
-}
-
 .multiline-text {
   white-space: pre-wrap;
 }
