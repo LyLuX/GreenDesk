@@ -22,27 +22,17 @@ const renderPagination = (pagination, properties = {}) => {
 };
 
 describe('PaginationControls', () => {
-  it('keeps two adjacent pages, the boundaries and gaps around a middle page', () => {
-    expect(getVisiblePages(15, 50)).toEqual([
-      1,
-      'previous-gap',
-      13,
-      14,
-      15,
-      16,
-      17,
-      'next-gap',
-      50,
-    ]);
+  it('keeps one adjacent page, the boundaries and gaps around a middle page', () => {
+    expect(getVisiblePages(15, 50)).toEqual([1, 'previous-gap', 14, 15, 16, 'next-gap', 50]);
 
     renderPagination({ page: 15, totalPages: 50, total: 250 });
 
     expect(screen.getByText('15').closest('[aria-current="page"]')).toBeInTheDocument();
     expect(screen.getAllByText('…')).toHaveLength(2);
-    expect(screen.getByRole('button', { name: 'Aller à la page 13' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Aller à la page 17' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Aller à la page 12' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Aller à la page 18' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Aller à la page 14' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Aller à la page 16' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Aller à la page 13' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Aller à la page 17' })).not.toBeInTheDocument();
   });
 
   it('navigates directly and with the French previous and next controls', async () => {
@@ -59,14 +49,14 @@ describe('PaginationControls', () => {
   it('adapts the range and disabled actions at both boundaries', () => {
     renderPagination({ page: 1, totalPages: 50, total: 250 });
 
-    expect(getVisiblePages(1, 50)).toEqual([1, 2, 3, 'next-gap', 50]);
+    expect(getVisiblePages(1, 50)).toEqual([1, 2, 'next-gap', 50]);
     expect(screen.getByRole('button', { name: 'Précédent' })).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Aller à la page 4' })).not.toBeInTheDocument();
 
     cleanup();
     renderPagination({ page: 50, totalPages: 50, total: 250 });
 
-    expect(getVisiblePages(50, 50)).toEqual([1, 'previous-gap', 48, 49, 50]);
+    expect(getVisiblePages(50, 50)).toEqual([1, 'previous-gap', 49, 50]);
     expect(screen.getByRole('button', { name: 'Suivant' })).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Aller à la page 47' })).not.toBeInTheDocument();
   });

@@ -1,4 +1,4 @@
-const ADJACENT_PAGE_COUNT = 2;
+const ADJACENT_PAGE_COUNT = 1;
 
 /** Builds a compact page range with stable first/last-page access. */
 export function getVisiblePages(currentPage, totalPages) {
@@ -102,7 +102,7 @@ export default function PaginationControls({
         Par page{' '}
         <select
           aria-label="Nombre d’éléments par page"
-          className="form-select d-inline-block ms-1 w-auto"
+          className="form-select form-select-sm d-inline-block ms-1 w-auto"
           value={limit}
           disabled={disabled}
           onChange={(event) => onLimitChange(Number(event.target.value))}
