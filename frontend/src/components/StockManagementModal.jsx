@@ -258,7 +258,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
       {permittedOperations.length ? (
         <form className="d-grid gap-3" onSubmit={submit}>
           <label className="form-label mb-0 text-body-secondary">
-            Opération
+            Opérations
             <select
               className="form-select"
               value={operation}
