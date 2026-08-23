@@ -1,8 +1,70 @@
 import { jest } from '@jest/globals';
 
-import MailService from '../src/core/mail/mail.service.js';
+import MailService, { buildSmtpTransportOptions } from '../src/core/mail/mail.service.js';
+
+const smtpConfiguration = (auth, overrides = {}) => ({
+  host: 'smtp.example.test',
+  port: 587,
+  secure: false,
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100,
+  useSystemCa: false,
+  auth,
+  ...overrides,
+});
 
 describe('MailService', () => {
+  it('builds password and OAuth2 transports from the same SMTP abstraction', () => {
+    expect(
+      buildSmtpTransportOptions(
+        smtpConfiguration({ type: 'password', user: 'mailer', password: 'secret' }),
+      ),
+    ).toMatchObject({ auth: { user: 'mailer', pass: 'secret' } });
+    expect(
+      buildSmtpTransportOptions(
+        smtpConfiguration({
+          type: 'oauth2',
+          user: 'mailer@example.test',
+          clientId: 'client-id',
+          clientSecret: 'client-secret',
+          refreshToken: 'refresh-token',
+          accessUrl: 'https://login.example.test/token',
+          scope: 'smtp.send offline_access',
+        }),
+      ),
+    ).toMatchObject({
+      auth: {
+        type: 'OAuth2',
+        user: 'mailer@example.test',
+        clientId: 'client-id',
+        clientSecret: 'client-secret',
+        refreshToken: 'refresh-token',
+        accessUrl: 'https://login.example.test/token',
+        customParams: { scope: 'smtp.send offline_access' },
+      },
+    });
+  });
+
+  it('merges Node and operating-system certificate authorities when requested', () => {
+    const getCACertificates = jest.fn((source) =>
+      source === 'default' ? ['default-ca', 'shared-ca'] : ['system-ca', 'shared-ca'],
+    );
+    const options = buildSmtpTransportOptions(
+      smtpConfiguration({ type: 'none' }, { useSystemCa: true }),
+      getCACertificates,
+    );
+
+    expect(options.tls.ca).toEqual(['default-ca', 'shared-ca', 'system-ca']);
+    expect(options).not.toHaveProperty('auth');
+  });
+
+  it('fails explicitly when the Node runtime cannot expose system certificates', () => {
+    expect(() =>
+      buildSmtpTransportOptions(smtpConfiguration({ type: 'none' }, { useSystemCa: true }), null),
+    ).toThrow(/version de Node compatible/);
+  });
+
   it('uses the shared sender configuration for arbitrary email workflows', async () => {
     const transport = { sendMail: jest.fn().mockResolvedValue({ messageId: 'message-1' }) };
     const service = new MailService(

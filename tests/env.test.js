@@ -201,10 +201,85 @@ describe('runtime environment configuration', () => {
         port: 465,
         secure: true,
         pool: true,
-        user: 'mailer',
-        password: 'secret',
+        useSystemCa: false,
+        auth: { type: 'password', user: 'mailer', password: 'secret' },
       },
     });
+  });
+
+  it('validates a provider-neutral OAuth2 SMTP configuration', () => {
+    const configuration = createEnvironment({
+      NODE_ENV: 'test',
+      MAIL_ENABLED: 'true',
+      SMTP_HOST: 'smtp-mail.outlook.com',
+      SMTP_AUTH_TYPE: 'oauth2',
+      SMTP_USER: 'sender@outlook.test',
+      SMTP_USE_SYSTEM_CA: 'true',
+      SMTP_OAUTH_CLIENT_ID: 'client-id',
+      SMTP_OAUTH_CLIENT_SECRET: 'client-secret',
+      SMTP_OAUTH_REFRESH_TOKEN: 'refresh-token',
+      SMTP_OAUTH_ACCESS_URL: 'https://login.example.test/common/oauth2/v2.0/token',
+      SMTP_OAUTH_SCOPE: 'smtp.send offline_access',
+      MAIL_FROM_ADDRESS: 'sender@outlook.test',
+    });
+
+    expect(configuration.mail.smtp).toMatchObject({
+      useSystemCa: true,
+      auth: {
+        type: 'oauth2',
+        user: 'sender@outlook.test',
+        password: '',
+        clientId: 'client-id',
+        clientSecret: 'client-secret',
+        refreshToken: 'refresh-token',
+        accessUrl: 'https://login.example.test/common/oauth2/v2.0/token',
+        scope: 'smtp.send offline_access',
+      },
+    });
+  });
+
+  it('rejects incomplete or ambiguous OAuth2 SMTP credentials', () => {
+    expect(() =>
+      createEnvironment({
+        NODE_ENV: 'test',
+        MAIL_ENABLED: 'true',
+        SMTP_HOST: 'smtp.example.test',
+        SMTP_AUTH_TYPE: 'oauth2',
+        SMTP_USER: 'sender@example.test',
+        SMTP_PASSWORD: 'legacy-password',
+        SMTP_OAUTH_REFRESH_TOKEN: 'refresh-token-without-client',
+        MAIL_FROM_ADDRESS: 'sender@example.test',
+      }),
+    ).toThrow(
+      /SMTP_PASSWORD ne doit pas être défini[\s\S]*SMTP_OAUTH_ACCESS_URL est obligatoire[\s\S]*SMTP_OAUTH_ACCESS_TOKEN ou le couple/,
+    );
+  });
+
+  it('rejects credentials that do not match the selected SMTP authentication mode', () => {
+    expect(() =>
+      createEnvironment({
+        NODE_ENV: 'test',
+        SMTP_AUTH_TYPE: 'password',
+      }),
+    ).toThrow(/SMTP_USER et SMTP_PASSWORD sont obligatoires/);
+
+    expect(() =>
+      createEnvironment({
+        NODE_ENV: 'test',
+        SMTP_AUTH_TYPE: 'password',
+        SMTP_USER: 'sender@example.test',
+        SMTP_PASSWORD: 'password',
+        SMTP_OAUTH_CLIENT_ID: 'unused-client-id',
+      }),
+    ).toThrow(/SMTP_OAUTH_\* ne doivent pas être définies/);
+
+    expect(() =>
+      createEnvironment({
+        NODE_ENV: 'test',
+        SMTP_AUTH_TYPE: 'none',
+        SMTP_USER: 'unused@example.test',
+      }),
+    ).toThrow(/Aucun identifiant SMTP ne doit être défini/);
   });
 
   it('requires email delivery when public registration is enabled in production', () => {

@@ -4,6 +4,7 @@ import appVersion from './app-version.js';
 dotenv.config();
 
 const NODE_ENVIRONMENTS = new Set(['development', 'test', 'production']);
+const SMTP_AUTH_TYPES = new Set(['none', 'password', 'oauth2']);
 const PRODUCTION_REQUIRED_DATABASE_KEYS = [
   'DATABASE_HOST',
   'DATABASE_NAME',
@@ -50,6 +51,40 @@ const parsePositiveInteger = (source, key, fallback, errors) => {
     errors.push(`${key} doit être un entier strictement positif.`);
   }
   return value;
+};
+
+const parseOptionalPositiveInteger = (source, key, errors) => {
+  const rawValue = normalizedValue(source, key);
+  if (!rawValue) return null;
+  const value = Number(rawValue);
+  if (!Number.isInteger(value) || value < 1) {
+    errors.push(`${key} doit être un entier strictement positif.`);
+  }
+  return value;
+};
+
+const parseOptionalHttpUrl = (source, key, isProduction, errors) => {
+  const rawValue = normalizedValue(source, key);
+  if (!rawValue) return '';
+  try {
+    const url = new URL(rawValue);
+    if (
+      !['http:', 'https:'].includes(url.protocol) ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash
+    ) {
+      throw new Error('Invalid URL');
+    }
+    if (isProduction && url.protocol !== 'https:') {
+      errors.push(`${key} doit utiliser HTTPS en production.`);
+    }
+    return url.toString();
+  } catch {
+    errors.push(`${key} doit être une URL HTTP(S) valide.`);
+    return '';
+  }
 };
 
 const parseTrustedProxies = (source, errors) => {
@@ -203,13 +238,72 @@ export function createEnvironment(source = process.env) {
   const smtpHost = normalizedValue(source, 'SMTP_HOST');
   const smtpUser = normalizedValue(source, 'SMTP_USER');
   const smtpPassword = source.SMTP_PASSWORD ?? '';
+  const smtpAuthType =
+    normalizedValue(source, 'SMTP_AUTH_TYPE').toLowerCase() ||
+    (smtpUser || smtpPassword ? 'password' : 'none');
+  const smtpOauthClientId = normalizedValue(source, 'SMTP_OAUTH_CLIENT_ID');
+  const smtpOauthClientSecret = source.SMTP_OAUTH_CLIENT_SECRET ?? '';
+  const smtpOauthRefreshToken = source.SMTP_OAUTH_REFRESH_TOKEN ?? '';
+  const smtpOauthAccessToken = source.SMTP_OAUTH_ACCESS_TOKEN ?? '';
+  const smtpOauthAccessUrl = parseOptionalHttpUrl(
+    source,
+    'SMTP_OAUTH_ACCESS_URL',
+    isProduction,
+    errors,
+  );
+  const smtpOauthExpiresAt = parseOptionalPositiveInteger(source, 'SMTP_OAUTH_EXPIRES_AT', errors);
+  const smtpOauthScope = normalizedValue(source, 'SMTP_OAUTH_SCOPE');
+  const hasOauthConfiguration = Boolean(
+    smtpOauthClientId ||
+    smtpOauthClientSecret ||
+    smtpOauthRefreshToken ||
+    smtpOauthAccessToken ||
+    smtpOauthAccessUrl ||
+    smtpOauthExpiresAt ||
+    smtpOauthScope,
+  );
   const mailFromAddress = normalizedValue(source, 'MAIL_FROM_ADDRESS');
   if (mailEnabled && !smtpHost) errors.push('SMTP_HOST est obligatoire lorsque MAIL_ENABLED=true.');
   if (mailEnabled && !mailFromAddress) {
     errors.push('MAIL_FROM_ADDRESS est obligatoire lorsque MAIL_ENABLED=true.');
   }
-  if (Boolean(smtpUser) !== Boolean(smtpPassword)) {
-    errors.push('SMTP_USER et SMTP_PASSWORD doivent être définis ensemble.');
+  if (!SMTP_AUTH_TYPES.has(smtpAuthType)) {
+    errors.push('SMTP_AUTH_TYPE doit valoir "none", "password" ou "oauth2".');
+  }
+  if (smtpAuthType === 'password' && (!smtpUser || !smtpPassword)) {
+    errors.push('SMTP_USER et SMTP_PASSWORD sont obligatoires avec SMTP_AUTH_TYPE=password.');
+  }
+  if (smtpAuthType === 'password' && hasOauthConfiguration) {
+    errors.push(
+      'Les variables SMTP_OAUTH_* ne doivent pas être définies avec SMTP_AUTH_TYPE=password.',
+    );
+  }
+  if (smtpAuthType === 'oauth2') {
+    if (!smtpUser) errors.push('SMTP_USER est obligatoire avec SMTP_AUTH_TYPE=oauth2.');
+    if (smtpPassword) {
+      errors.push('SMTP_PASSWORD ne doit pas être défini avec SMTP_AUTH_TYPE=oauth2.');
+    }
+    if (smtpOauthRefreshToken && !smtpOauthAccessUrl) {
+      errors.push('SMTP_OAUTH_ACCESS_URL est obligatoire avec SMTP_AUTH_TYPE=oauth2.');
+    }
+    if (!smtpOauthAccessToken && (!smtpOauthClientId || !smtpOauthRefreshToken)) {
+      errors.push(
+        'SMTP_OAUTH_ACCESS_TOKEN ou le couple SMTP_OAUTH_CLIENT_ID/SMTP_OAUTH_REFRESH_TOKEN est obligatoire avec SMTP_AUTH_TYPE=oauth2.',
+      );
+    }
+    if (smtpOauthClientSecret && !smtpOauthClientId) {
+      errors.push(
+        'SMTP_OAUTH_CLIENT_ID est obligatoire lorsque SMTP_OAUTH_CLIENT_SECRET est défini.',
+      );
+    }
+    if (smtpOauthRefreshToken && !smtpOauthClientId) {
+      errors.push(
+        'SMTP_OAUTH_CLIENT_ID est obligatoire lorsque SMTP_OAUTH_REFRESH_TOKEN est défini.',
+      );
+    }
+  }
+  if (smtpAuthType === 'none' && (smtpUser || smtpPassword || hasOauthConfiguration)) {
+    errors.push('Aucun identifiant SMTP ne doit être défini avec SMTP_AUTH_TYPE=none.');
   }
   if (isProduction && publicRegistrationEnabled && !mailEnabled) {
     errors.push('MAIL_ENABLED doit valoir "true" lorsque l’inscription publique est active.');
@@ -229,6 +323,7 @@ export function createEnvironment(source = process.env) {
   );
   const smtpPort = parsePort(source, 'SMTP_PORT', 587, errors);
   const smtpSecure = parseBoolean(source, 'SMTP_SECURE', false, errors);
+  const smtpUseSystemCa = parseBoolean(source, 'SMTP_USE_SYSTEM_CA', false, errors);
   const smtpPool = parseBoolean(source, 'SMTP_POOL', true, errors);
   const smtpMaxConnections = parsePositiveInteger(source, 'SMTP_MAX_CONNECTIONS', 5, errors);
   const smtpMaxMessages = parsePositiveInteger(source, 'SMTP_MAX_MESSAGES', 100, errors);
@@ -296,8 +391,19 @@ export function createEnvironment(source = process.env) {
         pool: smtpPool,
         maxConnections: smtpMaxConnections,
         maxMessages: smtpMaxMessages,
-        user: smtpUser,
-        password: smtpPassword,
+        useSystemCa: smtpUseSystemCa,
+        auth: {
+          type: smtpAuthType,
+          user: smtpUser,
+          password: smtpPassword,
+          clientId: smtpOauthClientId,
+          clientSecret: smtpOauthClientSecret,
+          refreshToken: smtpOauthRefreshToken,
+          accessToken: smtpOauthAccessToken,
+          accessUrl: smtpOauthAccessUrl,
+          expiresAt: smtpOauthExpiresAt,
+          scope: smtpOauthScope,
+        },
       },
     },
     emailVerification: {
