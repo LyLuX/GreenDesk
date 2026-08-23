@@ -366,6 +366,55 @@ describe('MaintenanceOrderListModal', () => {
     expect(window.print).toHaveBeenCalledOnce();
   });
 
+  it('paginates the dashboard low-stock list with the shared GreenDesk controls', async () => {
+    const user = userEvent.setup();
+    const parts = Array.from({ length: 6 }, (_, index) => ({
+      uuid: `low-stock-part-${index + 1}`,
+      name: `Pièce faible ${index + 1}`,
+      supplier: 'Pièces Pro',
+      supplierReference: `FOU-0${index + 1}`,
+      reference: `REF-0${index + 1}`,
+      unit: 'pièce',
+      quantity: 1,
+      quantityOnHand: index % 2,
+      quantityOnOrder: 0,
+      lowStock: true,
+      plans: [],
+    }));
+    mocks.getOrderList.mockResolvedValue({ data: { data: { items: parts } } });
+
+    render(
+      <MaintenanceOrderListModal
+        open
+        onClose={vi.fn()}
+        initialFilters={{ includeLowStock: true, lowStockOnly: true }}
+      />,
+    );
+
+    const dialog = screen.getByRole('dialog', { name: 'Pièces avec un stock faible' });
+    expect(await within(dialog).findByText('Pièce faible 1')).toBeVisible();
+    expect(within(dialog).queryByText('Pièce faible 6')).not.toBeInTheDocument();
+    expect(within(dialog).getByText('6 pièce(s), page 1 sur 2')).toBeVisible();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Suivant' }));
+    expect(within(dialog).getByText('Pièce faible 6')).toBeVisible();
+    expect(within(dialog).queryByText('Pièce faible 1')).not.toBeInTheDocument();
+
+    await user.selectOptions(
+      within(dialog).getByRole('combobox', { name: 'Nombre d’éléments par page' }),
+      '10',
+    );
+    expect(within(dialog).getByText('6 pièce(s), page 1 sur 1')).toBeVisible();
+    expect(within(dialog).getByText('Pièce faible 1')).toBeVisible();
+    expect(within(dialog).getByText('Pièce faible 6')).toBeVisible();
+    expect(document.querySelector('.maintenance-order-list-printable')).toHaveTextContent(
+      'Pièce faible 1',
+    );
+    expect(document.querySelector('.maintenance-order-list-printable')).toHaveTextContent(
+      'Pièce faible 6',
+    );
+  });
+
   it('does not let an older calendar response replace wear-based results', async () => {
     const user = userEvent.setup();
     let resolveCalendarRequest;

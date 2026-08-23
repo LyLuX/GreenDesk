@@ -8,13 +8,14 @@ import useAuth from '../auth/useAuth.js';
 import { formatStockQuantity, STOCK_OPERATIONS } from '../inventory/stock-status.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import useNotification from '../notifications/useNotification.js';
-import { extractPageItems } from '../utils/pagination.js';
+import { extractPageItems, paginateItems } from '../utils/pagination.js';
 import AppFooter from './AppFooter.jsx';
 import Button from './Button.jsx';
 import ConfirmDialog from './ConfirmDialog.jsx';
 import Loader from './Loader.jsx';
 import ManufacturerLogo from './ManufacturerLogo.jsx';
 import Modal from './Modal.jsx';
+import PaginationControls from './PaginationControls.jsx';
 
 const horizonOptions = [
   { value: 0, label: 'Aujourd’hui' },
@@ -316,6 +317,8 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
   const [orderQuantities, setOrderQuantities] = useState({});
   const [confirmation, setConfirmation] = useState(null);
   const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [lowStockPageNumber, setLowStockPageNumber] = useState(1);
+  const [lowStockLimit, setLowStockLimit] = useState(5);
   const latestRequestId = useRef(0);
 
   const load = useCallback(
@@ -366,9 +369,11 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
   const manufacturerByUuid = new Map(
     manufacturers.map((manufacturer) => [manufacturer.uuid, manufacturer]),
   );
+  const lowStockMode = Boolean(filters.lowStockOnly);
+  const lowStockPage = paginateItems(data?.items ?? [], lowStockPageNumber, lowStockLimit);
+  const visibleParts = lowStockMode ? lowStockPage.items : data?.items;
   const supplierGroups = groupOrderPartsBySupplier(data?.items);
   const supplierPages = paginateSupplierGroups(supplierGroups);
-  const lowStockMode = Boolean(filters.lowStockOnly);
   const canIncludeLowStock = hasPermission(maintenancePermissions.parts.read);
   const canOrderParts = !lowStockMode && hasPermission(maintenancePermissions.parts.stock.order);
 
@@ -506,9 +511,9 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
                     : 'Calcul de la liste de commande'
                 }
               />
-            ) : data?.items?.length ? (
+            ) : visibleParts?.length ? (
               <OrderPartsTable
-                parts={data.items}
+                parts={visibleParts}
                 manufacturerByUuid={manufacturerByUuid}
                 orderQuantities={orderQuantities}
                 onOrderQuantityChange={
@@ -529,6 +534,19 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
               </p>
             )}
           </div>
+          {lowStockMode && data?.items?.length ? (
+            <PaginationControls
+              pagination={lowStockPage.pagination}
+              limit={lowStockLimit}
+              itemLabel="pièce(s)"
+              disabled={loading}
+              onLimitChange={(value) => {
+                setLowStockLimit(value);
+                setLowStockPageNumber(1);
+              }}
+              onPageChange={setLowStockPageNumber}
+            />
+          ) : null}
           {data?.items?.length ? (
             <div className="maintenance-order-list-actions mt-3 d-flex justify-content-end">
               <Button type="button" disabled={loading} onClick={() => window.print()}>
