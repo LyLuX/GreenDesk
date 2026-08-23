@@ -908,6 +908,41 @@ a:hover {
   color: #59635d;
 }
 
+.status-badge.history-action-success {
+  background: #e3eddc;
+  color: #365d16;
+}
+
+.status-badge.history-action-info {
+  background: #deedf2;
+  color: #20566b;
+}
+
+.status-badge.history-action-warning {
+  background: #f7edbd;
+  color: #6b5700;
+}
+
+.status-badge.history-action-danger {
+  background: #f5d8d8;
+  color: #8a2525;
+}
+
+.status-badge.history-action-maintenance {
+  background: #ebe3f2;
+  color: #5c3675;
+}
+
+.status-badge.history-action-access {
+  background: #dcebec;
+  color: #245d61;
+}
+
+.status-badge.history-action-neutral {
+  background: #eef0ee;
+  color: #59635d;
+}
+
 .status-badge.stock-in-stock {
   background: #e3eddc;
   color: #365d16;

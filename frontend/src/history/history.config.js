@@ -66,3 +66,26 @@ export const historyActionLabels = Object.freeze({
   MIGRATE: 'Reprise de stock',
   PRICE_UPDATE: 'Changement de prix',
 });
+
+export const historyActionVariants = Object.freeze({
+  CREATE: 'success',
+  USER_CREATED: 'success',
+  RESTORE: 'success',
+  USER_RESTORED: 'success',
+  UPDATE: 'info',
+  USER_UPDATED: 'info',
+  STATUS_CHANGE: 'info',
+  DELETE: 'danger',
+  USER_DELETED: 'danger',
+  LOGIN_SUCCESS: 'access',
+  LOGOUT_SUCCESS: 'neutral',
+  EXECUTE: 'maintenance',
+  EXECUTE_WITHOUT_PARTS: 'warning',
+  INTERVENTION: 'maintenance',
+  ORDER: 'warning',
+  RECEIVE: 'success',
+  CONSUME: 'warning',
+  ADJUST: 'info',
+  MIGRATE: 'info',
+  PRICE_UPDATE: 'info',
+});

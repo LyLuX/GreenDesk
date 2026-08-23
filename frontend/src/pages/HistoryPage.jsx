@@ -10,6 +10,7 @@ import PaginationControls from '../components/PaginationControls.jsx';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import {
   historyActionLabels,
+  historyActionVariants,
   historySectionConfig,
   historyTypeLabels,
 } from '../history/history.config.js';
@@ -123,7 +124,11 @@ const columns = [
   {
     key: 'action',
     label: 'Action',
-    render: (value) => <span className="status-badge">{historyActionLabels[value] || value}</span>,
+    render: (value) => (
+      <span className={`status-badge history-action-${historyActionVariants[value] || 'neutral'}`}>
+        {historyActionLabels[value] || value}
+      </span>
+    ),
   },
   { key: 'details', label: 'Détails', render: (_value, row) => renderDetails(row) },
   {
@@ -134,8 +139,7 @@ const columns = [
   },
 ];
 
-/** Shared paginated table for a consolidated history section. */
-export default function HistoryPage({ section }) {
+function HistorySectionPage({ section }) {
   const config = historySectionConfig[section];
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState(null);
@@ -143,18 +147,11 @@ export default function HistoryPage({ section }) {
   const [type, setType] = useState('');
   const [from, setFrom] = useState('');
   const [through, setThrough] = useState('');
-  const [pageState, setPageState] = useState({ section, page: 1 });
+  const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(5);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const debouncedSearch = useDebouncedValue(search, 300);
-  const page = pageState.section === section ? pageState.page : 1;
-  const setPage = (nextPage) => setPageState({ section, page: nextPage });
-
-  useEffect(() => {
-    setPageState((current) => (current.section === section ? current : { section, page: 1 }));
-  }, [section]);
-
   const load = useCallback(
     async (signal) => {
       setIsLoading(true);
@@ -269,4 +266,9 @@ export default function HistoryPage({ section }) {
       )}
     </main>
   );
+}
+
+/** Shared paginated table remounted for each consolidated history section. */
+export default function HistoryPage({ section }) {
+  return <HistorySectionPage key={section} section={section} />;
 }
