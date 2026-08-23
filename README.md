@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **7.20.1**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **7.21.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -180,6 +180,8 @@ Le backend organise les responsabilités en `routes`, `controller`, `service`, `
 ## Authentification et permissions
 
 La connexion retourne un access token JWT et le profil utilisateur avec ses rôles et permissions. La session est conservée dans le navigateur sans mot de passe, contrôlée à la restauration et supprimée sur expiration ou réponse HTTP 401. Les permissions déterminent les menus, actions et routes, tandis que le backend reste la source d’autorité.
+
+La liste d’administration des utilisateurs exclut les comptes supprimés par défaut. Les utilisateurs qui possèdent `users.read` et `users.deleted.read` disposent du filtre `Supprimés`, qui affiche ces comptes en lecture seule avec leur date de suppression.
 
 ## Variables d’environnement
 

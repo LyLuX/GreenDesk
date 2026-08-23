@@ -63,7 +63,10 @@ import UsersPage from './UsersPage.jsx';
 
 describe('administrator table pagination', () => {
   afterEach(cleanup);
-  beforeEach(() => mocks.hasPermission.mockReturnValue(true));
+  beforeEach(() => {
+    mocks.hasPermission.mockReturnValue(true);
+    for (const user of mocks.users) delete user.deletedAt;
+  });
 
   it('filters user actions with their dedicated permissions', async () => {
     mocks.hasPermission.mockImplementation(
@@ -79,6 +82,27 @@ describe('administrator table pagination', () => {
       screen.getAllByRole('button', { name: /Désactiver Utilisateur/ }).length,
     ).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: /Supprimer Utilisateur/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Supprimés' })).not.toBeInTheDocument();
+  });
+
+  it('shows deleted users as read-only with the dedicated permission', async () => {
+    const user = userEvent.setup();
+    mocks.users[0].deletedAt = '2026-08-23T08:00:00.000Z';
+    mocks.hasPermission.mockImplementation(
+      (permission) => permission === 'users.read' || permission === 'users.deleted.read',
+    );
+
+    render(<UsersPage />);
+    await user.selectOptions(await screen.findByLabelText('Filtrer par statut'), 'deleted');
+
+    expect(await screen.findByText('user1@example.test')).toBeVisible();
+    expect(screen.getByText('Supprimé')).toHaveClass('status-badge', 'deleted');
+    expect(
+      screen.queryByRole('button', { name: 'Modifier Utilisateur 1' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Supprimer Utilisateur 1' }),
+    ).not.toBeInTheDocument();
   });
 
   it('uses the dedicated permission to resend verification emails', async () => {

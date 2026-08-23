@@ -21,7 +21,7 @@ const roleInclude = [
 
 /** Database access for users. */
 export default class UserRepository extends TransactionalRepository {
-  async findAll({ search, active, roleUuid, page, limit } = {}) {
+  async findAll({ search, active, deleted = false, roleUuid, page, limit } = {}) {
     const pagination = normalizePagination({ page, limit });
     const where = {};
     if (search) {
@@ -34,6 +34,7 @@ export default class UserRepository extends TransactionalRepository {
     }
     const normalizedActive = normalizeBooleanFilter(active);
     if (normalizedActive !== undefined) where.isActive = normalizedActive;
+    if (deleted) where.deletedAt = { [Op.ne]: null };
     const pageResult = await User.findAndCountAll({
       attributes: ['id'],
       where,
@@ -56,16 +57,21 @@ export default class UserRepository extends TransactionalRepository {
       ],
       limit: pagination.limit,
       offset: pagination.offset,
+      paranoid: !deleted,
     });
     const ids = pageResult.rows.map((user) => user.id);
     const rows = ids.length
       ? await User.findAll({
-          where: { id: { [Op.in]: ids } },
+          where: {
+            id: { [Op.in]: ids },
+            ...(deleted ? { deletedAt: { [Op.ne]: null } } : {}),
+          },
           include: roleInclude,
           order: [
             ['lastName', 'ASC'],
             ['firstName', 'ASC'],
           ],
+          paranoid: !deleted,
         })
       : [];
     return { count: pageResult.count, rows };

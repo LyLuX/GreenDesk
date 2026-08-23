@@ -983,6 +983,11 @@ a:hover {
   color: #59635d;
 }
 
+.status-badge.deleted {
+  background: #f5d8d8;
+  color: #8a2525;
+}
+
 .status-badge.history-action-success {
   background: #e3eddc;
   color: #365d16;

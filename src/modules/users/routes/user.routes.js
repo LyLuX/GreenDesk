@@ -17,12 +17,17 @@ import {
 
 const router = Router();
 const controller = new UserController();
+const authorizeDeletedUserListing = (request, response, next) => {
+  if (!request.query.deleted) return next();
+  return authorize(administrationPermissions.users.deleted.read)(request, response, next);
+};
 router.use(authenticate);
 router.get(
   '/',
   authorize(administrationPermissions.users.read),
   listUserValidator,
   validateRequest,
+  authorizeDeletedUserListing,
   asyncHandler(controller.getAll.bind(controller)),
 );
 router.get(

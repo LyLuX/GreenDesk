@@ -14,6 +14,7 @@ const authorization = (permissions) => `Bearer ${tokenFor(permissions)}`;
 describe('granular administration route permissions', () => {
   beforeAll(() => {
     jest.spyOn(User, 'findOne').mockResolvedValue({ id: 1 });
+    jest.spyOn(User, 'findAndCountAll').mockResolvedValue({ count: 0, rows: [] });
   });
 
   afterAll(() => jest.restoreAllMocks());
@@ -82,6 +83,21 @@ describe('granular administration route permissions', () => {
       .post('/api/v1/users/invalid/email-verification/resend')
       .set('Authorization', authorization(['users.email_verification.resend']))
       .expect(400);
+  });
+
+  it('requires dedicated permission before listing deleted users', async () => {
+    await request(app)
+      .get('/api/v1/users?deleted=true')
+      .set('Authorization', authorization(['users.read']))
+      .expect(403);
+    await request(app)
+      .get('/api/v1/users?deleted=true')
+      .set('Authorization', authorization(['users.read', 'users.deleted.read']))
+      .expect(200);
+    await request(app)
+      .get('/api/v1/users')
+      .set('Authorization', authorization(['users.read']))
+      .expect(200);
   });
 
   it.each([

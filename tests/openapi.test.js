@@ -295,6 +295,15 @@ describe('OpenAPI contract', () => {
 
   it('documents granular administration and file permissions', () => {
     expect(swaggerSpec.paths['/users'].get.description).toContain('`users.read`');
+    expect(swaggerSpec.paths['/users'].get.description).toContain('`users.deleted.read`');
+    expect(swaggerSpec.paths['/users'].get.parameters).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'deleted',
+          schema: expect.objectContaining({ type: 'boolean' }),
+        }),
+      ]),
+    );
     expect(swaggerSpec.paths['/users/{uuid}'].put.description).toContain('`users.password.update`');
     expect(swaggerSpec.paths['/roles/{uuid}'].put.description).toContain(
       '`roles.permissions.update`',

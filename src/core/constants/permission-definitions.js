@@ -17,6 +17,10 @@ const permissionDefinitions = [
   },
   { name: administrationPermissions.users.delete, description: 'Supprimer des utilisateurs.' },
   {
+    name: administrationPermissions.users.deleted.read,
+    description: 'Consulter les comptes utilisateur supprimés.',
+  },
+  {
     name: administrationPermissions.users.status.update,
     description: 'Activer ou désactiver des comptes utilisateur.',
   },

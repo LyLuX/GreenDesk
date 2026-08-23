@@ -196,11 +196,18 @@ export const openApiPaths = {
       operationId: 'listUsers',
       tags: ['Users'],
       summary: 'Liste les utilisateurs.',
-      description: 'Nécessite `users.read`.',
+      description:
+        'Nécessite `users.read`. Le filtre `deleted=true` retourne uniquement les comptes supprimés et nécessite également `users.deleted.read`.',
       security: secure,
       parameters: [
         searchParameter,
         { name: 'active', in: 'query', schema: { type: 'boolean' } },
+        {
+          name: 'deleted',
+          in: 'query',
+          description: 'Retourne uniquement les comptes supprimés logiquement.',
+          schema: { type: 'boolean', default: false },
+        },
         { name: 'roleUuid', in: 'query', schema: { type: 'string', format: 'uuid' } },
         pageParameter,
         limitParameter,

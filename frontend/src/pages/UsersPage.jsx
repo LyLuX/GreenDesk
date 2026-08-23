@@ -47,6 +47,7 @@ export default function UsersPage() {
   const canUpdatePassword = hasPermission(administrationPermissions.users.password.update);
   const canUpdateRoles = hasPermission(administrationPermissions.users.roles.update);
   const canDelete = hasPermission(administrationPermissions.users.delete);
+  const canReadDeletedUsers = hasPermission(administrationPermissions.users.deleted.read);
   const canResendVerification = hasPermission(
     administrationPermissions.users.emailVerification.resend,
   );
@@ -84,7 +85,7 @@ export default function UsersPage() {
             page,
             limit,
             ...(debouncedSearch ? { search: debouncedSearch } : {}),
-            ...(active !== '' ? { active } : {}),
+            ...(active === 'deleted' ? { deleted: true } : active !== '' ? { active } : {}),
             ...(roleUuid ? { roleUuid } : {}),
           },
           signal,
@@ -99,10 +100,13 @@ export default function UsersPage() {
                   [user.firstName, user.lastName, user.email]
                     .filter(Boolean)
                     .some((value) => value.toLocaleLowerCase('fr').includes(term));
-                const matchesActive = active === '' || String(user.isActive) === active;
+                const matchesDeleted =
+                  active === 'deleted' ? Boolean(user.deletedAt) : !user.deletedAt;
+                const matchesActive =
+                  active === '' || active === 'deleted' || String(user.isActive) === active;
                 const matchesRole =
                   !roleUuid || user.roles?.some((role) => role.uuid === roleUuid) === true;
-                return matchesSearch && matchesActive && matchesRole;
+                return matchesSearch && matchesDeleted && matchesActive && matchesRole;
               }),
               page,
               limit,
@@ -341,6 +345,10 @@ export default function UsersPage() {
             name: 'active',
             type: 'select',
             ...activityStatusFilter,
+            options: [
+              ...activityStatusFilter.options,
+              ...(canReadDeletedUsers ? [{ value: 'deleted', label: 'Supprimés' }] : []),
+            ],
             ariaLabel: 'Filtrer par statut',
             value: active,
             onChange: (value) => {
@@ -418,71 +426,85 @@ export default function UsersPage() {
                     </td>
                     <td>{user.roles?.map((role) => role.name).join(', ') || 'Aucun rôle'}</td>
                     <td>
-                      <span className={`status-badge ${user.isActive ? '' : 'inactive'}`}>
-                        {user.isActive ? 'Actif' : 'Inactif'}
-                      </span>
                       <span
-                        className={`d-block small mt-1 ${user.emailVerifiedAt ? 'text-success' : 'text-warning-emphasis'}`}
+                        className={`status-badge ${
+                          user.deletedAt ? 'deleted' : user.isActive ? '' : 'inactive'
+                        }`}
                       >
-                        Email {user.emailVerifiedAt ? 'vérifié' : 'à vérifier'}
+                        {user.deletedAt ? 'Supprimé' : user.isActive ? 'Actif' : 'Inactif'}
                       </span>
+                      {user.deletedAt ? (
+                        <span className="d-block small mt-1 text-body-secondary">
+                          {formatDateTime(user.deletedAt)}
+                        </span>
+                      ) : (
+                        <span
+                          className={`d-block small mt-1 ${user.emailVerifiedAt ? 'text-success' : 'text-warning-emphasis'}`}
+                        >
+                          Email {user.emailVerifiedAt ? 'vérifié' : 'à vérifier'}
+                        </span>
+                      )}
                     </td>
                     <td>{formatDateTime(user.lastLoginAt, 'Jamais')}</td>
                     <td>
-                      <div className="d-flex h-100 w-100 flex-wrap align-items-center justify-content-center gap-1">
-                        {canOpenEdit && (
-                          <button
-                            aria-label={`Modifier ${user.firstName} ${user.lastName}`}
-                            className="btn btn-sm btn-outline-brand flex-fill"
-                            type="button"
-                            disabled={Boolean(removing || changingStatus)}
-                            onClick={() => openEdit(user)}
-                          >
-                            Modifier
-                          </button>
-                        )}
-                        {canUpdateStatus && (
-                          <button
-                            aria-label={`${user.isActive ? 'Désactiver' : 'Activer'} ${
-                              user.firstName
-                            } ${user.lastName}`}
-                            className={`btn btn-sm ${getStatusActionButtonClass(
-                              user.isActive,
-                            )} flex-fill`}
-                            type="button"
-                            disabled={Boolean(removing || changingStatus)}
-                            onClick={() => setConfirmation({ action: 'status', user })}
-                          >
-                            {user.isActive ? 'Désactiver' : 'Activer'}
-                          </button>
-                        )}
-                        {canResendVerification && !user.emailVerifiedAt && (
-                          <TimedProgressButton
-                            aria-label={`Renvoyer l’email de vérification à ${user.firstName} ${user.lastName}`}
-                            busy={resendingVerification === user.uuid}
-                            busyLabel="Envoi…"
-                            className="btn btn-sm btn-outline-secondary flex-fill"
-                            cooldown={verificationCooldowns[user.uuid]}
-                            cooldownLabel={(seconds) => `Disponible dans ${seconds} s`}
-                            type="button"
-                            disabled={Boolean(removing || changingStatus || resendingVerification)}
-                            onClick={() => resendVerification(user)}
-                          >
-                            Renvoyer la vérification
-                          </TimedProgressButton>
-                        )}
-                        {canDelete && (
-                          <button
-                            aria-label={`Supprimer ${user.firstName} ${user.lastName}`}
-                            className="btn btn-sm btn-outline-danger flex-fill"
-                            type="button"
-                            disabled={Boolean(removing || changingStatus)}
-                            onClick={() => setConfirmation({ action: 'delete', user })}
-                          >
-                            {removing === user.uuid ? 'Suppression…' : 'Supprimer'}
-                          </button>
-                        )}
-                      </div>
+                      {!user.deletedAt && (
+                        <div className="d-flex h-100 w-100 flex-wrap align-items-center justify-content-center gap-1">
+                          {canOpenEdit && (
+                            <button
+                              aria-label={`Modifier ${user.firstName} ${user.lastName}`}
+                              className="btn btn-sm btn-outline-brand flex-fill"
+                              type="button"
+                              disabled={Boolean(removing || changingStatus)}
+                              onClick={() => openEdit(user)}
+                            >
+                              Modifier
+                            </button>
+                          )}
+                          {canUpdateStatus && (
+                            <button
+                              aria-label={`${user.isActive ? 'Désactiver' : 'Activer'} ${
+                                user.firstName
+                              } ${user.lastName}`}
+                              className={`btn btn-sm ${getStatusActionButtonClass(
+                                user.isActive,
+                              )} flex-fill`}
+                              type="button"
+                              disabled={Boolean(removing || changingStatus)}
+                              onClick={() => setConfirmation({ action: 'status', user })}
+                            >
+                              {user.isActive ? 'Désactiver' : 'Activer'}
+                            </button>
+                          )}
+                          {canResendVerification && !user.emailVerifiedAt && (
+                            <TimedProgressButton
+                              aria-label={`Renvoyer l’email de vérification à ${user.firstName} ${user.lastName}`}
+                              busy={resendingVerification === user.uuid}
+                              busyLabel="Envoi…"
+                              className="btn btn-sm btn-outline-secondary flex-fill"
+                              cooldown={verificationCooldowns[user.uuid]}
+                              cooldownLabel={(seconds) => `Disponible dans ${seconds} s`}
+                              type="button"
+                              disabled={Boolean(
+                                removing || changingStatus || resendingVerification,
+                              )}
+                              onClick={() => resendVerification(user)}
+                            >
+                              Renvoyer la vérification
+                            </TimedProgressButton>
+                          )}
+                          {canDelete && (
+                            <button
+                              aria-label={`Supprimer ${user.firstName} ${user.lastName}`}
+                              className="btn btn-sm btn-outline-danger flex-fill"
+                              type="button"
+                              disabled={Boolean(removing || changingStatus)}
+                              onClick={() => setConfirmation({ action: 'delete', user })}
+                            >
+                              {removing === user.uuid ? 'Suppression…' : 'Supprimer'}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))
