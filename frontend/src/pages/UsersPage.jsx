@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import getApiErrorMessage from '../api/get-api-error-message.js';
+import getApiErrorMessage, { getRetryAfterSeconds } from '../api/get-api-error-message.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import {
   createUser,
@@ -17,6 +17,10 @@ import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
+import TimedProgressButton, {
+  createTimedCooldown,
+  isTimedCooldownActive,
+} from '../components/TimedProgressButton.jsx';
 import { activityStatusFilter } from '../filters/filter-options.js';
 import useNotification from '../notifications/useNotification.js';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
@@ -59,6 +63,7 @@ export default function UsersPage() {
   const [removing, setRemoving] = useState(null);
   const [changingStatus, setChangingStatus] = useState(null);
   const [resendingVerification, setResendingVerification] = useState(null);
+  const [verificationCooldowns, setVerificationCooldowns] = useState({});
   const [confirmation, setConfirmation] = useState(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(5);
@@ -278,12 +283,23 @@ export default function UsersPage() {
   };
 
   const resendVerification = async (user) => {
-    if (resendingVerification) return;
+    if (resendingVerification || isTimedCooldownActive(verificationCooldowns[user.uuid])) return;
     setResendingVerification(user.uuid);
     try {
-      await resendUserEmailVerification(user.uuid);
+      const response = await resendUserEmailVerification(user.uuid);
+      setVerificationCooldowns((current) => ({
+        ...current,
+        [user.uuid]: createTimedCooldown(response.data?.data?.resendCooldownSeconds),
+      }));
       notify('success', 'Email de vérification envoyé.');
     } catch (requestError) {
+      const retryAfterSeconds = getRetryAfterSeconds(requestError);
+      if (retryAfterSeconds) {
+        setVerificationCooldowns((current) => ({
+          ...current,
+          [user.uuid]: createTimedCooldown(retryAfterSeconds),
+        }));
+      }
       setError(getApiErrorMessage(requestError));
     } finally {
       setResendingVerification(null);
@@ -441,17 +457,19 @@ export default function UsersPage() {
                           </button>
                         )}
                         {canResendVerification && !user.emailVerifiedAt && (
-                          <button
+                          <TimedProgressButton
                             aria-label={`Renvoyer l’email de vérification à ${user.firstName} ${user.lastName}`}
+                            busy={resendingVerification === user.uuid}
+                            busyLabel="Envoi…"
                             className="btn btn-sm btn-outline-secondary flex-fill"
+                            cooldown={verificationCooldowns[user.uuid]}
+                            cooldownLabel={(seconds) => `Disponible dans ${seconds} s`}
                             type="button"
                             disabled={Boolean(removing || changingStatus || resendingVerification)}
                             onClick={() => resendVerification(user)}
                           >
-                            {resendingVerification === user.uuid
-                              ? 'Envoi…'
-                              : 'Renvoyer la vérification'}
-                          </button>
+                            Renvoyer la vérification
+                          </TimedProgressButton>
                         )}
                         {canDelete && (
                           <button

@@ -30,7 +30,13 @@ describe('RegisterPage', () => {
   it('submits the expected registration payload', async () => {
     const user = userEvent.setup();
     client.post.mockResolvedValue({
-      data: { success: true, data: { verificationEmailSent: true } },
+      data: {
+        success: true,
+        data: {
+          verificationEmailSent: true,
+          verificationEmailResendCooldownSeconds: 60,
+        },
+      },
     });
     renderPage();
 

@@ -35,6 +35,7 @@ export default class AuthService {
       user: this.userService.publicUser(user),
       verificationRequired: true,
       verificationEmailSent: delivery.sent,
+      verificationEmailResendCooldownSeconds: delivery.sent ? delivery.resendCooldownSeconds : 0,
     };
   }
 

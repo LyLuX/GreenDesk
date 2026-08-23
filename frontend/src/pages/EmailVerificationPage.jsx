@@ -2,9 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 
 import { resendEmailVerification, verifyEmail } from '../api/email-verification.api.js';
-import getApiErrorMessage from '../api/get-api-error-message.js';
+import getApiErrorMessage, { getRetryAfterSeconds } from '../api/get-api-error-message.js';
 import useAuth from '../auth/useAuth.js';
 import Loader from '../components/Loader.jsx';
+import TimedProgressButton, {
+  createTimedCooldown,
+  isTimedCooldownActive,
+} from '../components/TimedProgressButton.jsx';
 
 /** Public account-verification and safe resend screen. */
 export default function EmailVerificationPage() {
@@ -24,6 +28,9 @@ export default function EmailVerificationPage() {
       : '',
   );
   const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(() =>
+    location.state?.emailSent ? createTimedCooldown(location.state?.resendCooldownSeconds) : null,
+  );
 
   useEffect(() => {
     if (!token || attemptedToken.current === token) return;
@@ -44,16 +51,21 @@ export default function EmailVerificationPage() {
 
   const resend = async (event) => {
     event.preventDefault();
-    if (!email.trim() || resending) return;
+    if (!email.trim() || resending || isTimedCooldownActive(resendCooldown)) return;
     setResending(true);
     setMessage('');
     try {
-      await resendEmailVerification(email.trim());
+      const response = await resendEmailVerification(email.trim());
+      setResendCooldown(createTimedCooldown(response.data?.data?.resendCooldownSeconds));
       setStatus('resent');
       setMessage(
         'Si un compte non vérifié correspond à cette adresse, un nouvel email a été envoyé.',
       );
     } catch (error) {
+      const retryAfterSeconds = getRetryAfterSeconds(error);
+      if (retryAfterSeconds) {
+        setResendCooldown(createTimedCooldown(retryAfterSeconds));
+      }
       setStatus('invalid');
       setMessage(getApiErrorMessage(error));
     } finally {
@@ -100,9 +112,16 @@ export default function EmailVerificationPage() {
                     required
                   />
                 </label>
-                <button className="btn btn-outline-brand" type="submit" disabled={resending}>
-                  {resending ? 'Envoi…' : 'Renvoyer l’email de vérification'}
-                </button>
+                <TimedProgressButton
+                  busy={resending}
+                  busyLabel="Envoi…"
+                  className="btn btn-outline-brand"
+                  cooldown={resendCooldown}
+                  cooldownLabel={(seconds) => `Renvoyer dans ${seconds} s`}
+                  type="submit"
+                >
+                  Renvoyer l’email de vérification
+                </TimedProgressButton>
               </form>
             )}
             <p className="mb-0 text-center small text-body-secondary">

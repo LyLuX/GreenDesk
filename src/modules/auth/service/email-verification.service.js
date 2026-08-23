@@ -112,7 +112,12 @@ export default class EmailVerificationService {
         errorName: error.name,
       });
     });
-    return { sent: true };
+    return { sent: true, resendCooldownSeconds: this.resendCooldownSeconds() };
+  }
+
+  resendCooldownSeconds() {
+    const seconds = Math.ceil(Number(this.configuration.cooldownMs) / 1000);
+    return Number.isSafeInteger(seconds) && seconds > 0 ? seconds : 1;
   }
 
   async resend(email) {
@@ -120,7 +125,10 @@ export default class EmailVerificationService {
     if (user && !user.emailVerifiedAt) {
       await this.issue(user);
     }
-    return { message: GENERIC_RESEND_MESSAGE };
+    return {
+      message: GENERIC_RESEND_MESSAGE,
+      resendCooldownSeconds: this.resendCooldownSeconds(),
+    };
   }
 
   async resendByUserUuid(uuid, actorUserId) {
@@ -138,7 +146,10 @@ export default class EmailVerificationService {
         { retryAfterSeconds: delivery.retryAfterSeconds },
       );
     }
-    return { message: 'Verification email sent' };
+    return {
+      message: 'Verification email sent',
+      resendCooldownSeconds: delivery.resendCooldownSeconds,
+    };
   }
 
   async verify(token) {

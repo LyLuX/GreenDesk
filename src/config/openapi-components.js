@@ -1253,7 +1253,12 @@ export const openApiSchemas = {
   AuthSessionResponse: success(reference('AuthSession')),
   RegistrationResponse: success({
     type: 'object',
-    required: ['user', 'verificationRequired', 'verificationEmailSent'],
+    required: [
+      'user',
+      'verificationRequired',
+      'verificationEmailSent',
+      'verificationEmailResendCooldownSeconds',
+    ],
     properties: {
       user: reference('User'),
       verificationRequired: { type: 'boolean', enum: [true] },
@@ -1262,12 +1267,25 @@ export const openApiSchemas = {
         description:
           'Indique si le premier email a été remis au transport SMTP. Le compte reste créé en cas d’échec.',
       },
+      verificationEmailResendCooldownSeconds: {
+        type: 'integer',
+        minimum: 0,
+        description:
+          'Délai avant le premier renvoi. Vaut zéro lorsque le premier email n’a pas été envoyé.',
+      },
     },
   }),
   EmailVerificationResponse: success({
     type: 'object',
-    required: ['message'],
-    properties: { message: { type: 'string' } },
+    required: ['message', 'resendCooldownSeconds'],
+    properties: {
+      message: { type: 'string' },
+      resendCooldownSeconds: {
+        type: 'integer',
+        minimum: 1,
+        description: 'Délai avant qu’un nouveau renvoi puisse être demandé.',
+      },
+    },
   }),
   LogoutResponse: success({
     type: 'object',

@@ -60,6 +60,7 @@ export default function RegisterPage() {
         state: {
           email,
           emailSent: response.data?.data?.verificationEmailSent !== false,
+          resendCooldownSeconds: response.data?.data?.verificationEmailResendCooldownSeconds ?? 0,
         },
       });
     } catch (err) {

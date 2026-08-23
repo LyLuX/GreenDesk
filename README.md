@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **7.19.1**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **7.20.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -132,7 +132,7 @@ L’envoi d’emails repose sur un service Nodemailer partagé et un transport S
 
 Pour Outlook.com, utilisez `smtp-mail.outlook.com`, le port `587`, `SMTP_SECURE=false`, l’URL de jeton `https://login.microsoftonline.com/common/oauth2/v2.0/token` et le scope `https://outlook.office.com/SMTP.Send offline_access`. L’application doit être enregistrée dans Microsoft Entra pour les comptes Microsoft personnels, puis le consentement utilisateur doit fournir un refresh token. `SMTP_USER` doit désigner la boîte ayant accordé ce consentement ; `MAIL_FROM_ADDRESS` doit être identique sauf permission explicite d’envoi délégué.
 
-En production, `APP_PUBLIC_URL` doit utiliser HTTPS et l’envoi d’emails est obligatoire lorsque l’inscription publique est active. Les liens de vérification expirent après 24 heures et tous les renvois sont limités à un par minute par compte, y compris depuis l’administration ; ces valeurs se règlent avec `EMAIL_VERIFICATION_TTL_HOURS` et `EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS`. Les jetons sont aléatoires, stockés uniquement sous forme de condensat et invalidés après utilisation. Le renvoi depuis l’administration nécessite `users.email_verification.resend`, tandis que la confirmation et le renvoi par l’utilisateur restent publics et soumis au quota dédié.
+En production, `APP_PUBLIC_URL` doit utiliser HTTPS et l’envoi d’emails est obligatoire lorsque l’inscription publique est active. Les liens de vérification expirent après 24 heures et tous les renvois sont limités à un par minute par compte, y compris depuis l’administration ; ces valeurs se règlent avec `EMAIL_VERIFICATION_TTL_HOURS` et `EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS`. Le bouton de renvoi affiche l’envoi en cours, puis la progression et le temps restant avant de redevenir disponible. Les jetons sont aléatoires, stockés uniquement sous forme de condensat et invalidés après utilisation. Le renvoi depuis l’administration nécessite `users.email_verification.resend`, tandis que la confirmation et le renvoi par l’utilisateur restent publics et soumis au quota dédié.
 
 Toutes les routes `/api` sont limitées à 500 requêtes par adresse IP sur 15 minutes. Les quotas renforcés sont de 10 échecs de connexion sur 15 minutes, 5 inscriptions par heure, 10 demandes de vérification d’email sur 15 minutes et 30 renouvellements de session par utilisateur sur 15 minutes. Ils peuvent être ajustés avec les variables `RATE_LIMIT_*_MAX` ou désactivés localement avec `RATE_LIMIT_ENABLED=false`. Les en-têtes `RateLimit`, `RateLimit-Policy` et `Retry-After` décrivent la limite appliquée. Le store mémoire convient à une instance unique ; un déploiement horizontal devra utiliser un store partagé avant sa mise en service.
 

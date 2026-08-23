@@ -41,7 +41,9 @@ describe('AuthService', () => {
       create: jest.fn().mockResolvedValue(registeredUser),
       publicUser: jest.fn((user) => user),
     };
-    const emailVerificationService = { issue: jest.fn().mockResolvedValue({ sent: true }) };
+    const emailVerificationService = {
+      issue: jest.fn().mockResolvedValue({ sent: true, resendCooldownSeconds: 60 }),
+    };
     const service = new AuthService(
       {},
       userService,
@@ -58,7 +60,11 @@ describe('AuthService', () => {
     expect(emailVerificationService.issue).toHaveBeenCalledWith(registeredUser, {
       suppressDeliveryErrors: true,
     });
-    expect(result).toMatchObject({ verificationRequired: true, verificationEmailSent: true });
+    expect(result).toMatchObject({
+      verificationRequired: true,
+      verificationEmailSent: true,
+      verificationEmailResendCooldownSeconds: 60,
+    });
   });
 
   it('returns an access token for valid credentials', async () => {

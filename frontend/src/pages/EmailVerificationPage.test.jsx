@@ -39,7 +39,9 @@ describe('EmailVerificationPage', () => {
 
   it('resends a verification message without disclosing account existence', async () => {
     const user = userEvent.setup();
-    resendEmailVerification.mockResolvedValue({ data: { success: true } });
+    resendEmailVerification.mockResolvedValue({
+      data: { success: true, data: { resendCooldownSeconds: 60 } },
+    });
     renderPage({ pathname: '/verify-email', state: { email: 'marie@example.test' } });
 
     await user.click(screen.getByRole('button', { name: 'Renvoyer l’email de vérification' }));
@@ -50,6 +52,20 @@ describe('EmailVerificationPage', () => {
         'Si un compte non vérifié correspond à cette adresse, un nouvel email a été envoyé.',
       ),
     ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Renvoyer dans 60 s' })).toBeDisabled();
+  });
+
+  it('starts the resend cooldown after the registration email', () => {
+    renderPage({
+      pathname: '/verify-email',
+      state: {
+        email: 'marie@example.test',
+        emailSent: true,
+        resendCooldownSeconds: 60,
+      },
+    });
+
+    expect(screen.getByRole('button', { name: 'Renvoyer dans 60 s' })).toBeDisabled();
   });
 
   it('reports when registration succeeded but the first email was not sent', () => {

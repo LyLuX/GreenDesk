@@ -36,13 +36,14 @@ describe('EmailVerificationService', () => {
       { error: jest.fn() },
     );
 
-    await service.issue(user);
+    const delivery = await service.issue(user);
 
     const storedHash = repository.create.mock.calls[0][0].tokenHash;
     const sentUrl = new URL(mailService.send.mock.calls[0][0].text.match(/https:\/\/\S+/)[0]);
     const rawToken = sentUrl.searchParams.get('token');
     expect(storedHash).toBe(createHash('sha256').update(rawToken).digest('hex'));
     expect(storedHash).not.toContain(rawToken);
+    expect(delivery).toEqual({ sent: true, resendCooldownSeconds: 60 });
   });
 
   it('verifies a valid token exactly once and records the event', async () => {
@@ -89,12 +90,13 @@ describe('EmailVerificationService', () => {
       { findByEmail: jest.fn().mockResolvedValue(null) },
       {},
       {},
-      {},
+      { cooldownMs: 60_000 },
       'https://greendesk.example.test',
       { error: jest.fn() },
     );
     await expect(service.resend('unknown@example.test')).resolves.toEqual({
       message: 'Si un compte non vérifié correspond à cette adresse, un nouvel email a été envoyé.',
+      resendCooldownSeconds: 60,
     });
   });
 
@@ -121,6 +123,7 @@ describe('EmailVerificationService', () => {
 
     await expect(service.resend(user.email)).resolves.toEqual({
       message: 'Si un compte non vérifié correspond à cette adresse, un nouvel email a été envoyé.',
+      resendCooldownSeconds: 60,
     });
     await expect(service.resendByUserUuid(user.uuid, 8)).rejects.toMatchObject({
       statusCode: 429,

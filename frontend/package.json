@@ -1,7 +1,7 @@
 {
   "name": "greendesk-frontend",
   "private": true,
-  "version": "7.19.1",
+  "version": "7.20.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

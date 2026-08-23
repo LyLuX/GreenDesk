@@ -88,7 +88,9 @@ describe('administrator table pagination', () => {
       (permission) =>
         permission === 'users.read' || permission === 'users.email_verification.resend',
     );
-    mocks.resendUserEmailVerification.mockResolvedValue({ data: { success: true } });
+    mocks.resendUserEmailVerification.mockResolvedValue({
+      data: { success: true, data: { resendCooldownSeconds: 60 } },
+    });
 
     render(<UsersPage />);
     const button = await screen.findByRole('button', {
@@ -97,6 +99,11 @@ describe('administrator table pagination', () => {
     await user.click(button);
 
     expect(mocks.resendUserEmailVerification).toHaveBeenCalledWith('user-1');
+    expect(
+      screen.getByRole('button', {
+        name: 'Renvoyer l’email de vérification à Utilisateur 1 - disponible dans 60 secondes',
+      }),
+    ).toBeDisabled();
     expect(
       screen.queryByRole('button', { name: 'Modifier Utilisateur 1' }),
     ).not.toBeInTheDocument();
