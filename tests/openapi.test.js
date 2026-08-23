@@ -295,6 +295,9 @@ describe('OpenAPI contract', () => {
 
   it('documents granular administration and file permissions', () => {
     expect(swaggerSpec.paths['/users'].get.description).toContain('`users.read`');
+    expect(swaggerSpec.paths['/users'].get.description).toContain(
+      'dernière connexion décroissante',
+    );
     expect(swaggerSpec.paths['/users'].get.description).toContain('`users.deleted.read`');
     expect(swaggerSpec.paths['/users'].get.parameters).toEqual(
       expect.arrayContaining([

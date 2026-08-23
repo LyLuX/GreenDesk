@@ -197,7 +197,7 @@ export const openApiPaths = {
       tags: ['Users'],
       summary: 'Liste les utilisateurs.',
       description:
-        'Nécessite `users.read`. Le filtre `deleted=true` retourne uniquement les comptes supprimés et nécessite également `users.deleted.read`.',
+        'Nécessite `users.read`. Les résultats sont triés par dernière connexion décroissante. Le filtre `deleted=true` retourne uniquement les comptes supprimés et nécessite également `users.deleted.read`.',
       security: secure,
       parameters: [
         searchParameter,

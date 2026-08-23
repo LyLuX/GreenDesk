@@ -17,8 +17,13 @@ describe('UserRepository deleted-user listing', () => {
     const rowQuery = User.findAll.mock.calls[0][0];
     expect(pageQuery.paranoid).toBe(false);
     expect(pageQuery.where.deletedAt[Op.ne]).toBeNull();
+    expect(pageQuery.order).toEqual([
+      ['lastLoginAt', 'DESC'],
+      ['id', 'DESC'],
+    ]);
     expect(rowQuery.paranoid).toBe(false);
     expect(rowQuery.where.deletedAt[Op.ne]).toBeNull();
+    expect(rowQuery.order).toEqual(pageQuery.order);
     expect(result).toEqual({ count: 1, rows: [{ id: 9 }] });
   });
 
@@ -30,6 +35,7 @@ describe('UserRepository deleted-user listing', () => {
 
     expect(User.findAndCountAll.mock.calls[0][0].paranoid).toBe(true);
     expect(User.findAndCountAll.mock.calls[0][0].where).not.toHaveProperty('deletedAt');
+    expect(User.findAndCountAll.mock.calls[0][0].order[0]).toEqual(['lastLoginAt', 'DESC']);
   });
 
   it('can resolve a user by UUID through the paranoid boundary for restoration', async () => {

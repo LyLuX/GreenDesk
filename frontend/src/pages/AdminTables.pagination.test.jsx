@@ -67,7 +67,56 @@ describe('administrator table pagination', () => {
   afterEach(cleanup);
   beforeEach(() => {
     mocks.hasPermission.mockReturnValue(true);
-    for (const user of mocks.users) delete user.deletedAt;
+    for (const user of mocks.users) {
+      delete user.deletedAt;
+      user.lastLoginAt = null;
+    }
+  });
+
+  it('automatically loads every role page without a manual load button', async () => {
+    mocks.referenceApis.roles.list
+      .mockResolvedValueOnce({
+        data: {
+          data: {
+            items: [{ uuid: 'role-first', name: 'Rôle première page' }],
+            pagination: { page: 1, limit: 25, total: 2, totalPages: 2 },
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          data: {
+            items: [{ uuid: 'role-second', name: 'Rôle seconde page' }],
+            pagination: { page: 2, limit: 25, total: 2, totalPages: 2 },
+          },
+        },
+      });
+
+    render(<UsersPage />);
+
+    expect(await screen.findByRole('option', { name: 'Rôle seconde page' })).toBeVisible();
+    expect(mocks.referenceApis.roles.list).toHaveBeenCalledWith(
+      { page: 1, limit: 25 },
+      expect.any(AbortSignal),
+    );
+    expect(mocks.referenceApis.roles.list).toHaveBeenCalledWith(
+      { page: 2, limit: 25 },
+      expect.any(AbortSignal),
+    );
+    expect(screen.queryByRole('button', { name: 'Charger plus de rôles' })).not.toBeInTheDocument();
+  });
+
+  it('keeps the user order returned by the API instead of sorting in React', async () => {
+    mocks.users[0].lastLoginAt = '2026-08-20T08:00:00.000Z';
+    mocks.users[1].lastLoginAt = '2026-08-23T08:00:00.000Z';
+
+    render(<UsersPage />);
+
+    const firstUser = await screen.findByText('user1@example.test');
+    const secondUser = screen.getByText('user2@example.test');
+    expect(
+      firstUser.compareDocumentPosition(secondUser) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('filters user actions with their dedicated permissions', async () => {

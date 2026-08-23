@@ -150,7 +150,10 @@ describe('MaintenancePage', () => {
       { page: 1, limit: 5, active: 'true' },
       expect.any(AbortSignal),
     );
-    expect(mocks.listMaterials).toHaveBeenCalledWith({ limit: 25 }, expect.any(AbortSignal));
+    expect(mocks.listMaterials).toHaveBeenCalledWith(
+      { page: 1, limit: 25 },
+      expect.any(AbortSignal),
+    );
     expect(screen.getByText('05/08/2026')).toBeInTheDocument();
     expect(screen.queryByText(/Compteur/)).not.toBeInTheDocument();
     expect(screen.getByText('Normale', { selector: 'span' })).toHaveClass(

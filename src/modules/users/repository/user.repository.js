@@ -18,6 +18,10 @@ const roleInclude = [
     through: { attributes: [] },
   },
 ];
+const userListOrder = [
+  ['lastLoginAt', 'DESC'],
+  ['id', 'DESC'],
+];
 
 /** Database access for users. */
 export default class UserRepository extends TransactionalRepository {
@@ -51,10 +55,7 @@ export default class UserRepository extends TransactionalRepository {
           ]
         : [],
       distinct: true,
-      order: [
-        ['lastName', 'ASC'],
-        ['firstName', 'ASC'],
-      ],
+      order: userListOrder,
       limit: pagination.limit,
       offset: pagination.offset,
       paranoid: !deleted,
@@ -67,10 +68,7 @@ export default class UserRepository extends TransactionalRepository {
             ...(deleted ? { deletedAt: { [Op.ne]: null } } : {}),
           },
           include: roleInclude,
-          order: [
-            ['lastName', 'ASC'],
-            ['firstName', 'ASC'],
-          ],
+          order: userListOrder,
           paranoid: !deleted,
         })
       : [];

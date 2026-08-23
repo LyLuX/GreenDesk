@@ -84,7 +84,10 @@ const user = {
     email: { type: 'string', format: 'email', maxLength: 255 },
     emailVerifiedAt: nullableDateTime,
     isActive: { type: 'boolean' },
-    lastLoginAt: nullableDateTime,
+    lastLoginAt: {
+      ...nullableDateTime,
+      description: 'Dernière connexion, utilisée pour trier la liste des utilisateurs par défaut.',
+    },
     roles: arrayOf(reference('UserRole')),
     ...timestamps,
     deletedAt: {

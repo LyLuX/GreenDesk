@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import getApiErrorMessage, { getRetryAfterSeconds } from '../api/get-api-error-message.js';
+import listAllPages from '../api/list-all-pages.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import {
   createUser,
@@ -37,6 +38,7 @@ const emptyUser = () => ({
   password: '',
   roleUuids: [],
 });
+const rolesApi = createReferenceApi('roles');
 
 /** Administrator workspace for creating and maintaining application users. */
 export default function UsersPage() {
@@ -75,8 +77,6 @@ export default function UsersPage() {
   const [active, setActive] = useState(activityStatusFilter.defaultValue);
   const [roleUuid, setRoleUuid] = useState('');
   const [pagination, setPagination] = useState(null);
-  const [rolesPagination, setRolesPagination] = useState(null);
-  const [loadingMoreRoles, setLoadingMoreRoles] = useState(false);
   const debouncedSearch = useDebouncedValue(search, 300);
 
   const load = useCallback(
@@ -136,13 +136,8 @@ export default function UsersPage() {
   useEffect(() => {
     if (!canReadRoles) return undefined;
     const controller = new AbortController();
-    createReferenceApi('roles')
-      .list({ limit: 25 }, controller.signal)
-      .then((response) => {
-        const payload = response.data.data ?? {};
-        setRoles(Array.isArray(payload) ? payload : (payload.items ?? []));
-        setRolesPagination(Array.isArray(payload) ? null : (payload.pagination ?? null));
-      })
+    listAllPages(rolesApi.list, {}, controller.signal)
+      .then(setRoles)
       .catch((requestError) => {
         if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
       });
@@ -169,25 +164,6 @@ export default function UsersPage() {
       roleUuids: user.roles?.map((role) => role.uuid) ?? [],
     });
     setFormError('');
-  };
-
-  const loadMoreRoles = async () => {
-    if (!rolesPagination || rolesPagination.page >= rolesPagination.totalPages || loadingMoreRoles)
-      return;
-    setLoadingMoreRoles(true);
-    try {
-      const response = await createReferenceApi('roles').list({
-        page: rolesPagination.page + 1,
-        limit: 25,
-      });
-      const payload = response.data.data ?? {};
-      setRoles((current) => [...current, ...(payload.items ?? [])]);
-      setRolesPagination(payload.pagination ?? rolesPagination);
-    } catch (requestError) {
-      setError(getApiErrorMessage(requestError));
-    } finally {
-      setLoadingMoreRoles(false);
-    }
   };
 
   const updateField = (event) => {
@@ -395,16 +371,6 @@ export default function UsersPage() {
             : []),
         ]}
       />
-      {canReadRoles && rolesPagination?.page < rolesPagination?.totalPages && (
-        <Button
-          className="btn-sm btn-outline-secondary mb-3"
-          type="button"
-          disabled={loadingMoreRoles}
-          onClick={loadMoreRoles}
-        >
-          {loadingMoreRoles ? 'Chargement…' : 'Charger plus de rôles'}
-        </Button>
-      )}
       {error && (
         <p className="alert alert-danger" role="alert">
           {error}
@@ -634,16 +600,6 @@ export default function UsersPage() {
                   </label>
                 </div>
               ))}
-              {rolesPagination?.page < rolesPagination?.totalPages && (
-                <Button
-                  className="btn-sm btn-outline-secondary mt-2"
-                  type="button"
-                  disabled={loadingMoreRoles}
-                  onClick={loadMoreRoles}
-                >
-                  {loadingMoreRoles ? 'Chargement…' : 'Charger plus de rôles'}
-                </Button>
-              )}
             </div>
           )}
           <Button type="submit" disabled={saving}>

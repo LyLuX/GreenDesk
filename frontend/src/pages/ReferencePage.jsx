@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import getApiErrorMessage from '../api/get-api-error-message.js';
+import listAllPages from '../api/list-all-pages.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
 import Button from '../components/Button.jsx';
@@ -52,8 +53,6 @@ export default function ReferencePage({
   const [direction, setDirection] = useState(resource === 'materials' ? 'DESC' : 'ASC');
   const [paginationData, setPaginationData] = useState(null);
   const [optionLists, setOptionLists] = useState({});
-  const [optionPagination, setOptionPagination] = useState({});
-  const [loadingMoreOptions, setLoadingMoreOptions] = useState('');
   const [editing, setEditing] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -134,23 +133,16 @@ export default function ReferencePage({
     const controller = new AbortController();
     Promise.all(
       resources.map(async (resourceName) => {
-        const response = await createReferenceApi(resourceName).list(
-          { limit: 25 },
+        const items = await listAllPages(
+          createReferenceApi(resourceName).list,
+          {},
           controller.signal,
         );
-        const payload = response.data.data ?? [];
-        return [
-          resourceName,
-          Array.isArray(payload) ? payload : (payload.items ?? []),
-          Array.isArray(payload) ? null : (payload.pagination ?? null),
-        ];
+        return [resourceName, items];
       }),
     )
       .then((entries) => {
         setOptionLists(Object.fromEntries(entries.map(([name, items]) => [name, items])));
-        setOptionPagination(
-          Object.fromEntries(entries.map(([name, _items, pageData]) => [name, pageData])),
-        );
       })
       .catch(() => {});
     return () => controller.abort();
@@ -178,27 +170,6 @@ export default function ReferencePage({
       ];
     }
     return options;
-  };
-  const loadMoreOptions = async (resourceName) => {
-    const current = optionPagination[resourceName];
-    if (!current || current.page >= current.totalPages || loadingMoreOptions) return;
-    setLoadingMoreOptions(resourceName);
-    try {
-      const response = await createReferenceApi(resourceName).list({
-        page: current.page + 1,
-        limit: 25,
-      });
-      const payload = response.data.data ?? {};
-      setOptionLists((lists) => ({
-        ...lists,
-        [resourceName]: [...(lists[resourceName] ?? []), ...(payload.items ?? [])],
-      }));
-      setOptionPagination((pages) => ({ ...pages, [resourceName]: payload.pagination ?? current }));
-    } catch (error) {
-      setLoadError(getApiErrorMessage(error));
-    } finally {
-      setLoadingMoreOptions('');
-    }
   };
   const save = async (event) => {
     event.preventDefault();
@@ -304,7 +275,6 @@ export default function ReferencePage({
         </p>
       )}
       {fields.map((field) => {
-        const optionsPage = optionPagination[field.optionsResource];
         return (
           <div className="d-grid gap-2" key={field.name}>
             <FormField
@@ -319,18 +289,6 @@ export default function ReferencePage({
               options={selectOptions(field)}
               disabled={Boolean(editing?.uuid && !canUpdateRecord)}
             />
-            {optionsPage?.page < optionsPage?.totalPages && (
-              <Button
-                className="btn-sm btn-outline-secondary justify-self-start"
-                type="button"
-                disabled={Boolean(loadingMoreOptions)}
-                onClick={() => loadMoreOptions(field.optionsResource)}
-              >
-                {loadingMoreOptions === field.optionsResource
-                  ? 'Chargement…'
-                  : `Charger plus de ${field.label.toLowerCase()}`}
-              </Button>
-            )}
           </div>
         );
       })}
@@ -409,24 +367,6 @@ export default function ReferencePage({
           })),
         ]}
       />
-      {[...new Set(filters.map((filter) => filter.optionsResource).filter(Boolean))].map(
-        (resourceName) => {
-          const optionsPage = optionPagination[resourceName];
-          return optionsPage?.page < optionsPage?.totalPages ? (
-            <Button
-              className="btn-sm btn-outline-secondary mb-3"
-              type="button"
-              disabled={Boolean(loadingMoreOptions)}
-              onClick={() => loadMoreOptions(resourceName)}
-              key={resourceName}
-            >
-              {loadingMoreOptions === resourceName
-                ? 'Chargement…'
-                : 'Charger plus d’options de filtre'}
-            </Button>
-          ) : null;
-        },
-      )}
       {pagination && resource === 'materials' && (
         <FilterPanel
           ariaLabel="Tri"

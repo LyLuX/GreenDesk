@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import getApiErrorMessage from '../api/get-api-error-message.js';
+import listAllPages from '../api/list-all-pages.js';
 import {
   createMaintenance,
   deleteMaintenance,
@@ -125,8 +126,6 @@ export default function MaintenancePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [catalogError, setCatalogError] = useState('');
-  const [catalogPagination, setCatalogPagination] = useState({});
-  const [loadingMoreCatalog, setLoadingMoreCatalog] = useState('');
   const [partsPage, setPartsPage] = useState(1);
   const [partsLimit, setPartsLimit] = useState(5);
   const [partsPagination, setPartsPagination] = useState(null);
@@ -173,21 +172,11 @@ export default function MaintenancePage() {
   const loadCatalogs = useCallback(async (signal) => {
     try {
       const [materialList, operationList] = await Promise.all([
-        listMaterialOptions({ limit: 25 }, signal),
-        listMaintenanceOperations({ limit: 25 }, signal),
+        listAllPages(listMaterialOptions, {}, signal),
+        listAllPages(listMaintenanceOperations, {}, signal),
       ]);
-      const materialPayload = materialList.data.data ?? {};
-      const operationPayload = operationList.data.data ?? {};
-      setMaterials(
-        Array.isArray(materialPayload) ? materialPayload : (materialPayload.items ?? []),
-      );
-      setOperations(
-        Array.isArray(operationPayload) ? operationPayload : (operationPayload.items ?? []),
-      );
-      setCatalogPagination({
-        materials: Array.isArray(materialPayload) ? null : (materialPayload.pagination ?? null),
-        operations: Array.isArray(operationPayload) ? null : (operationPayload.pagination ?? null),
-      });
+      setMaterials(materialList);
+      setOperations(operationList);
       setCatalogError('');
     } catch (requestError) {
       if (requestError.code !== 'ERR_CANCELED') {
@@ -200,29 +189,6 @@ export default function MaintenancePage() {
     loadCatalogs(controller.signal);
     return () => controller.abort();
   }, [loadCatalogs]);
-  const loadMoreCatalog = async (catalog) => {
-    const current = catalogPagination[catalog];
-    if (!current || current.page >= current.totalPages || loadingMoreCatalog) return;
-    setLoadingMoreCatalog(catalog);
-    try {
-      const request = {
-        materials: listMaterialOptions,
-        operations: listMaintenanceOperations,
-      }[catalog];
-      const response = await request({ page: current.page + 1, limit: 25 });
-      const payload = response.data.data ?? {};
-      const setters = {
-        materials: setMaterials,
-        operations: setOperations,
-      };
-      setters[catalog]((items) => [...items, ...(payload.items ?? [])]);
-      setCatalogPagination((pages) => ({ ...pages, [catalog]: payload.pagination ?? current }));
-    } catch (requestError) {
-      setCatalogError(getApiErrorMessage(requestError));
-    } finally {
-      setLoadingMoreCatalog('');
-    }
-  };
   const loadParts = useCallback(
     async (signal) => {
       setPartsLoading(true);
@@ -553,16 +519,6 @@ export default function MaintenancePage() {
           },
         ]}
       />
-      {catalogPagination.materials?.page < catalogPagination.materials?.totalPages && (
-        <Button
-          className="btn-sm btn-outline-secondary mb-3"
-          type="button"
-          disabled={Boolean(loadingMoreCatalog)}
-          onClick={() => loadMoreCatalog('materials')}
-        >
-          {loadingMoreCatalog === 'materials' ? 'Chargement…' : 'Charger plus de matériels'}
-        </Button>
-      )}
       {(error || catalogError) && (
         <div
           role="alert"
@@ -771,24 +727,6 @@ export default function MaintenancePage() {
               />
             ),
           )}
-          <div className="d-flex flex-wrap gap-2">
-            {[
-              ['materials', 'matériels'],
-              ['operations', 'opérations'],
-            ].map(([catalog, label]) =>
-              catalogPagination[catalog]?.page < catalogPagination[catalog]?.totalPages ? (
-                <Button
-                  className="btn-sm btn-outline-secondary"
-                  type="button"
-                  disabled={Boolean(loadingMoreCatalog)}
-                  onClick={() => loadMoreCatalog(catalog)}
-                  key={catalog}
-                >
-                  {loadingMoreCatalog === catalog ? 'Chargement…' : `Charger plus de ${label}`}
-                </Button>
-              ) : null,
-            )}
-          </div>
           <fieldset className="surface d-grid gap-2 p-3">
             <legend className="h6 mb-0">Pièces nécessaires</legend>
             {partsError && (

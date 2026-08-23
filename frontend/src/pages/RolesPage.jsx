@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import getApiErrorMessage from '../api/get-api-error-message.js';
+import listAllPages from '../api/list-all-pages.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
 import Button from '../components/Button.jsx';
@@ -22,7 +23,6 @@ import {
 const emptyRole = () => ({ name: '', description: '', permissionUuids: [] });
 const rolesApi = createReferenceApi('roles');
 const permissionsApi = createReferenceApi('permissions');
-const permissionsPageLimit = 25;
 const visiblePermissionCount = 6;
 
 function PermissionActionFamilyCheckbox({
@@ -86,24 +86,6 @@ function PermissionActionFamilyCheckbox({
     </div>
   );
 }
-
-const listAllPermissions = async (signal) => {
-  const items = [];
-  let page = 1;
-
-  while (true) {
-    const response = await permissionsApi.list({ page, limit: permissionsPageLimit }, signal);
-    const payload = response.data.data ?? [];
-    if (Array.isArray(payload)) return payload;
-
-    items.push(...(payload.items ?? []));
-    const pagination = payload.pagination;
-    if (!pagination || pagination.page >= pagination.totalPages || !payload.items?.length) {
-      return items;
-    }
-    page = pagination.page + 1;
-  }
-};
 
 const renderPermissionSummary = (permissions = []) => {
   if (!permissions.length) return 'Aucune permission';
@@ -245,7 +227,7 @@ export default function RolesPage() {
     }
     const controller = new AbortController();
     setLoadingPermissions(true);
-    listAllPermissions(controller.signal)
+    listAllPages(permissionsApi.list, {}, controller.signal)
       .then((items) => {
         setPermissions(items);
       })
