@@ -29,6 +29,10 @@ const permissionDefinitions = [
     description: 'Modifier les rôles attribués à un utilisateur.',
   },
   {
+    name: administrationPermissions.users.emailVerification.resend,
+    description: 'Renvoyer l’email de vérification d’un compte utilisateur.',
+  },
+  {
     name: administrationPermissions.roles.read,
     description: 'Consulter les rôles de l’application.',
   },

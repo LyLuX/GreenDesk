@@ -1,11 +1,16 @@
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import { successResponse } from '../../../core/responses/api-response.js';
 import UserService from '../service/user.service.js';
+import EmailVerificationService from '../../auth/service/email-verification.service.js';
 
 /** Translates user HTTP requests to UserService calls. */
 export default class UserController {
-  constructor(userService = new UserService()) {
+  constructor(
+    userService = new UserService(),
+    emailVerificationService = new EmailVerificationService(),
+  ) {
     this.userService = userService;
+    this.emailVerificationService = emailVerificationService;
   }
   async getAll(request, response) {
     response.json(successResponse(await this.userService.getAll(request.query)));
@@ -30,5 +35,15 @@ export default class UserController {
   async remove(request, response) {
     await this.userService.remove(request.params.uuid, request.user?.userId);
     response.status(HTTP_STATUS.NO_CONTENT).send();
+  }
+  async resendEmailVerification(request, response) {
+    response.json(
+      successResponse(
+        await this.emailVerificationService.resendByUserUuid(
+          request.params.uuid,
+          request.user?.userId,
+        ),
+      ),
+    );
   }
 }

@@ -10,6 +10,7 @@ const configuration = (overrides = {}) => ({
   login: { windowMs: 60_000, limit: 1 },
   register: { windowMs: 60_000, limit: 1 },
   refresh: { windowMs: 60_000, limit: 1 },
+  emailVerification: { windowMs: 60_000, limit: 1 },
   ...overrides,
 });
 

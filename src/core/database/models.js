@@ -16,6 +16,7 @@ import MaintenancePartUsage from '../../modules/maintenance/model/maintenance-pa
 import Supplier from '../../modules/suppliers/model/supplier.model.js';
 import MaintenanceTaskPart from '../../modules/maintenance/model/maintenance-task-part.model.js';
 import RevokedAccessToken from '../../modules/auth/model/revoked-access-token.model.js';
+import EmailVerificationToken from '../../modules/auth/model/email-verification-token.model.js';
 import StockMovement from '../inventory/stock-movement.model.js';
 
 let initialized = false;
@@ -35,6 +36,16 @@ export function initializeModels() {
     foreignKey: 'user_id',
     otherKey: 'role_id',
     as: 'roles',
+  });
+  User.hasMany(EmailVerificationToken, {
+    foreignKey: 'userId',
+    as: 'emailVerificationTokens',
+    onDelete: 'CASCADE',
+  });
+  EmailVerificationToken.belongsTo(User, {
+    foreignKey: 'userId',
+    as: 'user',
+    onDelete: 'CASCADE',
   });
   Role.belongsToMany(User, {
     through: 'user_roles',
@@ -212,5 +223,6 @@ export {
   Supplier,
   MaintenanceTaskPart,
   RevokedAccessToken,
+  EmailVerificationToken,
   StockMovement,
 };

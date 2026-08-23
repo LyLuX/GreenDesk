@@ -17,6 +17,7 @@ const makeUser = async () => ({
   lastName: 'Lovelace',
   email: 'ada@greendesk.local',
   isActive: true,
+  emailVerifiedAt: new Date('2026-08-23T08:00:00.000Z'),
   passwordHash: await bcrypt.hash('SecurePass123!', 4),
   authorizationVersion: 3,
   roles: [{ name: 'USER' }],
@@ -35,10 +36,25 @@ const makeUser = async () => ({
 
 describe('AuthService', () => {
   it('registers a user with the USER default role', async () => {
-    const userService = { create: jest.fn().mockResolvedValue({ uuid }) };
-    const service = new AuthService({}, userService, { record: jest.fn() });
+    const registeredUser = { id: 1, uuid, emailVerifiedAt: null };
+    const userService = {
+      create: jest.fn().mockResolvedValue(registeredUser),
+      publicUser: jest.fn((user) => user),
+    };
+    const emailVerificationService = { issue: jest.fn() };
+    const service = new AuthService(
+      {},
+      userService,
+      { record: jest.fn() },
+      emailVerificationService,
+    );
     await service.register({ email: 'ada@greendesk.local', password: 'SecurePass123!' });
-    expect(userService.create).toHaveBeenCalledWith(expect.any(Object), null, 'USER');
+    expect(userService.create).toHaveBeenCalledWith(expect.any(Object), null, 'USER', {
+      requireEmailVerification: true,
+    });
+    expect(emailVerificationService.issue).toHaveBeenCalledWith(registeredUser, {
+      suppressDeliveryErrors: true,
+    });
   });
 
   it('returns an access token for valid credentials', async () => {
@@ -72,6 +88,19 @@ describe('AuthService', () => {
     );
     await expect(service.login('ada@greendesk.local', 'wrong')).rejects.toMatchObject({
       statusCode: 401,
+    });
+  });
+
+  it('rejects a correct password until the email address is verified', async () => {
+    const user = { ...(await makeUser()), emailVerifiedAt: null };
+    const service = new AuthService(
+      { findByEmailWithPassword: jest.fn().mockResolvedValue(user) },
+      {},
+      { record: jest.fn() },
+    );
+    await expect(service.login(user.email, 'SecurePass123!')).rejects.toMatchObject({
+      statusCode: 403,
+      message: 'Email verification required',
     });
   });
 

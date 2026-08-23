@@ -8,6 +8,7 @@ import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';
 import UserService from '../../users/service/user.service.js';
 import AuthRepository from '../repository/auth.repository.js';
+import EmailVerificationService from './email-verification.service.js';
 
 /** Registration and credential-based authentication. */
 export default class AuthService {
@@ -15,20 +16,32 @@ export default class AuthService {
     authRepository = new AuthRepository(),
     userService = new UserService(),
     auditService = new AuditService(),
+    emailVerificationService = new EmailVerificationService(),
   ) {
     this.authRepository = authRepository;
     this.userService = userService;
     this.auditService = auditService;
+    this.emailVerificationService = emailVerificationService;
   }
 
   async register(values) {
-    return this.userService.create(values, null, 'USER');
+    const user = await this.userService.create(values, null, 'USER', {
+      requireEmailVerification: true,
+    });
+    await this.emailVerificationService.issue(user, { suppressDeliveryErrors: true });
+    return {
+      user: this.userService.publicUser(user),
+      verificationRequired: true,
+    };
   }
 
   async login(email, password) {
     const user = await this.authRepository.findByEmailWithPassword(email.toLowerCase());
     if (!user || !user.isActive || !(await bcrypt.compare(password, user.passwordHash))) {
       throw new AppError('Invalid email or password', HTTP_STATUS.UNAUTHORIZED);
+    }
+    if (!user.emailVerifiedAt) {
+      throw new AppError('Email verification required', HTTP_STATUS.FORBIDDEN);
     }
     return this.authRepository.withTransaction(async (transaction) => {
       await this.authRepository.update(user, { lastLoginAt: new Date() }, { transaction });
@@ -44,6 +57,14 @@ export default class AuthService {
       );
       return session;
     });
+  }
+
+  async verifyEmail(token) {
+    return this.emailVerificationService.verify(token);
+  }
+
+  async resendEmailVerification(email) {
+    return this.emailVerificationService.resend(email);
   }
 
   /** Renews an active user's access token and revokes the token it replaces. */

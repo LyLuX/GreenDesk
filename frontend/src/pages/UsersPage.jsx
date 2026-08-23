@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import { createReferenceApi } from '../api/reference.api.js';
-import { createUser, deleteUser, listUsers, updateUser } from '../api/users.api.js';
+import {
+  createUser,
+  deleteUser,
+  listUsers,
+  resendUserEmailVerification,
+  updateUser,
+} from '../api/users.api.js';
 import useAuth from '../auth/useAuth.js';
 import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
@@ -37,6 +43,9 @@ export default function UsersPage() {
   const canUpdatePassword = hasPermission(administrationPermissions.users.password.update);
   const canUpdateRoles = hasPermission(administrationPermissions.users.roles.update);
   const canDelete = hasPermission(administrationPermissions.users.delete);
+  const canResendVerification = hasPermission(
+    administrationPermissions.users.emailVerification.resend,
+  );
   const canReadRoles = hasPermission(administrationPermissions.roles.read);
   const canOpenEdit = canUpdate || canUpdatePassword || (canUpdateRoles && canReadRoles);
   const [users, setUsers] = useState([]);
@@ -49,6 +58,7 @@ export default function UsersPage() {
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(null);
   const [changingStatus, setChangingStatus] = useState(null);
+  const [resendingVerification, setResendingVerification] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(5);
@@ -267,6 +277,19 @@ export default function UsersPage() {
     }
   };
 
+  const resendVerification = async (user) => {
+    if (resendingVerification) return;
+    setResendingVerification(user.uuid);
+    try {
+      await resendUserEmailVerification(user.uuid);
+      notify('success', 'Email de vérification envoyé.');
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError));
+    } finally {
+      setResendingVerification(null);
+    }
+  };
+
   const confirmAction = async () => {
     if (!confirmation) return;
     const completed =
@@ -382,6 +405,11 @@ export default function UsersPage() {
                       <span className={`status-badge ${user.isActive ? '' : 'inactive'}`}>
                         {user.isActive ? 'Actif' : 'Inactif'}
                       </span>
+                      <span
+                        className={`d-block small mt-1 ${user.emailVerifiedAt ? 'text-success' : 'text-warning-emphasis'}`}
+                      >
+                        Email {user.emailVerifiedAt ? 'vérifié' : 'à vérifier'}
+                      </span>
                     </td>
                     <td>{formatDateTime(user.lastLoginAt, 'Jamais')}</td>
                     <td>
@@ -410,6 +438,19 @@ export default function UsersPage() {
                             onClick={() => setConfirmation({ action: 'status', user })}
                           >
                             {user.isActive ? 'Désactiver' : 'Activer'}
+                          </button>
+                        )}
+                        {canResendVerification && !user.emailVerifiedAt && (
+                          <button
+                            aria-label={`Renvoyer l’email de vérification à ${user.firstName} ${user.lastName}`}
+                            className="btn btn-sm btn-outline-secondary flex-fill"
+                            type="button"
+                            disabled={Boolean(removing || changingStatus || resendingVerification)}
+                            onClick={() => resendVerification(user)}
+                          >
+                            {resendingVerification === user.uuid
+                              ? 'Envoi…'
+                              : 'Renvoyer la vérification'}
                           </button>
                         )}
                         {canDelete && (

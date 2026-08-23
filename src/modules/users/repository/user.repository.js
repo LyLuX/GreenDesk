@@ -73,6 +73,9 @@ export default class UserRepository extends TransactionalRepository {
   async findByUuid(uuid, { transaction } = {}) {
     return User.findOne({ where: { uuid }, include: roleInclude, transaction });
   }
+  async findById(id, { transaction } = {}) {
+    return User.findByPk(id, { include: roleInclude, transaction });
+  }
   async findByEmail(email, { withDeleted = false, transaction } = {}) {
     return User.findOne({
       where: { email },

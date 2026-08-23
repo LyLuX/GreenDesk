@@ -19,6 +19,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [verificationRequired, setVerificationRequired] = useState(false);
   const postLoginDestinationRef = useRef(null);
 
   const getPostLoginDestination = () => {
@@ -53,6 +54,7 @@ export default function LoginPage() {
     const postLoginDestination = getPostLoginDestination();
     setLoading(true);
     setError('');
+    setVerificationRequired(false);
     try {
       const session = await login(email, password);
       notify('success', `Bienvenue ${session.user.firstName}, tu es maintenant connecté.`);
@@ -60,6 +62,9 @@ export default function LoginPage() {
       navigate(postLoginDestination, { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err));
+      setVerificationRequired(
+        err?.response?.data?.error?.message === 'Email verification required',
+      );
     } finally {
       setLoading(false);
     }
@@ -80,6 +85,13 @@ export default function LoginPage() {
         {error && (
           <p role="alert" className="alert alert-danger py-2">
             {error}
+          </p>
+        )}
+        {verificationRequired && (
+          <p className="mb-0 text-center small">
+            <Link className="fw-semibold" to="/verify-email" state={{ email }}>
+              Renvoyer l’email de vérification
+            </Link>
           </p>
         )}
         <label className="form-label" htmlFor="login-email">

@@ -48,6 +48,7 @@ export function createRateLimiters(configuration = env.rateLimit, securityLogger
       loginRateLimiter: disabledLimiter,
       registerRateLimiter: disabledLimiter,
       refreshRateLimiter: disabledLimiter,
+      emailVerificationRateLimiter: disabledLimiter,
     };
   }
 
@@ -86,8 +87,21 @@ export function createRateLimiters(configuration = env.rateLimit, securityLogger
         keyGenerator: (request) => `user:${request.user.sub}`,
       }),
     ),
+    emailVerificationRateLimiter: rateLimit(
+      limiterOptions({
+        ...configuration.emailVerification,
+        identifier: 'auth-email-verification',
+        message: 'Trop de tentatives de vérification. Réessayez plus tard.',
+        securityLogger,
+      }),
+    ),
   };
 }
 
-export const { apiRateLimiter, loginRateLimiter, registerRateLimiter, refreshRateLimiter } =
-  createRateLimiters();
+export const {
+  apiRateLimiter,
+  loginRateLimiter,
+  registerRateLimiter,
+  refreshRateLimiter,
+  emailVerificationRateLimiter,
+} = createRateLimiters();

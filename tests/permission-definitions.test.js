@@ -5,7 +5,7 @@ describe('permission definitions', () => {
     const names = permissionDefinitions.map(({ name }) => name);
 
     expect(new Set(names).size).toBe(names.length);
-    expect(names).toHaveLength(70);
+    expect(names).toHaveLength(71);
     expect(names).toEqual(
       expect.arrayContaining([
         'maintenance.operations.read',
@@ -33,6 +33,7 @@ describe('permission definitions', () => {
         'users.status.update',
         'users.password.update',
         'users.roles.update',
+        'users.email_verification.resend',
         'roles.permissions.update',
         'permissions.delete',
         'categories.status.update',

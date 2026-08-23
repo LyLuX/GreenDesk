@@ -75,13 +75,14 @@ const role = {
 
 const user = {
   type: 'object',
-  required: ['uuid', 'firstName', 'lastName', 'email', 'isActive', 'roles'],
+  required: ['uuid', 'firstName', 'lastName', 'email', 'emailVerifiedAt', 'isActive', 'roles'],
   properties: {
     id: { type: 'integer', readOnly: true },
     uuid,
     firstName: { type: 'string', maxLength: 100 },
     lastName: { type: 'string', maxLength: 100 },
     email: { type: 'string', format: 'email', maxLength: 255 },
+    emailVerifiedAt: nullableDateTime,
     isActive: { type: 'boolean' },
     lastLoginAt: nullableDateTime,
     roles: arrayOf(reference('UserRole')),
@@ -675,6 +676,18 @@ export const openApiSchemas = {
       password: { type: 'string', format: 'password', minLength: 8, writeOnly: true },
     },
   },
+  VerifyEmailRequest: {
+    type: 'object',
+    required: ['token'],
+    additionalProperties: false,
+    properties: { token: { type: 'string', minLength: 40, maxLength: 200, writeOnly: true } },
+  },
+  ResendEmailVerificationRequest: {
+    type: 'object',
+    required: ['email'],
+    additionalProperties: false,
+    properties: { email: { type: 'string', format: 'email' } },
+  },
   LoginRequest: {
     type: 'object',
     required: ['email', 'password'],
@@ -1238,6 +1251,19 @@ export const openApiSchemas = {
     properties: { name: { type: 'string' }, version: { type: 'string' } },
   }),
   AuthSessionResponse: success(reference('AuthSession')),
+  RegistrationResponse: success({
+    type: 'object',
+    required: ['user', 'verificationRequired'],
+    properties: {
+      user: reference('User'),
+      verificationRequired: { type: 'boolean', enum: [true] },
+    },
+  }),
+  EmailVerificationResponse: success({
+    type: 'object',
+    required: ['message'],
+    properties: { message: { type: 'string' } },
+  }),
   LogoutResponse: success({
     type: 'object',
     required: ['message'],
@@ -1314,6 +1340,10 @@ export const openApiResponses = {
   }),
   InternalError: withCacheControl({
     description: 'Unexpected server error.',
+    content: { 'application/json': { schema: reference('ErrorResponse') } },
+  }),
+  ServiceUnavailable: withCacheControl({
+    description: 'The configured email delivery service is unavailable.',
     content: { 'application/json': { schema: reference('ErrorResponse') } },
   }),
 };

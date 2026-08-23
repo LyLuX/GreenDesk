@@ -5,6 +5,21 @@ export default function getApiErrorMessage(error) {
   if (message === 'Invalid email or password') {
     return 'Adresse email ou mot de passe incorrect.';
   }
+  if (message === 'Email verification required') {
+    return 'Vérifiez votre adresse email avant de vous connecter.';
+  }
+  if (message === 'Invalid or expired verification token') {
+    return 'Ce lien de vérification est invalide ou a expiré.';
+  }
+  if (message === 'Email is already verified') {
+    return 'Cette adresse email est déjà vérifiée.';
+  }
+  if (message === 'Email delivery is not configured') {
+    return 'L’envoi d’emails n’est pas configuré.';
+  }
+  if (message === 'Email delivery failed') {
+    return 'L’email n’a pas pu être envoyé. Réessayez dans quelques instants.';
+  }
   if (message && message !== 'Validation failed') return message;
   if (Array.isArray(details) && details.length) {
     return [

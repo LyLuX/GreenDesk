@@ -4,7 +4,7 @@ export const permissionActionFamilies = Object.freeze(
     {
       key: 'create',
       label: 'Création et ajout',
-      actions: Object.freeze(['create', 'upload']),
+      actions: Object.freeze(['create', 'upload', 'resend']),
     },
     {
       key: 'update',

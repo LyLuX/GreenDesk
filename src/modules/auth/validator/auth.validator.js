@@ -10,3 +10,5 @@ export const loginValidator = [
   body('email').isEmail().normalizeEmail(),
   body('password').isString().notEmpty(),
 ];
+export const verifyEmailValidator = [body('token').isString().isLength({ min: 40, max: 200 })];
+export const resendEmailVerificationValidator = [body('email').isEmail().normalizeEmail()];

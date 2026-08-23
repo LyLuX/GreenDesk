@@ -66,4 +66,11 @@ router.delete(
   validateRequest,
   asyncHandler(controller.remove.bind(controller)),
 );
+router.post(
+  '/:uuid/email-verification/resend',
+  authorize(administrationPermissions.users.emailVerification.resend),
+  userUuidValidator,
+  validateRequest,
+  asyncHandler(controller.resendEmailVerification.bind(controller)),
+);
 export default router;

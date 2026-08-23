@@ -104,10 +104,14 @@ export const openApiPaths = {
         'Disponible uniquement lorsque `PUBLIC_REGISTRATION_ENABLED=true`. Cette option est désactivée par défaut en production.',
       requestBody: jsonBody('RegisterRequest'),
       responses: {
-        201: jsonResponse('UserResponse', 'Compte créé.'),
+        201: jsonResponse(
+          'RegistrationResponse',
+          'Compte créé ; une vérification de l’adresse email est nécessaire.',
+        ),
         400: responseRef('BadRequest'),
         403: responseRef('Forbidden'),
         409: responseRef('Conflict'),
+        429: responseRef('TooManyRequests'),
         500: responseRef('InternalError'),
       },
     },
@@ -122,6 +126,40 @@ export const openApiPaths = {
         200: jsonResponse('AuthSessionResponse', 'Session ouverte.'),
         400: responseRef('BadRequest'),
         401: responseRef('Unauthorized'),
+        403: responseRef('Forbidden'),
+        429: responseRef('TooManyRequests'),
+        500: responseRef('InternalError'),
+      },
+    },
+  },
+  '/auth/verify-email': {
+    post: {
+      operationId: 'verifyEmail',
+      tags: ['Auth'],
+      summary: 'Vérifie l’adresse email associée à une inscription publique.',
+      description:
+        'Route publique protégée par un quota dédié. Le jeton opaque est à usage unique et expire automatiquement.',
+      requestBody: jsonBody('VerifyEmailRequest'),
+      responses: {
+        200: jsonResponse('EmailVerificationResponse', 'Adresse email vérifiée.'),
+        400: responseRef('BadRequest'),
+        429: responseRef('TooManyRequests'),
+        500: responseRef('InternalError'),
+      },
+    },
+  },
+  '/auth/verify-email/resend': {
+    post: {
+      operationId: 'resendEmailVerification',
+      tags: ['Auth'],
+      summary: 'Demande un nouvel email de vérification.',
+      description:
+        'Route publique protégée par un quota et un délai minimal entre deux envois. La réponse reste identique que le compte existe ou non.',
+      requestBody: jsonBody('ResendEmailVerificationRequest'),
+      responses: {
+        200: jsonResponse('EmailVerificationResponse', 'Demande prise en compte.'),
+        400: responseRef('BadRequest'),
+        429: responseRef('TooManyRequests'),
         500: responseRef('InternalError'),
       },
     },
@@ -220,6 +258,25 @@ export const openApiPaths = {
       description: 'Nécessite `users.delete`.',
       security: secure,
       responses: { 204: noContent, ...resourceErrors },
+    },
+  },
+  '/users/{uuid}/email-verification/resend': {
+    parameters: [uuidParameter],
+    post: {
+      operationId: 'resendUserEmailVerification',
+      tags: ['Users'],
+      summary: 'Renvoie l’email de vérification d’un utilisateur.',
+      description: 'Nécessite `users.email_verification.resend`.',
+      security: secure,
+      responses: {
+        200: jsonResponse('EmailVerificationResponse', 'Email de vérification envoyé.'),
+        401: responseRef('Unauthorized'),
+        403: responseRef('Forbidden'),
+        404: responseRef('NotFound'),
+        409: responseRef('Conflict'),
+        503: responseRef('ServiceUnavailable'),
+        500: responseRef('InternalError'),
+      },
     },
   },
   '/roles': {

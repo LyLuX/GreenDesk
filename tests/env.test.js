@@ -62,7 +62,10 @@ describe('runtime environment configuration', () => {
         login: { limit: 10 },
         register: { limit: 5 },
         refresh: { limit: 30 },
+        emailVerification: { limit: 10 },
       },
+      mail: { enabled: false, applicationUrl: 'http://localhost:5173/' },
+      emailVerification: { ttlHours: 24, cooldownMs: 60000 },
       jwt: { secret: 'test-only-greendesk-secret-never-used-outside-tests' },
     });
   });
@@ -173,6 +176,44 @@ describe('runtime environment configuration', () => {
     expect(() => createEnvironment({ NODE_ENV: 'test', RATE_LIMIT_LOGIN_MAX: '0' })).toThrow(
       /RATE_LIMIT_LOGIN_MAX doit être un entier strictement positif/,
     );
+  });
+
+  it('builds a reusable SMTP configuration without exposing credentials', () => {
+    const configuration = createEnvironment({
+      NODE_ENV: 'test',
+      MAIL_ENABLED: 'true',
+      SMTP_HOST: 'smtp.example.test',
+      SMTP_PORT: '465',
+      SMTP_SECURE: 'true',
+      SMTP_USER: 'mailer',
+      SMTP_PASSWORD: 'secret',
+      MAIL_FROM_NAME: 'GreenDesk Maintenance',
+      MAIL_FROM_ADDRESS: 'no-reply@example.test',
+      APP_PUBLIC_URL: 'https://greendesk.example.test/app',
+    });
+
+    expect(configuration.mail).toMatchObject({
+      enabled: true,
+      applicationUrl: 'https://greendesk.example.test/app/',
+      from: { name: 'GreenDesk Maintenance', address: 'no-reply@example.test' },
+      smtp: {
+        host: 'smtp.example.test',
+        port: 465,
+        secure: true,
+        pool: true,
+        user: 'mailer',
+        password: 'secret',
+      },
+    });
+  });
+
+  it('requires email delivery when public registration is enabled in production', () => {
+    expect(() =>
+      createEnvironment({
+        ...productionEnvironment,
+        PUBLIC_REGISTRATION_ENABLED: 'true',
+      }),
+    ).toThrow(/MAIL_ENABLED doit valoir "true"/);
   });
 
   it('never includes credential values in validation errors', () => {

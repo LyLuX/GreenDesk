@@ -16,6 +16,7 @@ const ForbiddenPage = lazy(() => import('./pages/ForbiddenPage.jsx'));
 const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage.jsx'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
+const EmailVerificationPage = lazy(() => import('./pages/EmailVerificationPage.jsx'));
 const MaterialsPage = lazy(() => import('./pages/MaterialsPage.jsx'));
 const MaterialDetailPage = lazy(() => import('./pages/MaterialDetailPage.jsx'));
 const MaterialEditPage = lazy(() => import('./pages/MaterialEditPage.jsx'));
@@ -42,6 +43,7 @@ export const getModuleTitle = (pathname) => {
       '/': 'Tableau de bord',
       '/login': 'Connexion',
       '/register': 'Inscription',
+      '/verify-email': 'Vérification de l’email',
       '/403': 'Accès refusé',
       '/dashboard': 'Tableau de bord',
       '/categories': 'Catégories',
@@ -80,6 +82,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route
             path="/register"
             element={

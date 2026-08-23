@@ -5,11 +5,17 @@ import {
   loginRateLimiter,
   refreshRateLimiter,
   registerRateLimiter,
+  emailVerificationRateLimiter,
 } from '../../../core/middlewares/rate-limit.middleware.js';
 import { asyncHandler } from '../../../core/utils/async-handler.js';
 import AuthController from '../controller/auth.controller.js';
 import { requirePublicRegistration } from '../middlewares/public-registration.middleware.js';
-import { loginValidator, registerValidator } from '../validator/auth.validator.js';
+import {
+  loginValidator,
+  registerValidator,
+  resendEmailVerificationValidator,
+  verifyEmailValidator,
+} from '../validator/auth.validator.js';
 
 const router = Router();
 const controller = new AuthController();
@@ -20,6 +26,20 @@ router.post(
   registerValidator,
   validateRequest,
   asyncHandler(controller.register.bind(controller)),
+);
+router.post(
+  '/verify-email',
+  emailVerificationRateLimiter,
+  verifyEmailValidator,
+  validateRequest,
+  asyncHandler(controller.verifyEmail.bind(controller)),
+);
+router.post(
+  '/verify-email/resend',
+  emailVerificationRateLimiter,
+  resendEmailVerificationValidator,
+  validateRequest,
+  asyncHandler(controller.resendVerification.bind(controller)),
 );
 router.post(
   '/login',

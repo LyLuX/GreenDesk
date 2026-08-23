@@ -7,6 +7,7 @@ const administrationPermissions = Object.freeze({
     status: Object.freeze({ update: 'users.status.update' }),
     password: Object.freeze({ update: 'users.password.update' }),
     roles: Object.freeze({ update: 'users.roles.update' }),
+    emailVerification: Object.freeze({ resend: 'users.email_verification.resend' }),
   }),
   roles: Object.freeze({
     read: 'roles.read',

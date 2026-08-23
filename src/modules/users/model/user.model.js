@@ -23,6 +23,7 @@ User.init(
     email: { type: DataTypes.STRING(255), allowNull: false, unique: true },
     passwordHash: { type: DataTypes.STRING(255), allowNull: false },
     isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    emailVerifiedAt: { type: DataTypes.DATE, allowNull: true, field: 'email_verified_at' },
     authorizationVersion: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,

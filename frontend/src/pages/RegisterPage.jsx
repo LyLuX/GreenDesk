@@ -55,9 +55,9 @@ export default function RegisterPage() {
         email,
         password: values.password,
       });
-      navigate('/login', {
+      navigate('/verify-email', {
         replace: true,
-        state: { message: 'Votre compte a été créé. Vous pouvez maintenant vous connecter.' },
+        state: { email },
       });
     } catch (err) {
       setError(getApiErrorMessage(err));

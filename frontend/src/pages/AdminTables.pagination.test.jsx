@@ -16,12 +16,14 @@ const mocks = vi.hoisted(() => {
       lastName: String(index + 1),
       email: `user${index + 1}@example.test`,
       isActive: index !== 5,
+      emailVerifiedAt: '2026-08-23T08:00:00.000Z',
       roles: index === 5 ? [roles[5]] : [],
       lastLoginAt: null,
     })),
     roles,
     hasPermission: vi.fn(() => true),
     updateUser: vi.fn(),
+    resendUserEmailVerification: vi.fn(),
     referenceApis: {
       roles: { list: vi.fn().mockResolvedValue({ data: { data: roles } }) },
       permissions: {
@@ -44,6 +46,7 @@ vi.mock('../api/users.api.js', () => ({
   createUser: vi.fn(),
   updateUser: mocks.updateUser,
   deleteUser: vi.fn(),
+  resendUserEmailVerification: mocks.resendUserEmailVerification,
 }));
 vi.mock('../api/reference.api.js', () => ({
   createReferenceApi: (resource) => mocks.referenceApis[resource],
@@ -76,6 +79,28 @@ describe('administrator table pagination', () => {
       screen.getAllByRole('button', { name: /Désactiver Utilisateur/ }).length,
     ).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: /Supprimer Utilisateur/ })).not.toBeInTheDocument();
+  });
+
+  it('uses the dedicated permission to resend verification emails', async () => {
+    const user = userEvent.setup();
+    mocks.users[0].emailVerifiedAt = null;
+    mocks.hasPermission.mockImplementation(
+      (permission) =>
+        permission === 'users.read' || permission === 'users.email_verification.resend',
+    );
+    mocks.resendUserEmailVerification.mockResolvedValue({ data: { success: true } });
+
+    render(<UsersPage />);
+    const button = await screen.findByRole('button', {
+      name: 'Renvoyer l’email de vérification à Utilisateur 1',
+    });
+    await user.click(button);
+
+    expect(mocks.resendUserEmailVerification).toHaveBeenCalledWith('user-1');
+    expect(
+      screen.queryByRole('button', { name: 'Modifier Utilisateur 1' }),
+    ).not.toBeInTheDocument();
+    mocks.users[0].emailVerifiedAt = '2026-08-23T08:00:00.000Z';
   });
 
   it('filters role actions with their dedicated permissions', async () => {

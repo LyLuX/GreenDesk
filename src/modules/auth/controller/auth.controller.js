@@ -41,6 +41,14 @@ export default class AuthController {
       throw error;
     }
   }
+  async verifyEmail(request, response) {
+    response.json(successResponse(await this.authService.verifyEmail(request.body.token)));
+  }
+  async resendVerification(request, response) {
+    response.json(
+      successResponse(await this.authService.resendEmailVerification(request.body.email)),
+    );
+  }
   async refresh(request, response) {
     response.json(successResponse(await this.authService.refresh(request.user)));
   }

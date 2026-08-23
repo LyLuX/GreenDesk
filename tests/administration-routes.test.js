@@ -73,6 +73,17 @@ describe('granular administration route permissions', () => {
       .expect(400);
   });
 
+  it('protects administrative verification-email resends with their own permission', async () => {
+    await request(app)
+      .post('/api/v1/users/invalid/email-verification/resend')
+      .set('Authorization', authorization(['users.update']))
+      .expect(403);
+    await request(app)
+      .post('/api/v1/users/invalid/email-verification/resend')
+      .set('Authorization', authorization(['users.email_verification.resend']))
+      .expect(400);
+  });
+
   it.each([
     ['/api/v1/permissions', 'post', 'permissions.create', { name: '' }],
     [`/api/v1/permissions/${uuid}`, 'put', 'permissions.update', { name: '' }],

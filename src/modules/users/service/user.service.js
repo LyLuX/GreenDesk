@@ -40,9 +40,15 @@ export default class UserService {
     return user;
   }
 
-  async create(values, actorUserId = null, defaultRoleName = null) {
+  async create(
+    values,
+    actorUserId = null,
+    defaultRoleName = null,
+    { requireEmailVerification = false } = {},
+  ) {
     const email = values.email.toLowerCase();
     const { roleUuids, ...userValues } = values;
+    const emailVerifiedAt = requireEmailVerification ? null : new Date();
     const assignedRoles = roleUuids?.length ? await this.findRoles(roleUuids) : null;
     const passwordHash = await bcrypt.hash(values.password, PASSWORD_ROUNDS);
     return this.userRepository.withTransaction(async (transaction) => {
@@ -57,13 +63,23 @@ export default class UserService {
         await this.userRepository.restore(existingUser, { transaction });
         await this.userRepository.update(
           existingUser,
-          { ...userValues, email, passwordHash, isActive: true, lastLoginAt: null },
+          {
+            ...userValues,
+            email,
+            passwordHash,
+            isActive: true,
+            emailVerifiedAt,
+            lastLoginAt: null,
+          },
           { transaction },
         );
       }
       const user =
         existingUser ??
-        (await this.userRepository.create({ ...userValues, email, passwordHash }, { transaction }));
+        (await this.userRepository.create(
+          { ...userValues, email, passwordHash, emailVerifiedAt },
+          { transaction },
+        ));
       if (assignedRoles) {
         await this.userRepository.setRoles(user, assignedRoles, { transaction });
       } else if (defaultRoleName) {

@@ -117,6 +117,35 @@ const parseCorsOrigins = (source, isProduction, errors) => {
   return [...new Set(origins)];
 };
 
+const parseApplicationUrl = (source, isProduction, errors) => {
+  const rawValue =
+    normalizedValue(source, 'APP_PUBLIC_URL') || (isProduction ? '' : 'http://localhost:5173');
+  if (!rawValue) {
+    errors.push('APP_PUBLIC_URL est obligatoire lorsque les emails sont activés en production.');
+    return 'http://localhost:5173';
+  }
+  try {
+    const url = new URL(rawValue);
+    if (
+      !['http:', 'https:'].includes(url.protocol) ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash
+    ) {
+      throw new Error('Invalid application URL');
+    }
+    if (isProduction && url.protocol !== 'https:') {
+      errors.push('APP_PUBLIC_URL doit utiliser HTTPS en production.');
+    }
+    if (!url.pathname.endsWith('/')) url.pathname = `${url.pathname}/`;
+    return url.toString();
+  } catch {
+    errors.push('APP_PUBLIC_URL doit être une URL HTTP(S) valide.');
+    return 'http://localhost:5173';
+  }
+};
+
 /**
  * Builds and validates the runtime configuration before any service starts.
  * Production deliberately has no fallback for credentials or public origins.
@@ -170,6 +199,39 @@ export function createEnvironment(source = process.env) {
     !isProduction,
     errors,
   );
+  const mailEnabled = parseBoolean(source, 'MAIL_ENABLED', false, errors);
+  const smtpHost = normalizedValue(source, 'SMTP_HOST');
+  const smtpUser = normalizedValue(source, 'SMTP_USER');
+  const smtpPassword = source.SMTP_PASSWORD ?? '';
+  const mailFromAddress = normalizedValue(source, 'MAIL_FROM_ADDRESS');
+  if (mailEnabled && !smtpHost) errors.push('SMTP_HOST est obligatoire lorsque MAIL_ENABLED=true.');
+  if (mailEnabled && !mailFromAddress) {
+    errors.push('MAIL_FROM_ADDRESS est obligatoire lorsque MAIL_ENABLED=true.');
+  }
+  if (Boolean(smtpUser) !== Boolean(smtpPassword)) {
+    errors.push('SMTP_USER et SMTP_PASSWORD doivent être définis ensemble.');
+  }
+  if (isProduction && publicRegistrationEnabled && !mailEnabled) {
+    errors.push('MAIL_ENABLED doit valoir "true" lorsque l’inscription publique est active.');
+  }
+  const applicationUrl = parseApplicationUrl(source, isProduction && mailEnabled, errors);
+  const emailVerificationTtlHours = parsePositiveInteger(
+    source,
+    'EMAIL_VERIFICATION_TTL_HOURS',
+    24,
+    errors,
+  );
+  const emailVerificationCooldownSeconds = parsePositiveInteger(
+    source,
+    'EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS',
+    60,
+    errors,
+  );
+  const smtpPort = parsePort(source, 'SMTP_PORT', 587, errors);
+  const smtpSecure = parseBoolean(source, 'SMTP_SECURE', false, errors);
+  const smtpPool = parseBoolean(source, 'SMTP_POOL', true, errors);
+  const smtpMaxConnections = parsePositiveInteger(source, 'SMTP_MAX_CONNECTIONS', 5, errors);
+  const smtpMaxMessages = parsePositiveInteger(source, 'SMTP_MAX_MESSAGES', 100, errors);
   const rateLimitEnabled = parseBoolean(source, 'RATE_LIMIT_ENABLED', true, errors);
   const trustedProxies = parseTrustedProxies(source, errors);
   const rateLimit = {
@@ -189,6 +251,10 @@ export function createEnvironment(source = process.env) {
     refresh: {
       windowMs: 15 * 60 * 1000,
       limit: parsePositiveInteger(source, 'RATE_LIMIT_REFRESH_MAX', 30, errors),
+    },
+    emailVerification: {
+      windowMs: 15 * 60 * 1000,
+      limit: parsePositiveInteger(source, 'RATE_LIMIT_EMAIL_VERIFICATION_MAX', 10, errors),
     },
   };
 
@@ -215,6 +281,29 @@ export function createEnvironment(source = process.env) {
     trustedProxies,
     auth: {
       publicRegistrationEnabled,
+    },
+    mail: {
+      enabled: mailEnabled,
+      applicationUrl,
+      from: {
+        name: normalizedValue(source, 'MAIL_FROM_NAME') || 'GreenDesk',
+        address: mailFromAddress || 'no-reply@greendesk.local',
+      },
+      smtp: {
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpSecure,
+        pool: smtpPool,
+        maxConnections: smtpMaxConnections,
+        maxMessages: smtpMaxMessages,
+        user: smtpUser,
+        password: smtpPassword,
+      },
+    },
+    emailVerification: {
+      ttlHours: emailVerificationTtlHours,
+      ttlMs: emailVerificationTtlHours * 60 * 60 * 1000,
+      cooldownMs: emailVerificationCooldownSeconds * 1000,
     },
     rateLimit,
     jwt: {

@@ -1,6 +1,6 @@
 export const RETURN_LOCATION_STORAGE_KEY = 'greendesk.returnLocation';
 
-const excludedPaths = new Set(['/login', '/register']);
+const excludedPaths = new Set(['/login', '/register', '/verify-email']);
 
 /** Accepts only rooted, same-origin GreenDesk paths that can be resumed after login. */
 export const sanitizeReturnLocation = (value) => {
