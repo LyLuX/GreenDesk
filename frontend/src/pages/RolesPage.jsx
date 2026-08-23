@@ -4,6 +4,7 @@ import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
 import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import EyeIcon from '../components/EyeIcon.jsx';
 import FilterPanel from '../components/FilterPanel.jsx';
 import FormField from '../components/FormField.jsx';
 import Loader from '../components/Loader.jsx';
@@ -13,82 +14,76 @@ import useNotification from '../notifications/useNotification.js';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import { paginateItems } from '../utils/pagination.js';
 import administrationPermissions from '../permissions/administration.permissions.js';
+import {
+  getPermissionFamily,
+  permissionActionFamilies,
+} from '../permissions/permission-action-families.js';
 
 const emptyRole = () => ({ name: '', description: '', permissionUuids: [] });
 const rolesApi = createReferenceApi('roles');
 const permissionsApi = createReferenceApi('permissions');
 const permissionsPageLimit = 25;
 const visiblePermissionCount = 6;
-const permissionActionOrder = [
-  'read',
-  'financial',
-  'create',
-  'upload',
-  'update',
-  'set_primary',
-  'adjust_on_hand',
-  'adjust_on_order',
-  'order',
-  'receive',
-  'consume',
-  'delete',
-  'execute',
-  'skip_parts',
-];
-const permissionActionLabels = {
-  read: 'Lecture',
-  financial: 'Données financières',
-  create: 'Création',
-  upload: 'Ajout de fichier',
-  update: 'Modification',
-  set_primary: 'Définition comme principale',
-  adjust_on_hand: 'Correction du stock',
-  adjust_on_order: 'Correction des quantités commandées',
-  order: 'Enregistrement des commandes',
-  receive: 'Réception des commandes',
-  consume: 'Utilisation en maintenance',
-  delete: 'Suppression',
-  execute: 'Exécution',
-  skip_parts: 'Exécution sans changement de pièce',
-};
 
-const getPermissionAction = (permissionName = '') => {
-  const separatorIndex = permissionName.lastIndexOf('.');
-  if (separatorIndex <= 0 || separatorIndex === permissionName.length - 1) return null;
-  return permissionName.slice(separatorIndex + 1).toLocaleLowerCase('fr');
-};
-
-const formatPermissionAction = (action) =>
-  permissionActionLabels[action] ?? `${action.charAt(0).toLocaleUpperCase('fr')}${action.slice(1)}`;
-
-function PermissionActionCheckbox({ action, permissionUuids, selectedPermissionUuids, onToggle }) {
+function PermissionActionFamilyCheckbox({
+  controlsId,
+  family,
+  label,
+  permissionUuids,
+  selectedPermissionUuids,
+  pinned,
+  onPreview,
+  onToggle,
+  onTogglePreview,
+}) {
   const checkboxRef = useRef(null);
   const selectedCount = permissionUuids.filter((uuid) => selectedPermissionUuids.has(uuid)).length;
   const allSelected = selectedCount === permissionUuids.length;
   const partiallySelected = selectedCount > 0 && !allSelected;
-  const label = formatPermissionAction(action);
+  const previewLabel = `${pinned ? 'Masquer' : 'Afficher'} les permissions du groupe « ${label} »`;
 
   useEffect(() => {
     if (checkboxRef.current) checkboxRef.current.indeterminate = partiallySelected;
   }, [partiallySelected]);
 
   return (
-    <label className="form-label permission-action-option mb-0">
-      <input
-        ref={checkboxRef}
-        aria-checked={partiallySelected ? 'mixed' : allSelected}
-        className="form-check-input"
-        type="checkbox"
-        checked={allSelected}
-        onChange={() => onToggle(permissionUuids)}
-      />
-      <span className="permission-action-label">
-        <span>{label}</span>
-        <span className="permission-action-count">
-          {selectedCount} sur {permissionUuids.length}
+    <div
+      className={`permission-action-option ${pinned ? 'is-pinned' : ''}`}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) onPreview(null);
+      }}
+      onFocus={() => onPreview(family)}
+      onMouseEnter={() => onPreview(family)}
+      onMouseLeave={() => onPreview(null)}
+    >
+      <label className="form-label permission-action-selection mb-0">
+        <input
+          ref={checkboxRef}
+          aria-checked={partiallySelected ? 'mixed' : allSelected}
+          className="form-check-input"
+          type="checkbox"
+          checked={allSelected}
+          onChange={() => onToggle(permissionUuids)}
+        />
+        <span className="permission-action-label">
+          <span>{label}</span>
+          <span className="permission-action-count">
+            {selectedCount} sur {permissionUuids.length}
+          </span>
         </span>
-      </span>
-    </label>
+      </label>
+      <button
+        aria-controls={controlsId}
+        aria-label={previewLabel}
+        aria-pressed={pinned}
+        className="btn permission-action-preview"
+        title={previewLabel}
+        type="button"
+        onClick={() => onTogglePreview(family)}
+      >
+        <EyeIcon hidden={pinned} />
+      </button>
+    </div>
   );
 }
 
@@ -144,6 +139,7 @@ export default function RolesPage() {
   const canReadPermissions = hasPermission(administrationPermissions.permissions.read);
   const canOpenEdit = canUpdate || (canAssignPermissions && canReadPermissions);
   const permissionActionsTitleId = useId();
+  const permissionPickerId = useId();
   const [roles, setRoles] = useState([]);
   const [permissions, setPermissions] = useState([]);
   const [editing, setEditing] = useState(null);
@@ -160,7 +156,10 @@ export default function RolesPage() {
   const [permissionUuid, setPermissionUuid] = useState('');
   const [pagination, setPagination] = useState(null);
   const [loadingPermissions, setLoadingPermissions] = useState(true);
+  const [previewedPermissionFamily, setPreviewedPermissionFamily] = useState(null);
+  const [pinnedPermissionFamily, setPinnedPermissionFamily] = useState(null);
   const debouncedSearch = useDebouncedValue(search, 300);
+  const highlightedPermissionFamily = previewedPermissionFamily ?? pinnedPermissionFamily;
   const sortedPermissions = useMemo(
     () =>
       [...permissions].sort((left, right) =>
@@ -168,29 +167,20 @@ export default function RolesPage() {
       ),
     [permissions],
   );
-  const permissionActionGroups = useMemo(() => {
+  const permissionFamilyGroups = useMemo(() => {
     const groups = new Map();
 
     for (const permission of sortedPermissions) {
-      const action = getPermissionAction(permission.name);
-      if (!action) continue;
-      const permissionUuids = groups.get(action) ?? [];
+      const family = getPermissionFamily(permission.name);
+      if (!family) continue;
+      const permissionUuids = groups.get(family) ?? [];
       permissionUuids.push(permission.uuid);
-      groups.set(action, permissionUuids);
+      groups.set(family, permissionUuids);
     }
 
-    return [...groups.entries()]
-      .map(([action, permissionUuids]) => ({ action, permissionUuids }))
-      .sort((left, right) => {
-        const leftIndex = permissionActionOrder.indexOf(left.action);
-        const rightIndex = permissionActionOrder.indexOf(right.action);
-        if (leftIndex !== -1 || rightIndex !== -1) {
-          if (leftIndex === -1) return 1;
-          if (rightIndex === -1) return -1;
-          return leftIndex - rightIndex;
-        }
-        return left.action.localeCompare(right.action, 'fr', { sensitivity: 'base' });
-      });
+    return permissionActionFamilies
+      .filter(({ key }) => groups.has(key))
+      .map(({ key, label }) => ({ family: key, label, permissionUuids: groups.get(key) }));
   }, [sortedPermissions]);
   const selectedPermissionUuids = useMemo(
     () => new Set(form.permissionUuids),
@@ -269,12 +259,16 @@ export default function RolesPage() {
   }, [canReadPermissions]);
 
   const openCreate = () => {
+    setPreviewedPermissionFamily(null);
+    setPinnedPermissionFamily(null);
     setEditing({});
     setForm(emptyRole());
     setFormError('');
   };
 
   const openEdit = (role) => {
+    setPreviewedPermissionFamily(null);
+    setPinnedPermissionFamily(null);
     setPermissions((current) => [
       ...current,
       ...(role.permissions ?? []).filter(
@@ -312,6 +306,12 @@ export default function RolesPage() {
     });
   };
 
+  const closeEditor = () => {
+    setEditing(null);
+    setPreviewedPermissionFamily(null);
+    setPinnedPermissionFamily(null);
+  };
+
   const save = async (event) => {
     event.preventDefault();
     if (saving) return;
@@ -341,7 +341,7 @@ export default function RolesPage() {
       if (editing?.uuid) await rolesApi.update(editing.uuid, payload);
       else await rolesApi.create(payload);
       notify('success', `Rôle ${editing?.uuid ? 'mis à jour' : 'créé'} avec succès.`);
-      setEditing(null);
+      closeEditor();
       await load();
     } catch (requestError) {
       setFormError(getApiErrorMessage(requestError));
@@ -490,7 +490,7 @@ export default function RolesPage() {
       <Modal
         open={editing !== null}
         title={editing?.uuid ? 'Modifier un rôle' : 'Créer un rôle'}
-        onClose={() => !saving && setEditing(null)}
+        onClose={() => !saving && closeEditor()}
         busy={saving}
       >
         <form className="d-grid gap-3" onSubmit={save}>
@@ -524,7 +524,7 @@ export default function RolesPage() {
                   {form.permissionUuids.length} sur {sortedPermissions.length}
                 </span>
               </legend>
-              {!loadingPermissions && permissionActionGroups.length > 0 && (
+              {!loadingPermissions && permissionFamilyGroups.length > 0 && (
                 <section
                   aria-labelledby={permissionActionsTitleId}
                   className="filter-panel permission-action-panel surface mb-3 p-3"
@@ -532,26 +532,49 @@ export default function RolesPage() {
                   <h3 className="permission-action-panel-title" id={permissionActionsTitleId}>
                     Sélection rapide par action
                   </h3>
-                  {permissionActionGroups.map(({ action, permissionUuids }) => (
-                    <PermissionActionCheckbox
-                      action={action}
-                      key={action}
+                  {permissionFamilyGroups.map(({ family, label, permissionUuids }) => (
+                    <PermissionActionFamilyCheckbox
+                      controlsId={permissionPickerId}
+                      family={family}
+                      key={family}
+                      label={label}
                       permissionUuids={permissionUuids}
                       selectedPermissionUuids={selectedPermissionUuids}
+                      pinned={pinnedPermissionFamily === family}
+                      onPreview={setPreviewedPermissionFamily}
                       onToggle={togglePermissionAction}
+                      onTogglePreview={(selectedFamily) =>
+                        setPinnedPermissionFamily((current) =>
+                          current === selectedFamily ? null : selectedFamily,
+                        )
+                      }
                     />
                   ))}
                 </section>
               )}
-              <div className="permission-picker">
+              <div
+                id={permissionPickerId}
+                className={`permission-picker ${highlightedPermissionFamily ? 'has-permission-highlight' : ''}`}
+              >
                 {loadingPermissions ? (
                   <Loader label="Chargement des permissions" />
                 ) : (
                   sortedPermissions.map((permission) => {
                     const selected = form.permissionUuids.includes(permission.uuid);
+                    const permissionFamily = getPermissionFamily(permission.name);
+                    const highlighted = permissionFamily === highlightedPermissionFamily;
                     return (
                       <div
-                        className={`permission-option ${selected ? 'selected' : ''}`}
+                        className={[
+                          'permission-option',
+                          selected ? 'selected' : '',
+                          highlighted ? 'permission-option-highlighted' : '',
+                          highlightedPermissionFamily && !highlighted
+                            ? 'permission-option-muted'
+                            : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
                         key={permission.uuid}
                       >
                         <input

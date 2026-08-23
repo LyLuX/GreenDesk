@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -318,6 +318,13 @@ describe('administrator table pagination', () => {
           { uuid: 'material-read', name: 'materials.read', description: '' },
           { uuid: 'part-read', name: 'maintenance.parts.read', description: '' },
           { uuid: 'material-create', name: 'materials.create', description: '' },
+          { uuid: 'manufacturer-upload', name: 'manufacturers.logo.upload', description: '' },
+          { uuid: 'material-update', name: 'materials.update', description: '' },
+          {
+            uuid: 'material-primary-photo',
+            name: 'materials.photos.set_primary',
+            description: '',
+          },
           {
             uuid: 'dashboard-financial',
             name: 'dashboard.read.financial',
@@ -339,6 +346,11 @@ describe('administrator table pagination', () => {
             description: '',
           },
           {
+            uuid: 'maintenance-execute',
+            name: 'maintenance.execute',
+            description: '',
+          },
+          {
             uuid: 'maintenance-execute-without-parts',
             name: 'maintenance.execute.skip_parts',
             description: '',
@@ -354,50 +366,52 @@ describe('administrator table pagination', () => {
 
     const dialog = within(screen.getByRole('dialog', { name: 'Créer un rôle' }));
     const actionGroup = within(dialog.getByRole('region', { name: 'Sélection rapide par action' }));
-    const readAction = actionGroup.getByRole('checkbox', { name: 'Lecture 0 sur 2' });
-    const createAction = actionGroup.getByRole('checkbox', { name: 'Création 0 sur 1' });
+    const readAction = actionGroup.getByRole('checkbox', { name: 'Consultation 0 sur 2' });
+    const createAction = actionGroup.getByRole('checkbox', {
+      name: 'Création et ajout 0 sur 2',
+    });
+    const updateAction = actionGroup.getByRole('checkbox', {
+      name: 'Modification et paramétrage 0 sur 2',
+    });
     const financialAction = actionGroup.getByRole('checkbox', {
       name: 'Données financières 0 sur 1',
     });
-    const exceptionalExecutionAction = actionGroup.getByRole('checkbox', {
-      name: 'Exécution sans changement de pièce 0 sur 1',
+    const executionAction = actionGroup.getByRole('checkbox', {
+      name: 'Exécution de maintenance 0 sur 2',
     });
-    const adjustOnHandAction = actionGroup.getByRole('checkbox', {
-      name: 'Correction du stock 0 sur 1',
-    });
-    const orderAction = actionGroup.getByRole('checkbox', {
-      name: 'Enregistrement des commandes 0 sur 1',
-    });
-    const consumeAction = actionGroup.getByRole('checkbox', {
-      name: 'Utilisation en maintenance 0 sur 1',
-    });
+    const stockAction = actionGroup.getByRole('checkbox', { name: 'Gestion du stock 0 sur 3' });
 
+    expect(actionGroup.getAllByRole('checkbox')).toHaveLength(6);
     expect(readAction).not.toBeChecked();
     expect(createAction).not.toBeChecked();
+    expect(updateAction).not.toBeChecked();
     expect(financialAction).not.toBeChecked();
-    expect(exceptionalExecutionAction).not.toBeChecked();
-    expect(adjustOnHandAction).not.toBeChecked();
-    expect(orderAction).not.toBeChecked();
-    expect(consumeAction).not.toBeChecked();
+    expect(executionAction).not.toBeChecked();
+    expect(stockAction).not.toBeChecked();
     expect(actionGroup.queryByText('Admin')).not.toBeInTheDocument();
 
-    await user.click(consumeAction);
+    await user.click(createAction);
+    expect(dialog.getByLabelText('materials.create')).toBeChecked();
+    expect(dialog.getByLabelText('manufacturers.logo.upload')).toBeChecked();
+    expect(actionGroup.getByRole('checkbox', { name: 'Création et ajout 2 sur 2' })).toBeChecked();
+
+    await user.click(stockAction);
+    expect(dialog.getByLabelText('maintenance.parts.stock.adjust_on_hand')).toBeChecked();
+    expect(dialog.getByLabelText('maintenance.parts.stock.order')).toBeChecked();
     expect(dialog.getByLabelText('maintenance.parts.stock.consume')).toBeChecked();
-    expect(
-      actionGroup.getByRole('checkbox', { name: 'Utilisation en maintenance 1 sur 1' }),
-    ).toBeChecked();
+    expect(actionGroup.getByRole('checkbox', { name: 'Gestion du stock 3 sur 3' })).toBeChecked();
 
     await user.click(readAction);
 
     expect(dialog.getByLabelText('materials.read')).toBeChecked();
     expect(dialog.getByLabelText('maintenance.parts.read')).toBeChecked();
-    expect(dialog.getByLabelText('materials.create')).not.toBeChecked();
+    expect(dialog.getByLabelText('materials.create')).toBeChecked();
     expect(dialog.getByLabelText('dashboard.read.financial')).not.toBeChecked();
-    expect(actionGroup.getByRole('checkbox', { name: 'Lecture 2 sur 2' })).toBeChecked();
+    expect(actionGroup.getByRole('checkbox', { name: 'Consultation 2 sur 2' })).toBeChecked();
 
     await user.click(dialog.getByLabelText('materials.read'));
 
-    const partialReadAction = actionGroup.getByRole('checkbox', { name: 'Lecture 1 sur 2' });
+    const partialReadAction = actionGroup.getByRole('checkbox', { name: 'Consultation 1 sur 2' });
     expect(partialReadAction).toBePartiallyChecked();
 
     await user.click(partialReadAction);
@@ -405,9 +419,62 @@ describe('administrator table pagination', () => {
     expect(dialog.getByLabelText('materials.read')).toBeChecked();
     expect(dialog.getByLabelText('maintenance.parts.read')).toBeChecked();
 
-    await user.click(actionGroup.getByRole('checkbox', { name: 'Lecture 2 sur 2' }));
+    await user.click(actionGroup.getByRole('checkbox', { name: 'Consultation 2 sur 2' }));
 
     expect(dialog.getByLabelText('materials.read')).not.toBeChecked();
     expect(dialog.getByLabelText('maintenance.parts.read')).not.toBeChecked();
+  });
+
+  it('highlights the permissions associated with a quick action', async () => {
+    const user = userEvent.setup();
+    mocks.referenceApis.permissions.list.mockResolvedValueOnce({
+      data: {
+        data: [
+          { uuid: 'material-read', name: 'materials.read', description: '' },
+          { uuid: 'part-read', name: 'maintenance.parts.read', description: '' },
+          { uuid: 'material-create', name: 'materials.create', description: '' },
+        ],
+      },
+    });
+    render(<RolesPage />);
+
+    await screen.findByText('Rôle 5');
+    await user.click(screen.getByRole('button', { name: 'Créer un rôle' }));
+
+    const dialog = within(screen.getByRole('dialog', { name: 'Créer un rôle' }));
+    const actionGroup = within(dialog.getByRole('region', { name: 'Sélection rapide par action' }));
+    const readAction = actionGroup.getByRole('checkbox', { name: 'Consultation 0 sur 2' });
+    const readCard = readAction.closest('.permission-action-option');
+    const materialRead = dialog.getByLabelText('materials.read').closest('.permission-option');
+    const partRead = dialog.getByLabelText('maintenance.parts.read').closest('.permission-option');
+    const materialCreate = dialog.getByLabelText('materials.create').closest('.permission-option');
+
+    await user.hover(readCard);
+    expect(materialRead).toHaveClass('permission-option-highlighted');
+    expect(partRead).toHaveClass('permission-option-highlighted');
+    expect(materialCreate).toHaveClass('permission-option-muted');
+
+    await user.unhover(readCard);
+    expect(materialRead).not.toHaveClass('permission-option-highlighted');
+    expect(materialCreate).not.toHaveClass('permission-option-muted');
+
+    fireEvent.focus(readAction);
+    expect(partRead).toHaveClass('permission-option-highlighted');
+    fireEvent.blur(readAction);
+    expect(partRead).not.toHaveClass('permission-option-highlighted');
+
+    const pinButton = actionGroup.getByRole('button', {
+      name: 'Afficher les permissions du groupe « Consultation »',
+    });
+    await user.click(pinButton);
+    await user.unhover(readCard);
+
+    expect(
+      actionGroup.getByRole('button', {
+        name: 'Masquer les permissions du groupe « Consultation »',
+      }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(materialRead).toHaveClass('permission-option-highlighted');
+    expect(materialCreate).toHaveClass('permission-option-muted');
   });
 });
