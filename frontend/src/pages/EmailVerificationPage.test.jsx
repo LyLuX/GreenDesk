@@ -51,4 +51,34 @@ describe('EmailVerificationPage', () => {
       ),
     ).toBeInTheDocument();
   });
+
+  it('reports when registration succeeded but the first email was not sent', () => {
+    renderPage({
+      pathname: '/verify-email',
+      state: { email: 'marie@example.test', emailSent: false },
+    });
+
+    expect(
+      screen.getByText(
+        'Votre compte est créé, mais l’email de vérification n’a pas pu être envoyé.',
+      ),
+    ).toHaveClass('alert-danger');
+  });
+
+  it('shows the SMTP failure returned by a resend request', async () => {
+    const user = userEvent.setup();
+    resendEmailVerification.mockRejectedValue({
+      response: {
+        status: 503,
+        data: { error: { message: 'Email delivery failed' } },
+      },
+    });
+    renderPage({ pathname: '/verify-email', state: { email: 'marie@example.test' } });
+
+    await user.click(screen.getByRole('button', { name: 'Renvoyer l’email de vérification' }));
+
+    expect(
+      await screen.findByText('L’email n’a pas pu être envoyé. Réessayez dans quelques instants.'),
+    ).toHaveClass('alert-danger');
+  });
 });

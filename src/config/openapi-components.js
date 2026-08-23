@@ -1253,10 +1253,15 @@ export const openApiSchemas = {
   AuthSessionResponse: success(reference('AuthSession')),
   RegistrationResponse: success({
     type: 'object',
-    required: ['user', 'verificationRequired'],
+    required: ['user', 'verificationRequired', 'verificationEmailSent'],
     properties: {
       user: reference('User'),
       verificationRequired: { type: 'boolean', enum: [true] },
+      verificationEmailSent: {
+        type: 'boolean',
+        description:
+          'Indique si le premier email a été remis au transport SMTP. Le compte reste créé en cas d’échec.',
+      },
     },
   }),
   EmailVerificationResponse: success({

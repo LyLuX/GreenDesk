@@ -41,20 +41,24 @@ describe('AuthService', () => {
       create: jest.fn().mockResolvedValue(registeredUser),
       publicUser: jest.fn((user) => user),
     };
-    const emailVerificationService = { issue: jest.fn() };
+    const emailVerificationService = { issue: jest.fn().mockResolvedValue({ sent: true }) };
     const service = new AuthService(
       {},
       userService,
       { record: jest.fn() },
       emailVerificationService,
     );
-    await service.register({ email: 'ada@greendesk.local', password: 'SecurePass123!' });
+    const result = await service.register({
+      email: 'ada@greendesk.local',
+      password: 'SecurePass123!',
+    });
     expect(userService.create).toHaveBeenCalledWith(expect.any(Object), null, 'USER', {
       requireEmailVerification: true,
     });
     expect(emailVerificationService.issue).toHaveBeenCalledWith(registeredUser, {
       suppressDeliveryErrors: true,
     });
+    expect(result).toMatchObject({ verificationRequired: true, verificationEmailSent: true });
   });
 
   it('returns an access token for valid credentials', async () => {

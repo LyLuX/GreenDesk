@@ -97,4 +97,22 @@ describe('EmailVerificationService', () => {
       message: 'Si un compte non vérifié correspond à cette adresse, un nouvel email a été envoyé.',
     });
   });
+
+  it('propagates a delivery failure when resending for a known account', async () => {
+    const service = new EmailVerificationService(
+      {},
+      { findByEmail: jest.fn().mockResolvedValue(user) },
+      {},
+      {},
+      {},
+      'https://greendesk.example.test',
+      { error: jest.fn() },
+    );
+    service.issue = jest.fn().mockRejectedValue({
+      statusCode: 503,
+      message: 'Email delivery failed',
+    });
+
+    await expect(service.resend(user.email)).rejects.toMatchObject({ statusCode: 503 });
+  });
 });

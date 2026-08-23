@@ -14,8 +14,15 @@ export default function EmailVerificationPage() {
   const token = searchParams.get('token') ?? '';
   const attemptedToken = useRef('');
   const [email, setEmail] = useState(location.state?.email ?? '');
-  const [status, setStatus] = useState(token ? 'verifying' : 'pending');
-  const [message, setMessage] = useState('');
+  const initialDeliveryFailed = !token && location.state?.emailSent === false;
+  const [status, setStatus] = useState(
+    token ? 'verifying' : initialDeliveryFailed ? 'delivery-failed' : 'pending',
+  );
+  const [message, setMessage] = useState(
+    initialDeliveryFailed
+      ? 'Votre compte est créé, mais l’email de vérification n’a pas pu être envoyé.'
+      : '',
+  );
   const [resending, setResending] = useState(false);
 
   useEffect(() => {

@@ -160,6 +160,7 @@ export const openApiPaths = {
         200: jsonResponse('EmailVerificationResponse', 'Demande prise en compte.'),
         400: responseRef('BadRequest'),
         429: responseRef('TooManyRequests'),
+        503: responseRef('ServiceUnavailable'),
         500: responseRef('InternalError'),
       },
     },

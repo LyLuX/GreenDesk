@@ -29,7 +29,9 @@ describe('RegisterPage', () => {
 
   it('submits the expected registration payload', async () => {
     const user = userEvent.setup();
-    client.post.mockResolvedValue({ data: { success: true } });
+    client.post.mockResolvedValue({
+      data: { success: true, data: { verificationEmailSent: true } },
+    });
     renderPage();
 
     await user.type(screen.getByLabelText('Prénom'), 'Marie');

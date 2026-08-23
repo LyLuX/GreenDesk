@@ -114,7 +114,7 @@ export default class EmailVerificationService {
   async resend(email) {
     const user = await this.userRepository.findByEmail(email.toLowerCase());
     if (user && !user.emailVerifiedAt) {
-      await this.issue(user, { suppressDeliveryErrors: true });
+      await this.issue(user);
     }
     return { message: GENERIC_RESEND_MESSAGE };
   }

@@ -28,10 +28,13 @@ export default class AuthService {
     const user = await this.userService.create(values, null, 'USER', {
       requireEmailVerification: true,
     });
-    await this.emailVerificationService.issue(user, { suppressDeliveryErrors: true });
+    const delivery = await this.emailVerificationService.issue(user, {
+      suppressDeliveryErrors: true,
+    });
     return {
       user: this.userService.publicUser(user),
       verificationRequired: true,
+      verificationEmailSent: delivery.sent,
     };
   }
 

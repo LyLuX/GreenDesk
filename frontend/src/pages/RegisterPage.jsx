@@ -49,7 +49,7 @@ export default function RegisterPage() {
     setLoading(true);
     setError('');
     try {
-      await client.post('/v1/auth/register', {
+      const response = await client.post('/v1/auth/register', {
         firstName,
         lastName,
         email,
@@ -57,7 +57,10 @@ export default function RegisterPage() {
       });
       navigate('/verify-email', {
         replace: true,
-        state: { email },
+        state: {
+          email,
+          emailSent: response.data?.data?.verificationEmailSent !== false,
+        },
       });
     } catch (err) {
       setError(getApiErrorMessage(err));
