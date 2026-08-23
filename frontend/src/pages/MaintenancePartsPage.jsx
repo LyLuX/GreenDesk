@@ -111,7 +111,6 @@ export default function MaintenancePartsPage() {
       name: 'unit',
       label: 'Unité',
       required: true,
-      defaultValue: 'pièce',
       suggestionsFromRecords: true,
     },
     {

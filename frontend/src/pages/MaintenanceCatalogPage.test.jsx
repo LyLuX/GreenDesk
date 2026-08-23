@@ -256,6 +256,7 @@ describe('dedicated maintenance catalogue pages', () => {
     await user.clear(designation);
     await user.type(designation, 'Filtre à huile');
     const unit = screen.getByLabelText('Unité');
+    expect(unit).toHaveValue('');
     await user.clear(unit);
     await user.type(unit, 'iè');
     await user.click(screen.getByRole('option', { name: 'pièce' }));
@@ -289,6 +290,7 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(screen.getByRole('dialog')).toBeVisible();
     expect(screen.queryByLabelText('Prix unitaire (€)')).not.toBeInTheDocument();
     const unit = screen.getByLabelText('Unité');
+    expect(unit).toHaveValue('pièce');
     await user.clear(unit);
     await user.type(unit, 'iè');
     await user.click(screen.getByRole('option', { name: 'pièce' }));
