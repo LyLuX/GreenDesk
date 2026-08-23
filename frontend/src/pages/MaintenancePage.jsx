@@ -38,7 +38,7 @@ import {
 } from '../maintenance/maintenance.labels.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import { getStatusActionButtonClass } from '../utils/status-action.js';
-import { formatDate } from '../utils/formatters.js';
+import { formatDate, formatOperationDateTime } from '../utils/formatters.js';
 
 const types = Object.keys(maintenanceTypeLabels);
 const priorities = Object.keys(maintenancePriorityLabels);
@@ -974,7 +974,7 @@ export default function MaintenancePage() {
               >
                 <div className="d-flex flex-wrap align-items-center gap-2">
                   <span>
-                    <strong>{formatDate(entry.performedAt)}</strong> ·{' '}
+                    <strong>{formatOperationDateTime(entry.performedAt, entry.createdAt)}</strong> ·{' '}
                     {entry.performedByUser
                       ? `${entry.performedByUser.firstName} ${entry.performedByUser.lastName}`
                       : 'Utilisateur supprimé'}

@@ -19,7 +19,7 @@ import useNotification from '../notifications/useNotification.js';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import { MAX_MAINTENANCE_PART_UNIT_PRICE } from '../maintenance/maintenance-costs.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
-import { formatCurrency, formatDate } from '../utils/formatters.js';
+import { formatCurrency, formatOperationDateTime } from '../utils/formatters.js';
 import Button from './Button.jsx';
 import AutocompleteField from './AutocompleteField.jsx';
 import Loader from './Loader.jsx';
@@ -442,7 +442,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
           <table className="table table-sm align-middle mb-0">
             <thead>
               <tr>
-                <th>Date</th>
+                <th>Date et heure</th>
                 <th>Opération</th>
                 <th>Stock</th>
                 <th>Commande</th>
@@ -451,7 +451,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
             <tbody>
               {movements.map((movement) => (
                 <tr key={movement.uuid}>
-                  <td>{formatDate(movement.performedAt)}</td>
+                  <td>{formatOperationDateTime(movement.performedAt, movement.createdAt)}</td>
                   <td>{stockOperationPresentation[movement.operation] ?? movement.operation}</td>
                   <td>{formatChange(movement.quantityOnHandChange, currentPart.unit)}</td>
                   <td>{formatChange(movement.quantityOnOrderChange, currentPart.unit)}</td>
@@ -472,7 +472,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
           <table className="table table-sm align-middle mb-0">
             <thead>
               <tr>
-                <th>Date</th>
+                <th>Date et heure</th>
                 <th>Ancien prix</th>
                 <th>Nouveau prix</th>
                 <th>Utilisateur</th>
@@ -481,7 +481,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
             <tbody>
               {priceHistory.map((entry) => (
                 <tr key={entry.uuid}>
-                  <td>{formatDate(entry.performedAt)}</td>
+                  <td>{formatOperationDateTime(entry.performedAt, entry.createdAt)}</td>
                   <td>{formatCurrency(entry.previousUnitPrice)}</td>
                   <td>{formatCurrency(entry.unitPrice)}</td>
                   <td>

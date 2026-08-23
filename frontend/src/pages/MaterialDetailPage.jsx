@@ -23,7 +23,12 @@ import {
 } from '../maintenance/maintenance.labels.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import fleetPermissions from '../permissions/fleet.permissions.js';
-import { formatCurrency, formatDate, formatDateTime } from '../utils/formatters.js';
+import {
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  formatOperationDateTime,
+} from '../utils/formatters.js';
 import { paginateItems } from '../utils/pagination.js';
 
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -666,7 +671,7 @@ export default function MaterialDetailPage() {
               <table className="table table-hover align-middle">
                 <thead>
                   <tr>
-                    <th>Date</th>
+                    <th>Date et heure</th>
                     <th>Description</th>
                     <th>Pièces utilisées</th>
                     <th>Coût</th>
@@ -676,7 +681,9 @@ export default function MaterialDetailPage() {
                 <tbody>
                   {interventions.map((intervention) => (
                     <tr key={intervention.uuid}>
-                      <td>{formatDate(intervention.performedAt)}</td>
+                      <td>
+                        {formatOperationDateTime(intervention.performedAt, intervention.createdAt)}
+                      </td>
                       <td>{intervention.description}</td>
                       <td>
                         {(intervention.parts ?? [])

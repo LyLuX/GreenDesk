@@ -272,6 +272,7 @@ describe('MaterialDetailPage', () => {
               uuid: 'intervention-uuid',
               description: 'Remplacement d’une grille cassée',
               performedAt: '2026-08-20',
+              createdAt: '2026-08-20T08:15:00.000Z',
               parts: [{ name: 'Grille', quantity: 1, unit: 'pièce' }],
               totalCost: 18.5,
               performedByUser: { firstName: 'Paul', lastName: 'Bournazel' },
@@ -294,6 +295,7 @@ describe('MaterialDetailPage', () => {
     await user.click(screen.getByRole('tab', { name: 'Maintenance' }));
 
     expect(await screen.findByText('Remplacement d’une grille cassée')).toBeVisible();
+    expect(screen.getByText('20/08/2026 10:15')).toBeVisible();
     expect(screen.getByText('Grille (1 pièce)')).toBeVisible();
     expect(screen.getByText('Paul Bournazel')).toBeVisible();
     expect(mocks.listInterventions).toHaveBeenCalledWith(

@@ -1226,7 +1226,7 @@ export const openApiPaths = {
       tags: ['History'],
       summary: 'Liste l’historique consolidé d’une section avec pagination.',
       description:
-        'Nécessite la permission dédiée correspondant à la section : `history.fleet.read`, `history.maintenance.read` ou `history.administration.read`. La maintenance consolide les audits, entretiens planifiés, interventions hors plan, mouvements de stock et changements de prix sans doublons.',
+        'Nécessite la permission dédiée correspondant à la section : `history.fleet.read`, `history.maintenance.read` ou `history.administration.read`. La maintenance consolide les audits, entretiens planifiés, interventions hors plan, mouvements de stock et changements de prix sans doublons. Les événements sont triés par date métier puis par heure exacte d’enregistrement.',
       security: secure,
       parameters: [
         {

@@ -706,6 +706,7 @@ describe('MaintenancePage', () => {
             {
               uuid: 'history-uuid',
               performedAt: '2026-08-15',
+              createdAt: '2026-08-15T08:15:00.000Z',
               comment: 'Bougie contrôlée et conservée',
               executionType: 'withoutPartReplacement',
               partsSnapshot: [{ name: 'Bougie', quantity: 1 }],
@@ -723,6 +724,7 @@ describe('MaintenancePage', () => {
     );
 
     const badge = await screen.findByText('Pièces non remplacées');
+    expect(screen.getByText('15/08/2026 10:15')).toBeVisible();
     expect(badge).toHaveClass('status-badge', 'maintenance-history-exception');
     expect(badge.closest('li')).toHaveClass('maintenance-history-without-parts');
     expect(screen.getByText('Bougie × 1', { selector: 'small' })).toBeVisible();

@@ -14,7 +14,7 @@ import {
   historySectionConfig,
   historyTypeLabels,
 } from '../history/history.config.js';
-import { formatCurrency, formatDate, formatDateTime } from '../utils/formatters.js';
+import { formatCurrency, formatOperationDateTime } from '../utils/formatters.js';
 
 const fieldLabels = Object.freeze({
   name: 'Nom',
@@ -101,8 +101,8 @@ const renderDetails = (row) => {
 const columns = [
   {
     key: 'occurredAt',
-    label: 'Date',
-    render: (value) => (String(value).includes('T') ? formatDateTime(value) : formatDate(value)),
+    label: 'Date et heure',
+    render: (value, row) => formatOperationDateTime(value, row.recordedAt),
   },
   {
     key: 'type',

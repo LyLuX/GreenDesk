@@ -19,6 +19,7 @@ describe('HistoryPage', () => {
             {
               uuid: 'event-1',
               occurredAt: '2026-08-22',
+              recordedAt: '2026-08-22T08:15:00.000Z',
               type: 'stock_movement',
               action: 'RECEIVE',
               subject: { label: 'Filtre à huile (FH-01)' },
@@ -42,6 +43,7 @@ describe('HistoryPage', () => {
     render(<HistoryPage section="maintenance" />);
 
     expect(await screen.findByText('Filtre à huile (FH-01)')).toBeInTheDocument();
+    expect(screen.getByText('22/08/2026 10:15')).toBeVisible();
     expect(screen.getByText('Réception')).toHaveClass('history-action-success');
     expect(screen.getByText('1 événement(s), page 1 sur 1')).toBeInTheDocument();
 
@@ -70,6 +72,7 @@ describe('HistoryPage', () => {
           items: actions.map(([action], index) => ({
             uuid: `event-${index}`,
             occurredAt: '2026-08-22',
+            recordedAt: `2026-08-22T0${index}:00:00.000Z`,
             type: 'maintenance_plan',
             action,
             subject: { label: `Élément ${index}` },

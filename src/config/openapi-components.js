@@ -514,7 +514,11 @@ export const openApiSchemas = {
         oneOf: [date, dateTime],
         description: 'Date métier de l’événement, ou date de journalisation pour un audit.',
       },
-      recordedAt: dateTime,
+      recordedAt: {
+        ...dateTime,
+        description:
+          'Horodatage exact de l’enregistrement, utilisé pour restituer l’heure et départager les événements d’une même date métier.',
+      },
       type: {
         type: 'string',
         enum: [

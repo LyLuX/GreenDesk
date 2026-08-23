@@ -94,4 +94,43 @@ describe('HistoryService', () => {
       context: { label: 'Tracteur' },
     });
   });
+
+  it('uses the exact recording time to sort operations from the same business date', async () => {
+    const repository = {
+      findAuditEvents: jest.fn().mockResolvedValue({ count: 0, rows: [] }),
+      findPlannedExecutions: jest.fn().mockResolvedValue({
+        count: 1,
+        rows: [
+          {
+            uuid: 'planned-early',
+            performedAt: '2026-08-22',
+            createdAt: '2026-08-22T08:00:00.000Z',
+            task: { uuid: 'task-1', title: 'Vidange', material: null },
+            performedByUser: null,
+            partUsages: [],
+          },
+        ],
+      }),
+      findInterventions: jest.fn().mockResolvedValue({ count: 0, rows: [] }),
+      findStockMovements: jest.fn().mockResolvedValue({
+        count: 1,
+        rows: [
+          {
+            uuid: 'stock-late',
+            stockableId: 1,
+            operation: 'order',
+            performedAt: '2026-08-22',
+            createdAt: '2026-08-22T10:00:00.000Z',
+            performedByUser: null,
+          },
+        ],
+        parts: [{ id: 1, uuid: 'part-1', name: 'Filtre', reference: 'FH-01' }],
+      }),
+      findPriceChanges: jest.fn().mockResolvedValue({ count: 0, rows: [] }),
+    };
+
+    const result = await new HistoryService(repository).list('maintenance');
+
+    expect(result.items.map(({ uuid }) => uuid)).toEqual(['stock-late', 'planned-early']);
+  });
 });
