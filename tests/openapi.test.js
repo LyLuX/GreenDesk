@@ -4,6 +4,7 @@ import request from 'supertest';
 
 import app from '../src/app.js';
 import swaggerSpec from '../src/config/swagger.js';
+import { DOCUMENT_TYPES } from '../src/modules/materials/material-file.constants.js';
 import { routeRegistry } from '../src/routes/route-registry.js';
 
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'options', 'head']);
@@ -177,6 +178,11 @@ describe('OpenAPI contract', () => {
     expect(swaggerSpec.paths).toHaveProperty('/maintenance/parts/{uuid}/price');
     expect(swaggerSpec.paths).toHaveProperty('/maintenance/parts/{uuid}/price-history');
     expect(swaggerSpec.paths['/materials/options'].get.responses[200]).toBeDefined();
+    expect(
+      swaggerSpec.paths['/materials/{uuid}/documents'].post.requestBody.content[
+        'multipart/form-data'
+      ].schema.properties.documentType.enum,
+    ).toEqual(DOCUMENT_TYPES);
     expect(swaggerSpec.components.schemas.MaterialOption.properties).toEqual({
       uuid: expect.any(Object),
       name: expect.any(Object),

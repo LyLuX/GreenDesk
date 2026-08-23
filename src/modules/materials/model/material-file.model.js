@@ -1,6 +1,7 @@
 import { DataTypes, Model } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
 import sequelize from '../../../config/database.js';
+import { DOCUMENT_TYPES } from '../material-file.constants.js';
 class MaterialFile extends Model {}
 MaterialFile.init(
   {
@@ -9,7 +10,7 @@ MaterialFile.init(
     materialId: { type: DataTypes.BIGINT.UNSIGNED, field: 'material_id', allowNull: false },
     kind: { type: DataTypes.ENUM('photo', 'document'), allowNull: false },
     documentType: {
-      type: DataTypes.ENUM('invoice', 'manual', 'certificate', 'other'),
+      type: DataTypes.ENUM(...DOCUMENT_TYPES),
       field: 'document_type',
       allowNull: true,
     },

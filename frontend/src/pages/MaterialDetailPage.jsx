@@ -36,6 +36,8 @@ const documentTypeLabels = Object.freeze({
   invoice: 'Facture',
   manual: 'Notice',
   certificate: 'Certificat',
+  exploded_view: 'Vue éclatée',
+  parts_list: 'Listing de pièces',
   other: 'Autre',
 });
 const auditActionLabels = Object.freeze({
@@ -551,6 +553,8 @@ export default function MaterialDetailPage() {
                   <option value="invoice">Facture</option>
                   <option value="manual">Notice</option>
                   <option value="certificate">Certificat</option>
+                  <option value="exploded_view">Vue éclatée</option>
+                  <option value="parts_list">Listing de pièces</option>
                   <option value="other">Autre</option>
                 </select>
                 {documentFile && (

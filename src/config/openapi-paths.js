@@ -1,5 +1,6 @@
 import { STOCK_STATUS_VALUES } from '../core/inventory/stock-status.js';
 import { MAINTENANCE_DEADLINE_STATUSES } from '../modules/maintenance/maintenance.constants.js';
+import { DOCUMENT_TYPES } from '../modules/materials/material-file.constants.js';
 
 const schemaRef = (name) => ({ $ref: `#/components/schemas/${name}` });
 const responseRef = (name) => ({ $ref: `#/components/responses/${name}` });
@@ -677,7 +678,7 @@ export const openApiPaths = {
                 file: { type: 'string', format: 'binary' },
                 documentType: {
                   type: 'string',
-                  enum: ['invoice', 'manual', 'certificate', 'other'],
+                  enum: DOCUMENT_TYPES,
                 },
               },
             },

@@ -1,5 +1,6 @@
 import {
   DOCUMENT_MIME_TYPES,
+  DOCUMENT_TYPES,
   MIME_EXTENSION_MAP,
   PHOTO_MIME_TYPES,
 } from '../src/modules/materials/material-file.constants.js';
@@ -14,5 +15,13 @@ describe('material file MIME rules', () => {
     });
     expect(PHOTO_MIME_TYPES).toContain('image/jpeg');
     expect(DOCUMENT_MIME_TYPES).toEqual(['application/pdf']);
+    expect(DOCUMENT_TYPES).toEqual([
+      'invoice',
+      'manual',
+      'certificate',
+      'exploded_view',
+      'parts_list',
+      'other',
+    ]);
   });
 });

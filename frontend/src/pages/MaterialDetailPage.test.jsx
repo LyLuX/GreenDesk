@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -103,7 +103,14 @@ describe('MaterialDetailPage', () => {
 
     const documentInput = screen.getByLabelText('Ajouter un document');
     const documentSubmit = screen.getByRole('button', { name: 'Envoyer le document' });
+    const documentType = screen.getByRole('combobox', { name: 'Type de document' });
     expect(documentSubmit).toBeDisabled();
+    expect(within(documentType).getByRole('option', { name: 'Vue éclatée' })).toHaveValue(
+      'exploded_view',
+    );
+    expect(within(documentType).getByRole('option', { name: 'Listing de pièces' })).toHaveValue(
+      'parts_list',
+    );
 
     await user.upload(
       documentInput,

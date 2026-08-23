@@ -8,4 +8,11 @@ export const MIME_EXTENSION_MAP = Object.freeze({
 
 export const PHOTO_MIME_TYPES = Object.freeze(['image/jpeg', 'image/png', 'image/webp']);
 export const DOCUMENT_MIME_TYPES = Object.freeze(['application/pdf']);
-export const DOCUMENT_TYPES = Object.freeze(['invoice', 'manual', 'certificate', 'other']);
+export const DOCUMENT_TYPES = Object.freeze([
+  'invoice',
+  'manual',
+  'certificate',
+  'exploded_view',
+  'parts_list',
+  'other',
+]);
