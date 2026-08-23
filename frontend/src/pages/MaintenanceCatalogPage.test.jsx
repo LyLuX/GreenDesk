@@ -255,6 +255,11 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(designation).toHaveValue('Bougie');
     await user.clear(designation);
     await user.type(designation, 'Filtre à huile');
+    const unit = screen.getByLabelText('Unité');
+    await user.clear(unit);
+    await user.type(unit, 'iè');
+    await user.click(screen.getByRole('option', { name: 'pièce' }));
+    expect(unit).toHaveValue('pièce');
     await user.selectOptions(screen.getByLabelText('Fabricant'), 'manufacturer-uuid');
     await user.type(screen.getByLabelText('Référence fabricant'), 'OF-123');
     await user.selectOptions(screen.getByLabelText('Fournisseur'), 'supplier-uuid');
@@ -283,6 +288,11 @@ describe('dedicated maintenance catalogue pages', () => {
 
     expect(screen.getByRole('dialog')).toBeVisible();
     expect(screen.queryByLabelText('Prix unitaire (€)')).not.toBeInTheDocument();
+    const unit = screen.getByLabelText('Unité');
+    await user.clear(unit);
+    await user.type(unit, 'iè');
+    await user.click(screen.getByRole('option', { name: 'pièce' }));
+    expect(unit).toHaveValue('pièce');
   });
 
   it('manages workshop and ordered quantities from a dedicated reusable action', async () => {

@@ -107,7 +107,13 @@ export default function MaintenancePartsPage() {
       options: directoryOptions(suppliers),
     },
     { name: 'supplierReference', label: 'Référence fournisseur' },
-    { name: 'unit', label: 'Unité', required: true, defaultValue: 'pièce' },
+    {
+      name: 'unit',
+      label: 'Unité',
+      required: true,
+      defaultValue: 'pièce',
+      suggestionsFromRecords: true,
+    },
     {
       name: 'unitPrice',
       label: 'Prix unitaire (€)',
