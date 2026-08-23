@@ -1,4 +1,5 @@
 import ReferencePage from './ReferencePage.jsx';
+import fleetPermissions from '../permissions/fleet.permissions.js';
 import { activityStatusFilter } from '../filters/filter-options.js';
 
 /** Category reference-data page. */
@@ -7,9 +8,10 @@ export default function CategoriesPage() {
     <ReferencePage
       title="Catégories"
       resource="categories"
-      createPermission="categories.create"
-      updatePermission="categories.update"
-      deletePermission="categories.delete"
+      createPermission={fleetPermissions.categories.create}
+      updatePermission={fleetPermissions.categories.update}
+      deletePermission={fleetPermissions.categories.delete}
+      statusPermission={fleetPermissions.categories.status.update}
       statusAction
       fields={[
         { name: 'name', label: 'Nom', required: true },

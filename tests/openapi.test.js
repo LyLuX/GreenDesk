@@ -261,6 +261,33 @@ describe('OpenAPI contract', () => {
         type: 'boolean',
       });
     }
+    expect(swaggerSpec.paths['/materials/{uuid}'].put.description).toContain(
+      '`materials.status.update`',
+    );
+    expect(swaggerSpec.paths['/categories/{uuid}'].put.description).toContain(
+      '`categories.status.update`',
+    );
+    expect(swaggerSpec.paths['/maintenance/{uuid}/status'].patch.description).toContain(
+      '`maintenance.status.update`',
+    );
+  });
+
+  it('documents granular administration and file permissions', () => {
+    expect(swaggerSpec.paths['/users'].get.description).toContain('`users.read`');
+    expect(swaggerSpec.paths['/users/{uuid}'].put.description).toContain('`users.password.update`');
+    expect(swaggerSpec.paths['/roles/{uuid}'].put.description).toContain(
+      '`roles.permissions.update`',
+    );
+    expect(swaggerSpec.paths['/permissions'].post.description).toContain('`permissions.create`');
+    expect(swaggerSpec.paths['/manufacturers/{uuid}/logo'].post.description).toContain(
+      '`manufacturers.logo.upload`',
+    );
+    expect(swaggerSpec.paths['/materials/{uuid}/photos'].post.description).toContain(
+      '`materials.photos.create`',
+    );
+    expect(swaggerSpec.paths['/materials/files/{fileUuid}'].delete.description).toContain(
+      '`materials.files.delete`',
+    );
   });
 
   it('documents the default material catalogue sort', () => {

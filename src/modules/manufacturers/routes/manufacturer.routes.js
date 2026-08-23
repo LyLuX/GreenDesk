@@ -4,7 +4,11 @@ import path from 'node:path';
 import multer from 'multer';
 import { Router } from 'express';
 import { authenticate } from '../../../core/middlewares/auth.middleware.js';
-import { authorize } from '../../../core/middlewares/authorization.middleware.js';
+import fleetPermissions from '../../../core/constants/fleet-permissions.js';
+import {
+  authorize,
+  authorizeBodyFields,
+} from '../../../core/middlewares/authorization.middleware.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import { createFileSignatureValidator } from '../../../core/middlewares/file-signature.middleware.js';
@@ -51,14 +55,14 @@ const uploadLogo = (request, response, next) =>
 router.use(authenticate);
 router.get(
   '/',
-  authorize('manufacturers.read', maintenancePermissions.parts.read),
+  authorize(fleetPermissions.manufacturers.read, maintenancePermissions.parts.read),
   validator.listValidator,
   validateRequest,
   asyncHandler(controller.getAll.bind(controller)),
 );
 router.post(
   '/',
-  authorize('manufacturers.create'),
+  authorize(fleetPermissions.manufacturers.create),
   validator.createValidator,
   validateRequest,
   asyncHandler(controller.create.bind(controller)),
@@ -66,8 +70,8 @@ router.post(
 router.get(
   '/:uuid/logo',
   authorize(
-    'manufacturers.read',
-    'materials.read',
+    fleetPermissions.manufacturers.read,
+    fleetPermissions.materials.read,
     maintenancePermissions.parts.read,
     maintenancePermissions.plans.read,
   ),
@@ -77,7 +81,7 @@ router.get(
 );
 router.post(
   '/:uuid/logo',
-  authorize('manufacturers.create', 'manufacturers.update'),
+  authorize(fleetPermissions.manufacturers.logo.upload),
   validator.uuidValidator,
   validateRequest,
   uploadLogo,
@@ -86,21 +90,24 @@ router.post(
 );
 router.delete(
   '/:uuid/logo',
-  authorize('manufacturers.update'),
+  authorize(fleetPermissions.manufacturers.logo.delete),
   validator.uuidValidator,
   validateRequest,
   asyncHandler(controller.removeLogo.bind(controller)),
 );
 router.put(
   '/:uuid',
-  authorize('manufacturers.update'),
+  authorize(fleetPermissions.manufacturers.update, fleetPermissions.manufacturers.status.update),
+  authorizeBodyFields(fleetPermissions.manufacturers.update, {
+    active: fleetPermissions.manufacturers.status.update,
+  }),
   validator.updateValidator,
   validateRequest,
   asyncHandler(controller.update.bind(controller)),
 );
 router.delete(
   '/:uuid',
-  authorize('manufacturers.delete'),
+  authorize(fleetPermissions.manufacturers.delete),
   validator.uuidValidator,
   validateRequest,
   asyncHandler(controller.remove.bind(controller)),

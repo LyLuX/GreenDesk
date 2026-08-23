@@ -2,6 +2,7 @@ import MaterialManufacturerCell from '../components/MaterialManufacturerCell.jsx
 import { activityStatusFilter } from '../filters/filter-options.js';
 import { formatCurrency } from '../utils/formatters.js';
 import ReferencePage from './ReferencePage.jsx';
+import fleetPermissions from '../permissions/fleet.permissions.js';
 
 const columns = [
   { key: 'name', label: 'Nom' },
@@ -77,9 +78,10 @@ export default function MaterialsPage() {
     <ReferencePage
       title="Matériels"
       resource="materials"
-      createPermission="materials.create"
-      updatePermission="materials.update"
-      deletePermission="materials.delete"
+      createPermission={fleetPermissions.materials.create}
+      updatePermission={fleetPermissions.materials.update}
+      deletePermission={fleetPermissions.materials.delete}
+      statusPermission={fleetPermissions.materials.status.update}
       statusAction
       fields={fields}
       columns={columns}

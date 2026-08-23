@@ -64,6 +64,11 @@ describe('frontend navigation', () => {
         permission: 'maintenance.parts.read',
       },
     ]);
+    expect(navigationSections.find((section) => section.key === 'administration').items).toEqual([
+      { label: 'Utilisateurs', path: '/users', permission: 'users.read' },
+      { label: 'Rôles', path: '/roles', permission: 'roles.read' },
+      { label: 'Permissions', path: '/permissions', permission: 'permissions.read' },
+    ]);
   });
 
   it('uses the centralized API prefix', () => {

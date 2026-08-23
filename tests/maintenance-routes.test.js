@@ -228,6 +228,43 @@ describe('maintenance catalogue route permissions', () => {
       .expect(204);
   });
 
+  it('separates catalogue and plan status changes from general updates', async () => {
+    for (const [path, updatePermission, statusPermission] of [
+      [
+        `/api/v1/maintenance/operations/${uuid}`,
+        'maintenance.operations.update',
+        'maintenance.operations.status.update',
+      ],
+      [
+        `/api/v1/maintenance/parts/${uuid}`,
+        'maintenance.parts.update',
+        'maintenance.parts.status.update',
+      ],
+    ]) {
+      await request(app)
+        .put(path)
+        .set('Authorization', authorization([updatePermission]))
+        .send({ active: false })
+        .expect(403);
+      await request(app)
+        .put(path)
+        .set('Authorization', authorization([statusPermission]))
+        .send({ active: 'invalid' })
+        .expect(400);
+    }
+
+    await request(app)
+      .patch(`/api/v1/maintenance/${uuid}/status`)
+      .set('Authorization', authorization(['maintenance.update']))
+      .send({ active: false })
+      .expect(403);
+    await request(app)
+      .patch(`/api/v1/maintenance/${uuid}/status`)
+      .set('Authorization', authorization(['maintenance.status.update']))
+      .send({ active: false })
+      .expect(200);
+  });
+
   it('requires the permission matching each stock operation', async () => {
     const path = `/api/v1/maintenance/parts/${uuid}/stock`;
     const permissions = {

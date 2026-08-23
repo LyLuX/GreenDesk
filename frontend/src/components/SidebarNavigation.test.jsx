@@ -42,7 +42,11 @@ describe('SidebarNavigation', () => {
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
         <SidebarNavigation
-          hasPermission={(permission) => permission !== 'ADMIN'}
+          hasPermission={(permission) =>
+            !permission.startsWith('users.') &&
+            !permission.startsWith('roles.') &&
+            !permission.startsWith('permissions.')
+          }
           onNavigate={vi.fn()}
         />
       </MemoryRouter>,

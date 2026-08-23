@@ -5,6 +5,7 @@ const maintenancePermissions = Object.freeze({
     create: 'maintenance.create',
     update: 'maintenance.update',
     delete: 'maintenance.delete',
+    status: Object.freeze({ update: 'maintenance.status.update' }),
     execute: 'maintenance.execute',
     executeWithoutPartReplacement: 'maintenance.execute.skip_parts',
   }),
@@ -13,12 +14,14 @@ const maintenancePermissions = Object.freeze({
     create: 'maintenance.operations.create',
     update: 'maintenance.operations.update',
     delete: 'maintenance.operations.delete',
+    status: Object.freeze({ update: 'maintenance.operations.status.update' }),
   }),
   parts: Object.freeze({
     read: 'maintenance.parts.read',
     create: 'maintenance.parts.create',
     update: 'maintenance.parts.update',
     delete: 'maintenance.parts.delete',
+    status: Object.freeze({ update: 'maintenance.parts.status.update' }),
     stock: Object.freeze({
       adjustOnHand: 'maintenance.parts.stock.adjust_on_hand',
       adjustOnOrder: 'maintenance.parts.stock.adjust_on_order',

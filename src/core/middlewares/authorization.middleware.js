@@ -22,6 +22,20 @@ export const authorizeAll =
     return next(new AppError('Insufficient permissions', HTTP_STATUS.FORBIDDEN));
   };
 
+/** Requires the permissions mapped to every field present in the validated request body. */
+export const authorizeBodyFields = (defaultPermission, fieldPermissions = {}) => {
+  return (request, response, next) => {
+    const requiredPermissions = new Set();
+    for (const field of Object.keys(request.body ?? {})) {
+      const permission = fieldPermissions[field] ?? defaultPermission;
+      if (permission) requiredPermissions.add(permission);
+    }
+    if (!requiredPermissions.size && defaultPermission) requiredPermissions.add(defaultPermission);
+    if (!requiredPermissions.size) return next();
+    return authorizeAll(...requiredPermissions)(request, response, next);
+  };
+};
+
 /** Restricts an operation to one of the specified application roles. */
 export const authorizeRole =
   (...roles) =>

@@ -1,6 +1,10 @@
 import { Router } from 'express';
 import { authenticate } from '../../../core/middlewares/auth.middleware.js';
-import { authorize, authorizeAll } from '../../../core/middlewares/authorization.middleware.js';
+import {
+  authorize,
+  authorizeAll,
+  authorizeBodyFields,
+} from '../../../core/middlewares/authorization.middleware.js';
 import { STOCK_OPERATIONS } from '../../../core/inventory/stock-operation.js';
 import { validateRequest } from '../../../core/middlewares/validate-request.js';
 import { asyncHandler } from '../../../core/utils/async-handler.js';
@@ -56,7 +60,13 @@ router.post(
 );
 router.put(
   '/operations/:uuid',
-  authorize(maintenancePermissions.operations.update),
+  authorize(
+    maintenancePermissions.operations.update,
+    maintenancePermissions.operations.status.update,
+  ),
+  authorizeBodyFields(maintenancePermissions.operations.update, {
+    active: maintenancePermissions.operations.status.update,
+  }),
   validator.updateOperationValidator,
   validateRequest,
   asyncHandler(catalogController.updateOperation.bind(catalogController)),
@@ -84,7 +94,10 @@ router.post(
 );
 router.put(
   '/parts/:uuid',
-  authorize(maintenancePermissions.parts.update),
+  authorize(maintenancePermissions.parts.update, maintenancePermissions.parts.status.update),
+  authorizeBodyFields(maintenancePermissions.parts.update, {
+    active: maintenancePermissions.parts.status.update,
+  }),
   validator.updatePartValidator,
   validateRequest,
   asyncHandler(catalogController.updatePart.bind(catalogController)),
@@ -191,7 +204,7 @@ router.put(
 );
 router.patch(
   '/:uuid/status',
-  authorize(maintenancePermissions.plans.update),
+  authorize(maintenancePermissions.plans.status.update),
   validator.statusValidator,
   validateRequest,
   asyncHandler(controller.status.bind(controller)),

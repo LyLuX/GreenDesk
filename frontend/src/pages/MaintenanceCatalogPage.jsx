@@ -63,6 +63,7 @@ export default function MaintenanceCatalogPage({
     (rowActionPermissions?.length
       ? rowActionPermissions.some((permission) => hasPermission(permission))
       : hasPermission(permissions.update));
+  const statusPermission = permissions.status?.update ?? permissions.update;
 
   const load = useCallback(
     async (signal) => {
@@ -261,7 +262,7 @@ export default function MaintenanceCatalogPage({
               : undefined
           }
           onStatus={
-            hasPermission(permissions.update)
+            hasPermission(statusPermission)
               ? (row) => setConfirmation({ action: 'status', row })
               : undefined
           }

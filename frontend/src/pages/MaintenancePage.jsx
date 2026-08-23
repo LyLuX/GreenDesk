@@ -653,7 +653,7 @@ export default function MaintenancePage() {
                           Modifier
                         </button>
                       )}
-                      {hasPermission(maintenancePermissions.plans.update) && (
+                      {hasPermission(maintenancePermissions.plans.status.update) && (
                         <button
                           aria-label={`${item.active ? 'Désactiver' : 'Activer'} ${item.title}`}
                           className={`btn btn-sm ${getStatusActionButtonClass(

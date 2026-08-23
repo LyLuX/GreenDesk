@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import { createUser, deleteUser, listUsers, updateUser } from '../api/users.api.js';
+import useAuth from '../auth/useAuth.js';
 import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import FilterPanel from '../components/FilterPanel.jsx';
@@ -16,19 +17,28 @@ import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import { paginateItems } from '../utils/pagination.js';
 import { getStatusActionButtonClass } from '../utils/status-action.js';
 import { formatDateTime } from '../utils/formatters.js';
+import administrationPermissions from '../permissions/administration.permissions.js';
 
 const emptyUser = () => ({
   firstName: '',
   lastName: '',
   email: '',
   password: '',
-  isActive: true,
   roleUuids: [],
 });
 
 /** Administrator workspace for creating and maintaining application users. */
 export default function UsersPage() {
+  const { hasPermission } = useAuth();
   const { notify } = useNotification();
+  const canCreate = hasPermission(administrationPermissions.users.create);
+  const canUpdate = hasPermission(administrationPermissions.users.update);
+  const canUpdateStatus = hasPermission(administrationPermissions.users.status.update);
+  const canUpdatePassword = hasPermission(administrationPermissions.users.password.update);
+  const canUpdateRoles = hasPermission(administrationPermissions.users.roles.update);
+  const canDelete = hasPermission(administrationPermissions.users.delete);
+  const canReadRoles = hasPermission(administrationPermissions.roles.read);
+  const canOpenEdit = canUpdate || canUpdatePassword || (canUpdateRoles && canReadRoles);
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [editing, setEditing] = useState(null);
@@ -102,6 +112,7 @@ export default function UsersPage() {
   }, [load]);
 
   useEffect(() => {
+    if (!canReadRoles) return undefined;
     const controller = new AbortController();
     createReferenceApi('roles')
       .list({ limit: 25 }, controller.signal)
@@ -114,7 +125,7 @@ export default function UsersPage() {
         if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
       });
     return () => controller.abort();
-  }, []);
+  }, [canReadRoles]);
 
   const openCreate = () => {
     setEditing({});
@@ -133,7 +144,6 @@ export default function UsersPage() {
       lastName: user.lastName ?? '',
       email: user.email ?? '',
       password: '',
-      isActive: Boolean(user.isActive),
       roleUuids: user.roles?.map((role) => role.uuid) ?? [],
     });
     setFormError('');
@@ -175,7 +185,10 @@ export default function UsersPage() {
   const save = async (event) => {
     event.preventDefault();
     if (saving) return;
-    if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim()) {
+    if (
+      (!editing?.uuid || canUpdate) &&
+      (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim())
+    ) {
       setFormError('Le prénom, le nom et l’adresse email sont obligatoires.');
       return;
     }
@@ -183,19 +196,30 @@ export default function UsersPage() {
       setFormError('Le mot de passe doit contenir au moins 8 caractères.');
       return;
     }
-    if (form.password && form.password.length < 8) {
+    if (canUpdatePassword && form.password && form.password.length < 8) {
       setFormError('Le mot de passe doit contenir au moins 8 caractères.');
       return;
     }
 
-    const payload = {
-      firstName: form.firstName.trim(),
-      lastName: form.lastName.trim(),
-      email: form.email.trim(),
-      isActive: form.isActive,
-      roleUuids: form.roleUuids,
-      ...(form.password ? { password: form.password } : {}),
-    };
+    const payload = editing?.uuid
+      ? {
+          ...(canUpdate
+            ? {
+                firstName: form.firstName.trim(),
+                lastName: form.lastName.trim(),
+                email: form.email.trim(),
+              }
+            : {}),
+          ...(canUpdateRoles && canReadRoles ? { roleUuids: form.roleUuids } : {}),
+          ...(canUpdatePassword && form.password ? { password: form.password } : {}),
+        }
+      : {
+          firstName: form.firstName.trim(),
+          lastName: form.lastName.trim(),
+          email: form.email.trim(),
+          password: form.password,
+          ...(canUpdateRoles && canReadRoles ? { roleUuids: form.roleUuids } : {}),
+        };
     setSaving(true);
     setFormError('');
     try {
@@ -259,7 +283,7 @@ export default function UsersPage() {
           <h1 className="page-title">Utilisateurs</h1>
           <p className="page-subtitle">Comptes, accès et rôles de l’application.</p>
         </div>
-        <Button onClick={openCreate}>Créer un utilisateur</Button>
+        {canCreate && <Button onClick={openCreate}>Créer un utilisateur</Button>}
       </div>
       <FilterPanel
         fields={[
@@ -285,22 +309,26 @@ export default function UsersPage() {
               setPage(1);
             },
           },
-          {
-            name: 'roleUuid',
-            type: 'select',
-            label: 'Rôle',
-            ariaLabel: 'Filtrer par rôle',
-            emptyLabel: 'Tous les rôles',
-            options: roles.map((role) => ({ value: role.uuid, label: role.name })),
-            value: roleUuid,
-            onChange: (value) => {
-              setRoleUuid(value);
-              setPage(1);
-            },
-          },
+          ...(canReadRoles
+            ? [
+                {
+                  name: 'roleUuid',
+                  type: 'select',
+                  label: 'Rôle',
+                  ariaLabel: 'Filtrer par rôle',
+                  emptyLabel: 'Tous les rôles',
+                  options: roles.map((role) => ({ value: role.uuid, label: role.name })),
+                  value: roleUuid,
+                  onChange: (value) => {
+                    setRoleUuid(value);
+                    setPage(1);
+                  },
+                },
+              ]
+            : []),
         ]}
       />
-      {rolesPagination?.page < rolesPagination?.totalPages && (
+      {canReadRoles && rolesPagination?.page < rolesPagination?.totalPages && (
         <Button
           className="btn-sm btn-outline-secondary mb-3"
           type="button"
@@ -358,37 +386,43 @@ export default function UsersPage() {
                     <td>{formatDateTime(user.lastLoginAt, 'Jamais')}</td>
                     <td>
                       <div className="d-flex h-100 w-100 flex-wrap align-items-center justify-content-center gap-1">
-                        <button
-                          aria-label={`Modifier ${user.firstName} ${user.lastName}`}
-                          className="btn btn-sm btn-outline-brand flex-fill"
-                          type="button"
-                          disabled={Boolean(removing || changingStatus)}
-                          onClick={() => openEdit(user)}
-                        >
-                          Modifier
-                        </button>
-                        <button
-                          aria-label={`${user.isActive ? 'Désactiver' : 'Activer'} ${
-                            user.firstName
-                          } ${user.lastName}`}
-                          className={`btn btn-sm ${getStatusActionButtonClass(
-                            user.isActive,
-                          )} flex-fill`}
-                          type="button"
-                          disabled={Boolean(removing || changingStatus)}
-                          onClick={() => setConfirmation({ action: 'status', user })}
-                        >
-                          {user.isActive ? 'Désactiver' : 'Activer'}
-                        </button>
-                        <button
-                          aria-label={`Supprimer ${user.firstName} ${user.lastName}`}
-                          className="btn btn-sm btn-outline-danger flex-fill"
-                          type="button"
-                          disabled={Boolean(removing || changingStatus)}
-                          onClick={() => setConfirmation({ action: 'delete', user })}
-                        >
-                          {removing === user.uuid ? 'Suppression…' : 'Supprimer'}
-                        </button>
+                        {canOpenEdit && (
+                          <button
+                            aria-label={`Modifier ${user.firstName} ${user.lastName}`}
+                            className="btn btn-sm btn-outline-brand flex-fill"
+                            type="button"
+                            disabled={Boolean(removing || changingStatus)}
+                            onClick={() => openEdit(user)}
+                          >
+                            Modifier
+                          </button>
+                        )}
+                        {canUpdateStatus && (
+                          <button
+                            aria-label={`${user.isActive ? 'Désactiver' : 'Activer'} ${
+                              user.firstName
+                            } ${user.lastName}`}
+                            className={`btn btn-sm ${getStatusActionButtonClass(
+                              user.isActive,
+                            )} flex-fill`}
+                            type="button"
+                            disabled={Boolean(removing || changingStatus)}
+                            onClick={() => setConfirmation({ action: 'status', user })}
+                          >
+                            {user.isActive ? 'Désactiver' : 'Activer'}
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            aria-label={`Supprimer ${user.firstName} ${user.lastName}`}
+                            className="btn btn-sm btn-outline-danger flex-fill"
+                            type="button"
+                            disabled={Boolean(removing || changingStatus)}
+                            onClick={() => setConfirmation({ action: 'delete', user })}
+                          >
+                            {removing === user.uuid ? 'Suppression…' : 'Supprimer'}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -430,6 +464,7 @@ export default function UsersPage() {
                 value={form.firstName}
                 onChange={updateField}
                 required
+                disabled={Boolean(editing?.uuid && !canUpdate)}
               />
             </div>
             <div className="col-md-6">
@@ -439,6 +474,7 @@ export default function UsersPage() {
                 value={form.lastName}
                 onChange={updateField}
                 required
+                disabled={Boolean(editing?.uuid && !canUpdate)}
               />
             </div>
           </div>
@@ -449,60 +485,52 @@ export default function UsersPage() {
             value={form.email}
             onChange={updateField}
             required
+            disabled={Boolean(editing?.uuid && !canUpdate)}
           />
-          <label className="form-label mb-0 text-body-secondary" htmlFor="user-password">
-            {editing?.uuid ? 'Nouveau mot de passe' : 'Mot de passe'}
-            <PasswordInput
-              id="user-password"
-              name="password"
-              value={form.password}
-              onChange={updateField}
-              minLength="8"
-              required={!editing?.uuid}
-              autoComplete="new-password"
-            />
-          </label>
-          <div>
-            <p className="form-label mb-2 text-body-secondary">Rôles</p>
-            {roles.map((role) => (
-              <div className="form-check" key={role.uuid}>
-                <input
-                  className="form-check-input"
-                  id={`role-${role.uuid}`}
-                  type="checkbox"
-                  checked={form.roleUuids.includes(role.uuid)}
-                  onChange={() => toggleRole(role.uuid)}
-                />
-                <label className="form-check-label" htmlFor={`role-${role.uuid}`}>
-                  {role.name}
-                  {role.description ? ` — ${role.description}` : ''}
-                </label>
-              </div>
-            ))}
-            {rolesPagination?.page < rolesPagination?.totalPages && (
-              <Button
-                className="btn-sm btn-outline-secondary mt-2"
-                type="button"
-                disabled={loadingMoreRoles}
-                onClick={loadMoreRoles}
-              >
-                {loadingMoreRoles ? 'Chargement…' : 'Charger plus de rôles'}
-              </Button>
-            )}
-          </div>
-          <div className="form-check">
-            <input
-              className="form-check-input"
-              id="user-active"
-              name="isActive"
-              type="checkbox"
-              checked={form.isActive}
-              onChange={updateField}
-            />
-            <label className="form-check-label" htmlFor="user-active">
-              Compte actif
+          {(!editing?.uuid || canUpdatePassword) && (
+            <label className="form-label mb-0 text-body-secondary" htmlFor="user-password">
+              {editing?.uuid ? 'Nouveau mot de passe' : 'Mot de passe'}
+              <PasswordInput
+                id="user-password"
+                name="password"
+                value={form.password}
+                onChange={updateField}
+                minLength="8"
+                required={!editing?.uuid}
+                autoComplete="new-password"
+              />
             </label>
-          </div>
+          )}
+          {canUpdateRoles && canReadRoles && (
+            <div>
+              <p className="form-label mb-2 text-body-secondary">Rôles</p>
+              {roles.map((role) => (
+                <div className="form-check" key={role.uuid}>
+                  <input
+                    className="form-check-input"
+                    id={`role-${role.uuid}`}
+                    type="checkbox"
+                    checked={form.roleUuids.includes(role.uuid)}
+                    onChange={() => toggleRole(role.uuid)}
+                  />
+                  <label className="form-check-label" htmlFor={`role-${role.uuid}`}>
+                    {role.name}
+                    {role.description ? ` — ${role.description}` : ''}
+                  </label>
+                </div>
+              ))}
+              {rolesPagination?.page < rolesPagination?.totalPages && (
+                <Button
+                  className="btn-sm btn-outline-secondary mt-2"
+                  type="button"
+                  disabled={loadingMoreRoles}
+                  onClick={loadMoreRoles}
+                >
+                  {loadingMoreRoles ? 'Chargement…' : 'Charger plus de rôles'}
+                </Button>
+              )}
+            </div>
+          )}
           <Button type="submit" disabled={saving}>
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </Button>

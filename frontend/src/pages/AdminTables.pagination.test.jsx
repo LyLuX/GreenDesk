@@ -1,6 +1,6 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
   const roles = Array.from({ length: 6 }, (_value, index) => ({
@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => {
       lastLoginAt: null,
     })),
     roles,
+    hasPermission: vi.fn(() => true),
     updateUser: vi.fn(),
     referenceApis: {
       roles: { list: vi.fn().mockResolvedValue({ data: { data: roles } }) },
@@ -50,12 +51,43 @@ vi.mock('../api/reference.api.js', () => ({
 vi.mock('../notifications/useNotification.js', () => ({
   default: () => ({ notify: vi.fn() }),
 }));
+vi.mock('../auth/useAuth.js', () => ({
+  default: () => ({ hasPermission: mocks.hasPermission }),
+}));
 
 import RolesPage from './RolesPage.jsx';
 import UsersPage from './UsersPage.jsx';
 
 describe('administrator table pagination', () => {
   afterEach(cleanup);
+  beforeEach(() => mocks.hasPermission.mockReturnValue(true));
+
+  it('filters user actions with their dedicated permissions', async () => {
+    mocks.hasPermission.mockImplementation(
+      (permission) => permission === 'users.read' || permission === 'users.status.update',
+    );
+
+    render(<UsersPage />);
+
+    expect(await screen.findByText('user5@example.test')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Créer un utilisateur' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Modifier Utilisateur/ })).not.toBeInTheDocument();
+    expect(
+      screen.getAllByRole('button', { name: /Désactiver Utilisateur/ }).length,
+    ).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: /Supprimer Utilisateur/ })).not.toBeInTheDocument();
+  });
+
+  it('filters role actions with their dedicated permissions', async () => {
+    mocks.hasPermission.mockImplementation((permission) => permission === 'roles.read');
+
+    render(<RolesPage />);
+
+    expect(await screen.findByText('Rôle 5')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Créer un rôle' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Modifier' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Supprimer' })).not.toBeInTheDocument();
+  });
 
   it('shows active users by default and paginates all users after clearing the status', async () => {
     const user = userEvent.setup();

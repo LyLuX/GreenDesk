@@ -22,6 +22,7 @@ import {
   maintenanceStatusLabels,
 } from '../maintenance/maintenance.labels.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
+import fleetPermissions from '../permissions/fleet.permissions.js';
 import { formatCurrency, formatDate, formatDateTime } from '../utils/formatters.js';
 import { paginateItems } from '../utils/pagination.js';
 
@@ -345,7 +346,7 @@ export default function MaterialDetailPage() {
         <Link className="btn btn-outline-brand" to="/materials">
           Retour aux matériels
         </Link>
-        {hasPermission('materials.update') && (
+        {hasPermission(fleetPermissions.materials.update) && (
           <Button onClick={() => navigate(`/materials/${uuid}/edit`)}>Modifier</Button>
         )}
       </div>
@@ -420,7 +421,7 @@ export default function MaterialDetailPage() {
           </section>
           <section className="surface mt-5 p-4">
             <h2 className="h4 mb-3">Photos</h2>
-            {hasPermission('materials.update') && (
+            {hasPermission(fleetPermissions.materials.photos.create) && (
               <div className="material-file-upload">
                 <input
                   className="form-control"
@@ -484,25 +485,30 @@ export default function MaterialDetailPage() {
                     {file.originalName}
                     {file.isPrimary ? ' (principale)' : ''}
                   </p>
-                  {hasPermission('materials.update') && (
+                  {(hasPermission(fleetPermissions.materials.photos.setPrimary) ||
+                    hasPermission(fleetPermissions.materials.files.delete)) && (
                     <div className="material-photo-actions mt-2">
-                      <Button
-                        type="button"
-                        disabled={file.isPrimary}
-                        onClick={async () => {
-                          await setPrimaryMaterialPhoto(file.uuid);
-                          load();
-                        }}
-                      >
-                        Principale
-                      </Button>
-                      <Button
-                        type="button"
-                        disabled={removingFileUuid === file.uuid}
-                        onClick={() => setFileToDelete(file)}
-                      >
-                        Supprimer
-                      </Button>
+                      {hasPermission(fleetPermissions.materials.photos.setPrimary) && (
+                        <Button
+                          type="button"
+                          disabled={file.isPrimary}
+                          onClick={async () => {
+                            await setPrimaryMaterialPhoto(file.uuid);
+                            load();
+                          }}
+                        >
+                          Principale
+                        </Button>
+                      )}
+                      {hasPermission(fleetPermissions.materials.files.delete) && (
+                        <Button
+                          type="button"
+                          disabled={removingFileUuid === file.uuid}
+                          onClick={() => setFileToDelete(file)}
+                        >
+                          Supprimer
+                        </Button>
+                      )}
                     </div>
                   )}
                 </article>
@@ -511,7 +517,7 @@ export default function MaterialDetailPage() {
           </section>
           <section className="surface mt-5 p-4">
             <h2 className="h4 mb-3">Documents</h2>
-            {hasPermission('materials.update') && (
+            {hasPermission(fleetPermissions.materials.documents.create) && (
               <div className="material-file-upload">
                 <input
                   ref={documentInputRef}
@@ -576,7 +582,7 @@ export default function MaterialDetailPage() {
                             <Button type="button" onClick={() => download(file)}>
                               Télécharger
                             </Button>
-                            {hasPermission('materials.update') && (
+                            {hasPermission(fleetPermissions.materials.files.delete) && (
                               <Button
                                 type="button"
                                 disabled={removingFileUuid === file.uuid}

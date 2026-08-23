@@ -684,7 +684,12 @@ export const openApiSchemas = {
       reference('RegisterRequest'),
       {
         type: 'object',
-        properties: { roleUuids: arrayOf(uuid) },
+        properties: {
+          roleUuids: {
+            ...arrayOf(uuid),
+            description: 'Nécessite `users.roles.update`.',
+          },
+        },
       },
     ],
   },
@@ -694,9 +699,18 @@ export const openApiSchemas = {
       firstName: writeText(100),
       lastName: writeText(100),
       email: { type: 'string', format: 'email' },
-      password: { type: 'string', format: 'password', minLength: 8, writeOnly: true },
-      isActive: { type: 'boolean' },
-      roleUuids: arrayOf(uuid),
+      password: {
+        type: 'string',
+        format: 'password',
+        minLength: 8,
+        writeOnly: true,
+        description: 'Nécessite `users.password.update`.',
+      },
+      isActive: { type: 'boolean', description: 'Nécessite `users.status.update`.' },
+      roleUuids: {
+        ...arrayOf(uuid),
+        description: 'Nécessite `users.roles.update`.',
+      },
     },
   },
   RoleCreateRequest: {
@@ -705,7 +719,10 @@ export const openApiSchemas = {
     properties: {
       name: writeText(100),
       description: { type: 'string', maxLength: 500 },
-      permissionUuids: arrayOf(uuid),
+      permissionUuids: {
+        ...arrayOf(uuid),
+        description: 'Nécessite `roles.permissions.update`.',
+      },
     },
   },
   RoleUpdateRequest: {
@@ -713,7 +730,10 @@ export const openApiSchemas = {
     properties: {
       name: writeText(100),
       description: { type: 'string', maxLength: 500 },
-      permissionUuids: arrayOf(uuid),
+      permissionUuids: {
+        ...arrayOf(uuid),
+        description: 'Nécessite `roles.permissions.update`.',
+      },
     },
   },
   PermissionCreateRequest: {
@@ -741,7 +761,7 @@ export const openApiSchemas = {
     properties: {
       name: writeText(150),
       description: { type: 'string' },
-      active: { type: 'boolean' },
+      active: { type: 'boolean', description: 'Nécessite `categories.status.update`.' },
     },
   },
   ManufacturerCreateRequest: {
@@ -753,7 +773,7 @@ export const openApiSchemas = {
     type: 'object',
     properties: {
       name: writeText(150),
-      active: { type: 'boolean' },
+      active: { type: 'boolean', description: 'Nécessite `manufacturers.status.update`.' },
     },
   },
   MaterialCreateRequest: {
@@ -768,7 +788,7 @@ export const openApiSchemas = {
       active: {
         type: 'boolean',
         description:
-          'Désactiver le matériel désactive ses plans actifs. Le réactiver ne réactive que les plans désactivés par le même changement de statut.',
+          'Nécessite `materials.status.update`. Désactiver le matériel désactive ses plans actifs. Le réactiver ne réactive que les plans désactivés par le même changement de statut.',
       },
     },
   },
@@ -794,7 +814,8 @@ export const openApiSchemas = {
     properties: {
       active: {
         type: 'boolean',
-        description: 'Un plan ne peut pas être activé si son matériel est inactif.',
+        description:
+          'Nécessite `maintenance.status.update`. Un plan ne peut pas être activé si son matériel est inactif.',
       },
     },
   },
@@ -852,7 +873,10 @@ export const openApiSchemas = {
       name: writeText(150),
       description: nullableString,
       maintenanceType: { type: 'string', enum: MAINTENANCE_TYPES },
-      active: { type: 'boolean' },
+      active: {
+        type: 'boolean',
+        description: 'Nécessite `maintenance.operations.status.update`.',
+      },
     },
   },
   MaintenancePartCreateRequest: {
@@ -896,7 +920,7 @@ export const openApiSchemas = {
       reference: writeText(150),
       supplierReference: { ...nullableString, maxLength: 150 },
       unit: writeText(50),
-      active: { type: 'boolean' },
+      active: { type: 'boolean', description: 'Nécessite `maintenance.parts.status.update`.' },
     },
   },
   MaintenancePartStockRequest: {
@@ -991,7 +1015,7 @@ export const openApiSchemas = {
       email: { type: 'string', format: 'email', nullable: true, maxLength: 254 },
       phone: { ...nullableString, maxLength: 50 },
       notes: nullableString,
-      active: { type: 'boolean' },
+      active: { type: 'boolean', description: 'Nécessite `suppliers.status.update`.' },
     },
   },
   AuthSession: {

@@ -192,7 +192,7 @@ describe('ReferencePage pagination', () => {
     );
   });
 
-  it('uses the update permission and endpoint to change an active status', async () => {
+  it('uses the dedicated status permission and existing endpoint to change an active status', async () => {
     api.list.mockResolvedValue({
       data: { data: [{ uuid: 'material-uuid', name: 'Tondeuse', active: true }] },
     });
@@ -205,6 +205,7 @@ describe('ReferencePage pagination', () => {
         createPermission="materials.create"
         updatePermission="materials.update"
         deletePermission="materials.delete"
+        statusPermission="materials.status.update"
         statusAction
         fields={[{ name: 'name', label: 'Nom' }]}
         columns={[{ key: 'name', label: 'Nom' }]}
@@ -219,7 +220,7 @@ describe('ReferencePage pagination', () => {
     await waitFor(() =>
       expect(api.update).toHaveBeenCalledWith('material-uuid', { active: false }),
     );
-    expect(hasPermission).toHaveBeenCalledWith('materials.update');
+    expect(hasPermission).toHaveBeenCalledWith('materials.status.update');
     expect(notify).toHaveBeenCalledWith('success', 'Statut de « Tondeuse » mis à jour.');
   });
 });

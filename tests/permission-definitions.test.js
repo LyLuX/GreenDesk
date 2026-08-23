@@ -5,17 +5,19 @@ describe('permission definitions', () => {
     const names = permissionDefinitions.map(({ name }) => name);
 
     expect(new Set(names).size).toBe(names.length);
-    expect(names).toHaveLength(45);
+    expect(names).toHaveLength(70);
     expect(names).toEqual(
       expect.arrayContaining([
         'maintenance.operations.read',
         'maintenance.operations.create',
         'maintenance.operations.update',
         'maintenance.operations.delete',
+        'maintenance.operations.status.update',
         'maintenance.parts.read',
         'maintenance.parts.create',
         'maintenance.parts.update',
         'maintenance.parts.delete',
+        'maintenance.parts.status.update',
         'maintenance.parts.stock.adjust_on_hand',
         'maintenance.parts.stock.adjust_on_order',
         'maintenance.parts.stock.order',
@@ -27,6 +29,23 @@ describe('permission definitions', () => {
         'history.maintenance.read',
         'history.administration.read',
         'dashboard.read.financial',
+        'users.read',
+        'users.status.update',
+        'users.password.update',
+        'users.roles.update',
+        'roles.permissions.update',
+        'permissions.delete',
+        'categories.status.update',
+        'materials.status.update',
+        'materials.photos.create',
+        'materials.photos.set_primary',
+        'materials.documents.create',
+        'materials.files.delete',
+        'manufacturers.status.update',
+        'manufacturers.logo.upload',
+        'manufacturers.logo.delete',
+        'suppliers.status.update',
+        'maintenance.status.update',
       ]),
     );
     for (const { name, description } of permissionDefinitions) {

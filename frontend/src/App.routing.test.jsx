@@ -27,6 +27,15 @@ vi.mock('./pages/MaintenancePartsPage.jsx', () => ({
 vi.mock('./pages/HistoryPage.jsx', () => ({
   default: ({ section }) => <h1>Historique {section}</h1>,
 }));
+vi.mock('./pages/UsersPage.jsx', () => ({
+  default: () => <h1>Utilisateurs</h1>,
+}));
+vi.mock('./pages/RolesPage.jsx', () => ({
+  default: () => <h1>Rôles</h1>,
+}));
+vi.mock('./pages/PermissionsPage.jsx', () => ({
+  default: () => <h1>Permissions</h1>,
+}));
 vi.mock('./pages/ReferencePage.jsx', () => ({
   default: (properties) => {
     referencePage(properties);
@@ -83,7 +92,7 @@ describe('root route', () => {
     expect(screen.getByTestId(permission)).toBeInTheDocument();
   });
 
-  it('uses the material update permission for status actions', async () => {
+  it('uses a permission dedicated to material status actions', async () => {
     render(
       <MemoryRouter initialEntries={['/materials']}>
         <App />
@@ -95,8 +104,24 @@ describe('root route', () => {
       expect.objectContaining({
         resource: 'materials',
         updatePermission: 'materials.update',
+        statusPermission: 'materials.status.update',
         statusAction: true,
       }),
     );
+  });
+
+  it.each([
+    ['/users', 'Utilisateurs', 'users.read'],
+    ['/roles', 'Rôles', 'roles.read'],
+    ['/permissions', 'Permissions', 'permissions.read'],
+  ])('protects %s with its administration read permission', async (path, heading, permission) => {
+    render(
+      <MemoryRouter initialEntries={[path]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
+    expect(screen.getByTestId(permission)).toBeInTheDocument();
   });
 });

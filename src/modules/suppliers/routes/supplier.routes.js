@@ -1,6 +1,10 @@
 import { Router } from 'express';
 import { authenticate } from '../../../core/middlewares/auth.middleware.js';
-import { authorize } from '../../../core/middlewares/authorization.middleware.js';
+import fleetPermissions from '../../../core/constants/fleet-permissions.js';
+import {
+  authorize,
+  authorizeBodyFields,
+} from '../../../core/middlewares/authorization.middleware.js';
 import { validateRequest } from '../../../core/middlewares/validate-request.js';
 import { asyncHandler } from '../../../core/utils/async-handler.js';
 import SupplierController from '../controller/supplier.controller.js';
@@ -12,28 +16,31 @@ const controller = new SupplierController();
 router.use(authenticate);
 router.get(
   '/',
-  authorize('suppliers.read', maintenancePermissions.parts.read),
+  authorize(fleetPermissions.suppliers.read, maintenancePermissions.parts.read),
   validator.listValidator,
   validateRequest,
   asyncHandler(controller.getAll.bind(controller)),
 );
 router.post(
   '/',
-  authorize('suppliers.create'),
+  authorize(fleetPermissions.suppliers.create),
   validator.createValidator,
   validateRequest,
   asyncHandler(controller.create.bind(controller)),
 );
 router.put(
   '/:uuid',
-  authorize('suppliers.update'),
+  authorize(fleetPermissions.suppliers.update, fleetPermissions.suppliers.status.update),
+  authorizeBodyFields(fleetPermissions.suppliers.update, {
+    active: fleetPermissions.suppliers.status.update,
+  }),
   validator.updateValidator,
   validateRequest,
   asyncHandler(controller.update.bind(controller)),
 );
 router.delete(
   '/:uuid',
-  authorize('suppliers.delete'),
+  authorize(fleetPermissions.suppliers.delete),
   validator.uuidValidator,
   validateRequest,
   asyncHandler(controller.remove.bind(controller)),

@@ -79,6 +79,10 @@ describe('reference routes authorization and validation', () => {
       .post(`/api/v1/manufacturers/${uuid}/logo`)
       .set('Authorization', `Bearer ${tokenFor(['manufacturers.read'])}`)
       .expect(403);
+    await request(app)
+      .post(`/api/v1/manufacturers/${uuid}/logo`)
+      .set('Authorization', `Bearer ${tokenFor(['manufacturers.create'])}`)
+      .expect(403);
   });
 
   it('allows material readers to request the logo used by the material list', async () => {
@@ -100,20 +104,54 @@ describe('reference routes authorization and validation', () => {
       .expect(404);
   });
 
-  it('restricts user management to administrators', async () => {
+  it('uses the dedicated user read permission instead of the legacy permission', async () => {
     await request(app)
-      .get('/api/v1/users')
+      .get('/api/v1/users?active=invalid')
       .set('Authorization', `Bearer ${tokenFor(['USER_READ'])}`)
+      .expect(403);
+    await request(app)
+      .get('/api/v1/users?active=invalid')
+      .set('Authorization', `Bearer ${tokenFor(['users.read'])}`)
+      .expect(400);
+  });
+
+  it('uses dedicated permissions for every material file action', async () => {
+    const uuid = 'f75ce638-18d2-4e29-9958-2afaa4ae5151';
+    await request(app)
+      .post(`/api/v1/materials/${uuid}/photos`)
+      .set('Authorization', `Bearer ${tokenFor(['materials.update'])}`)
+      .attach('file', Buffer.from('invalid image'), {
+        filename: 'photo.jpg',
+        contentType: 'image/jpeg',
+      })
+      .expect(403);
+    await request(app)
+      .post(`/api/v1/materials/${uuid}/photos`)
+      .set('Authorization', `Bearer ${tokenFor(['materials.photos.create'])}`)
+      .attach('file', Buffer.from('invalid image'), {
+        filename: 'photo.jpg',
+        contentType: 'image/jpeg',
+      })
+      .expect(400);
+    await request(app)
+      .patch(`/api/v1/materials/files/${uuid}/primary`)
+      .set('Authorization', `Bearer ${tokenFor(['materials.update'])}`)
+      .expect(403);
+    await request(app)
+      .delete(`/api/v1/materials/files/${uuid}`)
+      .set('Authorization', `Bearer ${tokenFor(['materials.update'])}`)
       .expect(403);
   });
 
-  it('restricts role and permission management to administrators', async () => {
-    const token = tokenFor(['USER_READ']);
-    await request(app).get('/api/v1/roles').set('Authorization', `Bearer ${token}`).expect(403);
+  it('uses dedicated role and permission read permissions', async () => {
     await request(app)
-      .get('/api/v1/permissions')
-      .set('Authorization', `Bearer ${token}`)
-      .expect(403);
+      .get('/api/v1/roles?permissionUuid=invalid')
+      .set('Authorization', `Bearer ${tokenFor(['roles.read'])}`)
+      .expect(400);
+    await request(app)
+      .get('/api/v1/permissions?page=0')
+      .set('Authorization', `Bearer ${tokenFor(['permissions.read'])}`)
+      .expect(400);
   });
 
   it('validates category creation before accessing persistence', async () => {
@@ -136,22 +174,22 @@ describe('reference routes authorization and validation', () => {
   });
 
   it.each([
-    ['materials', 'materials.read', 'materials.update'],
-    ['categories', 'categories.read', 'categories.update'],
-    ['manufacturers', 'manufacturers.read', 'manufacturers.update'],
-    ['suppliers', 'suppliers.read', 'suppliers.update'],
+    ['materials', 'materials.update', 'materials.status.update'],
+    ['categories', 'categories.update', 'categories.status.update'],
+    ['manufacturers', 'manufacturers.update', 'manufacturers.status.update'],
+    ['suppliers', 'suppliers.update', 'suppliers.status.update'],
   ])(
-    'uses %s.update to change the active status',
-    async (resource, readPermission, updatePermission) => {
+    'uses a dedicated permission to change the %s status',
+    async (resource, updatePermission, statusPermission) => {
       const uuid = 'f75ce638-18d2-4e29-9958-2afaa4ae5151';
       await request(app)
         .put(`/api/v1/${resource}/${uuid}`)
-        .set('Authorization', `Bearer ${tokenFor([readPermission])}`)
+        .set('Authorization', `Bearer ${tokenFor([updatePermission])}`)
         .send({ active: false })
         .expect(403);
       await request(app)
         .put(`/api/v1/${resource}/${uuid}`)
-        .set('Authorization', `Bearer ${tokenFor([updatePermission])}`)
+        .set('Authorization', `Bearer ${tokenFor([statusPermission])}`)
         .send({ active: 'invalid' })
         .expect(400);
     },

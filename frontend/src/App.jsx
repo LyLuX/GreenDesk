@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import PermissionRoute from './auth/PermissionRoute.jsx';
 import ProtectedRoute from './auth/ProtectedRoute.jsx';
-import AdminRoute from './auth/AdminRoute.jsx';
 import AppFooter from './components/AppFooter.jsx';
 import Loader from './components/Loader.jsx';
 import { publicRegistrationEnabled } from './config/features.js';
@@ -10,6 +9,7 @@ import AppLayout from './layouts/AppLayout.jsx';
 import maintenancePermissions from './maintenance/maintenance.permissions.js';
 import historyPermissions from './history/history.permissions.js';
 import dashboardPermissions from './dashboard/dashboard.permissions.js';
+import administrationPermissions from './permissions/administration.permissions.js';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'));
 const ForbiddenPage = lazy(() => import('./pages/ForbiddenPage.jsx'));
@@ -32,7 +32,6 @@ const HistoryPage = lazy(() => import('./pages/HistoryPage.jsx'));
 const secure = (permission, page) => (
   <PermissionRoute permission={permission}>{page}</PermissionRoute>
 );
-const adminOnly = (page) => <AdminRoute>{page}</AdminRoute>;
 
 /** Returns the user-facing module name for a frontend path. */
 export const getModuleTitle = (pathname) => {
@@ -130,9 +129,18 @@ export default function App() {
                 element={<Navigate to="/manufacturers" replace />}
               />
               <Route path="/maintenance/suppliers" element={<Navigate to="/suppliers" replace />} />
-              <Route path="/users" element={adminOnly(<UsersPage />)} />
-              <Route path="/roles" element={adminOnly(<RolesPage />)} />
-              <Route path="/permissions" element={adminOnly(<PermissionsPage />)} />
+              <Route
+                path="/users"
+                element={secure(administrationPermissions.users.read, <UsersPage />)}
+              />
+              <Route
+                path="/roles"
+                element={secure(administrationPermissions.roles.read, <RolesPage />)}
+              />
+              <Route
+                path="/permissions"
+                element={secure(administrationPermissions.permissions.read, <PermissionsPage />)}
+              />
               <Route
                 path="/history/fleet"
                 element={secure(historyPermissions.fleet, <HistoryPage section="fleet" />)}

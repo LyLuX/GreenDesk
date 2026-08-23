@@ -25,6 +25,7 @@ export default function ReferencePage({
   createPermission,
   updatePermission,
   deletePermission,
+  statusPermission = updatePermission,
   statusAction = false,
   filters = [],
   pagination = true,
@@ -61,6 +62,14 @@ export default function ReferencePage({
   const [loadError, setLoadError] = useState('');
   const [formError, setFormError] = useState('');
   const [statusError, setStatusError] = useState('');
+  const canUpdateRecord = hasPermission(updatePermission);
+  const canUploadFile = Boolean(
+    fileField && (!fileField.uploadPermission || hasPermission(fileField.uploadPermission)),
+  );
+  const canRemoveFile = Boolean(
+    fileField && (!fileField.deletePermission || hasPermission(fileField.deletePermission)),
+  );
+  const canManageFile = canUploadFile || canRemoveFile;
 
   const load = useCallback(
     async (signal) => {
@@ -213,9 +222,11 @@ export default function ReferencePage({
     setIsSaving(true);
     try {
       const response = editing?.uuid
-        ? await api.update(editing.uuid, values)
+        ? canUpdateRecord
+          ? await api.update(editing.uuid, values)
+          : null
         : await api.create(values);
-      const savedItem = response.data.data;
+      const savedItem = response?.data.data ?? editing;
       if (!editing?.uuid) setEditing(savedItem);
       if (fileField && selectedFile?.size > 0) {
         await fileField.upload(savedItem.uuid, selectedFile);
@@ -306,6 +317,7 @@ export default function ReferencePage({
               required={field.required}
               multiline={field.multiline}
               options={selectOptions(field)}
+              disabled={Boolean(editing?.uuid && !canUpdateRecord)}
             />
             {optionsPage?.page < optionsPage?.totalPages && (
               <Button
@@ -325,13 +337,15 @@ export default function ReferencePage({
       {fileField && (
         <>
           {editing?.uuid && fileField.hasFile(editing) && fileField.renderPreview?.(editing)}
-          <FormField
-            label={fileField.label}
-            name={fileField.name}
-            type="file"
-            accept={fileField.accept}
-          />
-          {editing?.uuid && fileField.hasFile(editing) && (
+          {canUploadFile && (
+            <FormField
+              label={fileField.label}
+              name={fileField.name}
+              type="file"
+              accept={fileField.accept}
+            />
+          )}
+          {canRemoveFile && editing?.uuid && fileField.hasFile(editing) && (
             <label className="form-check text-body-secondary">
               <input
                 className="form-check-input"
@@ -341,7 +355,9 @@ export default function ReferencePage({
               {fileField.removeLabel}
             </label>
           )}
-          {fileField.help && <small className="text-body-secondary">{fileField.help}</small>}
+          {canUploadFile && fileField.help && (
+            <small className="text-body-secondary">{fileField.help}</small>
+          )}
         </>
       )}
     </>
@@ -470,8 +486,8 @@ export default function ReferencePage({
         rows={rows}
         emptyMessage={emptyMessage}
         actionLoadingId={statusActionId}
-        onEdit={hasPermission(updatePermission) ? setEditing : undefined}
-        onStatus={statusAction && hasPermission(updatePermission) ? requestStatusChange : undefined}
+        onEdit={canUpdateRecord || canManageFile ? setEditing : undefined}
+        onStatus={statusAction && hasPermission(statusPermission) ? requestStatusChange : undefined}
         onDelete={
           deletePermission && hasPermission(deletePermission)
             ? (row) => setConfirmation({ action: 'delete', row })

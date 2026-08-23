@@ -2,14 +2,16 @@ import { deleteManufacturerLogo, uploadManufacturerLogo } from '../api/manufactu
 import ManufacturerLogo from '../components/ManufacturerLogo.jsx';
 import { activityStatusFilter } from '../filters/filter-options.js';
 import ReferencePage from './ReferencePage.jsx';
+import fleetPermissions from '../permissions/fleet.permissions.js';
 export default function ManufacturersPage() {
   return (
     <ReferencePage
       title="Fabricants"
       resource="manufacturers"
-      createPermission="manufacturers.create"
-      updatePermission="manufacturers.update"
-      deletePermission="manufacturers.delete"
+      createPermission={fleetPermissions.manufacturers.create}
+      updatePermission={fleetPermissions.manufacturers.update}
+      deletePermission={fleetPermissions.manufacturers.delete}
+      statusPermission={fleetPermissions.manufacturers.status.update}
       statusAction
       fields={[{ name: 'name', label: 'Nom', required: true }]}
       fileField={{
@@ -24,6 +26,8 @@ export default function ManufacturersPage() {
         ),
         upload: uploadManufacturerLogo,
         remove: deleteManufacturerLogo,
+        uploadPermission: fleetPermissions.manufacturers.logo.upload,
+        deletePermission: fleetPermissions.manufacturers.logo.delete,
       }}
       columns={[
         {

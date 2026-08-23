@@ -1,96 +1,177 @@
+import administrationPermissions from './administration-permissions.js';
+import fleetPermissions from './fleet-permissions.js';
 import maintenancePermissions from '../../modules/maintenance/maintenance.permissions.js';
 import historyPermissions from '../../modules/audit/history.permissions.js';
 import dashboardPermissions from '../../modules/dashboard/dashboard.permissions.js';
 
 /** Canonical permission descriptions displayed when administrators configure roles. */
 const permissionDefinitions = [
+  { name: administrationPermissions.users.read, description: 'Consulter les utilisateurs.' },
   {
-    name: 'USER_READ',
-    description: 'Consulter la liste et les informations des utilisateurs.',
-  },
-  {
-    name: 'USER_CREATE',
+    name: administrationPermissions.users.create,
     description: 'Créer de nouveaux comptes utilisateur.',
   },
   {
-    name: 'USER_UPDATE',
-    description: 'Modifier les informations, le statut et les rôles des utilisateurs.',
+    name: administrationPermissions.users.update,
+    description: 'Modifier les informations générales des utilisateurs.',
+  },
+  { name: administrationPermissions.users.delete, description: 'Supprimer des utilisateurs.' },
+  {
+    name: administrationPermissions.users.status.update,
+    description: 'Activer ou désactiver des comptes utilisateur.',
   },
   {
-    name: 'USER_DELETE',
-    description: 'Supprimer des comptes utilisateur.',
+    name: administrationPermissions.users.password.update,
+    description: 'Modifier le mot de passe d’un utilisateur.',
   },
   {
-    name: 'categories.read',
+    name: administrationPermissions.users.roles.update,
+    description: 'Modifier les rôles attribués à un utilisateur.',
+  },
+  {
+    name: administrationPermissions.roles.read,
+    description: 'Consulter les rôles de l’application.',
+  },
+  {
+    name: administrationPermissions.roles.create,
+    description: 'Créer de nouveaux rôles applicatifs.',
+  },
+  {
+    name: administrationPermissions.roles.update,
+    description: 'Modifier le nom et la description des rôles.',
+  },
+  {
+    name: administrationPermissions.roles.delete,
+    description: 'Supprimer des rôles de l’application.',
+  },
+  {
+    name: administrationPermissions.roles.permissions.update,
+    description: 'Modifier les permissions attribuées à un rôle.',
+  },
+  {
+    name: administrationPermissions.permissions.read,
+    description: 'Consulter le référentiel des permissions.',
+  },
+  {
+    name: administrationPermissions.permissions.create,
+    description: 'Créer de nouvelles permissions applicatives.',
+  },
+  {
+    name: administrationPermissions.permissions.update,
+    description: 'Modifier les permissions applicatives.',
+  },
+  {
+    name: administrationPermissions.permissions.delete,
+    description: 'Supprimer des permissions.',
+  },
+  {
+    name: fleetPermissions.categories.read,
     description: 'Consulter la liste et le détail des catégories.',
   },
   {
-    name: 'categories.create',
+    name: fleetPermissions.categories.create,
     description: 'Ajouter de nouvelles catégories au référentiel.',
   },
   {
-    name: 'categories.update',
+    name: fleetPermissions.categories.update,
     description: 'Modifier le nom et la description des catégories.',
   },
   {
-    name: 'categories.delete',
+    name: fleetPermissions.categories.delete,
     description: 'Supprimer des catégories du référentiel.',
   },
   {
-    name: 'materials.read',
+    name: fleetPermissions.categories.status.update,
+    description: 'Activer ou désactiver des catégories.',
+  },
+  {
+    name: fleetPermissions.materials.read,
     description: 'Consulter les matériels, leurs fichiers et leur historique.',
   },
   {
-    name: 'materials.create',
+    name: fleetPermissions.materials.create,
     description: 'Ajouter de nouveaux matériels au parc.',
   },
   {
-    name: 'materials.update',
-    description: 'Modifier les informations et les fichiers des matériels.',
+    name: fleetPermissions.materials.update,
+    description: 'Modifier les informations des matériels.',
   },
   {
-    name: 'materials.delete',
+    name: fleetPermissions.materials.delete,
     description: 'Retirer des matériels du parc.',
   },
   {
-    name: dashboardPermissions.read,
-    description: 'Consulter les indicateurs du tableau de bord.',
+    name: fleetPermissions.materials.status.update,
+    description: 'Activer ou désactiver des matériels.',
   },
+  {
+    name: fleetPermissions.materials.photos.create,
+    description: 'Ajouter des photos aux matériels.',
+  },
+  {
+    name: fleetPermissions.materials.photos.setPrimary,
+    description: 'Définir la photo principale d’un matériel.',
+  },
+  {
+    name: fleetPermissions.materials.documents.create,
+    description: 'Ajouter des documents aux matériels.',
+  },
+  {
+    name: fleetPermissions.materials.files.delete,
+    description: 'Supprimer des photos ou des documents des matériels.',
+  },
+  { name: dashboardPermissions.read, description: 'Consulter les indicateurs du tableau de bord.' },
   {
     name: dashboardPermissions.financial,
     description: 'Consulter les indicateurs financiers du tableau de bord.',
   },
   {
-    name: 'manufacturers.read',
+    name: fleetPermissions.manufacturers.read,
     description: 'Consulter la liste et le détail des fabricants.',
   },
   {
-    name: 'manufacturers.create',
+    name: fleetPermissions.manufacturers.create,
     description: 'Ajouter de nouveaux fabricants au référentiel.',
   },
   {
-    name: 'manufacturers.update',
+    name: fleetPermissions.manufacturers.update,
     description: 'Modifier les informations des fabricants.',
   },
   {
-    name: 'manufacturers.delete',
+    name: fleetPermissions.manufacturers.delete,
     description: 'Supprimer des fabricants du référentiel.',
   },
   {
-    name: 'suppliers.read',
+    name: fleetPermissions.manufacturers.status.update,
+    description: 'Activer ou désactiver des fabricants.',
+  },
+  {
+    name: fleetPermissions.manufacturers.logo.upload,
+    description: 'Ajouter ou remplacer le logo d’un fabricant.',
+  },
+  {
+    name: fleetPermissions.manufacturers.logo.delete,
+    description: 'Supprimer le logo d’un fabricant.',
+  },
+  {
+    name: fleetPermissions.suppliers.read,
     description: 'Consulter la liste et le détail des fournisseurs.',
   },
   {
-    name: 'suppliers.create',
+    name: fleetPermissions.suppliers.create,
     description: 'Ajouter de nouveaux fournisseurs au référentiel.',
   },
   {
-    name: 'suppliers.update',
+    name: fleetPermissions.suppliers.update,
     description: 'Modifier les informations des fournisseurs.',
   },
   {
-    name: 'suppliers.delete',
+    name: fleetPermissions.suppliers.delete,
     description: 'Supprimer des fournisseurs du référentiel.',
+  },
+  {
+    name: fleetPermissions.suppliers.status.update,
+    description: 'Activer ou désactiver des fournisseurs.',
   },
   {
     name: maintenancePermissions.plans.read,
@@ -102,11 +183,15 @@ const permissionDefinitions = [
   },
   {
     name: maintenancePermissions.plans.update,
-    description: 'Modifier le paramétrage et le statut des plans de maintenance.',
+    description: 'Modifier le paramétrage des plans de maintenance.',
   },
   {
     name: maintenancePermissions.plans.delete,
     description: 'Supprimer des plans de maintenance.',
+  },
+  {
+    name: maintenancePermissions.plans.status.update,
+    description: 'Activer ou désactiver des plans de maintenance.',
   },
   {
     name: maintenancePermissions.plans.execute,
@@ -126,11 +211,15 @@ const permissionDefinitions = [
   },
   {
     name: maintenancePermissions.operations.update,
-    description: 'Modifier les opérations réutilisables et leur statut d’activation.',
+    description: 'Modifier les opérations réutilisables de maintenance.',
   },
   {
     name: maintenancePermissions.operations.delete,
     description: 'Supprimer les opérations de maintenance qui ne sont utilisées par aucun plan.',
+  },
+  {
+    name: maintenancePermissions.operations.status.update,
+    description: 'Activer ou désactiver des opérations de maintenance.',
   },
   {
     name: maintenancePermissions.parts.read,
@@ -142,11 +231,15 @@ const permissionDefinitions = [
   },
   {
     name: maintenancePermissions.parts.update,
-    description: 'Modifier les références de pièces et leur statut d’activation.',
+    description: 'Modifier les références de pièces destinées à la maintenance.',
   },
   {
     name: maintenancePermissions.parts.delete,
     description: 'Supprimer les pièces de maintenance qui ne sont utilisées par aucun plan.',
+  },
+  {
+    name: maintenancePermissions.parts.status.update,
+    description: 'Activer ou désactiver des pièces de maintenance.',
   },
   {
     name: maintenancePermissions.parts.stock.adjustOnHand,

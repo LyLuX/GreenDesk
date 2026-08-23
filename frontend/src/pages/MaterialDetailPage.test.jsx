@@ -80,7 +80,9 @@ describe('MaterialDetailPage', () => {
   });
 
   it('enables the file upload buttons after selecting valid files', async () => {
-    mocks.hasPermission.mockImplementation((permission) => permission === 'materials.update');
+    mocks.hasPermission.mockImplementation((permission) =>
+      ['materials.photos.create', 'materials.documents.create'].includes(permission),
+    );
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={['/materials/material-uuid']}>

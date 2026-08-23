@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import { createReferenceApi } from '../api/reference.api.js';
+import useAuth from '../auth/useAuth.js';
 import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import FilterPanel from '../components/FilterPanel.jsx';
@@ -11,6 +12,7 @@ import PaginationControls from '../components/PaginationControls.jsx';
 import useNotification from '../notifications/useNotification.js';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import { paginateItems } from '../utils/pagination.js';
+import administrationPermissions from '../permissions/administration.permissions.js';
 
 const emptyRole = () => ({ name: '', description: '', permissionUuids: [] });
 const rolesApi = createReferenceApi('roles');
@@ -21,7 +23,9 @@ const permissionActionOrder = [
   'read',
   'financial',
   'create',
+  'upload',
   'update',
+  'set_primary',
   'adjust_on_hand',
   'adjust_on_order',
   'order',
@@ -35,7 +39,9 @@ const permissionActionLabels = {
   read: 'Lecture',
   financial: 'Données financières',
   create: 'Création',
+  upload: 'Ajout de fichier',
   update: 'Modification',
+  set_primary: 'Définition comme principale',
   adjust_on_hand: 'Correction du stock',
   adjust_on_order: 'Correction des quantités commandées',
   order: 'Enregistrement des commandes',
@@ -129,7 +135,14 @@ const renderPermissionSummary = (permissions = []) => {
 
 /** Administrator workspace for assigning permission codes to application roles. */
 export default function RolesPage() {
+  const { hasPermission } = useAuth();
   const { notify } = useNotification();
+  const canCreate = hasPermission(administrationPermissions.roles.create);
+  const canUpdate = hasPermission(administrationPermissions.roles.update);
+  const canDelete = hasPermission(administrationPermissions.roles.delete);
+  const canAssignPermissions = hasPermission(administrationPermissions.roles.permissions.update);
+  const canReadPermissions = hasPermission(administrationPermissions.permissions.read);
+  const canOpenEdit = canUpdate || (canAssignPermissions && canReadPermissions);
   const permissionActionsTitleId = useId();
   const [roles, setRoles] = useState([]);
   const [permissions, setPermissions] = useState([]);
@@ -236,6 +249,10 @@ export default function RolesPage() {
   }, [load]);
 
   useEffect(() => {
+    if (!canReadPermissions) {
+      setLoadingPermissions(false);
+      return undefined;
+    }
     const controller = new AbortController();
     setLoadingPermissions(true);
     listAllPermissions(controller.signal)
@@ -249,7 +266,7 @@ export default function RolesPage() {
         if (!controller.signal.aborted) setLoadingPermissions(false);
       });
     return () => controller.abort();
-  }, []);
+  }, [canReadPermissions]);
 
   const openCreate = () => {
     setEditing({});
@@ -298,18 +315,29 @@ export default function RolesPage() {
   const save = async (event) => {
     event.preventDefault();
     if (saving) return;
-    if (!form.name.trim()) {
+    if ((!editing?.uuid || canUpdate) && !form.name.trim()) {
       setFormError('Le nom du rôle est obligatoire.');
       return;
     }
     setSaving(true);
     setFormError('');
     try {
-      const payload = {
-        name: form.name.trim(),
-        description: form.description.trim() || null,
-        permissionUuids: form.permissionUuids,
-      };
+      const payload = editing?.uuid
+        ? {
+            ...(canUpdate
+              ? { name: form.name.trim(), description: form.description.trim() || null }
+              : {}),
+            ...(canAssignPermissions && canReadPermissions
+              ? { permissionUuids: form.permissionUuids }
+              : {}),
+          }
+        : {
+            name: form.name.trim(),
+            description: form.description.trim() || null,
+            ...(canAssignPermissions && canReadPermissions
+              ? { permissionUuids: form.permissionUuids }
+              : {}),
+          };
       if (editing?.uuid) await rolesApi.update(editing.uuid, payload);
       else await rolesApi.create(payload);
       notify('success', `Rôle ${editing?.uuid ? 'mis à jour' : 'créé'} avec succès.`);
@@ -344,7 +372,7 @@ export default function RolesPage() {
           <h1 className="page-title">Rôles</h1>
           <p className="page-subtitle">Attribution des permissions par rôle.</p>
         </div>
-        <Button onClick={openCreate}>Créer un rôle</Button>
+        {canCreate && <Button onClick={openCreate}>Créer un rôle</Button>}
       </div>
       <FilterPanel
         fields={[
@@ -359,22 +387,26 @@ export default function RolesPage() {
               setPage(1);
             },
           },
-          {
-            name: 'permissionUuid',
-            type: 'select',
-            label: 'Permission',
-            ariaLabel: 'Filtrer par permission',
-            emptyLabel: 'Toutes les permissions',
-            options: sortedPermissions.map((permission) => ({
-              value: permission.uuid,
-              label: permission.name,
-            })),
-            value: permissionUuid,
-            onChange: (value) => {
-              setPermissionUuid(value);
-              setPage(1);
-            },
-          },
+          ...(canReadPermissions
+            ? [
+                {
+                  name: 'permissionUuid',
+                  type: 'select',
+                  label: 'Permission',
+                  ariaLabel: 'Filtrer par permission',
+                  emptyLabel: 'Toutes les permissions',
+                  options: sortedPermissions.map((permission) => ({
+                    value: permission.uuid,
+                    label: permission.name,
+                  })),
+                  value: permissionUuid,
+                  onChange: (value) => {
+                    setPermissionUuid(value);
+                    setPage(1);
+                  },
+                },
+              ]
+            : []),
         ]}
       />
       {error && (
@@ -416,21 +448,25 @@ export default function RolesPage() {
                     </td>
                     <td>{renderPermissionSummary(role.permissions)}</td>
                     <td>
-                      <button
-                        className="btn btn-sm btn-outline-brand me-2"
-                        type="button"
-                        onClick={() => openEdit(role)}
-                      >
-                        Modifier
-                      </button>
-                      <button
-                        className="btn btn-sm btn-outline-danger"
-                        type="button"
-                        disabled={removing === role.uuid}
-                        onClick={() => setRoleToDelete(role)}
-                      >
-                        {removing === role.uuid ? 'Suppression…' : 'Supprimer'}
-                      </button>
+                      {canOpenEdit && (
+                        <button
+                          className="btn btn-sm btn-outline-brand me-2"
+                          type="button"
+                          onClick={() => openEdit(role)}
+                        >
+                          Modifier
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          className="btn btn-sm btn-outline-danger"
+                          type="button"
+                          disabled={removing === role.uuid}
+                          onClick={() => setRoleToDelete(role)}
+                        >
+                          {removing === role.uuid ? 'Suppression…' : 'Supprimer'}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -469,6 +505,7 @@ export default function RolesPage() {
             value={form.name}
             onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
             required
+            disabled={Boolean(editing?.uuid && !canUpdate)}
           />
           <FormField
             label="Description"
@@ -477,65 +514,71 @@ export default function RolesPage() {
             onChange={(event) =>
               setForm((current) => ({ ...current, description: event.target.value }))
             }
+            disabled={Boolean(editing?.uuid && !canUpdate)}
           />
-          <fieldset>
-            <legend className="form-label d-flex justify-content-between gap-3">
-              <span>Permissions attribuées</span>
-              <span className="text-body-secondary fw-normal">
-                {form.permissionUuids.length} sur {sortedPermissions.length}
-              </span>
-            </legend>
-            {!loadingPermissions && permissionActionGroups.length > 0 && (
-              <section
-                aria-labelledby={permissionActionsTitleId}
-                className="filter-panel permission-action-panel surface mb-3 p-3"
-              >
-                <h3 className="permission-action-panel-title" id={permissionActionsTitleId}>
-                  Sélection rapide par action
-                </h3>
-                {permissionActionGroups.map(({ action, permissionUuids }) => (
-                  <PermissionActionCheckbox
-                    action={action}
-                    key={action}
-                    permissionUuids={permissionUuids}
-                    selectedPermissionUuids={selectedPermissionUuids}
-                    onToggle={togglePermissionAction}
-                  />
-                ))}
-              </section>
-            )}
-            <div className="permission-picker">
-              {loadingPermissions ? (
-                <Loader label="Chargement des permissions" />
-              ) : (
-                sortedPermissions.map((permission) => {
-                  const selected = form.permissionUuids.includes(permission.uuid);
-                  return (
-                    <div
-                      className={`permission-option ${selected ? 'selected' : ''}`}
-                      key={permission.uuid}
-                    >
-                      <input
-                        className="form-check-input"
-                        id={`permission-${permission.uuid}`}
-                        type="checkbox"
-                        checked={selected}
-                        onChange={() => togglePermission(permission.uuid)}
-                      />
-                      <label className="form-check-label" htmlFor={`permission-${permission.uuid}`}>
-                        <span className="permission-description">
-                          {permission.description || permission.name}
-                        </span>
-                        {permission.description && (
-                          <code className="permission-code">{permission.name}</code>
-                        )}
-                      </label>
-                    </div>
-                  );
-                })
+          {canAssignPermissions && canReadPermissions && (
+            <fieldset>
+              <legend className="form-label d-flex justify-content-between gap-3">
+                <span>Permissions attribuées</span>
+                <span className="text-body-secondary fw-normal">
+                  {form.permissionUuids.length} sur {sortedPermissions.length}
+                </span>
+              </legend>
+              {!loadingPermissions && permissionActionGroups.length > 0 && (
+                <section
+                  aria-labelledby={permissionActionsTitleId}
+                  className="filter-panel permission-action-panel surface mb-3 p-3"
+                >
+                  <h3 className="permission-action-panel-title" id={permissionActionsTitleId}>
+                    Sélection rapide par action
+                  </h3>
+                  {permissionActionGroups.map(({ action, permissionUuids }) => (
+                    <PermissionActionCheckbox
+                      action={action}
+                      key={action}
+                      permissionUuids={permissionUuids}
+                      selectedPermissionUuids={selectedPermissionUuids}
+                      onToggle={togglePermissionAction}
+                    />
+                  ))}
+                </section>
               )}
-            </div>
-          </fieldset>
+              <div className="permission-picker">
+                {loadingPermissions ? (
+                  <Loader label="Chargement des permissions" />
+                ) : (
+                  sortedPermissions.map((permission) => {
+                    const selected = form.permissionUuids.includes(permission.uuid);
+                    return (
+                      <div
+                        className={`permission-option ${selected ? 'selected' : ''}`}
+                        key={permission.uuid}
+                      >
+                        <input
+                          className="form-check-input"
+                          id={`permission-${permission.uuid}`}
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => togglePermission(permission.uuid)}
+                        />
+                        <label
+                          className="form-check-label"
+                          htmlFor={`permission-${permission.uuid}`}
+                        >
+                          <span className="permission-description">
+                            {permission.description || permission.name}
+                          </span>
+                          {permission.description && (
+                            <code className="permission-code">{permission.name}</code>
+                          )}
+                        </label>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </fieldset>
+          )}
           <Button type="submit" disabled={saving}>
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </Button>

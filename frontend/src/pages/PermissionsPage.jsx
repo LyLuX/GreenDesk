@@ -1,4 +1,5 @@
 import ReferencePage from './ReferencePage.jsx';
+import administrationPermissions from '../permissions/administration.permissions.js';
 
 /** Administrator catalogue for the permission codes assigned to roles. */
 export default function PermissionsPage() {
@@ -6,9 +7,9 @@ export default function PermissionsPage() {
     <ReferencePage
       title="Permissions"
       resource="permissions"
-      createPermission="ADMIN"
-      updatePermission="ADMIN"
-      deletePermission="ADMIN"
+      createPermission={administrationPermissions.permissions.create}
+      updatePermission={administrationPermissions.permissions.update}
+      deletePermission={administrationPermissions.permissions.delete}
       fields={[
         { name: 'name', label: 'Code', required: true },
         { name: 'description', label: 'Description' },

@@ -556,6 +556,7 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(screen.queryByRole('button', { name: 'Supprimer Vidange' })).not.toBeInTheDocument();
     expect(mocks.hasPermission).toHaveBeenCalledWith('maintenance.operations.create');
     expect(mocks.hasPermission).toHaveBeenCalledWith('maintenance.operations.update');
+    expect(mocks.hasPermission).toHaveBeenCalledWith('maintenance.operations.status.update');
     expect(mocks.hasPermission).toHaveBeenCalledWith('maintenance.operations.delete');
   });
 });

@@ -155,7 +155,8 @@ export const openApiPaths = {
     get: {
       operationId: 'listUsers',
       tags: ['Users'],
-      summary: 'Liste les utilisateurs (administrateur uniquement).',
+      summary: 'Liste les utilisateurs.',
+      description: 'Nécessite `users.read`.',
       security: secure,
       parameters: [
         searchParameter,
@@ -175,6 +176,8 @@ export const openApiPaths = {
       operationId: 'createUser',
       tags: ['Users'],
       summary: 'Crée un utilisateur et lui attribue éventuellement des rôles.',
+      description:
+        'Nécessite `users.create`. Fournir `roleUuids` nécessite également `users.roles.update`.',
       security: secure,
       requestBody: jsonBody('UserCreateRequest'),
       responses: {
@@ -188,7 +191,8 @@ export const openApiPaths = {
     get: {
       operationId: 'getUser',
       tags: ['Users'],
-      summary: 'Retourne un utilisateur (administrateur uniquement).',
+      summary: 'Retourne un utilisateur.',
+      description: 'Nécessite `users.read`.',
       security: secure,
       responses: {
         200: jsonResponse('UserResponse', 'Utilisateur retourné.'),
@@ -200,7 +204,7 @@ export const openApiPaths = {
       tags: ['Users'],
       summary: 'Met à jour un utilisateur et ses rôles.',
       description:
-        'Une modification des rôles invalide les sessions actives de l’utilisateur concerné, sauf lorsqu’il s’agit de l’administrateur réalisant l’opération.',
+        '`users.update` protège les informations générales, `users.status.update` le statut, `users.password.update` le mot de passe et `users.roles.update` les rôles. Toutes les permissions correspondant aux champs fournis sont exigées. Une modification des rôles invalide les sessions actives de l’utilisateur concerné, sauf lorsqu’il s’agit de l’administrateur réalisant l’opération.',
       security: secure,
       requestBody: jsonBody('UserUpdateRequest'),
       responses: {
@@ -212,6 +216,7 @@ export const openApiPaths = {
       operationId: 'deleteUser',
       tags: ['Users'],
       summary: 'Supprime logiquement un utilisateur.',
+      description: 'Nécessite `users.delete`.',
       security: secure,
       responses: { 204: noContent, ...resourceErrors },
     },
@@ -220,7 +225,8 @@ export const openApiPaths = {
     get: {
       operationId: 'listRoles',
       tags: ['Roles'],
-      summary: 'Liste les rôles et leurs permissions (administrateur uniquement).',
+      summary: 'Liste les rôles et leurs permissions.',
+      description: 'Nécessite `roles.read`.',
       security: secure,
       parameters: [
         searchParameter,
@@ -239,6 +245,8 @@ export const openApiPaths = {
       operationId: 'createRole',
       tags: ['Roles'],
       summary: 'Crée un rôle et lui attribue éventuellement des permissions.',
+      description:
+        'Nécessite `roles.create`. Fournir `permissionUuids` nécessite également `roles.permissions.update`.',
       security: secure,
       requestBody: jsonBody('RoleCreateRequest'),
       responses: {
@@ -254,7 +262,7 @@ export const openApiPaths = {
       tags: ['Roles'],
       summary: 'Met à jour un rôle et ses permissions.',
       description:
-        'Une modification des permissions invalide les sessions actives des utilisateurs concernés, à l’exception de la session de l’administrateur réalisant l’opération.',
+        '`roles.update` protège le nom et la description. Modifier `permissionUuids` nécessite `roles.permissions.update`. Toutes les permissions correspondant aux champs fournis sont exigées. Une modification des permissions invalide les sessions actives des utilisateurs concernés, à l’exception de la session de l’administrateur réalisant l’opération.',
       security: secure,
       requestBody: jsonBody('RoleUpdateRequest'),
       responses: {
@@ -267,7 +275,7 @@ export const openApiPaths = {
       tags: ['Roles'],
       summary: 'Supprime logiquement un rôle.',
       description:
-        'La suppression invalide les sessions actives des utilisateurs concernés, à l’exception de la session de l’administrateur réalisant l’opération.',
+        'Nécessite `roles.delete`. La suppression invalide les sessions actives des utilisateurs concernés, à l’exception de la session de l’administrateur réalisant l’opération.',
       security: secure,
       responses: { 204: noContent, ...resourceErrors },
     },
@@ -276,7 +284,8 @@ export const openApiPaths = {
     get: {
       operationId: 'listPermissions',
       tags: ['Permissions'],
-      summary: 'Liste les permissions (administrateur uniquement).',
+      summary: 'Liste les permissions.',
+      description: 'Nécessite `permissions.read`.',
       security: secure,
       parameters: [searchParameter, pageParameter, limitParameter],
       responses: {
@@ -290,6 +299,7 @@ export const openApiPaths = {
       operationId: 'createPermission',
       tags: ['Permissions'],
       summary: 'Crée une permission.',
+      description: 'Nécessite `permissions.create`.',
       security: secure,
       requestBody: jsonBody('PermissionCreateRequest'),
       responses: {
@@ -304,6 +314,7 @@ export const openApiPaths = {
       operationId: 'updatePermission',
       tags: ['Permissions'],
       summary: 'Met à jour une permission.',
+      description: 'Nécessite `permissions.update`.',
       security: secure,
       requestBody: jsonBody('PermissionUpdateRequest'),
       responses: {
@@ -315,6 +326,7 @@ export const openApiPaths = {
       operationId: 'deletePermission',
       tags: ['Permissions'],
       summary: 'Supprime logiquement une permission.',
+      description: 'Nécessite `permissions.delete`.',
       security: secure,
       responses: { 204: noContent, ...resourceErrors },
     },
@@ -362,7 +374,8 @@ export const openApiPaths = {
       operationId: 'updateCategory',
       tags: ['Categories'],
       summary: 'Met à jour une catégorie, y compris son statut actif ou inactif.',
-      description: 'Nécessite `categories.update`.',
+      description:
+        '`categories.update` protège le nom et la description. Modifier `active` nécessite `categories.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées.',
       security: secure,
       requestBody: jsonBody('CategoryUpdateRequest'),
       responses: {
@@ -412,7 +425,8 @@ export const openApiPaths = {
       operationId: 'updateManufacturer',
       tags: ['Manufacturers'],
       summary: 'Met à jour un fabricant, y compris son statut actif ou inactif.',
-      description: 'Nécessite `manufacturers.update`.',
+      description:
+        '`manufacturers.update` protège le nom. Modifier `active` nécessite `manufacturers.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées.',
       security: secure,
       requestBody: jsonBody('ManufacturerUpdateRequest'),
       responses: {
@@ -448,7 +462,7 @@ export const openApiPaths = {
       tags: ['Manufacturers'],
       summary: 'Ajoute ou remplace le logo d’un fabricant (2 Mo maximum).',
       description:
-        'Nécessite `manufacturers.create` ou `manufacturers.update`. Le MIME déclaré et la signature binaire doivent correspondre à une image JPEG, PNG ou WebP.',
+        'Nécessite `manufacturers.logo.upload`. Le MIME déclaré et la signature binaire doivent correspondre à une image JPEG, PNG ou WebP.',
       security: secure,
       requestBody: {
         required: true,
@@ -477,7 +491,7 @@ export const openApiPaths = {
       operationId: 'deleteManufacturerLogo',
       tags: ['Manufacturers'],
       summary: 'Supprime le logo d’un fabricant.',
-      description: 'Nécessite `manufacturers.update`.',
+      description: 'Nécessite `manufacturers.logo.delete`.',
       security: secure,
       responses: {
         200: jsonResponse('LogoStatusResponse', 'Logo supprimé ou déjà absent.'),
@@ -582,7 +596,7 @@ export const openApiPaths = {
       tags: ['Materials'],
       summary: 'Met à jour un matériel, y compris son statut actif ou inactif.',
       description:
-        'Nécessite `materials.update`. La désactivation rend inactifs les plans actifs associés. La réactivation restaure uniquement les plans désactivés au même instant que le matériel.',
+        '`materials.update` protège les informations générales. Modifier `active` nécessite `materials.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées. La désactivation rend inactifs les plans actifs associés. La réactivation restaure uniquement les plans désactivés au même instant que le matériel.',
       security: secure,
       requestBody: jsonBody('MaterialUpdateRequest'),
       responses: {
@@ -623,7 +637,7 @@ export const openApiPaths = {
       tags: ['Material files'],
       summary: 'Ajoute une photo au matériel (10 Mo, 10 photos maximum).',
       description:
-        'Nécessite `materials.update`. Formats acceptés : JPEG, PNG et WebP, avec correspondance obligatoire entre le MIME déclaré et la signature binaire.',
+        'Nécessite `materials.photos.create`. Formats acceptés : JPEG, PNG et WebP, avec correspondance obligatoire entre le MIME déclaré et la signature binaire.',
       security: secure,
       requestBody: {
         required: true,
@@ -650,7 +664,7 @@ export const openApiPaths = {
       tags: ['Material files'],
       summary: 'Ajoute un document PDF au matériel (10 Mo maximum).',
       description:
-        'Nécessite `materials.update`. Le MIME déclaré et la signature binaire doivent correspondre à un document PDF.',
+        'Nécessite `materials.documents.create`. Le MIME déclaré et la signature binaire doivent correspondre à un document PDF.',
       security: secure,
       requestBody: {
         required: true,
@@ -682,7 +696,7 @@ export const openApiPaths = {
       operationId: 'setPrimaryMaterialPhoto',
       tags: ['Material files'],
       summary: 'Définit une photo comme photo principale unique.',
-      description: 'Nécessite `materials.update`.',
+      description: 'Nécessite `materials.photos.set_primary`.',
       security: secure,
       responses: {
         200: jsonResponse('MaterialFileResponse', 'Photo principale mise à jour.'),
@@ -724,7 +738,7 @@ export const openApiPaths = {
       operationId: 'deleteMaterialFile',
       tags: ['Material files'],
       summary: 'Supprime un fichier et son enregistrement.',
-      description: 'Nécessite `materials.update`.',
+      description: 'Nécessite `materials.files.delete`.',
       security: secure,
       responses: { 204: noContent, ...resourceErrors },
     },
@@ -769,7 +783,8 @@ export const openApiPaths = {
       operationId: 'updateMaintenanceOperation',
       tags: ['Maintenance'],
       summary: 'Met à jour une opération et les intitulés des plans associés.',
-      description: 'Nécessite `maintenance.operations.update`.',
+      description:
+        '`maintenance.operations.update` protège les informations générales. Modifier `active` nécessite `maintenance.operations.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées.',
       security: secure,
       requestBody: jsonBody('MaintenanceOperationUpdateRequest'),
       responses: {
@@ -821,7 +836,8 @@ export const openApiPaths = {
       tags: ['Suppliers'],
       summary:
         'Met à jour un fournisseur, son statut actif ou inactif et le nom conservé sur ses pièces.',
-      description: 'Nécessite `suppliers.update`.',
+      description:
+        '`suppliers.update` protège les informations générales. Modifier `active` nécessite `suppliers.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées.',
       security: secure,
       requestBody: jsonBody('SupplierUpdateRequest'),
       responses: {
@@ -880,7 +896,8 @@ export const openApiPaths = {
       operationId: 'updateMaintenancePart',
       tags: ['Maintenance'],
       summary: 'Met à jour une référence de pièce.',
-      description: 'Nécessite `maintenance.parts.update`.',
+      description:
+        '`maintenance.parts.update` protège les informations générales. Modifier `active` nécessite `maintenance.parts.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées.',
       security: secure,
       requestBody: jsonBody('MaintenancePartUpdateRequest'),
       responses: {
@@ -1147,7 +1164,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Active ou désactive un plan.',
       description:
-        'Nécessite `maintenance.update`. Un plan ne peut pas être activé tant que son matériel est inactif.',
+        'Nécessite `maintenance.status.update`. Un plan ne peut pas être activé tant que son matériel est inactif.',
       security: secure,
       requestBody: jsonBody('MaintenanceStatusRequest'),
       responses: {

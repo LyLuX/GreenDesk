@@ -1,6 +1,7 @@
 import maintenancePermissions from './maintenance/maintenance.permissions.js';
 import historyPermissions from './history/history.permissions.js';
 import dashboardPermissions from './dashboard/dashboard.permissions.js';
+import administrationPermissions from './permissions/administration.permissions.js';
 
 /** Hierarchical navigation model shared by the sidebar and its tests. */
 export const navigationSections = [
@@ -68,9 +69,13 @@ export const navigationSections = [
     key: 'administration',
     label: 'Administration',
     items: [
-      { label: 'Utilisateurs', path: '/users', permission: 'ADMIN' },
-      { label: 'Rôles', path: '/roles', permission: 'ADMIN' },
-      { label: 'Permissions', path: '/permissions', permission: 'ADMIN' },
+      { label: 'Utilisateurs', path: '/users', permission: administrationPermissions.users.read },
+      { label: 'Rôles', path: '/roles', permission: administrationPermissions.roles.read },
+      {
+        label: 'Permissions',
+        path: '/permissions',
+        permission: administrationPermissions.permissions.read,
+      },
     ],
   },
 ];

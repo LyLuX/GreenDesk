@@ -1,14 +1,16 @@
 import { activityStatusFilter } from '../filters/filter-options.js';
 import ReferencePage from './ReferencePage.jsx';
+import fleetPermissions from '../permissions/fleet.permissions.js';
 
 export default function SuppliersPage() {
   return (
     <ReferencePage
       title="Fournisseurs"
       resource="suppliers"
-      createPermission="suppliers.create"
-      updatePermission="suppliers.update"
-      deletePermission="suppliers.delete"
+      createPermission={fleetPermissions.suppliers.create}
+      updatePermission={fleetPermissions.suppliers.update}
+      deletePermission={fleetPermissions.suppliers.delete}
+      statusPermission={fleetPermissions.suppliers.status.update}
       statusAction
       fields={[
         { name: 'name', label: 'Nom', required: true },
