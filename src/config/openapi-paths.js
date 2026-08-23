@@ -288,6 +288,21 @@ export const openApiPaths = {
       },
     },
   },
+  '/users/{uuid}/restore': {
+    parameters: [uuidParameter],
+    post: {
+      operationId: 'restoreUser',
+      tags: ['Users'],
+      summary: 'Restaure un utilisateur supprimé logiquement.',
+      description:
+        'Nécessite `users.restore`. Le statut, les rôles et l’état de vérification précédents sont conservés, tandis que les anciennes sessions sont invalidées.',
+      security: secure,
+      responses: {
+        200: jsonResponse('UserResponse', 'Utilisateur restauré.'),
+        ...writeErrors,
+      },
+    },
+  },
   '/roles': {
     get: {
       operationId: 'listRoles',

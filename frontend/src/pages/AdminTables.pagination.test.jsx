@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => {
     roles,
     hasPermission: vi.fn(() => true),
     updateUser: vi.fn(),
+    restoreUser: vi.fn(),
     resendUserEmailVerification: vi.fn(),
     referenceApis: {
       roles: { list: vi.fn().mockResolvedValue({ data: { data: roles } }) },
@@ -46,6 +47,7 @@ vi.mock('../api/users.api.js', () => ({
   createUser: vi.fn(),
   updateUser: mocks.updateUser,
   deleteUser: vi.fn(),
+  restoreUser: mocks.restoreUser,
   resendUserEmailVerification: mocks.resendUserEmailVerification,
 }));
 vi.mock('../api/reference.api.js', () => ({
@@ -103,6 +105,30 @@ describe('administrator table pagination', () => {
     expect(
       screen.queryByRole('button', { name: 'Supprimer Utilisateur 1' }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Restaurer Utilisateur 1' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('restores a deleted user with the dedicated permission and confirmation', async () => {
+    const user = userEvent.setup();
+    mocks.users[0].deletedAt = '2026-08-23T08:00:00.000Z';
+    mocks.restoreUser.mockResolvedValue({ data: { success: true, data: mocks.users[0] } });
+    mocks.hasPermission.mockImplementation((permission) =>
+      ['users.read', 'users.deleted.read', 'users.restore'].includes(permission),
+    );
+
+    render(<UsersPage />);
+    await user.selectOptions(await screen.findByLabelText('Filtrer par statut'), 'deleted');
+    await user.click(await screen.findByRole('button', { name: 'Restaurer Utilisateur 1' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Restaurer l’utilisateur' });
+    expect(within(dialog).getByText(/statut, ses rôles et son état de vérification/)).toBeVisible();
+    const confirmButton = within(dialog).getByRole('button', { name: 'Restaurer' });
+    expect(confirmButton).toHaveClass('btn-outline-activation');
+    await user.click(confirmButton);
+
+    expect(mocks.restoreUser).toHaveBeenCalledWith('user-1');
   });
 
   it('uses the dedicated permission to resend verification emails', async () => {

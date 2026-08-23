@@ -134,6 +134,9 @@ describe('UserService', () => {
     );
 
     expect(userRepository.restore).toHaveBeenCalledWith(deletedUser, { transaction });
+    expect(userRepository.incrementAuthorizationVersion).toHaveBeenCalledWith(deletedUser.id, {
+      transaction,
+    });
     expect(userRepository.update).toHaveBeenCalledWith(
       deletedUser,
       expect.objectContaining({
@@ -147,5 +150,85 @@ describe('UserService', () => {
       expect.objectContaining({ action: 'USER_RESTORED' }),
       { transaction },
     );
+  });
+
+  it('invalidates sessions when deleting a user', async () => {
+    const { service, userRepository, auditService } = createService();
+
+    await service.remove(user.uuid, 2);
+
+    expect(userRepository.incrementAuthorizationVersion).toHaveBeenCalledWith(user.id, {
+      transaction,
+    });
+    expect(userRepository.delete).toHaveBeenCalledWith(user, { transaction });
+    expect(auditService.record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'USER_DELETED', entityUuid: user.uuid }),
+      { transaction },
+    );
+  });
+
+  it('restores a deleted user without changing their account properties', async () => {
+    const deletedUser = {
+      ...user,
+      isActive: false,
+      emailVerifiedAt: null,
+      deletedAt: new Date('2026-08-23T08:00:00.000Z'),
+      roles: [{ uuid: 'role-1', name: 'USER' }],
+    };
+    const { service, userRepository, auditService } = createService();
+    userRepository.findByUuid.mockResolvedValue(deletedUser);
+    userRepository.restore.mockImplementation(async (restoredUser) => {
+      restoredUser.deletedAt = null;
+      return restoredUser;
+    });
+
+    await expect(service.restore(deletedUser.uuid, 2)).resolves.toBe(deletedUser);
+
+    expect(userRepository.findByUuid).toHaveBeenCalledWith(deletedUser.uuid, {
+      withDeleted: true,
+      transaction,
+    });
+    expect(userRepository.restore).toHaveBeenCalledWith(deletedUser, { transaction });
+    expect(userRepository.update).not.toHaveBeenCalled();
+    expect(userRepository.setRoles).not.toHaveBeenCalled();
+    expect(userRepository.incrementAuthorizationVersion).toHaveBeenCalledWith(deletedUser.id, {
+      transaction,
+    });
+    expect(auditService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'USER_RESTORED',
+        entityUuid: deletedUser.uuid,
+        oldValues: expect.objectContaining({
+          isActive: false,
+          emailVerifiedAt: null,
+          deletedAt: expect.any(Date),
+        }),
+        newValues: expect.objectContaining({
+          isActive: false,
+          emailVerifiedAt: null,
+          deletedAt: null,
+        }),
+      }),
+      { transaction },
+    );
+  });
+
+  it('rejects restoration when the user is not deleted', async () => {
+    const { service, userRepository } = createService();
+    userRepository.findByUuid.mockResolvedValue(user);
+
+    await expect(service.restore(user.uuid, 2)).rejects.toMatchObject({ statusCode: 409 });
+
+    expect(userRepository.restore).not.toHaveBeenCalled();
+    expect(userRepository.incrementAuthorizationVersion).not.toHaveBeenCalled();
+  });
+
+  it('returns not found when the account to restore does not exist', async () => {
+    const { service, userRepository } = createService();
+    userRepository.findByUuid.mockResolvedValue(null);
+
+    await expect(service.restore(user.uuid, 2)).rejects.toMatchObject({ statusCode: 404 });
+
+    expect(userRepository.restore).not.toHaveBeenCalled();
   });
 });

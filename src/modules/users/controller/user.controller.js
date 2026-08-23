@@ -36,6 +36,11 @@ export default class UserController {
     await this.userService.remove(request.params.uuid, request.user?.userId);
     response.status(HTTP_STATUS.NO_CONTENT).send();
   }
+  async restore(request, response) {
+    response.json(
+      successResponse(await this.userService.restore(request.params.uuid, request.user?.userId)),
+    );
+  }
   async resendEmailVerification(request, response) {
     response.json(
       successResponse(

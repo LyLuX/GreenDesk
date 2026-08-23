@@ -7,5 +7,6 @@ export const listUsers = (params, signal) =>
 export const createUser = (payload) => client.post('/v1/users', payload);
 export const updateUser = (uuid, payload) => client.put(`/v1/users/${uuid}`, payload);
 export const deleteUser = (uuid) => client.delete(`/v1/users/${uuid}`);
+export const restoreUser = (uuid) => client.post(`/v1/users/${uuid}/restore`);
 export const resendUserEmailVerification = (uuid) =>
   client.post(`/v1/users/${uuid}/email-verification/resend`);

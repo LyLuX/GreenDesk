@@ -72,6 +72,13 @@ router.delete(
   asyncHandler(controller.remove.bind(controller)),
 );
 router.post(
+  '/:uuid/restore',
+  authorize(administrationPermissions.users.restore),
+  userUuidValidator,
+  validateRequest,
+  asyncHandler(controller.restore.bind(controller)),
+);
+router.post(
   '/:uuid/email-verification/resend',
   authorize(administrationPermissions.users.emailVerification.resend),
   userUuidValidator,

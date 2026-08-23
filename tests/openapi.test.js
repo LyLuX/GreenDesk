@@ -304,6 +304,13 @@ describe('OpenAPI contract', () => {
         }),
       ]),
     );
+    expect(swaggerSpec.paths['/users/{uuid}/restore'].post.description).toContain(
+      '`users.restore`',
+    );
+    expect(swaggerSpec.paths['/users/{uuid}/restore'].post.responses).toHaveProperty('409');
+    expect(swaggerSpec.components.schemas.User.properties.deletedAt.description).toContain(
+      'restauration',
+    );
     expect(swaggerSpec.paths['/users/{uuid}'].put.description).toContain('`users.password.update`');
     expect(swaggerSpec.paths['/roles/{uuid}'].put.description).toContain(
       '`roles.permissions.update`',

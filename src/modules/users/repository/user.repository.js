@@ -76,8 +76,13 @@ export default class UserRepository extends TransactionalRepository {
       : [];
     return { count: pageResult.count, rows };
   }
-  async findByUuid(uuid, { transaction } = {}) {
-    return User.findOne({ where: { uuid }, include: roleInclude, transaction });
+  async findByUuid(uuid, { withDeleted = false, transaction } = {}) {
+    return User.findOne({
+      where: { uuid },
+      include: roleInclude,
+      paranoid: !withDeleted,
+      transaction,
+    });
   }
   async findById(id, { transaction } = {}) {
     return User.findByPk(id, { include: roleInclude, transaction });

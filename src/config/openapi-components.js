@@ -87,6 +87,11 @@ const user = {
     lastLoginAt: nullableDateTime,
     roles: arrayOf(reference('UserRole')),
     ...timestamps,
+    deletedAt: {
+      ...nullableDateTime,
+      description:
+        'Date de suppression logique du compte, remise à `null` après une restauration réussie.',
+    },
   },
 };
 

@@ -9,7 +9,7 @@ export const permissionActionFamilies = Object.freeze(
     {
       key: 'update',
       label: 'Modification et paramétrage',
-      actions: Object.freeze(['update', 'set_primary']),
+      actions: Object.freeze(['update', 'set_primary', 'restore']),
     },
     {
       key: 'stock',

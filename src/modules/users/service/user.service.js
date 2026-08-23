@@ -91,6 +91,9 @@ export default class UserService {
           );
         await this.userRepository.setRoles(user, [role], { transaction });
       }
+      if (existingUser) {
+        await this.userRepository.incrementAuthorizationVersion(existingUser.id, { transaction });
+      }
       await this.auditService.record(
         {
           userId: actorUserId,
@@ -144,8 +147,9 @@ export default class UserService {
   }
 
   async remove(uuid, actorUserId = null) {
-    const user = await this.getByUuid(uuid);
     await this.userRepository.withTransaction(async (transaction) => {
+      const user = await this.getByUuid(uuid, { transaction });
+      await this.userRepository.incrementAuthorizationVersion(user.id, { transaction });
       await this.userRepository.delete(user, { transaction });
       await this.auditService.record(
         {
@@ -157,6 +161,34 @@ export default class UserService {
         },
         { transaction },
       );
+    });
+  }
+
+  async restore(uuid, actorUserId = null) {
+    return this.userRepository.withTransaction(async (transaction) => {
+      const user = await this.userRepository.findByUuid(uuid, {
+        withDeleted: true,
+        transaction,
+      });
+      if (!user) throw new AppError('User not found', HTTP_STATUS.NOT_FOUND);
+      if (!user.deletedAt) {
+        throw new AppError('User is not deleted', HTTP_STATUS.CONFLICT);
+      }
+      const oldValues = this.publicUser(user);
+      await this.userRepository.restore(user, { transaction });
+      await this.userRepository.incrementAuthorizationVersion(user.id, { transaction });
+      await this.auditService.record(
+        {
+          userId: actorUserId,
+          action: 'USER_RESTORED',
+          entity: 'USER',
+          entityUuid: user.uuid,
+          oldValues,
+          newValues: this.publicUser(user),
+        },
+        { transaction },
+      );
+      return user;
     });
   }
 

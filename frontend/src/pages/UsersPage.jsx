@@ -6,6 +6,7 @@ import {
   deleteUser,
   listUsers,
   resendUserEmailVerification,
+  restoreUser,
   updateUser,
 } from '../api/users.api.js';
 import useAuth from '../auth/useAuth.js';
@@ -47,6 +48,7 @@ export default function UsersPage() {
   const canUpdatePassword = hasPermission(administrationPermissions.users.password.update);
   const canUpdateRoles = hasPermission(administrationPermissions.users.roles.update);
   const canDelete = hasPermission(administrationPermissions.users.delete);
+  const canRestore = hasPermission(administrationPermissions.users.restore);
   const canReadDeletedUsers = hasPermission(administrationPermissions.users.deleted.read);
   const canResendVerification = hasPermission(
     administrationPermissions.users.emailVerification.resend,
@@ -62,6 +64,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(null);
+  const [restoring, setRestoring] = useState(null);
   const [changingStatus, setChangingStatus] = useState(null);
   const [resendingVerification, setResendingVerification] = useState(null);
   const [verificationCooldowns, setVerificationCooldowns] = useState({});
@@ -270,6 +273,23 @@ export default function UsersPage() {
     }
   };
 
+  const restore = async (user) => {
+    if (restoring) return false;
+    setRestoring(user.uuid);
+    try {
+      await restoreUser(user.uuid);
+      notify('success', 'Utilisateur restauré avec succès.');
+      if (users.length === 1 && page > 1) setPage((current) => current - 1);
+      else await load();
+      return true;
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError));
+      return false;
+    } finally {
+      setRestoring(null);
+    }
+  };
+
   const toggleStatus = async (user) => {
     if (changingStatus) return false;
     setChangingStatus(user.uuid);
@@ -312,10 +332,10 @@ export default function UsersPage() {
 
   const confirmAction = async () => {
     if (!confirmation) return;
-    const completed =
-      confirmation.action === 'delete'
-        ? await remove(confirmation.user)
-        : await toggleStatus(confirmation.user);
+    let completed;
+    if (confirmation.action === 'delete') completed = await remove(confirmation.user);
+    else if (confirmation.action === 'restore') completed = await restore(confirmation.user);
+    else completed = await toggleStatus(confirmation.user);
     if (completed) setConfirmation(null);
   };
 
@@ -447,7 +467,21 @@ export default function UsersPage() {
                     </td>
                     <td>{formatDateTime(user.lastLoginAt, 'Jamais')}</td>
                     <td>
-                      {!user.deletedAt && (
+                      {user.deletedAt ? (
+                        canRestore && (
+                          <div className="d-flex h-100 w-100 align-items-center justify-content-center">
+                            <button
+                              aria-label={`Restaurer ${user.firstName} ${user.lastName}`}
+                              className="btn btn-sm btn-outline-activation flex-fill"
+                              type="button"
+                              disabled={Boolean(restoring)}
+                              onClick={() => setConfirmation({ action: 'restore', user })}
+                            >
+                              {restoring === user.uuid ? 'Restauration…' : 'Restaurer'}
+                            </button>
+                          </div>
+                        )
+                      ) : (
                         <div className="d-flex h-100 w-100 flex-wrap align-items-center justify-content-center gap-1">
                           {canOpenEdit && (
                             <button
@@ -622,32 +656,43 @@ export default function UsersPage() {
         title={
           confirmation?.action === 'delete'
             ? 'Supprimer l’utilisateur'
-            : `${confirmation?.user.isActive ? 'Désactiver' : 'Activer'} l’utilisateur`
+            : confirmation?.action === 'restore'
+              ? 'Restaurer l’utilisateur'
+              : `${confirmation?.user.isActive ? 'Désactiver' : 'Activer'} l’utilisateur`
         }
         description={
           confirmation?.action === 'delete'
             ? `Le compte de « ${confirmation?.user.firstName ?? ''} ${
                 confirmation?.user.lastName ?? ''
               } » sera supprimé de la liste.`
-            : confirmation?.user.isActive
+            : confirmation?.action === 'restore'
               ? `Le compte de « ${confirmation?.user.firstName ?? ''} ${
                   confirmation?.user.lastName ?? ''
-                } » ne pourra plus se connecter.`
-              : `Le compte de « ${confirmation?.user.firstName ?? ''} ${
-                  confirmation?.user.lastName ?? ''
-                } » pourra de nouveau se connecter.`
+                } » sera restauré avec son statut, ses rôles et son état de vérification précédents.`
+              : confirmation?.user.isActive
+                ? `Le compte de « ${confirmation?.user.firstName ?? ''} ${
+                    confirmation?.user.lastName ?? ''
+                  } » ne pourra plus se connecter.`
+                : `Le compte de « ${confirmation?.user.firstName ?? ''} ${
+                    confirmation?.user.lastName ?? ''
+                  } » pourra de nouveau se connecter.`
         }
         confirmLabel={
           confirmation?.action === 'delete'
             ? 'Supprimer'
-            : confirmation?.user.isActive
-              ? 'Désactiver'
-              : 'Activer'
+            : confirmation?.action === 'restore'
+              ? 'Restaurer'
+              : confirmation?.user.isActive
+                ? 'Désactiver'
+                : 'Activer'
         }
-        onClose={() => !removing && !changingStatus && setConfirmation(null)}
+        onClose={() => !removing && !restoring && !changingStatus && setConfirmation(null)}
         onConfirm={confirmAction}
-        busy={Boolean(removing || changingStatus)}
-        destructive={confirmation?.action === 'delete' || confirmation?.user.isActive}
+        busy={Boolean(removing || restoring || changingStatus)}
+        destructive={
+          confirmation?.action === 'delete' ||
+          (confirmation?.action === 'status' && confirmation?.user.isActive)
+        }
       />
     </main>
   );

@@ -100,6 +100,17 @@ describe('granular administration route permissions', () => {
       .expect(200);
   });
 
+  it('protects user restoration with its own permission', async () => {
+    await request(app)
+      .post('/api/v1/users/invalid/restore')
+      .set('Authorization', authorization(['users.delete', 'users.deleted.read']))
+      .expect(403);
+    await request(app)
+      .post('/api/v1/users/invalid/restore')
+      .set('Authorization', authorization(['users.restore']))
+      .expect(400);
+  });
+
   it.each([
     ['/api/v1/permissions', 'post', 'permissions.create', { name: '' }],
     [`/api/v1/permissions/${uuid}`, 'put', 'permissions.update', { name: '' }],

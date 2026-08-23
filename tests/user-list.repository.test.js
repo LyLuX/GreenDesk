@@ -31,4 +31,14 @@ describe('UserRepository deleted-user listing', () => {
     expect(User.findAndCountAll.mock.calls[0][0].paranoid).toBe(true);
     expect(User.findAndCountAll.mock.calls[0][0].where).not.toHaveProperty('deletedAt');
   });
+
+  it('can resolve a user by UUID through the paranoid boundary for restoration', async () => {
+    jest.spyOn(User, 'findOne').mockResolvedValue({ id: 9 });
+
+    await new UserRepository().findByUuid('user-uuid', { withDeleted: true });
+
+    expect(User.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { uuid: 'user-uuid' }, paranoid: false }),
+    );
+  });
 });
