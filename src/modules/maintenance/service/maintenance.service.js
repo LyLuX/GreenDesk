@@ -14,6 +14,7 @@ import {
   MAINTENANCE_DEADLINE_STATUSES,
   MAINTENANCE_EXECUTION_TYPES,
   MAINTENANCE_PART_ACTIONS,
+  LOW_STOCK_TARGET_QUANTITY,
 } from '../maintenance.constants.js';
 import {
   addDaysDateOnly,
@@ -475,6 +476,8 @@ export default class MaintenanceService {
     horizonDays = 30,
     includeOverdue = true,
     includeWearBased = false,
+    includeLowStock = false,
+    lowStockOnly = false,
     status,
   } = {}) {
     const normalizedHorizon = Math.min(Math.max(Number(horizonDays) || 0, 0), 365);
@@ -483,15 +486,21 @@ export default class MaintenanceService {
     const today = todayDateOnly();
     const through = addDaysDateOnly(today, normalizedHorizon);
     const includeWearBasedPlans = normalizeBooleanFilter(includeWearBased) ?? false;
-    const [deadlineTasks, wearBasedTasks] = await Promise.all([
-      this.repository.findForOrderList({
-        from: normalizedIncludeOverdue ? undefined : today,
-        through,
-        status: normalizedStatus,
-      }),
-      includeWearBasedPlans && normalizedStatus !== 'wearBased'
+    const lowStockOnlyFilter = normalizeBooleanFilter(lowStockOnly) ?? false;
+    const includeLowStockParts =
+      lowStockOnlyFilter || (normalizeBooleanFilter(includeLowStock) ?? false);
+    const [deadlineTasks, wearBasedTasks, lowStockParts] = await Promise.all([
+      lowStockOnlyFilter
+        ? Promise.resolve([])
+        : this.repository.findForOrderList({
+            from: normalizedIncludeOverdue ? undefined : today,
+            through,
+            status: normalizedStatus,
+          }),
+      !lowStockOnlyFilter && includeWearBasedPlans && normalizedStatus !== 'wearBased'
         ? this.repository.findForOrderList({ status: 'wearBased' })
         : Promise.resolve([]),
+      includeLowStockParts ? this.catalogRepository.findLowStockParts() : Promise.resolve([]),
     ]);
     const tasks = [
       ...new Map([...deadlineTasks, ...wearBasedTasks].map((task) => [task.uuid, task])).values(),
@@ -528,6 +537,29 @@ export default class MaintenanceService {
         grouped.set(part.uuid, current);
       }
     }
+    for (const item of lowStockParts) {
+      const part = typeof item?.toJSON === 'function' ? item.toJSON() : item;
+      const current = grouped.get(part.uuid) ?? {
+        uuid: part.uuid,
+        name: part.name,
+        manufacturer: part.manufacturer,
+        manufacturerUuid: part.manufacturerDirectory?.uuid ?? null,
+        supplier: part.supplier,
+        supplierUuid: part.supplierDirectory?.uuid ?? null,
+        reference: part.reference,
+        supplierReference: part.supplierReference,
+        unit: part.unit,
+        unitPrice: Number(part.unitPrice ?? 0),
+        quantityOnHand: Number(part.quantityOnHand ?? 0),
+        quantityOnOrder: Number(part.quantityOnOrder ?? 0),
+        active: part.active,
+        quantity: 0,
+        plans: [],
+      };
+      current.lowStock = true;
+      current.quantity = Math.max(current.quantity, LOW_STOCK_TARGET_QUANTITY);
+      grouped.set(part.uuid, current);
+    }
     const items = [...grouped.values()]
       .map((part) => {
         const availability = getStockAvailability(part, part.quantity);
@@ -536,15 +568,18 @@ export default class MaintenanceService {
           stockStatus: availability.status,
           stockQuantity: availability.quantityOnHand + availability.quantityOnOrder,
           quantity: availability.shortage,
+          lowStock: Boolean(part.lowStock),
         };
       })
-      .filter((part) => part.quantity > 0)
+      .filter((part) => (lowStockOnlyFilter ? part.lowStock : part.quantity > 0))
       .sort((left, right) => left.name.localeCompare(right.name, 'fr'));
     return {
       horizonDays: normalizedHorizon,
       includeOverdue: normalizedIncludeOverdue,
       includeWearBased: includeWearBasedPlans,
-      status: normalizedStatus ?? null,
+      includeLowStock: includeLowStockParts,
+      lowStockOnly: lowStockOnlyFilter,
+      status: lowStockOnlyFilter ? null : (normalizedStatus ?? null),
       from: today,
       through,
       items,

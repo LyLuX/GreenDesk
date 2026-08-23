@@ -6,13 +6,18 @@ import MaintenanceRepository from '../../maintenance/repository/maintenance.repo
 import MaintenancePart from '../../maintenance/model/maintenance-part.model.js';
 import MaintenancePartUsage from '../../maintenance/model/maintenance-part-usage.model.js';
 import { Op } from 'sequelize';
+import { LOW_STOCK_MAX_QUANTITY } from '../../maintenance/maintenance.constants.js';
 
 /** Efficient aggregate queries used by the dashboard. */
 export default class DashboardRepository {
   constructor(maintenanceRepository = new MaintenanceRepository()) {
     this.maintenanceRepository = maintenanceRepository;
   }
-  async getCounts({ includeMaintenance = true, includeFinancial = true } = {}) {
+  async getCounts({
+    includeMaintenance = true,
+    includeLowStock = true,
+    includeFinancial = true,
+  } = {}) {
     const materialAttributes = [
       [
         sequelize.fn(
@@ -43,6 +48,7 @@ export default class DashboardRepository {
       manufacturersTotal,
       materialMetrics,
       maintenanceTasks,
+      maintenanceLowStock,
       maintenanceStockValues,
       maintenanceCosts,
     ] = await Promise.all([
@@ -56,6 +62,14 @@ export default class DashboardRepository {
         raw: true,
       }),
       includeMaintenance ? this.maintenanceRepository.findDashboard() : undefined,
+      includeLowStock
+        ? MaintenancePart.count({
+            where: {
+              active: true,
+              quantityOnHand: { [Op.lte]: LOW_STOCK_MAX_QUANTITY },
+            },
+          })
+        : undefined,
       includeMaintenance && includeFinancial ? this.getMaintenanceStockValues() : undefined,
       includeMaintenance && includeFinancial ? this.getMaintenanceCosts() : undefined,
     ]);
@@ -72,6 +86,7 @@ export default class DashboardRepository {
       counts.averageCost = Number(materialMetrics.averageCost);
     }
     if (includeMaintenance) counts.maintenanceTasks = maintenanceTasks;
+    if (includeLowStock) counts.maintenanceLowStock = maintenanceLowStock;
     if (includeMaintenance && includeFinancial) {
       counts.maintenanceStockValues = maintenanceStockValues;
       counts.maintenanceCosts = maintenanceCosts;

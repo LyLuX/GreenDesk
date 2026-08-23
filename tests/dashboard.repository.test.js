@@ -40,6 +40,7 @@ describe('DashboardRepository', () => {
 
     const counts = await repository.getCounts({
       includeMaintenance: false,
+      includeLowStock: false,
       includeFinancial: false,
     });
 
@@ -56,5 +57,25 @@ describe('DashboardRepository', () => {
       manufacturersTotal: 0,
       averageAge: 3.5,
     });
+  });
+
+  it('counts active parts with zero or one unit available for maintenance dashboards', async () => {
+    jest.spyOn(Material, 'count').mockResolvedValue(0);
+    jest.spyOn(Category, 'count').mockResolvedValue(0);
+    jest.spyOn(PartManufacturer, 'count').mockResolvedValue(0);
+    jest.spyOn(Material, 'findOne').mockResolvedValue({ averageAge: '0' });
+    const lowStockCount = jest.spyOn(MaintenancePart, 'count').mockResolvedValue(3);
+    const maintenanceRepository = { findDashboard: jest.fn().mockResolvedValue([]) };
+
+    const counts = await new DashboardRepository(maintenanceRepository).getCounts({
+      includeMaintenance: true,
+      includeLowStock: true,
+      includeFinancial: false,
+    });
+
+    expect(lowStockCount).toHaveBeenCalledWith({
+      where: { active: true, quantityOnHand: expect.any(Object) },
+    });
+    expect(counts.maintenanceLowStock).toBe(3);
   });
 });

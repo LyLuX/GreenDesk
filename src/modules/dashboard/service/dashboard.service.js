@@ -10,8 +10,16 @@ export default class DashboardService {
     this.repository = repository;
     this.maintenanceService = maintenanceService;
   }
-  async getSummary({ includeMaintenance = true, includeFinancial = true } = {}) {
-    const counts = await this.repository.getCounts({ includeMaintenance, includeFinancial });
+  async getSummary({
+    includeMaintenance = true,
+    includeLowStock = true,
+    includeFinancial = true,
+  } = {}) {
+    const counts = await this.repository.getCounts({
+      includeMaintenance,
+      includeLowStock,
+      includeFinancial,
+    });
     const currentYear = new Date().getUTCFullYear();
     const maintenanceCostByYear = new Map(
       (counts.maintenanceCosts ?? []).map(({ year, total }) => [Number(year), Number(total)]),
@@ -42,15 +50,21 @@ export default class DashboardService {
       summary.fleet.totalPurchaseValue = counts.totalPurchaseValue;
       summary.fleet.averageCost = counts.averageCost;
     }
-    if (counts.maintenanceTasks !== undefined) {
-      const maintenanceSummary = {
-        today: maintenance.today.length,
-        overdue: maintenance.overdue.length,
-        upcoming: maintenance.upcoming.length,
-        wearBased: maintenance.wearBased.length,
-        items: maintenance,
-      };
-      if (includeFinancial) {
+    if (counts.maintenanceTasks !== undefined || counts.maintenanceLowStock !== undefined) {
+      const maintenanceSummary = {};
+      if (counts.maintenanceTasks !== undefined) {
+        Object.assign(maintenanceSummary, {
+          today: maintenance.today.length,
+          overdue: maintenance.overdue.length,
+          upcoming: maintenance.upcoming.length,
+          wearBased: maintenance.wearBased.length,
+          items: maintenance,
+        });
+      }
+      if (counts.maintenanceLowStock !== undefined) {
+        maintenanceSummary.lowStock = Number(counts.maintenanceLowStock ?? 0);
+      }
+      if (includeFinancial && counts.maintenanceTasks !== undefined) {
         maintenanceSummary.stockValues = {
           onHand: Number(maintenanceStockValues.onHand ?? 0),
           onOrder: Number(maintenanceStockValues.onOrder ?? 0),

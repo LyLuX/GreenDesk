@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { getDashboardSummary, hasPermission } = vi.hoisted(() => ({
+const { getDashboardSummary, hasPermission, orderListModalProps } = vi.hoisted(() => ({
   getDashboardSummary: vi.fn().mockResolvedValue({
     data: {
       data: {
@@ -16,6 +16,7 @@ const { getDashboardSummary, hasPermission } = vi.hoisted(() => ({
           overdue: 1,
           upcoming: 1,
           wearBased: 1,
+          lowStock: 2,
           stockValues: { onHand: 450.75, onOrder: 120.5 },
           costs: [
             { year: 2026, total: 125.5 },
@@ -70,11 +71,18 @@ const { getDashboardSummary, hasPermission } = vi.hoisted(() => ({
     },
   }),
   hasPermission: vi.fn(),
+  orderListModalProps: vi.fn(),
 }));
 
 vi.mock('../api/dashboard.api.js', () => ({ getDashboardSummary }));
 vi.mock('../auth/useAuth.js', () => ({
   default: () => ({ hasPermission }),
+}));
+vi.mock('../components/MaintenanceOrderListModal.jsx', () => ({
+  default: (props) => {
+    orderListModalProps(props);
+    return props.open ? <div role="dialog" aria-label="Pièces avec un stock faible" /> : null;
+  },
 }));
 
 import DashboardPage, { formatAverageAge } from './DashboardPage.jsx';
@@ -118,7 +126,9 @@ describe('DashboardPage', () => {
     expect(screen.getByRole('region', { name: 'Maintenance' })).toBeVisible();
     expect(within(inventory).getAllByRole('article')).toHaveLength(5);
     expect(within(fleet).getAllByRole('article')).toHaveLength(3);
-    expect(within(maintenanceStock).getAllByRole('article')).toHaveLength(2);
+    expect(within(maintenanceStock).getAllByRole('article')).toHaveLength(3);
+    expect(within(maintenanceStock).getByText('Pièces avec un stock faible')).toBeVisible();
+    expect(within(maintenanceStock).getByText('2', { selector: '.metric-value' })).toBeVisible();
     expect(within(maintenanceStock).getByText('Valeur du stock')).toBeVisible();
     expect(within(maintenanceStock).getByText(/450,75/)).toBeVisible();
     expect(within(maintenanceStock).getByText('Valeur commandée')).toBeVisible();
@@ -179,12 +189,43 @@ describe('DashboardPage', () => {
     expect(within(fleet).getByText('Âge moyen')).toBeVisible();
     expect(screen.queryByText('Valeur du parc')).not.toBeInTheDocument();
     expect(screen.queryByText('Valeur moyenne')).not.toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Pièces en stock' })).not.toBeInTheDocument();
+    const maintenanceStock = screen.getByRole('region', { name: 'Pièces en stock' });
+    expect(within(maintenanceStock).getAllByRole('article')).toHaveLength(1);
+    expect(within(maintenanceStock).getByText('Pièces avec un stock faible')).toBeVisible();
+    expect(within(maintenanceStock).queryByText('Valeur du stock')).not.toBeInTheDocument();
     expect(
       screen.queryByRole('region', { name: 'Dépenses de maintenance' }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Entretiens des matériels' })).toBeVisible();
     expect(hasPermission).toHaveBeenCalledWith('dashboard.read.financial');
+  });
+
+  it('opens the printable low-stock list from its counter', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Voir les pièces avec un stock inférieur ou égal à 1',
+      }),
+    );
+
+    expect(screen.getByRole('dialog', { name: 'Pièces avec un stock faible' })).toBeInTheDocument();
+    expect(orderListModalProps).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        open: true,
+        initialFilters: { includeLowStock: true, lowStockOnly: true },
+      }),
+    );
+  });
+
+  it('hides the low-stock card without maintenance part read access', async () => {
+    hasPermission.mockImplementation((permission) => permission === 'maintenance.read');
+
+    renderPage();
+
+    expect(await screen.findByRole('region', { name: 'Entretiens des matériels' })).toBeVisible();
+    expect(screen.queryByText('Pièces avec un stock faible')).not.toBeInTheDocument();
   });
 
   it.each([

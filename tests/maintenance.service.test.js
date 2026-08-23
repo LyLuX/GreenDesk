@@ -271,6 +271,69 @@ describe('MaintenanceService', () => {
     expect(result.includeWearBased).toBe(true);
   });
 
+  it('optionally adds uncovered low-stock parts to the order list', async () => {
+    const repository = { findForOrderList: jest.fn().mockResolvedValue([]) };
+    const catalogRepository = {
+      findLowStockParts: jest.fn().mockResolvedValue([
+        {
+          uuid: '11111111-1111-4111-8111-111111111111',
+          name: 'Filtre',
+          reference: 'FH-01',
+          unit: 'pièce',
+          quantityOnHand: 0,
+          quantityOnOrder: 0,
+          active: true,
+        },
+        {
+          uuid: '22222222-2222-4222-8222-222222222222',
+          name: 'Bougie déjà commandée',
+          reference: 'BPMR8Y',
+          unit: 'pièce',
+          quantityOnHand: 1,
+          quantityOnOrder: 1,
+          active: true,
+        },
+      ]),
+    };
+    const service = new MaintenanceService(repository, {}, {}, catalogRepository);
+
+    const result = await service.getOrderList({ includeLowStock: true });
+
+    expect(result.includeLowStock).toBe(true);
+    expect(result.lowStockOnly).toBe(false);
+    expect(result.items).toEqual([
+      expect.objectContaining({ reference: 'FH-01', quantity: 2, lowStock: true, plans: [] }),
+    ]);
+  });
+
+  it('returns every low-stock part in the dashboard view, including covered orders', async () => {
+    const repository = { findForOrderList: jest.fn() };
+    const catalogRepository = {
+      findLowStockParts: jest.fn().mockResolvedValue([
+        {
+          uuid: '22222222-2222-4222-8222-222222222222',
+          name: 'Bougie déjà commandée',
+          reference: 'BPMR8Y',
+          unit: 'pièce',
+          quantityOnHand: 1,
+          quantityOnOrder: 3,
+          active: true,
+        },
+      ]),
+    };
+    const service = new MaintenanceService(repository, {}, {}, catalogRepository);
+
+    const result = await service.getOrderList({ lowStockOnly: true });
+
+    expect(repository.findForOrderList).not.toHaveBeenCalled();
+    expect(result).toEqual(
+      expect.objectContaining({ includeLowStock: true, lowStockOnly: true, status: null }),
+    );
+    expect(result.items).toEqual([
+      expect.objectContaining({ reference: 'BPMR8Y', quantity: 0, lowStock: true }),
+    ]);
+  });
+
   it('identifies wear-based needs in order-list plan details', async () => {
     const repository = {
       findForOrderList: jest.fn().mockResolvedValue([

@@ -177,6 +177,35 @@ describe('maintenance catalogue route permissions', () => {
       .expect(403);
   });
 
+  it('applies the matching permissions to each order-list stock mode', async () => {
+    const path = '/api/v1/maintenance/order-list';
+
+    await request(app)
+      .get(path)
+      .set('Authorization', authorization(['maintenance.read']))
+      .expect(200);
+    await request(app)
+      .get(`${path}?lowStockOnly=true`)
+      .set('Authorization', authorization(['maintenance.read']))
+      .expect(403);
+    await request(app)
+      .get(`${path}?lowStockOnly=true`)
+      .set('Authorization', authorization(['maintenance.parts.read']))
+      .expect(200);
+    await request(app)
+      .get(`${path}?includeLowStock=true`)
+      .set('Authorization', authorization(['maintenance.read']))
+      .expect(403);
+    await request(app)
+      .get(`${path}?includeLowStock=true`)
+      .set('Authorization', authorization(['maintenance.read', 'maintenance.parts.read']))
+      .expect(200);
+    await request(app)
+      .get(`${path}?includeLowStock=invalid`)
+      .set('Authorization', authorization(['maintenance.read', 'maintenance.parts.read']))
+      .expect(400);
+  });
+
   it('requires operation-specific permissions for operation writes', async () => {
     const payload = { name: 'Vidange', maintenanceType: 'preventive' };
     await request(app)

@@ -5,7 +5,7 @@ import getApiErrorMessage from '../api/get-api-error-message.js';
 import { getMaintenanceOrderList, updateMaintenancePartStock } from '../api/maintenance.api.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
-import { STOCK_OPERATIONS } from '../inventory/stock-status.js';
+import { formatStockQuantity, STOCK_OPERATIONS } from '../inventory/stock-status.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import useNotification from '../notifications/useNotification.js';
 import { extractPageItems } from '../utils/pagination.js';
@@ -28,6 +28,8 @@ const defaultOrderListFilters = Object.freeze({
   horizonDays: 30,
   includeOverdue: true,
   includeWearBased: false,
+  includeLowStock: false,
+  lowStockOnly: false,
 });
 
 /** Converts the maintenance page deadline filter into the matching order-list period. */
@@ -38,30 +40,40 @@ export const getOrderListFiltersForDeadline = (deadlineStatus) => {
       horizonDays: 0,
       includeOverdue: true,
       includeWearBased: false,
+      includeLowStock: false,
+      lowStockOnly: false,
     },
     dueToday: {
       status: 'dueToday',
       horizonDays: 0,
       includeOverdue: false,
       includeWearBased: false,
+      includeLowStock: false,
+      lowStockOnly: false,
     },
     upcoming: {
       status: 'upcoming',
       horizonDays: 30,
       includeOverdue: false,
       includeWearBased: false,
+      includeLowStock: false,
+      lowStockOnly: false,
     },
     upToDate: {
       status: 'upToDate',
       horizonDays: 365,
       includeOverdue: false,
       includeWearBased: false,
+      includeLowStock: false,
+      lowStockOnly: false,
     },
     wearBased: {
       status: 'wearBased',
       horizonDays: 30,
       includeOverdue: false,
       includeWearBased: true,
+      includeLowStock: false,
+      lowStockOnly: false,
     },
   };
   return filtersByDeadline[deadlineStatus] ?? { ...defaultOrderListFilters };
@@ -106,6 +118,7 @@ function OrderPartsTable({
   onOrderQuantityChange,
   onMarkOrdered,
   actionLoadingId,
+  lowStockMode = false,
 }) {
   return (
     <div className="table-shell">
@@ -116,7 +129,8 @@ function OrderPartsTable({
               <th>Pièce</th>
               <th>{showSupplier ? 'Fournisseur / référence' : 'Référence fournisseur'}</th>
               {showPlans && printPlans ? <th>Plan concerné</th> : null}
-              <th>Quantité</th>
+              <th>{lowStockMode ? 'Stock disponible' : 'Quantité'}</th>
+              {lowStockMode ? <th>Quantité commandée</th> : null}
               {showPlans && !printPlans ? <th>Plans concernés</th> : null}
               {onMarkOrdered ? <th>Commande</th> : null}
             </tr>
@@ -152,7 +166,12 @@ function OrderPartsTable({
                   {showPlans && printPlans ? (
                     <td className="maintenance-order-plans">
                       <ul className="mb-0 ps-3">
-                        {part.plans.map((plan) => (
+                        {part.lowStock ? (
+                          <li key="low-stock">
+                            Stock faible : {formatStockQuantity(part.quantityOnHand, part.unit)}
+                          </li>
+                        ) : null}
+                        {(part.plans ?? []).map((plan) => (
                           <li key={plan.maintenanceUuid}>
                             {plan.title}
                             {plan.material?.name ? ` — ${plan.material.name}` : null}
@@ -162,12 +181,22 @@ function OrderPartsTable({
                     </td>
                   ) : null}
                   <td>
-                    {part.quantity} {part.unit}
+                    {lowStockMode
+                      ? formatStockQuantity(part.quantityOnHand, part.unit)
+                      : `${part.quantity} ${part.unit}`}
                   </td>
+                  {lowStockMode ? (
+                    <td>{formatStockQuantity(part.quantityOnOrder, part.unit)}</td>
+                  ) : null}
                   {showPlans && !printPlans ? (
                     <td className="maintenance-order-plans">
                       <ul className="mb-0 ps-3">
-                        {part.plans.map((plan) => (
+                        {part.lowStock ? (
+                          <li key="low-stock">
+                            Stock faible : {formatStockQuantity(part.quantityOnHand, part.unit)}
+                          </li>
+                        ) : null}
+                        {(part.plans ?? []).map((plan) => (
                           <li
                             key={plan.maintenanceUuid}
                             className={
@@ -236,14 +265,14 @@ function PrintBrandHeader() {
   );
 }
 
-function MaintenanceOrderPrintPages({ supplierPages, manufacturerByUuid }) {
+function MaintenanceOrderPrintPages({ supplierPages, manufacturerByUuid, lowStockMode = false }) {
   return (
     <div className="maintenance-order-list-printable" aria-hidden="true">
       {supplierPages.map((page) => (
         <section className="maintenance-order-print-page" key={page.key}>
           <PrintBrandHeader />
           <main className="maintenance-order-print-content">
-            <h1>Pièces à commander</h1>
+            <h1>{lowStockMode ? 'Pièces avec un stock faible' : 'Pièces à commander'}</h1>
             <p className="maintenance-order-print-supplier">
               Fournisseur : <strong>{page.supplier}</strong>
               {page.pageCount > 1 ? (
@@ -257,8 +286,10 @@ function MaintenanceOrderPrintPages({ supplierPages, manufacturerByUuid }) {
               parts={page.parts}
               manufacturerByUuid={manufacturerByUuid}
               showSupplier={false}
-              printPlans
+              printPlans={!lowStockMode}
+              showPlans={!lowStockMode}
               showManufacturerLogo={false}
+              lowStockMode={lowStockMode}
             />
           </main>
           <div className="maintenance-order-print-footer">
@@ -337,7 +368,9 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
   );
   const supplierGroups = groupOrderPartsBySupplier(data?.items);
   const supplierPages = paginateSupplierGroups(supplierGroups);
-  const canOrderParts = hasPermission(maintenancePermissions.parts.stock.order);
+  const lowStockMode = Boolean(filters.lowStockOnly);
+  const canIncludeLowStock = hasPermission(maintenancePermissions.parts.read);
+  const canOrderParts = !lowStockMode && hasPermission(maintenancePermissions.parts.stock.order);
 
   const requestMarkOrdered = (part) => {
     const quantity = Number(orderQuantities[part.uuid]);
@@ -376,64 +409,84 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
     <>
       <Modal
         open={open}
-        title="Pièces à commander"
+        title={lowStockMode ? 'Pièces avec un stock faible' : 'Pièces à commander'}
         onClose={onClose}
         busy={loading}
         className="maintenance-order-list-modal"
       >
         <div className="maintenance-order-list-screen">
-          <div className="maintenance-order-list-controls mb-3 d-flex flex-wrap align-items-end gap-3">
-            <label className="form-label mb-0 text-body-secondary">
-              Échéance
-              <select
-                className="form-select"
-                value={filters.horizonDays}
-                onChange={(event) =>
-                  setFilters((current) => ({
-                    ...current,
-                    status: undefined,
-                    horizonDays: Number(event.target.value),
-                  }))
-                }
-              >
-                {horizonOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="form-check mb-2">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                checked={filters.includeOverdue}
-                onChange={(event) =>
-                  setFilters((current) => ({
-                    ...current,
-                    status: undefined,
-                    includeOverdue: event.target.checked,
-                  }))
-                }
-              />
-              <span className="form-check-label">Inclure les plans en retard</span>
-            </label>
-            <label className="form-check mb-2">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                checked={filters.includeWearBased}
-                onChange={(event) =>
-                  setFilters((current) => ({
-                    ...current,
-                    status: undefined,
-                    includeWearBased: event.target.checked,
-                  }))
-                }
-              />
-              <span className="form-check-label">Inclure les plans selon usure</span>
-            </label>
-          </div>
+          {!lowStockMode ? (
+            <div className="maintenance-order-list-controls mb-3 d-flex flex-wrap align-items-end gap-3">
+              <label className="form-label mb-0 text-body-secondary">
+                Échéance
+                <select
+                  className="form-select"
+                  value={filters.horizonDays}
+                  onChange={(event) =>
+                    setFilters((current) => ({
+                      ...current,
+                      status: undefined,
+                      horizonDays: Number(event.target.value),
+                    }))
+                  }
+                >
+                  {horizonOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="form-check mb-2">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={filters.includeOverdue}
+                  onChange={(event) =>
+                    setFilters((current) => ({
+                      ...current,
+                      status: undefined,
+                      includeOverdue: event.target.checked,
+                    }))
+                  }
+                />
+                <span className="form-check-label">Inclure les plans en retard</span>
+              </label>
+              <label className="form-check mb-2">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={filters.includeWearBased}
+                  onChange={(event) =>
+                    setFilters((current) => ({
+                      ...current,
+                      status: undefined,
+                      includeWearBased: event.target.checked,
+                    }))
+                  }
+                />
+                <span className="form-check-label">Inclure les plans selon usure</span>
+              </label>
+              {canIncludeLowStock ? (
+                <label className="form-check mb-2">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    checked={filters.includeLowStock}
+                    onChange={(event) =>
+                      setFilters((current) => ({
+                        ...current,
+                        includeLowStock: event.target.checked,
+                      }))
+                    }
+                  />
+                  <span className="form-check-label">
+                    Inclure les pièces avec un stock inférieur ou égal à 1
+                  </span>
+                </label>
+              ) : null}
+            </div>
+          ) : null}
           {error && (
             <div className="alert alert-danger d-flex align-items-center justify-content-between gap-3">
               <p role="alert" className="mb-0">
@@ -446,7 +499,13 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
           )}
           <div className="maintenance-order-list-scroll">
             {loading && !data ? (
-              <Loader label="Calcul de la liste de commande" />
+              <Loader
+                label={
+                  lowStockMode
+                    ? 'Chargement des pièces avec un stock faible'
+                    : 'Calcul de la liste de commande'
+                }
+              />
             ) : data?.items?.length ? (
               <OrderPartsTable
                 parts={data.items}
@@ -460,9 +519,14 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
                 }
                 onMarkOrdered={canOrderParts ? requestMarkOrdered : undefined}
                 actionLoadingId={actionLoadingId}
+                lowStockMode={lowStockMode}
               />
             ) : (
-              <p className="mb-0">Aucune pièce à commander sur cette période.</p>
+              <p className="mb-0">
+                {lowStockMode
+                  ? 'Aucune pièce avec un stock inférieur ou égal à 1.'
+                  : 'Aucune pièce à commander sur cette période.'}
+              </p>
             )}
           </div>
           {data?.items?.length ? (
@@ -479,6 +543,7 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
             <MaintenanceOrderPrintPages
               supplierPages={supplierPages}
               manufacturerByUuid={manufacturerByUuid}
+              lowStockMode={lowStockMode}
             />,
             document.body,
           )

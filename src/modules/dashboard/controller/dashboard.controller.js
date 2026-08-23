@@ -11,9 +11,12 @@ export default class DashboardController {
   }
   async summary(request, response) {
     const includeMaintenance = hasPermission(request, maintenancePermissions.plans.read);
+    const includeLowStock = hasPermission(request, maintenancePermissions.parts.read);
     const includeFinancial = hasPermission(request, dashboardPermissions.financial);
     response.json(
-      successResponse(await this.service.getSummary({ includeMaintenance, includeFinancial })),
+      successResponse(
+        await this.service.getSummary({ includeMaintenance, includeLowStock, includeFinancial }),
+      ),
     );
   }
 }

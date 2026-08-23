@@ -43,6 +43,19 @@ const requirePartStockActionPermission = (request, response, next) => {
   }
   return authorizeAll(...requiredPermissions)(request, response, next);
 };
+const authorizeOrderList = (request, response, next) => {
+  if (request.query.lowStockOnly) {
+    return authorize(maintenancePermissions.parts.read)(request, response, next);
+  }
+  if (request.query.includeLowStock) {
+    return authorizeAll(maintenancePermissions.plans.read, maintenancePermissions.parts.read)(
+      request,
+      response,
+      next,
+    );
+  }
+  return authorize(maintenancePermissions.plans.read)(request, response, next);
+};
 router.use(authenticate);
 router.get(
   '/operations',
@@ -140,9 +153,9 @@ router.delete(
 );
 router.get(
   '/order-list',
-  authorize(maintenancePermissions.plans.read),
   validator.orderListValidator,
   validateRequest,
+  authorizeOrderList,
   asyncHandler(controller.orderList.bind(controller)),
 );
 router.get(

@@ -15,6 +15,7 @@ describe('DashboardService', () => {
         totalPurchaseValue: 1600,
         averageCost: 200,
         averageAge: 3.5,
+        maintenanceLowStock: 2,
         maintenanceStockValues: { onHand: '450.75', onOrder: '120.50' },
         maintenanceCosts: [
           { year: currentYear, total: '125.50' },
@@ -44,6 +45,7 @@ describe('DashboardService', () => {
         overdue: 2,
         upcoming: 1,
         wearBased: 1,
+        lowStock: 2,
         stockValues: { onHand: 450.75, onOrder: 120.5 },
         costs: [
           { year: currentYear, total: 125.5 },
@@ -64,6 +66,7 @@ describe('DashboardService', () => {
     expect(maintenanceService.toPublic).toHaveBeenCalledTimes(5);
     expect(repository.getCounts).toHaveBeenCalledWith({
       includeMaintenance: true,
+      includeLowStock: true,
       includeFinancial: true,
     });
   });
@@ -86,6 +89,7 @@ describe('DashboardService', () => {
     await expect(
       new DashboardService(repository, maintenanceService).getSummary({
         includeMaintenance: false,
+        includeLowStock: false,
       }),
     ).resolves.toEqual({
       materials: { total: 8, active: 6, inactive: 2 },
@@ -95,6 +99,7 @@ describe('DashboardService', () => {
     });
     expect(repository.getCounts).toHaveBeenCalledWith({
       includeMaintenance: false,
+      includeLowStock: false,
       includeFinancial: true,
     });
     expect(maintenanceService.toPublic).not.toHaveBeenCalled();
@@ -109,6 +114,7 @@ describe('DashboardService', () => {
         categoriesTotal: 3,
         manufacturersTotal: 2,
         averageAge: 3.5,
+        maintenanceLowStock: 0,
         maintenanceTasks: [{ uuid: 'today', status: 'dueToday' }],
       }),
     };
@@ -129,6 +135,7 @@ describe('DashboardService', () => {
         overdue: 0,
         upcoming: 0,
         wearBased: 0,
+        lowStock: 0,
         items: {
           today: [{ uuid: 'today', status: 'dueToday' }],
           overdue: [],
@@ -139,6 +146,7 @@ describe('DashboardService', () => {
     });
     expect(repository.getCounts).toHaveBeenCalledWith({
       includeMaintenance: true,
+      includeLowStock: true,
       includeFinancial: false,
     });
   });

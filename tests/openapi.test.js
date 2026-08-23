@@ -217,9 +217,14 @@ describe('OpenAPI contract', () => {
       'averageAge',
     ]);
     const requiredDashboardMaintenanceFields =
-      swaggerSpec.components.schemas.DashboardSummary.properties.maintenance.required;
+      swaggerSpec.components.schemas.DashboardSummary.properties.maintenance.required ?? [];
     expect(requiredDashboardMaintenanceFields).not.toContain('stockValues');
     expect(requiredDashboardMaintenanceFields).not.toContain('costs');
+    expect(requiredDashboardMaintenanceFields).not.toContain('lowStock');
+    expect(
+      swaggerSpec.components.schemas.DashboardSummary.properties.maintenance.properties.lowStock
+        .description,
+    ).toContain('`maintenance.parts.read`');
     expect(swaggerSpec.paths['/dashboard/summary'].get.description).toContain(
       '`dashboard.read.financial`',
     );
@@ -237,6 +242,16 @@ describe('OpenAPI contract', () => {
     expect(
       swaggerSpec.paths['/maintenance/order-list'].get.parameters.find(
         ({ name }) => name === 'includeWearBased',
+      )?.schema,
+    ).toEqual(expect.objectContaining({ type: 'boolean', default: false }));
+    expect(
+      swaggerSpec.paths['/maintenance/order-list'].get.parameters.find(
+        ({ name }) => name === 'includeLowStock',
+      )?.schema,
+    ).toEqual(expect.objectContaining({ type: 'boolean', default: false }));
+    expect(
+      swaggerSpec.paths['/maintenance/order-list'].get.parameters.find(
+        ({ name }) => name === 'lowStockOnly',
       )?.schema,
     ).toEqual(expect.objectContaining({ type: 'boolean', default: false }));
   });

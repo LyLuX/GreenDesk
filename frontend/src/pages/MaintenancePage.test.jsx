@@ -257,6 +257,8 @@ describe('MaintenancePage', () => {
           horizonDays: 30,
           includeOverdue: false,
           includeWearBased: false,
+          includeLowStock: false,
+          lowStockOnly: false,
         },
         expect.any(AbortSignal),
       ),
@@ -265,7 +267,13 @@ describe('MaintenancePage', () => {
     await user.selectOptions(within(dialog).getByLabelText('Échéance'), '60');
     await waitFor(() =>
       expect(mocks.getOrderList).toHaveBeenLastCalledWith(
-        { horizonDays: 60, includeOverdue: false, includeWearBased: false },
+        {
+          horizonDays: 60,
+          includeOverdue: false,
+          includeWearBased: false,
+          includeLowStock: false,
+          lowStockOnly: false,
+        },
         expect.any(AbortSignal),
       ),
     );

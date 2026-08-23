@@ -1050,6 +1050,10 @@ a:hover {
   --metric-card-accent: var(--maintenance-wear-based-color);
 }
 
+.metric-card.maintenance-low-stock {
+  --metric-card-accent: #b64141;
+}
+
 .status-badge.maintenance-upcoming {
   background: #e3eddc;
   color: #365d16;

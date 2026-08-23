@@ -1070,6 +1070,8 @@ export const openApiSchemas = {
       'horizonDays',
       'includeOverdue',
       'includeWearBased',
+      'includeLowStock',
+      'lowStockOnly',
       'from',
       'through',
       'items',
@@ -1083,6 +1085,8 @@ export const openApiSchemas = {
       horizonDays: { type: 'integer', minimum: 0, maximum: 365 },
       includeOverdue: { type: 'boolean' },
       includeWearBased: { type: 'boolean' },
+      includeLowStock: { type: 'boolean' },
+      lowStockOnly: { type: 'boolean' },
       from: date,
       through: date,
       items: {
@@ -1092,13 +1096,18 @@ export const openApiSchemas = {
             reference('MaintenancePart'),
             {
               type: 'object',
-              required: ['quantity', 'plans'],
+              required: ['quantity', 'lowStock', 'plans'],
               properties: {
                 quantity: {
                   type: 'integer',
-                  minimum: 1,
+                  minimum: 0,
                   description:
-                    'Quantité restant à commander après déduction du stock ou de la commande en cours.',
+                    'Quantité restant à commander après déduction du stock ou de la commande en cours. Peut valoir zéro dans la vue exhaustive du stock faible.',
+                },
+                lowStock: {
+                  type: 'boolean',
+                  description:
+                    'Indique que le stock disponible de la pièce est inférieur ou égal à une unité.',
                 },
                 plans: {
                   type: 'array',
@@ -1172,13 +1181,19 @@ export const openApiSchemas = {
       },
       maintenance: {
         type: 'object',
-        description: 'Présent uniquement lorsque l’utilisateur possède `maintenance.read`.',
-        required: ['today', 'overdue', 'upcoming', 'wearBased', 'items'],
+        description:
+          'Présent lorsqu’au moins un indicateur de maintenance est autorisé. Les échéances nécessitent `maintenance.read` et le stock faible nécessite `maintenance.parts.read`.',
         properties: {
           today: { type: 'integer', minimum: 0 },
           overdue: { type: 'integer', minimum: 0 },
           upcoming: { type: 'integer', minimum: 0 },
           wearBased: { type: 'integer', minimum: 0 },
+          lowStock: {
+            type: 'integer',
+            minimum: 0,
+            description:
+              'Présent uniquement avec `maintenance.parts.read`. Nombre de pièces de maintenance actives dont le stock disponible est inférieur ou égal à une unité.',
+          },
           stockValues: {
             type: 'object',
             description:

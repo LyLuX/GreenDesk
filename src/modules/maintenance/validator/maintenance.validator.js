@@ -82,6 +82,8 @@ export const orderListValidator = [
   query('horizonDays').optional().isInt({ min: 0, max: 365 }).toInt(),
   query('includeOverdue').optional().isBoolean().toBoolean(),
   query('includeWearBased').optional().isBoolean().toBoolean(),
+  query('includeLowStock').optional().isBoolean().toBoolean(),
+  query('lowStockOnly').optional().isBoolean().toBoolean(),
 ];
 export const catalogListValidator = [
   query('search').optional({ values: 'falsy' }).trim().isLength({ max: 150 }),

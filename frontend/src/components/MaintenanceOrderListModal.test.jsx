@@ -33,6 +33,11 @@ import MaintenanceOrderListModal, {
   paginateSupplierGroups,
 } from './MaintenanceOrderListModal.jsx';
 
+const lowStockFiltersOff = {
+  includeLowStock: false,
+  lowStockOnly: false,
+};
+
 describe('MaintenanceOrderListModal', () => {
   afterEach(cleanup);
 
@@ -110,35 +115,41 @@ describe('MaintenanceOrderListModal', () => {
       horizonDays: 0,
       includeOverdue: true,
       includeWearBased: false,
+      ...lowStockFiltersOff,
     });
     expect(getOrderListFiltersForDeadline('dueToday')).toEqual({
       status: 'dueToday',
       horizonDays: 0,
       includeOverdue: false,
       includeWearBased: false,
+      ...lowStockFiltersOff,
     });
     expect(getOrderListFiltersForDeadline('upcoming')).toEqual({
       status: 'upcoming',
       horizonDays: 30,
       includeOverdue: false,
       includeWearBased: false,
+      ...lowStockFiltersOff,
     });
     expect(getOrderListFiltersForDeadline('upToDate')).toEqual({
       status: 'upToDate',
       horizonDays: 365,
       includeOverdue: false,
       includeWearBased: false,
+      ...lowStockFiltersOff,
     });
     expect(getOrderListFiltersForDeadline('wearBased')).toEqual({
       status: 'wearBased',
       horizonDays: 30,
       includeOverdue: false,
       includeWearBased: true,
+      ...lowStockFiltersOff,
     });
     expect(getOrderListFiltersForDeadline()).toEqual({
       horizonDays: 30,
       includeOverdue: true,
       includeWearBased: false,
+      ...lowStockFiltersOff,
     });
   });
 
@@ -163,6 +174,7 @@ describe('MaintenanceOrderListModal', () => {
         horizonDays: 30,
         includeOverdue: false,
         includeWearBased: false,
+        ...lowStockFiltersOff,
       },
       expect.any(AbortSignal),
     );
@@ -171,7 +183,12 @@ describe('MaintenanceOrderListModal', () => {
 
     await waitFor(() =>
       expect(mocks.getOrderList).toHaveBeenLastCalledWith(
-        { horizonDays: 30, includeOverdue: false, includeWearBased: true },
+        {
+          horizonDays: 30,
+          includeOverdue: false,
+          includeWearBased: true,
+          ...lowStockFiltersOff,
+        },
         expect.any(AbortSignal),
       ),
     );
@@ -180,7 +197,12 @@ describe('MaintenanceOrderListModal', () => {
 
     await waitFor(() =>
       expect(mocks.getOrderList).toHaveBeenLastCalledWith(
-        { horizonDays: 30, includeOverdue: true, includeWearBased: true },
+        {
+          horizonDays: 30,
+          includeOverdue: true,
+          includeWearBased: true,
+          ...lowStockFiltersOff,
+        },
         expect.any(AbortSignal),
       ),
     );
@@ -189,7 +211,12 @@ describe('MaintenanceOrderListModal', () => {
 
     await waitFor(() =>
       expect(mocks.getOrderList).toHaveBeenLastCalledWith(
-        { horizonDays: 60, includeOverdue: true, includeWearBased: true },
+        {
+          horizonDays: 60,
+          includeOverdue: true,
+          includeWearBased: true,
+          ...lowStockFiltersOff,
+        },
         expect.any(AbortSignal),
       ),
     );
@@ -239,9 +266,104 @@ describe('MaintenanceOrderListModal', () => {
     await user.click(includeWearBased);
     expect(await within(dialog).findByText('Lame selon usure')).toBeVisible();
     expect(mocks.getOrderList).toHaveBeenLastCalledWith(
-      { horizonDays: 30, includeOverdue: true, includeWearBased: true },
+      {
+        horizonDays: 30,
+        includeOverdue: true,
+        includeWearBased: true,
+        ...lowStockFiltersOff,
+      },
       expect.any(AbortSignal),
     );
+  });
+
+  it('adds low-stock parts to the existing order list from a dedicated option', async () => {
+    const user = userEvent.setup();
+    render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
+
+    const includeLowStock = await screen.findByRole('checkbox', {
+      name: 'Inclure les pièces avec un stock inférieur ou égal à 1',
+    });
+    expect(includeLowStock).not.toBeChecked();
+
+    await user.click(includeLowStock);
+
+    await waitFor(() =>
+      expect(mocks.getOrderList).toHaveBeenLastCalledWith(
+        {
+          horizonDays: 30,
+          includeOverdue: true,
+          includeWearBased: false,
+          includeLowStock: true,
+          lowStockOnly: false,
+        },
+        expect.any(AbortSignal),
+      ),
+    );
+  });
+
+  it('uses the shared printable modal for the dashboard low-stock list', async () => {
+    const user = userEvent.setup();
+    mocks.getOrderList.mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'low-stock-part',
+              name: 'Filtre à huile',
+              supplier: 'Pièces Pro',
+              supplierReference: 'FOU-01',
+              reference: 'FH-01',
+              unit: 'pièce',
+              quantity: 0,
+              quantityOnHand: 1,
+              quantityOnOrder: 3,
+              lowStock: true,
+              plans: [],
+            },
+          ],
+        },
+      },
+    });
+
+    render(
+      <MaintenanceOrderListModal
+        open
+        onClose={vi.fn()}
+        initialFilters={{ includeLowStock: true, lowStockOnly: true }}
+      />,
+    );
+
+    const dialog = screen.getByRole('dialog', { name: 'Pièces avec un stock faible' });
+    expect(await within(dialog).findByText('Filtre à huile')).toBeVisible();
+    expect(within(dialog).getByText('1 pièce')).toBeVisible();
+    expect(within(dialog).getByText('3 pièces')).toBeVisible();
+    expect(
+      within(dialog).queryByRole('checkbox', {
+        name: 'Inclure les pièces avec un stock inférieur ou égal à 1',
+      }),
+    ).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: /Marquer .* commandée/ })).toBeNull();
+    expect(mocks.getOrderList).toHaveBeenCalledWith(
+      {
+        horizonDays: 30,
+        includeOverdue: true,
+        includeWearBased: false,
+        includeLowStock: true,
+        lowStockOnly: true,
+      },
+      expect.any(AbortSignal),
+    );
+    const printPage = document.querySelector('.maintenance-order-print-page');
+    expect(printPage).toHaveTextContent('Pièces avec un stock faible');
+    expect([...printPage.querySelectorAll('th')].map((heading) => heading.textContent)).toEqual([
+      'Pièce',
+      'Référence fournisseur',
+      'Stock disponible',
+      'Quantité commandée',
+    ]);
+
+    await user.click(within(dialog).getByRole('button', { name: 'Imprimer la liste' }));
+    expect(window.print).toHaveBeenCalledOnce();
   });
 
   it('does not let an older calendar response replace wear-based results', async () => {
@@ -384,9 +506,12 @@ describe('MaintenanceOrderListModal', () => {
     const printPage = document.querySelector('.maintenance-order-print-page');
     expect(printPage).toHaveTextContent('2 pièce');
     expect(printPage).not.toHaveTextContent('2 pièces');
-    expect(
-      [...printPage.querySelectorAll('th')].map((heading) => heading.textContent),
-    ).toEqual(['Pièce', 'Référence fournisseur', 'Plan concerné', 'Quantité']);
+    expect([...printPage.querySelectorAll('th')].map((heading) => heading.textContent)).toEqual([
+      'Pièce',
+      'Référence fournisseur',
+      'Plan concerné',
+      'Quantité',
+    ]);
     expect(printPage).toHaveTextContent('Remplacement des bougies — Tronçonneuse 1');
     expect(printPage).not.toHaveTextContent('Plans concernés');
     const printFooter = document.querySelector('.maintenance-order-print-footer .app-footer');
@@ -455,6 +580,11 @@ describe('MaintenanceOrderListModal', () => {
       screen.queryByRole('button', { name: 'Marquer Bougie commandée' }),
     ).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Quantité commandée pour Bougie')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('checkbox', {
+        name: 'Inclure les pièces avec un stock inférieur ou égal à 1',
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it('creates one independent print page per supplier', async () => {

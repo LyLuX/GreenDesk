@@ -4,6 +4,7 @@ import { getDashboardSummary } from '../api/dashboard.api.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import useAuth from '../auth/useAuth.js';
 import Loader from '../components/Loader.jsx';
+import MaintenanceOrderListModal from '../components/MaintenanceOrderListModal.jsx';
 import Modal from '../components/Modal.jsx';
 import StatusPanel from '../components/StatusPanel.jsx';
 import {
@@ -62,6 +63,7 @@ export default function DashboardPage() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [maintenanceDialog, setMaintenanceDialog] = useState(null);
+  const [lowStockOpen, setLowStockOpen] = useState(false);
   const load = useCallback(async () => {
     setError('');
     try {
@@ -101,6 +103,8 @@ export default function DashboardPage() {
   const manufacturers = data.manufacturers ?? {};
   const fleet = data.fleet ?? {};
   const maintenance = data.maintenance ?? {};
+  const canReadMaintenancePlans = hasPermission(maintenancePermissions.plans.read);
+  const canReadMaintenanceParts = hasPermission(maintenancePermissions.parts.read);
   const canReadFinancialIndicators = hasPermission(dashboardPermissions.financial);
   const maintenanceStockValues = maintenance.stockValues ?? {};
   const maintenanceCosts =
@@ -138,27 +142,50 @@ export default function DashboardPage() {
         },
       ],
     },
-    ...(hasPermission(maintenancePermissions.plans.read)
+    ...(canReadMaintenancePlans || canReadMaintenanceParts
       ? [
           {
             label: 'Maintenance',
             groups: [
-              {
-                label: 'Entretiens des matériels',
-                cards: maintenanceCards.map((card) => ({
-                  ...card,
-                  value: maintenance[card.key] ?? 0,
-                })),
-              },
-              ...(canReadFinancialIndicators
+              ...(canReadMaintenancePlans
+                ? [
+                    {
+                      label: 'Entretiens des matériels',
+                      cards: maintenanceCards.map((card) => ({
+                        ...card,
+                        value: maintenance[card.key] ?? 0,
+                      })),
+                    },
+                  ]
+                : []),
+              ...(canReadMaintenanceParts || (canReadMaintenancePlans && canReadFinancialIndicators)
                 ? [
                     {
                       label: 'Pièces en stock',
                       cards: [
-                        ['Valeur du stock', formatCurrency(maintenanceStockValues.onHand)],
-                        ['Valeur commandée', formatCurrency(maintenanceStockValues.onOrder)],
+                        ...(canReadMaintenanceParts
+                          ? [
+                              {
+                                label: 'Pièces avec un stock faible',
+                                value: maintenance.lowStock ?? 0,
+                                className: 'maintenance-low-stock',
+                                ariaLabel: 'Voir les pièces avec un stock inférieur ou égal à 1',
+                                onClick: () => setLowStockOpen(true),
+                              },
+                            ]
+                          : []),
+                        ...(canReadMaintenancePlans && canReadFinancialIndicators
+                          ? [
+                              ['Valeur du stock', formatCurrency(maintenanceStockValues.onHand)],
+                              ['Valeur commandée', formatCurrency(maintenanceStockValues.onOrder)],
+                            ]
+                          : []),
                       ],
                     },
+                  ]
+                : []),
+              ...(canReadMaintenancePlans && canReadFinancialIndicators
+                ? [
                     {
                       label: 'Dépenses de maintenance',
                       cards: maintenanceCosts.map(({ year, total }) => [
@@ -214,7 +241,10 @@ export default function DashboardPage() {
                             ? { label: card[0], value: card[1], className: card[2] ?? '' }
                             : card;
                           const count = Number(normalizedCard.value);
-                          const isEmptyMaintenanceCard = normalizedCard.status && count <= 0;
+                          const isInteractive = Boolean(
+                            normalizedCard.status || normalizedCard.onClick,
+                          );
+                          const isEmptyMaintenanceCard = isInteractive && count <= 0;
                           const content = (
                             <>
                               <span className="metric-label">{normalizedCard.label}</span>
@@ -228,12 +258,18 @@ export default function DashboardPage() {
                               }`}
                               key={normalizedCard.label}
                             >
-                              {normalizedCard.status && count > 0 ? (
+                              {isInteractive && count > 0 ? (
                                 <button
                                   type="button"
                                   className="metric-card-content metric-card-button"
-                                  aria-label={`Voir les entretiens concernés : ${normalizedCard.label}`}
-                                  onClick={() => setMaintenanceDialog(normalizedCard)}
+                                  aria-label={
+                                    normalizedCard.ariaLabel ??
+                                    `Voir les entretiens concernés : ${normalizedCard.label}`
+                                  }
+                                  onClick={
+                                    normalizedCard.onClick ??
+                                    (() => setMaintenanceDialog(normalizedCard))
+                                  }
                                 >
                                   {content}
                                 </button>
@@ -305,6 +341,13 @@ export default function DashboardPage() {
           </div>
         )}
       </Modal>
+      {lowStockOpen ? (
+        <MaintenanceOrderListModal
+          open
+          initialFilters={{ includeLowStock: true, lowStockOnly: true }}
+          onClose={() => setLowStockOpen(false)}
+        />
+      ) : null}
     </main>
   );
 }
