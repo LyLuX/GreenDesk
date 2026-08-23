@@ -91,30 +91,38 @@ a:hover {
 }
 
 .timed-progress-button {
+  --timed-progress-color: color-mix(in srgb, var(--brand-leaf) 72%, #fff);
   position: relative;
   isolation: isolate;
   overflow: hidden;
 }
 
-.timed-progress-button__fill,
+.timed-progress-button__fill {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 42%;
+  height: 100%;
+  background: var(--timed-progress-color);
+  opacity: 0.32;
+  pointer-events: none;
+}
+
 .timed-progress-button__progress {
   position: absolute;
   z-index: 0;
   inset: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.14;
-  pointer-events: none;
-}
-
-.timed-progress-button__progress {
   appearance: none;
   overflow: hidden;
   border: 0;
-  color: currentColor;
+  color: var(--timed-progress-color);
   background: transparent;
-  direction: rtl;
-  writing-mode: vertical-lr;
+  opacity: 0.32;
+  pointer-events: none;
 }
 
 .timed-progress-button__progress::-webkit-progress-bar {
@@ -122,11 +130,11 @@ a:hover {
 }
 
 .timed-progress-button__progress::-webkit-progress-value {
-  background: currentColor;
+  background: var(--timed-progress-color);
 }
 
 .timed-progress-button__progress::-moz-progress-bar {
-  background: currentColor;
+  background: var(--timed-progress-color);
 }
 
 .timed-progress-button__label {
@@ -137,24 +145,23 @@ a:hover {
 }
 
 .timed-progress-button.is-busy .timed-progress-button__fill {
-  background: currentColor;
-  transform-origin: bottom;
-  animation: timed-progress-button-busy 900ms ease-in-out infinite alternate;
+  animation: timed-progress-button-busy 1100ms ease-in-out infinite alternate;
 }
 
 @keyframes timed-progress-button-busy {
   from {
-    transform: scaleY(0);
+    transform: translateX(0);
   }
   to {
-    transform: scaleY(1);
+    transform: translateX(138%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .timed-progress-button.is-busy .timed-progress-button__fill {
     animation: none;
-    transform: scaleY(1);
+    width: 100%;
+    transform: none;
   }
 }
 

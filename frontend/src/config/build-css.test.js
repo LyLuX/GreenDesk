@@ -73,6 +73,18 @@ describe('production CSS build', () => {
     );
   });
 
+  it('uses a horizontal GreenDesk progress treatment for timed action buttons', () => {
+    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+
+    expect(styles).toMatch(
+      /\.timed-progress-button\s*\{[^}]*--timed-progress-color:\s*color-mix\(in srgb,\s*var\(--brand-leaf\) 72%,\s*#fff\);/,
+    );
+    expect(styles).toMatch(
+      /@keyframes timed-progress-button-busy\s*\{[\s\S]*transform:\s*translateX\(0\);[\s\S]*transform:\s*translateX\(138%\);/,
+    );
+    expect(styles).not.toMatch(/\.timed-progress-button__progress\s*\{[^}]*writing-mode:/);
+  });
+
   it('uses one shared color for every wear-based maintenance indicator', () => {
     const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
 
