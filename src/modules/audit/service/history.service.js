@@ -80,6 +80,26 @@ const costs = (usages = []) => ({
   totalCost: usages.reduce((total, usage) => total + Number(plain(usage).totalCost || 0), 0),
 });
 
+const historyDateFormatter = new Intl.DateTimeFormat('fr-FR', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  timeZone: 'Europe/Paris',
+});
+const businessDateKey = (value) => {
+  const text = String(value || '');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const parts = Object.fromEntries(
+    historyDateFormatter
+      .formatToParts(date)
+      .filter(({ type }) => type !== 'literal')
+      .map(({ type, value: partValue }) => [type, partValue]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day}`;
+};
+
 /** Consolidates heterogeneous immutable journals into one stable public contract. */
 export default class HistoryService {
   constructor(repository = new HistoryRepository()) {
@@ -122,7 +142,9 @@ export default class HistoryService {
     const items = sources
       .flatMap((source) => source.items)
       .sort((left, right) => {
-        const dateOrder = new Date(right.occurredAt) - new Date(left.occurredAt);
+        const dateOrder = businessDateKey(right.occurredAt).localeCompare(
+          businessDateKey(left.occurredAt),
+        );
         if (dateOrder) return dateOrder;
         const recordedOrder = new Date(right.recordedAt) - new Date(left.recordedAt);
         return recordedOrder || right.uuid.localeCompare(left.uuid);

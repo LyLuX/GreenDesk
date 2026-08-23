@@ -97,7 +97,15 @@ describe('HistoryService', () => {
 
   it('uses the exact recording time to sort operations from the same business date', async () => {
     const repository = {
-      findAuditEvents: jest.fn().mockResolvedValue({ count: 0, rows: [] }),
+      findAuditEvents: jest.fn().mockResolvedValue({
+        count: 1,
+        rows: [
+          auditRow({
+            entity: 'MAINTENANCE_PART',
+            createdAt: '2026-08-22T08:19:00.000Z',
+          }),
+        ],
+      }),
       findPlannedExecutions: jest.fn().mockResolvedValue({
         count: 1,
         rows: [
@@ -120,7 +128,7 @@ describe('HistoryService', () => {
             stockableId: 1,
             operation: 'order',
             performedAt: '2026-08-22',
-            createdAt: '2026-08-22T10:00:00.000Z',
+            createdAt: '2026-08-22T09:20:00.000Z',
             performedByUser: null,
           },
         ],
@@ -131,6 +139,10 @@ describe('HistoryService', () => {
 
     const result = await new HistoryService(repository).list('maintenance');
 
-    expect(result.items.map(({ uuid }) => uuid)).toEqual(['stock-late', 'planned-early']);
+    expect(result.items.map(({ uuid }) => uuid)).toEqual([
+      'stock-late',
+      'audit-1',
+      'planned-early',
+    ]);
   });
 });
