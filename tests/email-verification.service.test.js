@@ -98,6 +98,37 @@ describe('EmailVerificationService', () => {
     });
   });
 
+  it('prevents consecutive public and administrative resends during the cooldown', async () => {
+    const repository = {
+      findLatestForUser: jest.fn().mockResolvedValue({
+        createdAt: new Date(Date.now() - 15_000),
+      }),
+    };
+    const userRepository = {
+      findByEmail: jest.fn().mockResolvedValue(user),
+      findByUuid: jest.fn().mockResolvedValue(user),
+    };
+    const mailService = { send: jest.fn() };
+    const service = new EmailVerificationService(
+      repository,
+      userRepository,
+      mailService,
+      { record: jest.fn() },
+      { ttlHours: 24, ttlMs: 86_400_000, cooldownMs: 60_000 },
+      'https://greendesk.example.test',
+      { error: jest.fn() },
+    );
+
+    await expect(service.resend(user.email)).resolves.toEqual({
+      message: 'Si un compte non vérifié correspond à cette adresse, un nouvel email a été envoyé.',
+    });
+    await expect(service.resendByUserUuid(user.uuid, 8)).rejects.toMatchObject({
+      statusCode: 429,
+      retryAfterSeconds: expect.any(Number),
+    });
+    expect(mailService.send).not.toHaveBeenCalled();
+  });
+
   it('propagates a delivery failure when resending for a known account', async () => {
     const service = new EmailVerificationService(
       {},

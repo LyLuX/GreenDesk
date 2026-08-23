@@ -4,7 +4,7 @@ import logger from '../logger/logger.js';
 /**
  * Express error middleware that normalizes operational and unexpected errors.
  *
- * @param {Error & {statusCode?: number, details?: object, isOperational?: boolean}} error - Raised error.
+ * @param {Error & {statusCode?: number, details?: object, isOperational?: boolean, retryAfterSeconds?: number}} error - Raised error.
  * @param {import('express').Request} _request - Incoming HTTP request.
  * @param {import('express').Response} response - Outgoing HTTP response.
  * @param {import('express').NextFunction} _next - Express callback.
@@ -12,11 +12,20 @@ import logger from '../logger/logger.js';
  */
 export function errorHandler(error, _request, response, _next) {
   const statusCode = error.statusCode ?? HTTP_STATUS.INTERNAL_SERVER_ERROR;
+  const retryAfterSeconds = Math.ceil(Number(error.retryAfterSeconds));
 
   logger.error(error.message, {
     stack: error.stack,
     statusCode,
   });
+
+  if (
+    statusCode === HTTP_STATUS.TOO_MANY_REQUESTS &&
+    Number.isSafeInteger(retryAfterSeconds) &&
+    retryAfterSeconds > 0
+  ) {
+    response.set('Retry-After', String(retryAfterSeconds));
+  }
 
   response.status(statusCode).json({
     success: false,

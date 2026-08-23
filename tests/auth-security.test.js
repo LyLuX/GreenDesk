@@ -34,6 +34,21 @@ describe('public authentication security', () => {
     expect((await request(app).post('/register')).status).toBe(201);
   });
 
+  it('exposes a safe Retry-After header for operational cooldown errors', async () => {
+    const app = express();
+    app.post('/resend', () => {
+      throw new AppError('Cooldown active', HTTP_STATUS.TOO_MANY_REQUESTS, undefined, {
+        retryAfterSeconds: 42,
+      });
+    });
+    app.use(errorHandler);
+
+    const response = await request(app).post('/resend');
+
+    expect(response.status).toBe(429);
+    expect(response.headers['retry-after']).toBe('42');
+  });
+
   it('logs failed logins without the email or password', async () => {
     const securityLogger = { warn: jest.fn() };
     const controller = new AuthController(

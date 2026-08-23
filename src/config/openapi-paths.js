@@ -267,7 +267,8 @@ export const openApiPaths = {
       operationId: 'resendUserEmailVerification',
       tags: ['Users'],
       summary: 'Renvoie l’email de vérification d’un utilisateur.',
-      description: 'Nécessite `users.email_verification.resend`.',
+      description:
+        'Nécessite `users.email_verification.resend`. Le délai minimal entre deux envois s’applique également aux renvois administratifs ; une nouvelle tentative anticipée retourne `429` et `Retry-After`.',
       security: secure,
       responses: {
         200: jsonResponse('EmailVerificationResponse', 'Email de vérification envoyé.'),

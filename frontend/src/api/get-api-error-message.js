@@ -20,6 +20,15 @@ export default function getApiErrorMessage(error) {
   if (message === 'Email delivery failed') {
     return 'L’email n’a pas pu être envoyé. Réessayez dans quelques instants.';
   }
+  if (message === 'Email verification resend cooldown active') {
+    const retryAfterHeader =
+      error?.response?.headers?.['retry-after'] ?? error?.response?.headers?.get?.('retry-after');
+    const retryAfterSeconds = Math.ceil(Number(retryAfterHeader));
+    if (Number.isSafeInteger(retryAfterSeconds) && retryAfterSeconds > 0) {
+      return `Un email vient déjà d’être envoyé. Réessayez dans ${retryAfterSeconds} seconde${retryAfterSeconds > 1 ? 's' : ''}.`;
+    }
+    return 'Un email vient déjà d’être envoyé. Réessayez dans quelques instants.';
+  }
   if (message && message !== 'Validation failed') return message;
   if (Array.isArray(details) && details.length) {
     return [

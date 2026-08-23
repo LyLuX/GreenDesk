@@ -45,4 +45,18 @@ describe('getApiErrorMessage', () => {
 
     expect(getApiErrorMessage(error)).toBe('Le champ « unit » contient une valeur invalide.');
   });
+
+  it('shows the remaining verification-email cooldown from Retry-After', () => {
+    const error = {
+      response: {
+        status: 429,
+        headers: { 'retry-after': '42' },
+        data: { error: { message: 'Email verification resend cooldown active' } },
+      },
+    };
+
+    expect(getApiErrorMessage(error)).toBe(
+      'Un email vient déjà d’être envoyé. Réessayez dans 42 secondes.',
+    );
+  });
 });

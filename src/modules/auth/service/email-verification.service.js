@@ -34,17 +34,21 @@ export default class EmailVerificationService {
     this.logger = serviceLogger;
   }
 
-  async issue(user, { actorUserId = null, force = false, suppressDeliveryErrors = false } = {}) {
+  async issue(user, { actorUserId = null, suppressDeliveryErrors = false } = {}) {
     if (!user || user.emailVerifiedAt) return { sent: false };
     const now = new Date();
-    if (!force) {
-      const latest = await this.repository.findLatestForUser(user.id);
-      if (
-        latest &&
-        now.getTime() - new Date(latest.createdAt).getTime() < this.configuration.cooldownMs
-      ) {
-        return { sent: false };
-      }
+    const latest = await this.repository.findLatestForUser(user.id);
+    const elapsedMs = latest ? now.getTime() - new Date(latest.createdAt).getTime() : null;
+    if (elapsedMs !== null && elapsedMs < this.configuration.cooldownMs) {
+      const retryAfterMs = Math.min(
+        this.configuration.cooldownMs,
+        this.configuration.cooldownMs - elapsedMs,
+      );
+      return {
+        sent: false,
+        reason: 'cooldown',
+        retryAfterSeconds: Math.max(1, Math.ceil(retryAfterMs / 1000)),
+      };
     }
 
     const token = randomBytes(32).toString('base64url');
@@ -125,7 +129,15 @@ export default class EmailVerificationService {
     if (user.emailVerifiedAt) {
       throw new AppError('Email is already verified', HTTP_STATUS.CONFLICT);
     }
-    await this.issue(user, { actorUserId, force: true });
+    const delivery = await this.issue(user, { actorUserId });
+    if (delivery.reason === 'cooldown') {
+      throw new AppError(
+        'Email verification resend cooldown active',
+        HTTP_STATUS.TOO_MANY_REQUESTS,
+        undefined,
+        { retryAfterSeconds: delivery.retryAfterSeconds },
+      );
+    }
     return { message: 'Verification email sent' };
   }
 
