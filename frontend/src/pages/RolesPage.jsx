@@ -37,6 +37,7 @@ function PermissionActionFamilyCheckbox({
   onTogglePreview,
 }) {
   const checkboxRef = useRef(null);
+  const checkboxId = useId();
   const selectedCount = permissionUuids.filter((uuid) => selectedPermissionUuids.has(uuid)).length;
   const allSelected = selectedCount === permissionUuids.length;
   const partiallySelected = selectedCount > 0 && !allSelected;
@@ -56,20 +57,19 @@ function PermissionActionFamilyCheckbox({
       onMouseEnter={() => onPreview(family)}
       onMouseLeave={() => onPreview(null)}
     >
-      <label className="form-label permission-action-selection mb-0">
-        <input
-          ref={checkboxRef}
-          aria-checked={partiallySelected ? 'mixed' : allSelected}
-          className="form-check-input"
-          type="checkbox"
-          checked={allSelected}
-          onChange={() => onToggle(permissionUuids)}
-        />
-        <span className="permission-action-label">
-          <span>{label}</span>
-          <span className="permission-action-count">
-            {selectedCount} sur {permissionUuids.length}
-          </span>
+      <input
+        ref={checkboxRef}
+        aria-checked={partiallySelected ? 'mixed' : allSelected}
+        className="form-check-input"
+        id={checkboxId}
+        type="checkbox"
+        checked={allSelected}
+        onChange={() => onToggle(permissionUuids)}
+      />
+      <label className="form-label permission-action-label mb-0" htmlFor={checkboxId}>
+        <span>{label}</span>
+        <span className="permission-action-count">
+          {selectedCount} sur {permissionUuids.length}
         </span>
       </label>
       <button

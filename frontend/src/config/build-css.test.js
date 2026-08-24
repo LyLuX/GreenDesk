@@ -48,12 +48,17 @@ describe('production CSS build', () => {
     expect(styles).toMatch(/\.multiline-text\s*\{[^}]*white-space:\s*pre-wrap;/);
   });
 
-  it('keeps quick role permission actions compact and vertically scrollable', () => {
+  it('keeps quick role permission actions compact, centered and vertically scrollable', () => {
     const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
 
     expect(styles).toMatch(
       /\.permission-action-panel\s*\{[^}]*height:\s*clamp\(8rem,\s*22vh,\s*11\.25rem\);[^}]*overflow-y:\s*auto;[^}]*scrollbar-gutter:\s*stable;/,
     );
+    expect(styles).toMatch(
+      /\.permission-action-panel \.permission-action-option\s*\{[^}]*grid-template-columns:\s*auto minmax\(0,\s*1fr\) 2rem;[^}]*align-items:\s*center;/,
+    );
+    const previewRule = styles.match(/\.permission-action-preview\s*\{([^}]*)\}/)?.[1];
+    expect(previewRule).not.toMatch(/(?:^|;)\s*height\s*:/);
   });
 
   it('visually separates dashboard cards from their dedicated background', () => {
