@@ -330,6 +330,27 @@ describe('OpenAPI contract', () => {
     );
   });
 
+  it('documents server-side uppercase normalization for user last names', () => {
+    expect(swaggerSpec.paths['/auth/register'].post.description).toContain(
+      'nom de famille est stocké en majuscules',
+    );
+    expect(swaggerSpec.paths['/users'].post.description).toContain(
+      'nom de famille est stocké en majuscules',
+    );
+    expect(swaggerSpec.paths['/users/{uuid}'].put.description).toContain(
+      'nom de famille est stocké en majuscules',
+    );
+    expect(swaggerSpec.components.schemas.User.properties.lastName.description).toContain(
+      'majuscules',
+    );
+    expect(
+      swaggerSpec.components.schemas.RegisterRequest.properties.lastName.description,
+    ).toContain('majuscules');
+    expect(
+      swaggerSpec.components.schemas.UserUpdateRequest.properties.lastName.description,
+    ).toContain('majuscules');
+  });
+
   it('documents the default material catalogue sort', () => {
     const parameters = swaggerSpec.paths['/materials'].get.parameters;
     const sort = parameters.find((parameter) => parameter.name === 'sort');

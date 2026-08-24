@@ -80,7 +80,11 @@ const user = {
     id: { type: 'integer', readOnly: true },
     uuid,
     firstName: { type: 'string', maxLength: 100 },
-    lastName: { type: 'string', maxLength: 100 },
+    lastName: {
+      type: 'string',
+      maxLength: 100,
+      description: 'Nom de famille normalisé et stocké en majuscules.',
+    },
     email: { type: 'string', format: 'email', maxLength: 255 },
     emailVerifiedAt: nullableDateTime,
     isActive: { type: 'boolean' },
@@ -679,7 +683,10 @@ export const openApiSchemas = {
     required: ['firstName', 'lastName', 'email', 'password'],
     properties: {
       firstName: writeText(100),
-      lastName: writeText(100),
+      lastName: {
+        ...writeText(100),
+        description: 'Nom de famille normalisé en majuscules par le serveur.',
+      },
       email: { type: 'string', format: 'email' },
       password: { type: 'string', format: 'password', minLength: 8, writeOnly: true },
     },
@@ -722,7 +729,10 @@ export const openApiSchemas = {
     type: 'object',
     properties: {
       firstName: writeText(100),
-      lastName: writeText(100),
+      lastName: {
+        ...writeText(100),
+        description: 'Nom de famille normalisé en majuscules par le serveur.',
+      },
       email: { type: 'string', format: 'email' },
       password: {
         type: 'string',

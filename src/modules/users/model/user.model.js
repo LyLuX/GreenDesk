@@ -19,7 +19,16 @@ User.init(
     id: { type: DataTypes.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
     uuid: { type: DataTypes.UUID, defaultValue: uuidv4, allowNull: false, unique: true },
     firstName: { type: DataTypes.STRING(100), allowNull: false },
-    lastName: { type: DataTypes.STRING(100), allowNull: false },
+    lastName: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      set(value) {
+        this.setDataValue(
+          'lastName',
+          typeof value === 'string' ? value.trim().toLocaleUpperCase('fr-FR') : value,
+        );
+      },
+    },
     email: { type: DataTypes.STRING(255), allowNull: false, unique: true },
     passwordHash: { type: DataTypes.STRING(255), allowNull: false },
     isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },

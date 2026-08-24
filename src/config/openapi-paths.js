@@ -101,7 +101,7 @@ export const openApiPaths = {
       tags: ['Auth'],
       summary: 'Crée un compte avec le rôle utilisateur par défaut.',
       description:
-        'Disponible uniquement lorsque `PUBLIC_REGISTRATION_ENABLED=true`. Cette option est désactivée par défaut en production.',
+        'Disponible uniquement lorsque `PUBLIC_REGISTRATION_ENABLED=true`. Cette option est désactivée par défaut en production. Le nom de famille est stocké en majuscules.',
       requestBody: jsonBody('RegisterRequest'),
       responses: {
         201: jsonResponse(
@@ -224,7 +224,7 @@ export const openApiPaths = {
       tags: ['Users'],
       summary: 'Crée un utilisateur et lui attribue éventuellement des rôles.',
       description:
-        'Nécessite `users.create`. Fournir `roleUuids` nécessite également `users.roles.update`.',
+        'Nécessite `users.create`. Fournir `roleUuids` nécessite également `users.roles.update`. Le nom de famille est stocké en majuscules.',
       security: secure,
       requestBody: jsonBody('UserCreateRequest'),
       responses: {
@@ -251,7 +251,7 @@ export const openApiPaths = {
       tags: ['Users'],
       summary: 'Met à jour un utilisateur et ses rôles.',
       description:
-        '`users.update` protège les informations générales, `users.status.update` le statut, `users.password.update` le mot de passe et `users.roles.update` les rôles. Toutes les permissions correspondant aux champs fournis sont exigées. Une modification des rôles invalide les sessions actives de l’utilisateur concerné, sauf lorsqu’il s’agit de l’administrateur réalisant l’opération.',
+        '`users.update` protège les informations générales, `users.status.update` le statut, `users.password.update` le mot de passe et `users.roles.update` les rôles. Toutes les permissions correspondant aux champs fournis sont exigées. Le nom de famille est stocké en majuscules. Une modification des rôles invalide les sessions actives de l’utilisateur concerné, sauf lorsqu’il s’agit de l’administrateur réalisant l’opération.',
       security: secure,
       requestBody: jsonBody('UserUpdateRequest'),
       responses: {
