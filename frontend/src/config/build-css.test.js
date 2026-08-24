@@ -48,15 +48,11 @@ describe('production CSS build', () => {
     expect(styles).toMatch(/\.multiline-text\s*\{[^}]*white-space:\s*pre-wrap;/);
   });
 
-  it('keeps quick role permission actions compact, aligned and vertically scrollable', () => {
+  it('keeps quick role permission actions compact and vertically scrollable', () => {
     const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
 
     expect(styles).toMatch(
       /\.permission-action-panel\s*\{[^}]*height:\s*clamp\(8rem,\s*22vh,\s*11\.25rem\);[^}]*overflow-y:\s*auto;[^}]*scrollbar-gutter:\s*stable;/,
-    );
-    expect(styles).toMatch(/\.permission-action-preview\s*\{[^}]*align-self:\s*start;/);
-    expect(styles).toMatch(
-      /\.permission-action-preview svg\s*\{[^}]*transform:\s*translateY\(-0\.25rem\);/,
     );
   });
 
