@@ -34,4 +34,54 @@ describe('PermissionService audit', () => {
       { transaction },
     );
   });
+
+  it('rejects manual creation in the role visibility namespace', async () => {
+    const repository = { withTransaction: jest.fn() };
+    const service = new PermissionService(repository, { record: jest.fn() });
+
+    await expect(
+      service.create({ name: 'users.roles.TECHNICIEN.read', description: 'Interdite' }),
+    ).rejects.toMatchObject({ statusCode: 400 });
+    expect(repository.withTransaction).not.toHaveBeenCalled();
+  });
+
+  it('rejects renaming an ordinary permission into the role visibility namespace', async () => {
+    const permission = {
+      uuid: 'd0fd8cdc-74d0-4f58-af27-6c181e05895d',
+      name: 'materials.read',
+    };
+    const repository = {
+      findByUuid: jest.fn().mockResolvedValue(permission),
+      withTransaction: jest.fn(),
+    };
+    const service = new PermissionService(repository, { record: jest.fn() });
+
+    await expect(
+      service.update(permission.uuid, { name: 'users.roles.TECHNICIEN.read' }),
+    ).rejects.toMatchObject({ statusCode: 409 });
+    expect(repository.withTransaction).not.toHaveBeenCalled();
+  });
+
+  it.each(['update', 'remove'])(
+    'rejects direct %s of an automatically managed role permission',
+    async (operation) => {
+      const permission = {
+        uuid: 'd0fd8cdc-74d0-4f58-af27-6c181e05895d',
+        name: 'users.roles.TECHNICIEN.read',
+      };
+      const repository = {
+        findByUuid: jest.fn().mockResolvedValue(permission),
+        withTransaction: jest.fn(),
+      };
+      const service = new PermissionService(repository, { record: jest.fn() });
+
+      const promise =
+        operation === 'update'
+          ? service.update(permission.uuid, { description: 'Modifiée' })
+          : service.remove(permission.uuid);
+
+      await expect(promise).rejects.toMatchObject({ statusCode: 409 });
+      expect(repository.withTransaction).not.toHaveBeenCalled();
+    },
+  );
 });

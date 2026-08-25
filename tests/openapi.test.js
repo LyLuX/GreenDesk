@@ -299,6 +299,10 @@ describe('OpenAPI contract', () => {
       'dernière connexion décroissante',
     );
     expect(swaggerSpec.paths['/users'].get.description).toContain('`users.deleted.read`');
+    expect(swaggerSpec.paths['/users'].get.description).toContain(
+      '`users.roles.<nom-du-rôle>.read`',
+    );
+    expect(swaggerSpec.paths['/users'].get.description).toContain('`users.all.read`');
     expect(swaggerSpec.paths['/users'].get.parameters).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -318,7 +322,18 @@ describe('OpenAPI contract', () => {
     expect(swaggerSpec.paths['/roles/{uuid}'].put.description).toContain(
       '`roles.permissions.update`',
     );
+    expect(swaggerSpec.paths['/roles/{uuid}'].put.description).toContain(
+      'nom du rôle est immuable',
+    );
+    expect(swaggerSpec.components.schemas.RoleUpdateRequest.properties).not.toHaveProperty('name');
+    expect(swaggerSpec.components.schemas.Permission.properties.name.maxLength).toBe(150);
+    expect(swaggerSpec.components.schemas.PermissionCreateRequest.properties.name.maxLength).toBe(
+      150,
+    );
     expect(swaggerSpec.paths['/permissions'].post.description).toContain('`permissions.create`');
+    expect(swaggerSpec.paths['/permissions'].post.description).toContain(
+      '`users.roles.<nom-du-rôle>.read`',
+    );
     expect(swaggerSpec.paths['/manufacturers/{uuid}/logo'].post.description).toContain(
       '`manufacturers.logo.upload`',
     );

@@ -197,7 +197,7 @@ export const openApiPaths = {
       tags: ['Users'],
       summary: 'Liste les utilisateurs.',
       description:
-        'Nécessite `users.read`. Les résultats sont triés par dernière connexion décroissante. Le filtre `deleted=true` retourne uniquement les comptes supprimés et nécessite également `users.deleted.read`.',
+        'Nécessite `users.read`. Les résultats sont limités aux rôles couverts par les permissions dynamiques `users.roles.<nom-du-rôle>.read` du demandeur ; `users.all.read` donne accès à tous les utilisateurs. Les résultats sont triés par dernière connexion décroissante. Le filtre `deleted=true` retourne uniquement les comptes supprimés et nécessite également `users.deleted.read`.',
       security: secure,
       parameters: [
         searchParameter,
@@ -239,7 +239,8 @@ export const openApiPaths = {
       operationId: 'getUser',
       tags: ['Users'],
       summary: 'Retourne un utilisateur.',
-      description: 'Nécessite `users.read`.',
+      description:
+        'Nécessite `users.read` et une permission dynamique `users.roles.<nom-du-rôle>.read` correspondant à l’un des rôles de l’utilisateur demandé, ou `users.all.read`.',
       security: secure,
       responses: {
         200: jsonResponse('UserResponse', 'Utilisateur retourné.'),
@@ -328,7 +329,7 @@ export const openApiPaths = {
       tags: ['Roles'],
       summary: 'Crée un rôle et lui attribue éventuellement des permissions.',
       description:
-        'Nécessite `roles.create`. Fournir `permissionUuids` nécessite également `roles.permissions.update`.',
+        'Nécessite `roles.create`. Fournir `permissionUuids` nécessite également `roles.permissions.update`. Une permission lisible `users.roles.<nom-du-rôle>.read` est créée automatiquement et attribuée au nouveau rôle.',
       security: secure,
       requestBody: jsonBody('RoleCreateRequest'),
       responses: {
@@ -342,9 +343,9 @@ export const openApiPaths = {
     put: {
       operationId: 'updateRole',
       tags: ['Roles'],
-      summary: 'Met à jour un rôle et ses permissions.',
+      summary: 'Met à jour la description et les permissions d’un rôle.',
       description:
-        '`roles.update` protège le nom et la description. Modifier `permissionUuids` nécessite `roles.permissions.update`. Toutes les permissions correspondant aux champs fournis sont exigées. Une modification des permissions invalide les sessions actives des utilisateurs concernés, à l’exception de la session de l’administrateur réalisant l’opération.',
+        '`roles.update` protège la description. Le nom du rôle est immuable après sa création. Modifier `permissionUuids` nécessite `roles.permissions.update`. Toutes les permissions correspondant aux champs fournis sont exigées. Une modification des permissions invalide les sessions actives des utilisateurs concernés, à l’exception de la session de l’administrateur réalisant l’opération.',
       security: secure,
       requestBody: jsonBody('RoleUpdateRequest'),
       responses: {
@@ -357,7 +358,7 @@ export const openApiPaths = {
       tags: ['Roles'],
       summary: 'Supprime logiquement un rôle.',
       description:
-        'Nécessite `roles.delete`. La suppression invalide les sessions actives des utilisateurs concernés, à l’exception de la session de l’administrateur réalisant l’opération.',
+        'Nécessite `roles.delete`. La permission dynamique de consultation des utilisateurs associée au rôle est supprimée dans la même transaction. La suppression invalide les sessions actives des utilisateurs concernés, à l’exception de la session de l’administrateur réalisant l’opération.',
       security: secure,
       responses: { 204: noContent, ...resourceErrors },
     },
@@ -381,7 +382,8 @@ export const openApiPaths = {
       operationId: 'createPermission',
       tags: ['Permissions'],
       summary: 'Crée une permission.',
-      description: 'Nécessite `permissions.create`.',
+      description:
+        'Nécessite `permissions.create`. L’espace de noms dynamique `users.roles.<nom-du-rôle>.read` est réservé à la gestion automatique des rôles.',
       security: secure,
       requestBody: jsonBody('PermissionCreateRequest'),
       responses: {
@@ -396,7 +398,8 @@ export const openApiPaths = {
       operationId: 'updatePermission',
       tags: ['Permissions'],
       summary: 'Met à jour une permission.',
-      description: 'Nécessite `permissions.update`.',
+      description:
+        'Nécessite `permissions.update`. Les permissions dynamiques `users.roles.<nom-du-rôle>.read` sont gérées automatiquement et ne peuvent pas être modifiées ici.',
       security: secure,
       requestBody: jsonBody('PermissionUpdateRequest'),
       responses: {
@@ -408,7 +411,8 @@ export const openApiPaths = {
       operationId: 'deletePermission',
       tags: ['Permissions'],
       summary: 'Supprime logiquement une permission.',
-      description: 'Nécessite `permissions.delete`.',
+      description:
+        'Nécessite `permissions.delete`. Les permissions dynamiques `users.roles.<nom-du-rôle>.read` ne peuvent être supprimées qu’avec leur rôle.',
       security: secure,
       responses: { 204: noContent, ...resourceErrors },
     },

@@ -74,6 +74,14 @@ describe('granular administration route permissions', () => {
       .expect(400);
   });
 
+  it('rejects renaming a role even with the role update permission', async () => {
+    await request(app)
+      .put(`/api/v1/roles/${uuid}`)
+      .set('Authorization', authorization(['roles.update']))
+      .send({ name: 'NOUVEAU_NOM' })
+      .expect(400);
+  });
+
   it('protects administrative verification-email resends with their own permission', async () => {
     await request(app)
       .post('/api/v1/users/invalid/email-verification/resend')

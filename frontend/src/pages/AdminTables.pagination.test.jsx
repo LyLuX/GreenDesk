@@ -26,7 +26,12 @@ const mocks = vi.hoisted(() => {
     restoreUser: vi.fn(),
     resendUserEmailVerification: vi.fn(),
     referenceApis: {
-      roles: { list: vi.fn().mockResolvedValue({ data: { data: roles } }) },
+      roles: {
+        list: vi.fn().mockResolvedValue({ data: { data: roles } }),
+        create: vi.fn(),
+        update: vi.fn(),
+        remove: vi.fn(),
+      },
       permissions: {
         list: vi.fn().mockResolvedValue({
           data: {
@@ -67,6 +72,7 @@ describe('administrator table pagination', () => {
   afterEach(cleanup);
   beforeEach(() => {
     mocks.hasPermission.mockReturnValue(true);
+    mocks.referenceApis.roles.update.mockResolvedValue({ data: { success: true } });
     for (const user of mocks.users) {
       delete user.deletedAt;
       user.lastLoginAt = null;
@@ -218,6 +224,48 @@ describe('administrator table pagination', () => {
     expect(screen.queryByRole('button', { name: 'Créer un rôle' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Modifier' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Supprimer' })).not.toBeInTheDocument();
+  });
+
+  it('keeps the role name and its readable permission immutable when editing', async () => {
+    const user = userEvent.setup();
+    const visibilityPermission = {
+      uuid: 'permission-role-technicien',
+      name: 'users.roles.TECHNICIEN.read',
+      description: 'Consulter les utilisateurs rattachés au rôle « TECHNICIEN ».',
+    };
+    mocks.referenceApis.roles.list.mockResolvedValueOnce({
+      data: {
+        data: [
+          {
+            uuid: 'role-technicien',
+            name: 'TECHNICIEN',
+            description: 'Description initiale',
+            permissions: [visibilityPermission],
+          },
+        ],
+      },
+    });
+    mocks.referenceApis.permissions.list.mockResolvedValueOnce({
+      data: { data: [visibilityPermission] },
+    });
+
+    render(<RolesPage />);
+    await user.click(await screen.findByRole('button', { name: 'Modifier' }));
+
+    const dialog = within(screen.getByRole('dialog', { name: 'Modifier un rôle' }));
+    expect(dialog.getByLabelText('Nom')).toBeDisabled();
+    expect(dialog.getByText(/ne peut plus être modifié/)).toBeVisible();
+    expect(dialog.getByLabelText(/Consulter les utilisateurs rattachés au rôle/)).toBeDisabled();
+    expect(dialog.getByText(/Permission automatique requise/)).toBeVisible();
+
+    await user.clear(dialog.getByLabelText('Description'));
+    await user.type(dialog.getByLabelText('Description'), 'Description actualisée');
+    await user.click(dialog.getByRole('button', { name: 'Enregistrer' }));
+
+    expect(mocks.referenceApis.roles.update).toHaveBeenCalledWith('role-technicien', {
+      description: 'Description actualisée',
+      permissionUuids: ['permission-role-technicien'],
+    });
   });
 
   it('shows active users by default and paginates all users after clearing the status', async () => {

@@ -74,4 +74,23 @@ export default class RoleRepository extends TransactionalRepository {
   async setPermissions(role, permissions, { transaction } = {}) {
     return role.setPermissions(permissions, { transaction });
   }
+  async addPermission(role, permission, { transaction } = {}) {
+    return role.addPermission(permission, { transaction });
+  }
+  async findByPermissionId(permissionId, { transaction } = {}) {
+    return Role.findAll({
+      attributes: ['id', 'uuid'],
+      include: [
+        {
+          model: Permission,
+          as: 'permissions',
+          attributes: [],
+          where: { id: permissionId },
+          through: { attributes: [] },
+          required: true,
+        },
+      ],
+      transaction,
+    });
+  }
 }

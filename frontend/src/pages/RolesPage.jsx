@@ -21,6 +21,7 @@ import {
 } from '../permissions/permission-action-families.js';
 
 const emptyRole = () => ({ name: '', description: '', permissionUuids: [] });
+const roleUserReadPermissionName = (roleName) => `users.roles.${roleName}.read`;
 const rolesApi = createReferenceApi('roles');
 const permissionsApi = createReferenceApi('permissions');
 const visiblePermissionCount = 6;
@@ -168,6 +169,10 @@ export default function RolesPage() {
     () => new Set(form.permissionUuids),
     [form.permissionUuids],
   );
+  const requiredVisibilityPermissionUuid = editing?.uuid
+    ? permissions.find((permission) => permission.name === roleUserReadPermissionName(editing.name))
+        ?.uuid
+    : null;
 
   const load = useCallback(
     async (signal) => {
@@ -267,6 +272,7 @@ export default function RolesPage() {
   };
 
   const togglePermission = (permissionUuid) => {
+    if (permissionUuid === requiredVisibilityPermissionUuid) return;
     setForm((current) => ({
       ...current,
       permissionUuids: current.permissionUuids.includes(permissionUuid)
@@ -282,7 +288,10 @@ export default function RolesPage() {
       return {
         ...current,
         permissionUuids: allSelected
-          ? current.permissionUuids.filter((uuid) => !actionPermissionUuids.has(uuid))
+          ? current.permissionUuids.filter(
+              (uuid) =>
+                !actionPermissionUuids.has(uuid) || uuid === requiredVisibilityPermissionUuid,
+            )
           : [...new Set([...current.permissionUuids, ...permissionUuids])],
       };
     });
@@ -306,11 +315,15 @@ export default function RolesPage() {
     try {
       const payload = editing?.uuid
         ? {
-            ...(canUpdate
-              ? { name: form.name.trim(), description: form.description.trim() || null }
-              : {}),
+            ...(canUpdate ? { description: form.description.trim() || null } : {}),
             ...(canAssignPermissions && canReadPermissions
-              ? { permissionUuids: form.permissionUuids }
+              ? {
+                  permissionUuids: [
+                    ...new Set(
+                      [requiredVisibilityPermissionUuid, ...form.permissionUuids].filter(Boolean),
+                    ),
+                  ],
+                }
               : {}),
           }
         : {
@@ -487,8 +500,13 @@ export default function RolesPage() {
             value={form.name}
             onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
             required
-            disabled={Boolean(editing?.uuid && !canUpdate)}
+            disabled={Boolean(editing?.uuid)}
           />
+          {editing?.uuid ? (
+            <small className="text-body-secondary">
+              Le nom d’un rôle ne peut plus être modifié après sa création.
+            </small>
+          ) : null}
           <FormField
             label="Description"
             name="description"
@@ -543,6 +561,7 @@ export default function RolesPage() {
                 ) : (
                   sortedPermissions.map((permission) => {
                     const selected = form.permissionUuids.includes(permission.uuid);
+                    const required = permission.uuid === requiredVisibilityPermissionUuid;
                     const permissionFamily = getPermissionFamily(permission.name);
                     const highlighted = permissionFamily === highlightedPermissionFamily;
                     return (
@@ -564,6 +583,7 @@ export default function RolesPage() {
                           id={`permission-${permission.uuid}`}
                           type="checkbox"
                           checked={selected}
+                          disabled={required}
                           onChange={() => togglePermission(permission.uuid)}
                         />
                         <label
@@ -575,6 +595,11 @@ export default function RolesPage() {
                           </span>
                           {permission.description && (
                             <code className="permission-code">{permission.name}</code>
+                          )}
+                          {required && (
+                            <span className="d-block small text-body-secondary">
+                              Permission automatique requise pour ce rôle.
+                            </span>
                           )}
                         </label>
                       </div>

@@ -1,4 +1,5 @@
 import HTTP_STATUS from '../../../core/constants/http-status.js';
+import { isRoleUserReadPermission } from '../../../core/constants/user-visibility-permissions.js';
 import AppError from '../../../core/errors/app-error.js';
 import PermissionRepository from '../repository/permission.repository.js';
 import AuditService from '../../audit/service/audit.service.js';
@@ -23,6 +24,12 @@ export default class PermissionService {
     return permission;
   }
   async create(values, actorUserId = null) {
+    if (isRoleUserReadPermission(values.name)) {
+      throw new AppError(
+        'Cette famille de permissions est réservée à la gestion automatique des rôles.',
+        HTTP_STATUS.BAD_REQUEST,
+      );
+    }
     return this.permissionRepository.withTransaction(async (transaction) => {
       const existingPermission = await this.permissionRepository.findByName(values.name, {
         withDeleted: true,
@@ -65,6 +72,15 @@ export default class PermissionService {
   }
   async update(uuid, values, actorUserId = null) {
     const permission = await this.getByUuid(uuid);
+    if (
+      isRoleUserReadPermission(permission.name) ||
+      (values.name && isRoleUserReadPermission(values.name))
+    ) {
+      throw new AppError(
+        'Cette permission est gérée automatiquement par son rôle.',
+        HTTP_STATUS.CONFLICT,
+      );
+    }
     const oldValues = permission.toJSON?.() ?? { ...permission };
     return this.permissionRepository.withTransaction(async (transaction) => {
       await this.permissionRepository.update(permission, values, { transaction });
@@ -84,6 +100,12 @@ export default class PermissionService {
   }
   async remove(uuid, actorUserId = null) {
     const permission = await this.getByUuid(uuid);
+    if (isRoleUserReadPermission(permission.name)) {
+      throw new AppError(
+        'Cette permission sera supprimée automatiquement avec son rôle.',
+        HTTP_STATUS.CONFLICT,
+      );
+    }
     await this.permissionRepository.withTransaction(async (transaction) => {
       await this.permissionRepository.delete(permission, { transaction });
       await this.auditService.record(

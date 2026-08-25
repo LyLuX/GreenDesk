@@ -23,7 +23,7 @@ describe('UserService', () => {
       create: jest.fn().mockResolvedValue(user),
       findByUuid: jest.fn().mockResolvedValue(user),
       setRoles: jest.fn(),
-      findAll: jest.fn(),
+      findAll: jest.fn().mockResolvedValue({ count: 0, rows: [] }),
       update: jest.fn(),
       delete: jest.fn(),
       restore: jest.fn(),
@@ -72,6 +72,42 @@ describe('UserService', () => {
   it('retrieves a user by UUID', async () => {
     const { service } = createService();
     await expect(service.getByUuid(user.uuid)).resolves.toBe(user);
+  });
+
+  it('limits user listings to role names granted by readable permissions', async () => {
+    const { service, userRepository } = createService();
+
+    await service.getAll({ page: 1, limit: 5 }, [
+      'users.read',
+      'users.roles.USER.read',
+      'users.roles.MANAGER.read',
+    ]);
+
+    expect(userRepository.findAll).toHaveBeenCalledWith({
+      page: 1,
+      limit: 5,
+      visibleRoleNames: ['USER', 'MANAGER'],
+    });
+  });
+
+  it('does not apply a role scope when users.all.read is granted', async () => {
+    const { service, userRepository } = createService();
+
+    await service.getAll({}, ['users.read', 'users.all.read']);
+
+    expect(userRepository.findAll).toHaveBeenCalledWith({ visibleRoleNames: undefined });
+  });
+
+  it('applies the same readable role scope to user details', async () => {
+    const { service, userRepository } = createService();
+
+    await service.getByUuid(user.uuid, {
+      visibilityPermissions: ['users.read', 'users.roles.USER.read'],
+    });
+
+    expect(userRepository.findByUuid).toHaveBeenCalledWith(user.uuid, {
+      visibleRoleNames: ['USER'],
+    });
   });
 
   it('updates user role assignments', async () => {

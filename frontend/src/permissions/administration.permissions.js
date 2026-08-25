@@ -1,6 +1,7 @@
 const administrationPermissions = Object.freeze({
   users: Object.freeze({
     read: 'users.read',
+    all: Object.freeze({ read: 'users.all.read' }),
     create: 'users.create',
     update: 'users.update',
     delete: 'users.delete',

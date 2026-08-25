@@ -15,7 +15,10 @@ export const createRoleValidator = [
 ];
 export const updateRoleValidator = [
   param('uuid').isUUID(),
-  body('name').optional().trim().notEmpty().isLength({ max: 100 }),
+  body('name')
+    .not()
+    .exists()
+    .withMessage('Le nom d’un rôle ne peut pas être modifié après sa création.'),
   body('description').optional().trim().isLength({ max: 500 }),
   body('permissionUuids').optional().isArray(),
   body('permissionUuids.*').optional().isUUID(),

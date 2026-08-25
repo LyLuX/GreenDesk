@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import sequelize, { connectDatabase } from '../config/database.js';
 import env from '../config/env.js';
 import permissionDefinitions from '../core/constants/permission-definitions.js';
+import { roleUserReadPermissionName } from '../core/constants/user-visibility-permissions.js';
 import { initializeModels } from '../core/database/models.js';
 import { withTransaction } from '../core/database/transaction-context.js';
 import PermissionService from '../modules/permissions/service/permission.service.js';
@@ -78,7 +79,14 @@ export async function seedDevelopmentData(credentials, dependencies = {}) {
   }
 
   const adminRole = await roleRepository.findByName('ADMIN');
-  const permissions = await permissionService.getAll();
+  const permissions = (
+    await Promise.all(
+      [
+        ...permissionDefinitions.map(({ name }) => name),
+        roleUserReadPermissionName(adminRole.name),
+      ].map((name) => permissionService.permissionRepository.findByName(name)),
+    )
+  ).filter(Boolean);
   await roleRepository.setPermissions(adminRole, permissions);
 
   const existingAdmin = await userRepository.findByEmail(credentials.email, { withDeleted: true });

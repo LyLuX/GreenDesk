@@ -25,8 +25,11 @@ const userListOrder = [
 
 /** Database access for users. */
 export default class UserRepository extends TransactionalRepository {
-  async findAll({ search, active, deleted = false, roleUuid, page, limit } = {}) {
+  async findAll({ search, active, deleted = false, roleUuid, visibleRoleNames, page, limit } = {}) {
     const pagination = normalizePagination({ page, limit });
+    if (Array.isArray(visibleRoleNames) && !visibleRoleNames.length) {
+      return { count: 0, rows: [] };
+    }
     const where = {};
     if (search) {
       const pattern = `%${search}%`;
@@ -42,18 +45,24 @@ export default class UserRepository extends TransactionalRepository {
     const pageResult = await User.findAndCountAll({
       attributes: ['id'],
       where,
-      include: roleUuid
-        ? [
-            {
-              model: Role,
-              as: 'roles',
-              attributes: [],
-              where: { uuid: roleUuid },
-              through: { attributes: [] },
-              required: true,
-            },
-          ]
-        : [],
+      include:
+        roleUuid || Array.isArray(visibleRoleNames)
+          ? [
+              {
+                model: Role,
+                as: 'roles',
+                attributes: [],
+                where: {
+                  ...(roleUuid ? { uuid: roleUuid } : {}),
+                  ...(Array.isArray(visibleRoleNames)
+                    ? { name: { [Op.in]: visibleRoleNames } }
+                    : {}),
+                },
+                through: { attributes: [] },
+                required: true,
+              },
+            ]
+          : [],
       distinct: true,
       order: userListOrder,
       limit: pagination.limit,
@@ -74,7 +83,32 @@ export default class UserRepository extends TransactionalRepository {
       : [];
     return { count: pageResult.count, rows };
   }
-  async findByUuid(uuid, { withDeleted = false, transaction } = {}) {
+  async findByUuid(uuid, { withDeleted = false, visibleRoleNames, transaction } = {}) {
+    if (Array.isArray(visibleRoleNames) && !visibleRoleNames.length) return null;
+    if (Array.isArray(visibleRoleNames)) {
+      const visibleUser = await User.findOne({
+        attributes: ['id'],
+        where: { uuid },
+        include: [
+          {
+            model: Role,
+            as: 'roles',
+            attributes: [],
+            where: { name: { [Op.in]: visibleRoleNames } },
+            through: { attributes: [] },
+            required: true,
+          },
+        ],
+        paranoid: !withDeleted,
+        transaction,
+      });
+      if (!visibleUser) return null;
+      return User.findByPk(visibleUser.id, {
+        include: roleInclude,
+        paranoid: !withDeleted,
+        transaction,
+      });
+    }
     return User.findOne({
       where: { uuid },
       include: roleInclude,

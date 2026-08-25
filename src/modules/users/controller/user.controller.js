@@ -13,10 +13,18 @@ export default class UserController {
     this.emailVerificationService = emailVerificationService;
   }
   async getAll(request, response) {
-    response.json(successResponse(await this.userService.getAll(request.query)));
+    response.json(
+      successResponse(await this.userService.getAll(request.query, request.user?.permissions)),
+    );
   }
   async getByUuid(request, response) {
-    response.json(successResponse(await this.userService.getByUuid(request.params.uuid)));
+    response.json(
+      successResponse(
+        await this.userService.getByUuid(request.params.uuid, {
+          visibilityPermissions: request.user?.permissions,
+        }),
+      ),
+    );
   }
   async create(request, response) {
     response

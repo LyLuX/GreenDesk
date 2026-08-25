@@ -1,6 +1,8 @@
 import bcrypt from 'bcrypt';
 
 import HTTP_STATUS from '../../../core/constants/http-status.js';
+import administrationPermissions from '../../../core/constants/administration-permissions.js';
+import { readableRoleNames } from '../../../core/constants/user-visibility-permissions.js';
 import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';
 import RoleRepository from '../../roles/repository/role.repository.js';
@@ -29,13 +31,27 @@ export default class UserService {
     this.auditService = auditService;
   }
 
-  async getAll(query = {}) {
-    const result = await this.userRepository.findAll(query);
+  visibleRoleNames(permissionNames = []) {
+    return permissionNames.includes(administrationPermissions.users.all.read)
+      ? undefined
+      : readableRoleNames(permissionNames);
+  }
+
+  async getAll(query = {}, visibilityPermissions = []) {
+    const result = await this.userRepository.findAll({
+      ...query,
+      visibleRoleNames: this.visibleRoleNames(visibilityPermissions),
+    });
     return paginatedResult(result, normalizePagination(query));
   }
 
-  async getByUuid(uuid, options) {
-    const user = await this.userRepository.findByUuid(uuid, options);
+  async getByUuid(uuid, { visibilityPermissions, ...options } = {}) {
+    const user = await this.userRepository.findByUuid(uuid, {
+      ...options,
+      ...(visibilityPermissions
+        ? { visibleRoleNames: this.visibleRoleNames(visibilityPermissions) }
+        : {}),
+    });
     if (!user) throw new AppError('User not found', HTTP_STATUS.NOT_FOUND);
     return user;
   }

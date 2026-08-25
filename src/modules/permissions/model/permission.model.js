@@ -10,7 +10,7 @@ Permission.init(
   {
     id: { type: DataTypes.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
     uuid: { type: DataTypes.UUID, defaultValue: uuidv4, allowNull: false, unique: true },
-    name: { type: DataTypes.STRING(100), allowNull: false, unique: true },
+    name: { type: DataTypes.STRING(150), allowNull: false, unique: true },
     description: { type: DataTypes.STRING(500), allowNull: true },
   },
   { sequelize, modelName: 'Permission', tableName: 'permissions', paranoid: true },

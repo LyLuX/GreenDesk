@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **7.24.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **7.25.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -181,7 +181,7 @@ Le backend organise les responsabilités en `routes`, `controller`, `service`, `
 
 La connexion retourne un access token JWT et le profil utilisateur avec ses rôles et permissions. La session est conservée dans le navigateur sans mot de passe, contrôlée à la restauration et supprimée sur expiration ou réponse HTTP 401. Les permissions déterminent les menus, actions et routes, tandis que le backend reste la source d’autorité.
 
-La liste d’administration des utilisateurs exclut les comptes supprimés par défaut et les trie en SQL par dernière connexion décroissante. Les utilisateurs qui possèdent `users.read` et `users.deleted.read` disposent du filtre `Supprimés`. La permission indépendante `users.restore` permet d’y restaurer un compte avec son statut, ses rôles et son état de vérification précédents. Toute suppression ou restauration invalide les anciennes sessions du compte.
+La liste d’administration des utilisateurs exclut les comptes supprimés par défaut et les trie en SQL par dernière connexion décroissante. `users.read` ouvre cette consultation, ensuite limitée aux rôles couverts par les permissions lisibles `users.roles.<nom-du-rôle>.read` détenues, par exemple `users.roles.ADMIN.read` ; `users.all.read` donne accès à tous les comptes. Chaque rôle reçoit à sa création sa propre permission de visibilité, qui peut être accordée à d’autres rôles et qui est supprimée avec lui. Le nom d’un rôle est immuable après sa création. Les utilisateurs qui possèdent `users.read` et `users.deleted.read` disposent du filtre `Supprimés`. La permission indépendante `users.restore` permet d’y restaurer un compte avec son statut, ses rôles et son état de vérification précédents. Toute suppression ou restauration invalide les anciennes sessions du compte.
 
 Le modèle utilisateur normalise systématiquement le nom de famille en majuscules avant chaque création ou modification. Cette règle backend couvre l’administration, l’inscription publique, le seeder et la restauration par réinscription, indépendamment de la casse saisie dans le frontend.
 

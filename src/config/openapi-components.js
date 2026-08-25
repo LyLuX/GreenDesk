@@ -61,7 +61,7 @@ const permission = {
   properties: {
     id: { type: 'integer', readOnly: true },
     uuid,
-    name: writeText(100),
+    name: writeText(150),
     description: { ...nullableString, maxLength: 500 },
     ...timestamps,
   },
@@ -511,7 +511,7 @@ export const openApiSchemas = {
       permissions: arrayOf({
         type: 'object',
         required: ['name'],
-        properties: { name: writeText(100) },
+        properties: { name: writeText(150) },
       }),
     },
   },
@@ -768,7 +768,6 @@ export const openApiSchemas = {
   RoleUpdateRequest: {
     type: 'object',
     properties: {
-      name: writeText(100),
       description: { type: 'string', maxLength: 500 },
       permissionUuids: {
         ...arrayOf(uuid),
@@ -780,14 +779,14 @@ export const openApiSchemas = {
     type: 'object',
     required: ['name'],
     properties: {
-      name: writeText(100),
+      name: writeText(150),
       description: { type: 'string', maxLength: 500 },
     },
   },
   PermissionUpdateRequest: {
     type: 'object',
     properties: {
-      name: writeText(100),
+      name: writeText(150),
       description: { type: 'string', maxLength: 500 },
     },
   },

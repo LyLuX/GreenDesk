@@ -8,6 +8,10 @@ import dashboardPermissions from '../../modules/dashboard/dashboard.permissions.
 const permissionDefinitions = [
   { name: administrationPermissions.users.read, description: 'Consulter les utilisateurs.' },
   {
+    name: administrationPermissions.users.all.read,
+    description: 'Consulter tous les utilisateurs, indépendamment de leur rôle.',
+  },
+  {
     name: administrationPermissions.users.create,
     description: 'Créer de nouveaux comptes utilisateur.',
   },
@@ -50,7 +54,7 @@ const permissionDefinitions = [
   },
   {
     name: administrationPermissions.roles.update,
-    description: 'Modifier le nom et la description des rôles.',
+    description: 'Modifier la description des rôles.',
   },
   {
     name: administrationPermissions.roles.delete,
