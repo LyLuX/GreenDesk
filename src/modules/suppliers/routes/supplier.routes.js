@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../../../core/middlewares/auth.middleware.js';
+import { resolveCompanyContext } from '../../../core/middlewares/company-context.middleware.js';
 import fleetPermissions from '../../../core/constants/fleet-permissions.js';
 import {
   authorize,
@@ -13,7 +14,7 @@ import * as validator from '../validator/supplier.validator.js';
 
 const router = Router();
 const controller = new SupplierController();
-router.use(authenticate);
+router.use(authenticate, resolveCompanyContext);
 router.get(
   '/',
   authorize(fleetPermissions.suppliers.read, maintenancePermissions.parts.read),

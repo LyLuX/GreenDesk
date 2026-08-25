@@ -10,6 +10,7 @@ import maintenancePermissions from './maintenance/maintenance.permissions.js';
 import historyPermissions from './history/history.permissions.js';
 import dashboardPermissions from './dashboard/dashboard.permissions.js';
 import administrationPermissions from './permissions/administration.permissions.js';
+import companyPermissions from './permissions/company.permissions.js';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'));
 const ForbiddenPage = lazy(() => import('./pages/ForbiddenPage.jsx'));
@@ -30,6 +31,7 @@ const UsersPage = lazy(() => import('./pages/UsersPage.jsx'));
 const RolesPage = lazy(() => import('./pages/RolesPage.jsx'));
 const PermissionsPage = lazy(() => import('./pages/PermissionsPage.jsx'));
 const HistoryPage = lazy(() => import('./pages/HistoryPage.jsx'));
+const CompaniesPage = lazy(() => import('./pages/CompaniesPage.jsx'));
 const secure = (permission, page) => (
   <PermissionRoute permission={permission}>{page}</PermissionRoute>
 );
@@ -54,6 +56,7 @@ export const getModuleTitle = (pathname) => {
       '/manufacturers': 'Fabricants',
       '/suppliers': 'Fournisseurs',
       '/users': 'Utilisateurs',
+      '/companies': 'Sociétés',
       '/roles': 'Rôles',
       '/permissions': 'Permissions',
       '/history/fleet': 'Historique de la gestion du parc',
@@ -135,6 +138,10 @@ export default function App() {
               <Route
                 path="/users"
                 element={secure(administrationPermissions.users.read, <UsersPage />)}
+              />
+              <Route
+                path="/companies"
+                element={secure(companyPermissions.read, <CompaniesPage />)}
               />
               <Route
                 path="/roles"

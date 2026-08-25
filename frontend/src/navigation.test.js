@@ -16,6 +16,7 @@ describe('frontend navigation', () => {
       '/history/fleet',
       '/history/maintenance',
       '/history/administration',
+      '/companies',
       '/users',
       '/roles',
       '/permissions',
@@ -65,6 +66,7 @@ describe('frontend navigation', () => {
       },
     ]);
     expect(navigationSections.find((section) => section.key === 'administration').items).toEqual([
+      { label: 'Sociétés', path: '/companies', permission: 'companies.read' },
       { label: 'Utilisateurs', path: '/users', permission: 'users.read' },
       { label: 'Rôles', path: '/roles', permission: 'roles.read' },
       { label: 'Permissions', path: '/permissions', permission: 'permissions.read' },

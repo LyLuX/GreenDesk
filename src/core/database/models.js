@@ -18,6 +18,7 @@ import MaintenanceTaskPart from '../../modules/maintenance/model/maintenance-tas
 import RevokedAccessToken from '../../modules/auth/model/revoked-access-token.model.js';
 import EmailVerificationToken from '../../modules/auth/model/email-verification-token.model.js';
 import StockMovement from '../inventory/stock-movement.model.js';
+import Company from '../../modules/companies/model/company.model.js';
 
 let initialized = false;
 
@@ -36,6 +37,18 @@ export function initializeModels() {
     foreignKey: 'user_id',
     otherKey: 'role_id',
     as: 'roles',
+  });
+  User.belongsToMany(Company, {
+    through: 'user_companies',
+    foreignKey: 'user_id',
+    otherKey: 'company_id',
+    as: 'companies',
+  });
+  Company.belongsToMany(User, {
+    through: 'user_companies',
+    foreignKey: 'company_id',
+    otherKey: 'user_id',
+    as: 'users',
   });
   User.hasMany(EmailVerificationToken, {
     foreignKey: 'userId',
@@ -201,6 +214,27 @@ export function initializeModels() {
   });
   StockMovement.belongsTo(User, { foreignKey: 'performedBy', as: 'performedByUser' });
 
+  for (const [model, alias] of [
+    [Category, 'categories'],
+    [PartManufacturer, 'manufacturers'],
+    [Supplier, 'suppliers'],
+    [Material, 'materials'],
+    [MaterialFile, 'materialFiles'],
+    [MaintenanceOperation, 'maintenanceOperations'],
+    [MaintenancePart, 'maintenanceParts'],
+    [MaintenanceTask, 'maintenanceTasks'],
+    [MaintenanceTaskPart, 'maintenanceTaskParts'],
+    [MaintenanceHistory, 'maintenanceHistory'],
+    [MaintenanceIntervention, 'maintenanceInterventions'],
+    [MaintenancePartUsage, 'maintenancePartUsages'],
+    [MaintenancePartPriceHistory, 'maintenancePartPriceHistory'],
+    [StockMovement, 'stockMovements'],
+    [AuditLog, 'auditLogs'],
+  ]) {
+    Company.hasMany(model, { foreignKey: 'companyId', as: alias });
+    model.belongsTo(Company, { foreignKey: 'companyId', as: 'company' });
+  }
+
   initialized = true;
 }
 
@@ -225,4 +259,5 @@ export {
   RevokedAccessToken,
   EmailVerificationToken,
   StockMovement,
+  Company,
 };

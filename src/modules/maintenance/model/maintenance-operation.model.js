@@ -11,7 +11,8 @@ MaintenanceOperation.init(
   {
     id: { type: DataTypes.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
     uuid: { type: DataTypes.UUID, defaultValue: uuidv4, allowNull: false, unique: true },
-    name: { type: DataTypes.STRING(150), allowNull: false, unique: true },
+    companyId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, field: 'company_id' },
+    name: { type: DataTypes.STRING(150), allowNull: false },
     description: { type: DataTypes.TEXT, allowNull: true },
     maintenanceType: {
       type: DataTypes.ENUM(...MAINTENANCE_TYPES),
@@ -27,6 +28,7 @@ MaintenanceOperation.init(
     modelName: 'MaintenanceOperation',
     tableName: 'maintenance_operations',
     paranoid: true,
+    indexes: [{ unique: true, fields: ['company_id', 'name'] }],
   },
 );
 

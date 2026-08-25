@@ -51,6 +51,7 @@ const writeErrors = {
 };
 const uuidParameter = parameterRef('Uuid');
 const fileUuidParameter = parameterRef('FileUuid');
+const companyUuidHeader = parameterRef('CompanyUuidHeader');
 const searchParameter = {
   name: 'search',
   in: 'query',
@@ -191,13 +192,82 @@ export const openApiPaths = {
       },
     },
   },
+  '/companies': {
+    get: {
+      operationId: 'listCompanies',
+      tags: ['Companies'],
+      summary: 'Liste les sociétés accessibles.',
+      description:
+        'Nécessite `companies.read`. Sans `companies.access.all`, seules les sociétés attribuées à l’utilisateur sont retournées.',
+      security: secure,
+      parameters: [
+        searchParameter,
+        { name: 'active', in: 'query', schema: { type: 'boolean' } },
+        pageParameter,
+        limitParameter,
+      ],
+      responses: {
+        200: jsonResponse('CompanyListResponse', 'Sociétés retournées.'),
+        ...standardErrors,
+      },
+    },
+    post: {
+      operationId: 'createCompany',
+      tags: ['Companies'],
+      summary: 'Crée une société.',
+      description:
+        'Nécessite `companies.create`. Le code devient immuable après la création. Sans `companies.access.all`, le créateur est automatiquement rattaché à la nouvelle société.',
+      security: secure,
+      requestBody: jsonBody('CompanyCreateRequest'),
+      responses: {
+        201: jsonResponse('CompanyResponse', 'Société créée.'),
+        ...writeErrors,
+      },
+    },
+  },
+  '/companies/{uuid}': {
+    parameters: [uuidParameter],
+    get: {
+      operationId: 'getCompany',
+      tags: ['Companies'],
+      summary: 'Retourne une société accessible.',
+      description: 'Nécessite `companies.read` et l’accès à la société demandée.',
+      security: secure,
+      responses: {
+        200: jsonResponse('CompanyResponse', 'Société retournée.'),
+        ...resourceErrors,
+      },
+    },
+    put: {
+      operationId: 'updateCompany',
+      tags: ['Companies'],
+      summary: 'Modifie une société accessible.',
+      description:
+        '`companies.update` protège le nom et la description ; `companies.status.update` protège le statut. Le code est immuable.',
+      security: secure,
+      requestBody: jsonBody('CompanyUpdateRequest'),
+      responses: {
+        200: jsonResponse('CompanyResponse', 'Société mise à jour.'),
+        ...writeErrors,
+      },
+    },
+    delete: {
+      operationId: 'deleteCompany',
+      tags: ['Companies'],
+      summary: 'Supprime une société vide.',
+      description:
+        'Nécessite `companies.delete`. La suppression est refusée tant que des utilisateurs ou des données y sont rattachés.',
+      security: secure,
+      responses: { 204: noContent, ...writeErrors },
+    },
+  },
   '/users': {
     get: {
       operationId: 'listUsers',
       tags: ['Users'],
       summary: 'Liste les utilisateurs.',
       description:
-        'Nécessite `users.read`. Les résultats sont limités aux rôles couverts par les permissions dynamiques `users.roles.<nom-du-rôle>.read` du demandeur ; `users.all.read` donne accès à tous les utilisateurs. Les résultats sont triés par dernière connexion décroissante. Le filtre `deleted=true` retourne uniquement les comptes supprimés et nécessite également `users.deleted.read`.',
+        'Nécessite `users.read`. Les résultats appartiennent à la société active, sauf avec `companies.access.all`, et restent limités aux rôles couverts par les permissions dynamiques `users.roles.<nom-du-rôle>.read` ; `users.all.read` retire uniquement ce filtre de rôle. Les résultats sont triés par dernière connexion décroissante. Le filtre `deleted=true` nécessite également `users.deleted.read`.',
       security: secure,
       parameters: [
         searchParameter,
@@ -224,7 +294,7 @@ export const openApiPaths = {
       tags: ['Users'],
       summary: 'Crée un utilisateur et lui attribue éventuellement des rôles.',
       description:
-        'Nécessite `users.create`. Fournir `roleUuids` nécessite également `users.roles.update`. Le nom de famille est stocké en majuscules.',
+        'Nécessite `users.create`. Fournir `roleUuids` nécessite `users.roles.update` et fournir `companyUuids` nécessite `users.companies.update`. Sans `companyUuids`, la société active est attribuée. Le nom de famille est stocké en majuscules.',
       security: secure,
       requestBody: jsonBody('UserCreateRequest'),
       responses: {
@@ -252,7 +322,7 @@ export const openApiPaths = {
       tags: ['Users'],
       summary: 'Met à jour un utilisateur et ses rôles.',
       description:
-        '`users.update` protège les informations générales, `users.status.update` le statut, `users.password.update` le mot de passe et `users.roles.update` les rôles. Toutes les permissions correspondant aux champs fournis sont exigées. Le nom de famille est stocké en majuscules. Une modification des rôles invalide les sessions actives de l’utilisateur concerné, sauf lorsqu’il s’agit de l’administrateur réalisant l’opération.',
+        '`users.update` protège les informations générales, `users.status.update` le statut, `users.password.update` le mot de passe, `users.roles.update` les rôles et `users.companies.update` les sociétés. Toutes les permissions correspondant aux champs fournis sont exigées. Le nom de famille est stocké en majuscules. Une modification des sociétés invalide les sessions actives de l’utilisateur concerné.',
       security: secure,
       requestBody: jsonBody('UserUpdateRequest'),
       responses: {
@@ -1369,6 +1439,27 @@ export const openApiPaths = {
     },
   },
 };
+
+const companyScopedPrefixes = [
+  '/users',
+  '/categories',
+  '/materials',
+  '/manufacturers',
+  '/suppliers',
+  '/maintenance',
+  '/dashboard',
+  '/history',
+];
+
+for (const [path, pathItem] of Object.entries(openApiPaths)) {
+  if (!companyScopedPrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) {
+    continue;
+  }
+  for (const operation of Object.values(pathItem)) {
+    if (!operation?.responses) continue;
+    operation.parameters = [...(operation.parameters ?? []), companyUuidHeader];
+  }
+}
 
 // Every documented `/api/v1` operation is covered by the application-wide API quota.
 for (const [path, pathItem] of Object.entries(openApiPaths)) {

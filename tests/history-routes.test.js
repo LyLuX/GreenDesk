@@ -5,6 +5,7 @@ import request from 'supertest';
 import app from '../src/app.js';
 import env from '../src/config/env.js';
 import StockMovement from '../src/core/inventory/stock-movement.model.js';
+import Company from '../src/modules/companies/model/company.model.js';
 import AuditLog from '../src/modules/audit/model/audit-log.model.js';
 import MaintenanceHistory from '../src/modules/maintenance/model/maintenance-history.model.js';
 import MaintenanceIntervention from '../src/modules/maintenance/model/maintenance-intervention.model.js';
@@ -14,13 +15,24 @@ import User from '../src/modules/users/model/user.model.js';
 
 const tokenFor = (permissions) =>
   jwt.sign(
-    { sub: 'f75ce638-18d2-4e29-9958-2afaa4ae5151', userId: 1, roles: [], permissions },
+    {
+      sub: 'f75ce638-18d2-4e29-9958-2afaa4ae5151',
+      userId: 1,
+      roles: [],
+      permissions,
+      companyAccess: [{ id: 1, uuid: 'f75ce638-18d2-4e29-9958-2afaa4ae5151' }],
+    },
     env.jwt.secret,
   );
 
 describe('consolidated history routes', () => {
   beforeAll(() => {
     jest.spyOn(User, 'findOne').mockResolvedValue({ id: 1 });
+    jest.spyOn(Company, 'findOne').mockResolvedValue({
+      id: 1,
+      uuid: 'f75ce638-18d2-4e29-9958-2afaa4ae5151',
+      active: true,
+    });
     for (const model of [
       AuditLog,
       MaintenanceHistory,

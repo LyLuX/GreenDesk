@@ -6,11 +6,19 @@ import app from '../src/app.js';
 import env from '../src/config/env.js';
 import sequelize from '../src/config/database.js';
 import User from '../src/modules/users/model/user.model.js';
+import Company from '../src/modules/companies/model/company.model.js';
 import Material from '../src/modules/materials/model/material.model.js';
+import PartManufacturer from '../src/modules/manufacturers/model/part-manufacturer.model.js';
 
 const tokenFor = (permissions) =>
   jwt.sign(
-    { sub: 'f75ce638-18d2-4e29-9958-2afaa4ae5151', userId: 1, roles: [], permissions },
+    {
+      sub: 'f75ce638-18d2-4e29-9958-2afaa4ae5151',
+      userId: 1,
+      roles: [],
+      permissions,
+      companyAccess: [{ id: 1, uuid: 'f75ce638-18d2-4e29-9958-2afaa4ae5151' }],
+    },
     env.jwt.secret,
   );
 
@@ -20,6 +28,12 @@ describe('reference routes authorization and validation', () => {
       .spyOn(sequelize, 'transaction')
       .mockImplementation(async (...args) => args.at(-1)({ id: 'route-test-transaction' }));
     jest.spyOn(User, 'findOne').mockResolvedValue({ id: 1 });
+    jest.spyOn(Company, 'findOne').mockResolvedValue({
+      id: 1,
+      uuid: 'f75ce638-18d2-4e29-9958-2afaa4ae5151',
+      active: true,
+    });
+    jest.spyOn(PartManufacturer, 'findOne').mockResolvedValue(null);
   });
 
   afterAll(() => {
@@ -57,7 +71,9 @@ describe('reference routes authorization and validation', () => {
       .set('Authorization', `Bearer ${tokenFor([])}`)
       .expect(403);
 
-    const findAll = jest.spyOn(Material, 'findAll').mockResolvedValue([]);
+    const findAll = jest
+      .spyOn(Material, 'findAndCountAll')
+      .mockResolvedValue({ count: 0, rows: [] });
     await request(app)
       .get('/api/v1/materials/options')
       .set('Authorization', `Bearer ${tokenFor(['maintenance.read'])}`)

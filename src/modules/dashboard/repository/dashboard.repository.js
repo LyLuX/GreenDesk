@@ -7,6 +7,7 @@ import MaintenancePart from '../../maintenance/model/maintenance-part.model.js';
 import MaintenancePartUsage from '../../maintenance/model/maintenance-part-usage.model.js';
 import { Op } from 'sequelize';
 import { LOW_STOCK_MAX_QUANTITY } from '../../maintenance/maintenance.constants.js';
+import { companyWhere } from '../../../core/company/company-context.js';
 
 /** Efficient aggregate queries used by the dashboard. */
 export default class DashboardRepository {
@@ -52,22 +53,23 @@ export default class DashboardRepository {
       maintenanceStockValues,
       maintenanceCosts,
     ] = await Promise.all([
-      Material.count(),
-      Material.count({ where: { active: true } }),
-      Material.count({ where: { active: false } }),
-      Category.count(),
-      PartManufacturer.count(),
+      Material.count({ where: companyWhere() }),
+      Material.count({ where: companyWhere({ active: true }) }),
+      Material.count({ where: companyWhere({ active: false }) }),
+      Category.count({ where: companyWhere() }),
+      PartManufacturer.count({ where: companyWhere() }),
       Material.findOne({
         attributes: materialAttributes,
+        where: companyWhere(),
         raw: true,
       }),
       includeMaintenance ? this.maintenanceRepository.findDashboard() : undefined,
       includeLowStock
         ? MaintenancePart.count({
-            where: {
+            where: companyWhere({
               active: true,
               quantityOnHand: { [Op.lte]: LOW_STOCK_MAX_QUANTITY },
-            },
+            }),
           })
         : undefined,
       includeMaintenance && includeFinancial ? this.getMaintenanceStockValues() : undefined,
@@ -100,6 +102,7 @@ export default class DashboardRepository {
         [sequelize.literal('COALESCE(SUM(quantity_on_hand * unit_price), 0)'), 'onHand'],
         [sequelize.literal('COALESCE(SUM(quantity_on_order * unit_price), 0)'), 'onOrder'],
       ],
+      where: companyWhere(),
       raw: true,
     });
   }
@@ -111,11 +114,11 @@ export default class DashboardRepository {
         [sequelize.fn('YEAR', sequelize.col('performed_at')), 'year'],
         [sequelize.fn('COALESCE', sequelize.fn('SUM', sequelize.col('total_cost')), 0), 'total'],
       ],
-      where: {
+      where: companyWhere({
         performedAt: {
           [Op.between]: [`${currentYear - 2}-01-01`, `${currentYear}-12-31`],
         },
-      },
+      }),
       group: [sequelize.fn('YEAR', sequelize.col('performed_at'))],
       raw: true,
     });

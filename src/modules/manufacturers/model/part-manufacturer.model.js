@@ -10,7 +10,8 @@ PartManufacturer.init(
   {
     id: { type: DataTypes.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
     uuid: { type: DataTypes.UUID, defaultValue: uuidv4, allowNull: false, unique: true },
-    name: { type: DataTypes.STRING(150), allowNull: false, unique: true },
+    companyId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, field: 'company_id' },
+    name: { type: DataTypes.STRING(150), allowNull: false },
     logoFileName: { type: DataTypes.STRING(255), allowNull: true, field: 'logo_file_name' },
     logoOriginalName: {
       type: DataTypes.STRING(255),
@@ -27,6 +28,7 @@ PartManufacturer.init(
     modelName: 'PartManufacturer',
     tableName: 'part_manufacturers',
     paranoid: true,
+    indexes: [{ unique: true, fields: ['company_id', 'name'] }],
   },
 );
 

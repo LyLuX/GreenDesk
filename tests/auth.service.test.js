@@ -21,6 +21,15 @@ const makeUser = async () => ({
   passwordHash: await bcrypt.hash('SecurePass123!', 4),
   authorizationVersion: 3,
   roles: [{ name: 'USER' }],
+  companies: [
+    {
+      id: 2,
+      uuid: 'b5eaf09e-49b1-4fa3-a022-1a20854b06bd',
+      code: 'EI_BOURNAZEL_PAUL',
+      name: 'EI BOURNAZEL Paul',
+      active: true,
+    },
+  ],
   toJSON() {
     return {
       id: this.id,
@@ -30,6 +39,7 @@ const makeUser = async () => ({
       email: this.email,
       passwordHash: this.passwordHash,
       roles: this.roles,
+      companies: this.companies,
     };
   },
 });
@@ -82,6 +92,9 @@ describe('AuthService', () => {
     expect(result.accessToken).toEqual(expect.any(String));
     expect(jwt.decode(result.accessToken).jti).toEqual(expect.any(String));
     expect(jwt.decode(result.accessToken).authorizationVersion).toBe(3);
+    expect(jwt.decode(result.accessToken).companyAccess).toEqual([
+      { id: 2, uuid: 'b5eaf09e-49b1-4fa3-a022-1a20854b06bd' },
+    ]);
     expect(result.user).toMatchObject({ uuid, roles: ['USER'] });
     expect(authRepository.update).toHaveBeenCalledWith(
       user,

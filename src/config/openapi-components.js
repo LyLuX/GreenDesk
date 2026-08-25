@@ -80,9 +80,47 @@ const role = {
   },
 };
 
+const company = {
+  type: 'object',
+  required: ['uuid', 'code', 'name', 'active'],
+  properties: {
+    id: { type: 'integer', readOnly: true },
+    uuid,
+    code: {
+      ...writeText(50),
+      pattern: '^[A-Za-z0-9_-]+$',
+      description: 'Identifiant métier immuable après la création.',
+    },
+    name: writeText(150),
+    description: { ...nullableString, maxLength: 1000 },
+    active: { type: 'boolean' },
+    ...timestamps,
+  },
+};
+
+const userCompany = {
+  type: 'object',
+  required: ['uuid', 'code', 'name', 'active'],
+  properties: {
+    uuid,
+    code: writeText(50),
+    name: writeText(150),
+    active: { type: 'boolean' },
+  },
+};
+
 const user = {
   type: 'object',
-  required: ['uuid', 'firstName', 'lastName', 'email', 'emailVerifiedAt', 'isActive', 'roles'],
+  required: [
+    'uuid',
+    'firstName',
+    'lastName',
+    'email',
+    'emailVerifiedAt',
+    'isActive',
+    'roles',
+    'companies',
+  ],
   properties: {
     id: { type: 'integer', readOnly: true },
     uuid,
@@ -100,6 +138,7 @@ const user = {
       description: 'Dernière connexion, utilisée pour trier la liste des utilisateurs par défaut.',
     },
     roles: arrayOf(reference('UserRole')),
+    companies: arrayOf(reference('UserCompany')),
     ...timestamps,
     deletedAt: {
       ...nullableDateTime,
@@ -501,6 +540,8 @@ export const openApiSchemas = {
   Pagination: pagination,
   Permission: permission,
   Role: role,
+  Company: company,
+  UserCompany: userCompany,
   UserRole: {
     type: 'object',
     required: ['uuid', 'name', 'permissions'],
@@ -726,6 +767,10 @@ export const openApiSchemas = {
             ...arrayOf(uuid),
             description: 'Nécessite `users.roles.update`.',
           },
+          companyUuids: {
+            ...arrayOf(uuid),
+            description: 'Nécessite `users.companies.update`.',
+          },
         },
       },
     ],
@@ -750,6 +795,10 @@ export const openApiSchemas = {
       roleUuids: {
         ...arrayOf(uuid),
         description: 'Nécessite `users.roles.update`.',
+      },
+      companyUuids: {
+        ...arrayOf(uuid),
+        description: 'Nécessite `users.companies.update`.',
       },
     },
   },
@@ -1057,6 +1106,28 @@ export const openApiSchemas = {
       active: { type: 'boolean', description: 'Nécessite `suppliers.status.update`.' },
     },
   },
+  CompanyCreateRequest: {
+    type: 'object',
+    required: ['code', 'name'],
+    additionalProperties: false,
+    properties: {
+      code: { ...writeText(50), pattern: '^[A-Za-z0-9_-]+$' },
+      name: writeText(150),
+      description: { ...nullableString, maxLength: 1000 },
+    },
+  },
+  CompanyUpdateRequest: {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      name: writeText(150),
+      description: { ...nullableString, maxLength: 1000 },
+      active: {
+        type: 'boolean',
+        description: 'Nécessite `companies.status.update`.',
+      },
+    },
+  },
   AuthSession: {
     type: 'object',
     required: ['accessToken', 'user'],
@@ -1064,7 +1135,7 @@ export const openApiSchemas = {
       accessToken: { type: 'string', description: 'JWT access token.' },
       user: {
         type: 'object',
-        required: ['uuid', 'firstName', 'lastName', 'email', 'roles', 'permissions'],
+        required: ['uuid', 'firstName', 'lastName', 'email', 'roles', 'permissions', 'companies'],
         properties: {
           uuid,
           firstName: writeText(100),
@@ -1072,11 +1143,13 @@ export const openApiSchemas = {
           email: { type: 'string', format: 'email' },
           roles: arrayOf({ type: 'string' }),
           permissions: arrayOf({ type: 'string' }),
+          companies: arrayOf(reference('UserCompany')),
         },
       },
     },
   },
   UserPage: pageOf('User'),
+  CompanyPage: pageOf('Company'),
   RolePage: pageOf('Role'),
   PermissionPage: pageOf('Permission'),
   CategoryPage: pageOf('Category'),
@@ -1315,6 +1388,8 @@ export const openApiSchemas = {
   }),
   UserResponse: success(reference('User')),
   UserListResponse: success(reference('UserPage')),
+  CompanyResponse: success(reference('Company')),
+  CompanyListResponse: success(reference('CompanyPage')),
   RoleResponse: success(reference('Role')),
   RoleListResponse: success(reference('RolePage')),
   PermissionResponse: success(reference('Permission')),
@@ -1416,6 +1491,14 @@ export const openApiHeaders = {
 };
 
 export const openApiParameters = {
+  CompanyUuidHeader: {
+    name: 'X-Company-Uuid',
+    in: 'header',
+    required: false,
+    description:
+      'Société active. Obligatoire pour sélectionner une société autre que la première société accessible.',
+    schema: uuid,
+  },
   Uuid: {
     name: 'uuid',
     in: 'path',

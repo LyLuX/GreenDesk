@@ -3,11 +3,12 @@ import { Op } from 'sequelize';
 import User from '../model/user.model.js';
 import Role from '../../roles/model/role.model.js';
 import Permission from '../../permissions/model/permission.model.js';
+import Company from '../../companies/model/company.model.js';
 import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 import { normalizePagination } from '../../../core/utils/pagination.js';
 
-const roleInclude = [
+const userIncludes = [
   {
     model: Role,
     as: 'roles',
@@ -15,6 +16,12 @@ const roleInclude = [
     include: [
       { model: Permission, as: 'permissions', attributes: ['name'], through: { attributes: [] } },
     ],
+    through: { attributes: [] },
+  },
+  {
+    model: Company,
+    as: 'companies',
+    attributes: ['id', 'uuid', 'code', 'name', 'active'],
     through: { attributes: [] },
   },
 ];
@@ -25,7 +32,16 @@ const userListOrder = [
 
 /** Database access for users. */
 export default class UserRepository extends TransactionalRepository {
-  async findAll({ search, active, deleted = false, roleUuid, visibleRoleNames, page, limit } = {}) {
+  async findAll({
+    search,
+    active,
+    deleted = false,
+    roleUuid,
+    visibleRoleNames,
+    companyId,
+    page,
+    limit,
+  } = {}) {
     const pagination = normalizePagination({ page, limit });
     if (Array.isArray(visibleRoleNames) && !visibleRoleNames.length) {
       return { count: 0, rows: [] };
@@ -45,8 +61,8 @@ export default class UserRepository extends TransactionalRepository {
     const pageResult = await User.findAndCountAll({
       attributes: ['id', 'lastLoginAt'],
       where,
-      include:
-        roleUuid || Array.isArray(visibleRoleNames)
+      include: [
+        ...(roleUuid || Array.isArray(visibleRoleNames)
           ? [
               {
                 model: Role,
@@ -62,7 +78,20 @@ export default class UserRepository extends TransactionalRepository {
                 required: true,
               },
             ]
-          : [],
+          : []),
+        ...(companyId
+          ? [
+              {
+                model: Company,
+                as: 'companies',
+                attributes: [],
+                where: { id: companyId },
+                through: { attributes: [] },
+                required: true,
+              },
+            ]
+          : []),
+      ],
       distinct: true,
       order: userListOrder,
       limit: pagination.limit,
@@ -76,59 +105,75 @@ export default class UserRepository extends TransactionalRepository {
             id: { [Op.in]: ids },
             ...(deleted ? { deletedAt: { [Op.ne]: null } } : {}),
           },
-          include: roleInclude,
+          include: userIncludes,
           order: userListOrder,
           paranoid: !deleted,
         })
       : [];
     return { count: pageResult.count, rows };
   }
-  async findByUuid(uuid, { withDeleted = false, visibleRoleNames, transaction } = {}) {
+  async findByUuid(uuid, { withDeleted = false, visibleRoleNames, companyId, transaction } = {}) {
     if (Array.isArray(visibleRoleNames) && !visibleRoleNames.length) return null;
-    if (Array.isArray(visibleRoleNames)) {
+    if (Array.isArray(visibleRoleNames) || companyId) {
       const visibleUser = await User.findOne({
         attributes: ['id'],
         where: { uuid },
         include: [
-          {
-            model: Role,
-            as: 'roles',
-            attributes: [],
-            where: { name: { [Op.in]: visibleRoleNames } },
-            through: { attributes: [] },
-            required: true,
-          },
+          ...(Array.isArray(visibleRoleNames)
+            ? [
+                {
+                  model: Role,
+                  as: 'roles',
+                  attributes: [],
+                  where: { name: { [Op.in]: visibleRoleNames } },
+                  through: { attributes: [] },
+                  required: true,
+                },
+              ]
+            : []),
+          ...(companyId
+            ? [
+                {
+                  model: Company,
+                  as: 'companies',
+                  attributes: [],
+                  where: { id: companyId },
+                  through: { attributes: [] },
+                  required: true,
+                },
+              ]
+            : []),
         ],
         paranoid: !withDeleted,
         transaction,
       });
       if (!visibleUser) return null;
       return User.findByPk(visibleUser.id, {
-        include: roleInclude,
+        include: userIncludes,
         paranoid: !withDeleted,
         transaction,
       });
     }
     return User.findOne({
       where: { uuid },
-      include: roleInclude,
+      include: userIncludes,
       paranoid: !withDeleted,
       transaction,
     });
   }
   async findById(id, { transaction } = {}) {
-    return User.findByPk(id, { include: roleInclude, transaction });
+    return User.findByPk(id, { include: userIncludes, transaction });
   }
   async findByEmail(email, { withDeleted = false, transaction } = {}) {
     return User.findOne({
       where: { email },
-      include: roleInclude,
+      include: userIncludes,
       paranoid: !withDeleted,
       transaction,
     });
   }
   async findByEmailWithPassword(email) {
-    return User.scope('withPassword').findOne({ where: { email }, include: roleInclude });
+    return User.scope('withPassword').findOne({ where: { email }, include: userIncludes });
   }
   async isActiveByClaims(id, uuid, authorizationVersion) {
     if (!id || !uuid) return false;
@@ -181,5 +226,8 @@ export default class UserRepository extends TransactionalRepository {
   }
   async setRoles(user, roles, { transaction } = {}) {
     return user.setRoles(roles, { transaction });
+  }
+  async setCompanies(user, companies, { transaction } = {}) {
+    return user.setCompanies(companies, { transaction });
   }
 }

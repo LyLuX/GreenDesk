@@ -39,6 +39,20 @@ const mocks = vi.hoisted(() => {
           },
         }),
       },
+      companies: {
+        list: vi.fn().mockResolvedValue({
+          data: {
+            data: [
+              {
+                uuid: 'company-1',
+                code: 'EI_BOURNAZEL_PAUL',
+                name: 'EI BOURNAZEL Paul',
+                active: true,
+              },
+            ],
+          },
+        }),
+      },
     },
   };
 });
@@ -62,7 +76,10 @@ vi.mock('../notifications/useNotification.js', () => ({
   default: () => ({ notify: vi.fn() }),
 }));
 vi.mock('../auth/useAuth.js', () => ({
-  default: () => ({ hasPermission: mocks.hasPermission }),
+  default: () => ({
+    hasPermission: mocks.hasPermission,
+    activeCompany: { uuid: 'company-1', name: 'EI BOURNAZEL Paul' },
+  }),
 }));
 
 import RolesPage from './RolesPage.jsx';

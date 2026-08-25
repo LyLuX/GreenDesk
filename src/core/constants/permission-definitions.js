@@ -3,6 +3,7 @@ import fleetPermissions from './fleet-permissions.js';
 import maintenancePermissions from '../../modules/maintenance/maintenance.permissions.js';
 import historyPermissions from '../../modules/audit/history.permissions.js';
 import dashboardPermissions from '../../modules/dashboard/dashboard.permissions.js';
+import companyPermissions from '../../modules/companies/company.permissions.js';
 
 /** Canonical permission descriptions displayed when administrators configure roles. */
 const permissionDefinitions = [
@@ -39,6 +40,28 @@ const permissionDefinitions = [
   {
     name: administrationPermissions.users.roles.update,
     description: 'Modifier les rôles attribués à un utilisateur.',
+  },
+  {
+    name: administrationPermissions.users.companies.update,
+    description: 'Modifier les sociétés attribuées à un utilisateur.',
+  },
+  {
+    name: companyPermissions.read,
+    description: 'Consulter le référentiel des sociétés.',
+  },
+  { name: companyPermissions.create, description: 'Créer de nouvelles sociétés.' },
+  {
+    name: companyPermissions.update,
+    description: 'Modifier les informations générales des sociétés.',
+  },
+  {
+    name: companyPermissions.status.update,
+    description: 'Activer ou désactiver des sociétés.',
+  },
+  { name: companyPermissions.delete, description: 'Supprimer des sociétés vides.' },
+  {
+    name: companyPermissions.accessAll,
+    description: 'Accéder aux données de toutes les sociétés sans restriction d’appartenance.',
   },
   {
     name: administrationPermissions.users.emailVerification.resend,

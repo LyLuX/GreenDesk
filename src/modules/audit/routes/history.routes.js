@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import { authenticate } from '../../../core/middlewares/auth.middleware.js';
+import { resolveCompanyContext } from '../../../core/middlewares/company-context.middleware.js';
 import { authorize } from '../../../core/middlewares/authorization.middleware.js';
 import { validateRequest } from '../../../core/middlewares/validate-request.js';
 import { asyncHandler } from '../../../core/utils/async-handler.js';
@@ -11,7 +12,7 @@ import { historyListValidator } from '../validator/history.validator.js';
 const router = Router();
 const controller = new HistoryController();
 
-router.use(authenticate);
+router.use(authenticate, resolveCompanyContext);
 router.get(
   '/:section',
   historyListValidator,

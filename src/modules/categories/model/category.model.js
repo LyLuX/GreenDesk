@@ -10,13 +10,20 @@ Category.init(
   {
     id: { type: DataTypes.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
     uuid: { type: DataTypes.UUID, defaultValue: uuidv4, allowNull: false, unique: true },
-    name: { type: DataTypes.STRING(150), allowNull: false, unique: true },
+    companyId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, field: 'company_id' },
+    name: { type: DataTypes.STRING(150), allowNull: false },
     description: { type: DataTypes.TEXT, allowNull: true },
     active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     createdBy: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true, field: 'created_by' },
     updatedBy: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true, field: 'updated_by' },
   },
-  { sequelize, modelName: 'Category', tableName: 'categories', paranoid: true },
+  {
+    sequelize,
+    modelName: 'Category',
+    tableName: 'categories',
+    paranoid: true,
+    indexes: [{ unique: true, fields: ['company_id', 'name'] }],
+  },
 );
 
 export default Category;

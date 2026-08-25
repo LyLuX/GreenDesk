@@ -7,6 +7,7 @@ class MaintenanceTaskPart extends Model {}
 
 MaintenanceTaskPart.init(
   {
+    companyId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, field: 'company_id' },
     maintenanceTaskId: {
       type: DataTypes.BIGINT.UNSIGNED,
       field: 'maintenance_task_id',

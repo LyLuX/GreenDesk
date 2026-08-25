@@ -4,16 +4,21 @@ import request from 'supertest';
 
 import app from '../src/app.js';
 import env from '../src/config/env.js';
+import Company from '../src/modules/companies/model/company.model.js';
 import User from '../src/modules/users/model/user.model.js';
 
 const uuid = 'f75ce638-18d2-4e29-9958-2afaa4ae5151';
 const tokenFor = (permissions) =>
-  jwt.sign({ sub: uuid, userId: 1, roles: [], permissions }, env.jwt.secret);
+  jwt.sign(
+    { sub: uuid, userId: 1, roles: [], permissions, companyAccess: [{ id: 1, uuid }] },
+    env.jwt.secret,
+  );
 const authorization = (permissions) => `Bearer ${tokenFor(permissions)}`;
 
 describe('granular administration route permissions', () => {
   beforeAll(() => {
     jest.spyOn(User, 'findOne').mockResolvedValue({ id: 1 });
+    jest.spyOn(Company, 'findOne').mockResolvedValue({ id: 1, uuid, active: true });
     jest.spyOn(User, 'findAndCountAll').mockResolvedValue({ count: 0, rows: [] });
   });
 

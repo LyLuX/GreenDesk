@@ -9,6 +9,8 @@ import AuditService from '../../audit/service/audit.service.js';
 import UserService from '../../users/service/user.service.js';
 import AuthRepository from '../repository/auth.repository.js';
 import EmailVerificationService from './email-verification.service.js';
+import CompanyRepository from '../../companies/repository/company.repository.js';
+import companyPermissions from '../../companies/company.permissions.js';
 
 /** Registration and credential-based authentication. */
 export default class AuthService {
@@ -17,11 +19,13 @@ export default class AuthService {
     userService = new UserService(),
     auditService = new AuditService(),
     emailVerificationService = new EmailVerificationService(),
+    companyRepository = new CompanyRepository(),
   ) {
     this.authRepository = authRepository;
     this.userService = userService;
     this.auditService = auditService;
     this.emailVerificationService = emailVerificationService;
+    this.companyRepository = companyRepository;
   }
 
   async register(values) {
@@ -49,10 +53,11 @@ export default class AuthService {
     }
     return this.authRepository.withTransaction(async (transaction) => {
       await this.authRepository.update(user, { lastLoginAt: new Date() }, { transaction });
-      const session = this.createSession(user);
+      const session = await this.createSession(user);
       await this.auditService.record(
         {
           userId: user.id,
+          companyId: user.companies?.[0]?.id,
           action: 'LOGIN_SUCCESS',
           entity: 'USER',
           entityUuid: user.uuid,
@@ -89,7 +94,7 @@ export default class AuthService {
   }
 
   /** Creates the public session payload shared by login and active-session renewal. */
-  createSession(user) {
+  async createSession(user) {
     const roles = (user.roles ?? []).map((role) => role.name);
     const permissions = [
       ...new Set(
@@ -98,6 +103,11 @@ export default class AuthService {
         ),
       ),
     ];
+    const hasGlobalCompanyAccess = permissions.includes(companyPermissions.accessAll);
+    const accessibleCompanies = hasGlobalCompanyAccess
+      ? await this.companyRepository.findAllActive()
+      : (user.companies ?? []).filter(({ active }) => active);
+    const companyAccess = accessibleCompanies.map(({ id, uuid }) => ({ id: Number(id), uuid }));
     const accessToken = jwt.sign(
       {
         sub: user.uuid,
@@ -105,6 +115,7 @@ export default class AuthService {
         email: user.email,
         roles,
         permissions,
+        companyAccess,
         authorizationVersion: Number(user.authorizationVersion ?? 0),
       },
       env.jwt.secret,
@@ -123,6 +134,12 @@ export default class AuthService {
         email: safeUser.email,
         roles,
         permissions,
+        companies: accessibleCompanies.map(({ uuid, code, name, active }) => ({
+          uuid,
+          code,
+          name,
+          active,
+        })),
       },
     };
   }
@@ -139,6 +156,7 @@ export default class AuthService {
       await this.auditService.record(
         {
           userId: claims.userId,
+          companyId: claims.companyAccess?.[0]?.id,
           action: 'LOGOUT_SUCCESS',
           entity: 'USER',
           entityUuid: claims.sub,

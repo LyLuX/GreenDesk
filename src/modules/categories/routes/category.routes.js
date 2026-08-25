@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../../../core/middlewares/auth.middleware.js';
+import { resolveCompanyContext } from '../../../core/middlewares/company-context.middleware.js';
 import fleetPermissions from '../../../core/constants/fleet-permissions.js';
 import {
   authorize,
@@ -11,7 +12,7 @@ import CategoryController from '../controller/category.controller.js';
 import * as validator from '../validator/category.validator.js';
 const router = Router();
 const controller = new CategoryController();
-router.use(authenticate);
+router.use(authenticate, resolveCompanyContext);
 router.get(
   '/',
   authorize(fleetPermissions.categories.read),

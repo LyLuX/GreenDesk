@@ -27,26 +27,35 @@ export default class UserController {
     );
   }
   async create(request, response) {
-    response
-      .status(HTTP_STATUS.CREATED)
-      .json(
-        successResponse(await this.userService.create(request.body, request.user?.userId, 'USER')),
-      );
+    response.status(HTTP_STATUS.CREATED).json(
+      successResponse(
+        await this.userService.create(request.body, request.user?.userId, 'USER', {
+          actorClaims: request.user,
+        }),
+      ),
+    );
   }
   async update(request, response) {
     response.json(
       successResponse(
-        await this.userService.update(request.params.uuid, request.body, request.user?.userId),
+        await this.userService.update(
+          request.params.uuid,
+          request.body,
+          request.user?.userId,
+          request.user,
+        ),
       ),
     );
   }
   async remove(request, response) {
-    await this.userService.remove(request.params.uuid, request.user?.userId);
+    await this.userService.remove(request.params.uuid, request.user?.userId, request.user);
     response.status(HTTP_STATUS.NO_CONTENT).send();
   }
   async restore(request, response) {
     response.json(
-      successResponse(await this.userService.restore(request.params.uuid, request.user?.userId)),
+      successResponse(
+        await this.userService.restore(request.params.uuid, request.user?.userId, request.user),
+      ),
     );
   }
   async resendEmailVerification(request, response) {
@@ -55,6 +64,7 @@ export default class UserController {
         await this.emailVerificationService.resendByUserUuid(
           request.params.uuid,
           request.user?.userId,
+          request.user,
         ),
       ),
     );

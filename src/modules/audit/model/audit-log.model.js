@@ -10,6 +10,7 @@ AuditLog.init(
   {
     id: { type: DataTypes.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
     uuid: { type: DataTypes.UUID, defaultValue: uuidv4, allowNull: false, unique: true },
+    companyId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true, field: 'company_id' },
     userId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true, field: 'user_id' },
     action: { type: DataTypes.STRING(100), allowNull: false },
     entity: { type: DataTypes.STRING(100), allowNull: false },

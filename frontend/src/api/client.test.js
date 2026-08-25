@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SESSION_STORAGE_KEY } from '../auth/auth.storage.js';
 import { RETURN_LOCATION_STORAGE_KEY } from '../auth/return-location.js';
+import { ACTIVE_COMPANY_STORAGE_KEY } from '../auth/company.storage.js';
 import client from './client.js';
 
 describe('API client unauthorized responses', () => {
@@ -35,5 +36,24 @@ describe('API client unauthorized responses', () => {
     expect(localStorage.getItem(SESSION_STORAGE_KEY)).toBeNull();
     expect(unauthorized).toHaveBeenCalledOnce();
     window.removeEventListener('greendesk:unauthorized', unauthorized);
+  });
+
+  it('sends the active company UUID with authenticated API requests', async () => {
+    localStorage.setItem(ACTIVE_COMPANY_STORAGE_KEY, 'company-uuid');
+    localStorage.setItem(
+      SESSION_STORAGE_KEY,
+      JSON.stringify({ accessToken: 'access-token', user: { roles: [], permissions: [] } }),
+    );
+    let sentConfig;
+
+    await client.get('/v1/materials', {
+      adapter: (config) => {
+        sentConfig = config;
+        return Promise.resolve({ data: {}, status: 200, statusText: 'OK', headers: {}, config });
+      },
+    });
+
+    expect(sentConfig.headers.Authorization).toBe('Bearer access-token');
+    expect(sentConfig.headers['X-Company-Uuid']).toBe('company-uuid');
   });
 });

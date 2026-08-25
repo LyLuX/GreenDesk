@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../../../core/middlewares/auth.middleware.js';
+import { resolveCompanyContext } from '../../../core/middlewares/company-context.middleware.js';
 import administrationPermissions from '../../../core/constants/administration-permissions.js';
 import {
   authorize,
@@ -21,7 +22,7 @@ const authorizeDeletedUserListing = (request, response, next) => {
   if (!request.query.deleted) return next();
   return authorize(administrationPermissions.users.deleted.read)(request, response, next);
 };
-router.use(authenticate);
+router.use(authenticate, resolveCompanyContext);
 router.get(
   '/',
   authorize(administrationPermissions.users.read),
@@ -42,6 +43,7 @@ router.post(
   authorize(administrationPermissions.users.create),
   authorizeBodyFields(null, {
     roleUuids: administrationPermissions.users.roles.update,
+    companyUuids: administrationPermissions.users.companies.update,
   }),
   createUserValidator,
   validateRequest,
@@ -59,6 +61,7 @@ router.put(
     isActive: administrationPermissions.users.status.update,
     password: administrationPermissions.users.password.update,
     roleUuids: administrationPermissions.users.roles.update,
+    companyUuids: administrationPermissions.users.companies.update,
   }),
   updateUserValidator,
   validateRequest,

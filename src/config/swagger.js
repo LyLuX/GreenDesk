@@ -20,15 +20,16 @@ const swaggerSpec = {
   tags: [
     { name: 'System', description: 'État et point d’entrée de l’API.' },
     { name: 'Auth', description: 'Authentification et cycle de session JWT.' },
+    { name: 'Companies', description: 'Sociétés et frontières d’accès aux données métier.' },
     { name: 'Users', description: 'Administration des utilisateurs.' },
     { name: 'Roles', description: 'Administration des rôles.' },
     { name: 'Permissions', description: 'Administration des permissions.' },
     { name: 'Categories', description: 'Référentiel des catégories.' },
     {
       name: 'Manufacturers',
-      description: 'Référentiel global des fabricants et de leurs logos.',
+      description: 'Référentiel des fabricants de la société active et de leurs logos.',
     },
-    { name: 'Suppliers', description: 'Référentiel global des fournisseurs.' },
+    { name: 'Suppliers', description: 'Référentiel des fournisseurs de la société active.' },
     { name: 'Materials', description: 'Gestion du parc matériel.' },
     { name: 'Material files', description: 'Photos et documents protégés des matériels.' },
     { name: 'Maintenance', description: 'Plans et historique d’entretien.' },

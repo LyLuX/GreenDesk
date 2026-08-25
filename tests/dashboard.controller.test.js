@@ -15,7 +15,7 @@ describe('DashboardController permissions', () => {
       true,
       true,
     ],
-    [['ADMIN'], [], true, true, true],
+    [['ADMIN'], [], false, false, false],
   ])(
     'requests only the dashboard sections authorized for the user',
     async (roles, permissions, includeMaintenance, includeLowStock, includeFinancial) => {

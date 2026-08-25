@@ -1,6 +1,7 @@
 import { jest } from '@jest/globals';
 
 import UserService from '../src/modules/users/service/user.service.js';
+import { runWithCompanyScope } from '../src/core/company/company-context.js';
 
 const user = {
   id: 1,
@@ -10,6 +11,7 @@ const user = {
   email: 'ada@greendesk.local',
   authorizationVersion: 0,
   roles: [],
+  companies: [],
   toJSON() {
     return { ...this, passwordHash: 'hidden' };
   },
@@ -23,6 +25,7 @@ describe('UserService', () => {
       create: jest.fn().mockResolvedValue(user),
       findByUuid: jest.fn().mockResolvedValue(user),
       setRoles: jest.fn(),
+      setCompanies: jest.fn(),
       findAll: jest.fn().mockResolvedValue({ count: 0, rows: [] }),
       update: jest.fn(),
       delete: jest.fn(),
@@ -37,8 +40,18 @@ describe('UserService', () => {
         .mockResolvedValue({ id: 3, uuid: 'a5eaf09e-49b1-4fa3-a022-1a20854b06bd' }),
     };
     const auditService = { record: jest.fn() };
+    const companyRepository = {
+      findFirstActive: jest.fn().mockResolvedValue({
+        id: 1,
+        uuid: 'a2b3c4d5-6e7f-4890-ab12-34567890cdef',
+        name: 'EI BOURNAZEL Paul',
+        active: true,
+      }),
+      findByUuid: jest.fn(),
+      findByUuids: jest.fn(),
+    };
     return {
-      service: new UserService(userRepository, roleRepository, auditService),
+      service: new UserService(userRepository, roleRepository, auditService, companyRepository),
       userRepository,
       auditService,
     };
@@ -61,6 +74,11 @@ describe('UserService', () => {
       { transaction },
     );
     expect(userRepository.create.mock.calls[0][0].passwordHash).not.toBe('SecurePass123!');
+    expect(userRepository.setCompanies).toHaveBeenCalledWith(
+      user,
+      [expect.objectContaining({ name: 'EI BOURNAZEL Paul' })],
+      { transaction },
+    );
     expect(result.passwordHash).toBeUndefined();
     expect(service.publicUser(result).authorizationVersion).toBeUndefined();
     expect(auditService.record).toHaveBeenCalledWith(
@@ -94,6 +112,31 @@ describe('UserService', () => {
     const { service, userRepository } = createService();
 
     await service.getAll({}, ['users.read', 'users.all.read']);
+
+    expect(userRepository.findAll).toHaveBeenCalledWith({ visibleRoleNames: undefined });
+  });
+
+  it('intersects user visibility with the active company', async () => {
+    const { service, userRepository } = createService();
+
+    await runWithCompanyScope(
+      { companyId: 7, companyUuid: 'b5eaf09e-49b1-4fa3-a022-1a20854b06bd' },
+      () => service.getAll({}, ['users.read', 'users.all.read']),
+    );
+
+    expect(userRepository.findAll).toHaveBeenCalledWith({
+      visibleRoleNames: undefined,
+      companyId: 7,
+    });
+  });
+
+  it('removes only the company filter with companies.access.all', async () => {
+    const { service, userRepository } = createService();
+
+    await runWithCompanyScope(
+      { companyId: 7, companyUuid: 'b5eaf09e-49b1-4fa3-a022-1a20854b06bd' },
+      () => service.getAll({}, ['users.read', 'users.all.read', 'companies.access.all']),
+    );
 
     expect(userRepository.findAll).toHaveBeenCalledWith({ visibleRoleNames: undefined });
   });

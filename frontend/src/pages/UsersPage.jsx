@@ -30,6 +30,7 @@ import { paginateItems } from '../utils/pagination.js';
 import { getStatusActionButtonClass } from '../utils/status-action.js';
 import { formatDateTime } from '../utils/formatters.js';
 import administrationPermissions from '../permissions/administration.permissions.js';
+import companyPermissions from '../permissions/company.permissions.js';
 
 const emptyUser = () => ({
   firstName: '',
@@ -37,18 +38,21 @@ const emptyUser = () => ({
   email: '',
   password: '',
   roleUuids: [],
+  companyUuids: [],
 });
 const rolesApi = createReferenceApi('roles');
+const companiesApi = createReferenceApi('companies');
 
 /** Administrator workspace for creating and maintaining application users. */
 export default function UsersPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, activeCompany } = useAuth();
   const { notify } = useNotification();
   const canCreate = hasPermission(administrationPermissions.users.create);
   const canUpdate = hasPermission(administrationPermissions.users.update);
   const canUpdateStatus = hasPermission(administrationPermissions.users.status.update);
   const canUpdatePassword = hasPermission(administrationPermissions.users.password.update);
   const canUpdateRoles = hasPermission(administrationPermissions.users.roles.update);
+  const canUpdateCompanies = hasPermission(administrationPermissions.users.companies.update);
   const canDelete = hasPermission(administrationPermissions.users.delete);
   const canRestore = hasPermission(administrationPermissions.users.restore);
   const canReadDeletedUsers = hasPermission(administrationPermissions.users.deleted.read);
@@ -56,9 +60,15 @@ export default function UsersPage() {
     administrationPermissions.users.emailVerification.resend,
   );
   const canReadRoles = hasPermission(administrationPermissions.roles.read);
-  const canOpenEdit = canUpdate || canUpdatePassword || (canUpdateRoles && canReadRoles);
+  const canReadCompanies = hasPermission(companyPermissions.read);
+  const canOpenEdit =
+    canUpdate ||
+    canUpdatePassword ||
+    (canUpdateRoles && canReadRoles) ||
+    (canUpdateCompanies && canReadCompanies);
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyUser);
   const [error, setError] = useState('');
@@ -144,9 +154,23 @@ export default function UsersPage() {
     return () => controller.abort();
   }, [canReadRoles]);
 
+  useEffect(() => {
+    if (!canReadCompanies) return undefined;
+    const controller = new AbortController();
+    listAllPages(companiesApi.list, {}, controller.signal)
+      .then(setCompanies)
+      .catch((requestError) => {
+        if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
+      });
+    return () => controller.abort();
+  }, [canReadCompanies]);
+
   const openCreate = () => {
     setEditing({});
-    setForm(emptyUser());
+    setForm({
+      ...emptyUser(),
+      companyUuids: activeCompany ? [activeCompany.uuid] : [],
+    });
     setFormError('');
   };
 
@@ -162,6 +186,7 @@ export default function UsersPage() {
       email: user.email ?? '',
       password: '',
       roleUuids: user.roles?.map((role) => role.uuid) ?? [],
+      companyUuids: user.companies?.map((company) => company.uuid) ?? [],
     });
     setFormError('');
   };
@@ -177,6 +202,15 @@ export default function UsersPage() {
       roleUuids: current.roleUuids.includes(roleUuid)
         ? current.roleUuids.filter((value) => value !== roleUuid)
         : [...current.roleUuids, roleUuid],
+    }));
+  };
+
+  const toggleCompany = (companyUuid) => {
+    setForm((current) => ({
+      ...current,
+      companyUuids: current.companyUuids.includes(companyUuid)
+        ? current.companyUuids.filter((value) => value !== companyUuid)
+        : [...current.companyUuids, companyUuid],
     }));
   };
 
@@ -209,6 +243,7 @@ export default function UsersPage() {
               }
             : {}),
           ...(canUpdateRoles && canReadRoles ? { roleUuids: form.roleUuids } : {}),
+          ...(canUpdateCompanies && canReadCompanies ? { companyUuids: form.companyUuids } : {}),
           ...(canUpdatePassword && form.password ? { password: form.password } : {}),
         }
       : {
@@ -217,6 +252,7 @@ export default function UsersPage() {
           email: form.email.trim(),
           password: form.password,
           ...(canUpdateRoles && canReadRoles ? { roleUuids: form.roleUuids } : {}),
+          ...(canUpdateCompanies && canReadCompanies ? { companyUuids: form.companyUuids } : {}),
         };
     setSaving(true);
     setFormError('');
@@ -385,6 +421,7 @@ export default function UsersPage() {
               <tr>
                 <th>Utilisateur</th>
                 <th>Rôles</th>
+                <th>Sociétés</th>
                 <th>Statut</th>
                 <th>Dernière connexion</th>
                 <th>
@@ -395,7 +432,7 @@ export default function UsersPage() {
             <tbody>
               {pagination?.total === 0 ? (
                 <tr>
-                  <td className="py-5 text-center text-body-secondary" colSpan="5">
+                  <td className="py-5 text-center text-body-secondary" colSpan="6">
                     {search.trim() || active || roleUuid
                       ? 'Aucun utilisateur ne correspond aux filtres.'
                       : 'Aucun utilisateur.'}
@@ -411,6 +448,10 @@ export default function UsersPage() {
                       <span className="d-block small text-body-secondary">{user.email}</span>
                     </td>
                     <td>{user.roles?.map((role) => role.name).join(', ') || 'Aucun rôle'}</td>
+                    <td>
+                      {user.companies?.map((company) => company.name).join(', ') ||
+                        'Aucune société'}
+                    </td>
                     <td>
                       <span
                         className={`status-badge ${
@@ -597,6 +638,25 @@ export default function UsersPage() {
                   <label className="form-check-label" htmlFor={`role-${role.uuid}`}>
                     {role.name}
                     {role.description ? ` — ${role.description}` : ''}
+                  </label>
+                </div>
+              ))}
+            </div>
+          )}
+          {canUpdateCompanies && canReadCompanies && (
+            <div>
+              <p className="form-label mb-2 text-body-secondary">Sociétés</p>
+              {companies.map((company) => (
+                <div className="form-check" key={company.uuid}>
+                  <input
+                    className="form-check-input"
+                    id={`company-${company.uuid}`}
+                    type="checkbox"
+                    checked={form.companyUuids.includes(company.uuid)}
+                    onChange={() => toggleCompany(company.uuid)}
+                  />
+                  <label className="form-check-label" htmlFor={`company-${company.uuid}`}>
+                    {company.name}
                   </label>
                 </div>
               ))}

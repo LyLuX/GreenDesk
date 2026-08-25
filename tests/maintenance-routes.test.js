@@ -115,11 +115,18 @@ jest.unstable_mockModule('../src/modules/suppliers/controller/supplier.controlle
 const { default: app } = await import('../src/app.js');
 const { default: env } = await import('../src/config/env.js');
 const { default: sequelize } = await import('../src/config/database.js');
+const { default: Company } = await import('../src/modules/companies/model/company.model.js');
 const { default: User } = await import('../src/modules/users/model/user.model.js');
 
 const tokenFor = (permissions) =>
   jwt.sign(
-    { sub: 'f75ce638-18d2-4e29-9958-2afaa4ae5151', userId: 1, roles: [], permissions },
+    {
+      sub: 'f75ce638-18d2-4e29-9958-2afaa4ae5151',
+      userId: 1,
+      roles: [],
+      permissions,
+      companyAccess: [{ id: 1, uuid: 'f75ce638-18d2-4e29-9958-2afaa4ae5151' }],
+    },
     env.jwt.secret,
   );
 const authorization = (permissions) => `Bearer ${tokenFor(permissions)}`;
@@ -131,6 +138,7 @@ describe('maintenance catalogue route permissions', () => {
       .spyOn(sequelize, 'transaction')
       .mockImplementation(async (...args) => args.at(-1)({ id: 'route-test-transaction' }));
     jest.spyOn(User, 'findOne').mockResolvedValue({ id: 1 });
+    jest.spyOn(Company, 'findOne').mockResolvedValue({ id: 1, uuid, active: true });
   });
 
   afterAll(() => {

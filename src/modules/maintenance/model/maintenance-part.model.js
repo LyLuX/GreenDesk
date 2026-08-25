@@ -12,6 +12,7 @@ MaintenancePart.init(
   {
     id: { type: DataTypes.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
     uuid: { type: DataTypes.UUID, defaultValue: uuidv4, allowNull: false, unique: true },
+    companyId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, field: 'company_id' },
     name: { type: DataTypes.STRING(150), allowNull: false },
     manufacturer: { type: DataTypes.STRING(150), allowNull: true },
     manufacturerId: {
@@ -74,6 +75,7 @@ MaintenancePart.init(
     modelName: 'MaintenancePart',
     tableName: 'maintenance_parts',
     paranoid: true,
+    indexes: [{ unique: true, fields: ['company_id', 'manufacturer', 'reference'] }],
   },
 );
 

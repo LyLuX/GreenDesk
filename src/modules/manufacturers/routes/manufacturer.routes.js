@@ -4,6 +4,7 @@ import path from 'node:path';
 import multer from 'multer';
 import { Router } from 'express';
 import { authenticate } from '../../../core/middlewares/auth.middleware.js';
+import { resolveCompanyContext } from '../../../core/middlewares/company-context.middleware.js';
 import fleetPermissions from '../../../core/constants/fleet-permissions.js';
 import {
   authorize,
@@ -52,7 +53,7 @@ const uploadLogo = (request, response, next) =>
       new AppError('Le logo doit être une image JPEG, PNG ou WebP.', HTTP_STATUS.BAD_REQUEST),
     );
   });
-router.use(authenticate);
+router.use(authenticate, resolveCompanyContext);
 router.get(
   '/',
   authorize(fleetPermissions.manufacturers.read, maintenancePermissions.parts.read),

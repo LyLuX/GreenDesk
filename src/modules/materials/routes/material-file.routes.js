@@ -4,6 +4,7 @@ import path from 'node:path';
 import multer from 'multer';
 import { Router } from 'express';
 import { authenticate } from '../../../core/middlewares/auth.middleware.js';
+import { resolveCompanyContext } from '../../../core/middlewares/company-context.middleware.js';
 import { authorize } from '../../../core/middlewares/authorization.middleware.js';
 import fleetPermissions from '../../../core/constants/fleet-permissions.js';
 import { createFileSignatureValidator } from '../../../core/middlewares/file-signature.middleware.js';
@@ -45,6 +46,7 @@ const validateDocumentSignature = createFileSignatureValidator(
 );
 const router = Router();
 const service = new MaterialFileService();
+router.use(authenticate, resolveCompanyContext);
 const upload = (middleware) => (request, response, next) =>
   middleware(request, response, (error) => {
     if (!error) return next();
@@ -54,7 +56,6 @@ const upload = (middleware) => (request, response, next) =>
   });
 router.post(
   '/:uuid/photos',
-  authenticate,
   authorize(fleetPermissions.materials.photos.create),
   upload(photoUpload.single('file')),
   validatePhotoSignature,
@@ -66,7 +67,6 @@ router.post(
 );
 router.post(
   '/:uuid/documents',
-  authenticate,
   authorize(fleetPermissions.materials.documents.create),
   upload(documentUpload.single('file')),
   validateDocumentSignature,
@@ -84,7 +84,6 @@ router.post(
 );
 router.patch(
   '/files/:fileUuid/primary',
-  authenticate,
   authorize(fleetPermissions.materials.photos.setPrimary),
   asyncHandler(async (request, response) =>
     response.json({ success: true, data: await service.setPrimary(request.params.fileUuid) }),
@@ -92,7 +91,6 @@ router.patch(
 );
 router.get(
   '/files/:fileUuid/content',
-  authenticate,
   authorize(fleetPermissions.materials.read),
   asyncHandler(async (request, response) => {
     const file = await service.getForContent(request.params.fileUuid);
@@ -103,7 +101,6 @@ router.get(
 );
 router.get(
   '/files/:fileUuid/download',
-  authenticate,
   authorize(fleetPermissions.materials.read),
   asyncHandler(async (request, response) => {
     const file = await service.getForDownload(request.params.fileUuid);
@@ -112,7 +109,6 @@ router.get(
 );
 router.delete(
   '/files/:fileUuid',
-  authenticate,
   authorize(fleetPermissions.materials.files.delete),
   asyncHandler(async (request, response) => {
     await service.remove(request.params.fileUuid);

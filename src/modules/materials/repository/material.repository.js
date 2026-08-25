@@ -7,6 +7,7 @@ import Material from '../model/material.model.js';
 import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
 import Category from '../../categories/model/category.model.js';
 import MaintenanceTask from '../../maintenance/model/maintenance-task.model.js';
+import { companyValues, companyWhere } from '../../../core/company/company-context.js';
 
 const include = [
   {
@@ -26,7 +27,7 @@ export default class MaterialRepository extends TransactionalRepository {
     if (normalizedActive !== undefined) where.active = normalizedActive;
     return Material.findAndCountAll({
       attributes: ['uuid', 'name', 'active'],
-      where,
+      where: companyWhere(where),
       order: [['name', 'ASC']],
       limit: pagination.limit,
       offset: pagination.offset,
@@ -64,7 +65,7 @@ export default class MaterialRepository extends TransactionalRepository {
       : 'purchaseDate';
     const sortDirection = direction === 'ASC' ? 'ASC' : 'DESC';
     return Material.findAndCountAll({
-      where,
+      where: companyWhere(where),
       include: filteredInclude,
       order: [
         [sortField, sortDirection],
@@ -78,7 +79,7 @@ export default class MaterialRepository extends TransactionalRepository {
 
   async findByUuid(uuid, options = {}) {
     return Material.findOne({
-      where: { uuid },
+      where: companyWhere({ uuid }),
       include: [...include, { association: 'files' }],
       transaction: options.transaction,
       lock: options.lock ? options.transaction?.LOCK.UPDATE : undefined,
@@ -86,17 +87,21 @@ export default class MaterialRepository extends TransactionalRepository {
   }
 
   async findByName(name, { withDeleted = false, transaction } = {}) {
-    return Material.findOne({ where: { name }, paranoid: !withDeleted, transaction });
+    return Material.findOne({ where: companyWhere({ name }), paranoid: !withDeleted, transaction });
   }
 
   async findBySerialNumber(serialNumber, { withDeleted = false, transaction } = {}) {
     return serialNumber
-      ? Material.findOne({ where: { serialNumber }, paranoid: !withDeleted, transaction })
+      ? Material.findOne({
+          where: companyWhere({ serialNumber }),
+          paranoid: !withDeleted,
+          transaction,
+        })
       : null;
   }
 
   async create(values, options = {}) {
-    return Material.create(values, options);
+    return Material.create(companyValues(values), options);
   }
 
   async update(material, values, options = {}) {
@@ -113,7 +118,7 @@ export default class MaterialRepository extends TransactionalRepository {
 
   async countMaintenanceTasks(materialId, options = {}) {
     return MaintenanceTask.count({
-      where: { materialId },
+      where: companyWhere({ materialId }),
       paranoid: false,
       transaction: options.transaction,
     });
@@ -123,7 +128,7 @@ export default class MaterialRepository extends TransactionalRepository {
     return MaintenanceTask.update(
       { active: false, updatedBy: userId, updatedAt },
       {
-        where: { materialId, active: true },
+        where: companyWhere({ materialId, active: true }),
         transaction: options.transaction,
         silent: true,
       },
@@ -144,11 +149,11 @@ export default class MaterialRepository extends TransactionalRepository {
     return MaintenanceTask.update(
       { active: true, updatedBy: userId },
       {
-        where: {
+        where: companyWhere({
           materialId,
           active: false,
           updatedAt: { [Op.in]: timestamps },
-        },
+        }),
         transaction: options.transaction,
       },
     );

@@ -45,7 +45,8 @@ describe('SidebarNavigation', () => {
           hasPermission={(permission) =>
             !permission.startsWith('users.') &&
             !permission.startsWith('roles.') &&
-            !permission.startsWith('permissions.')
+            !permission.startsWith('permissions.') &&
+            !permission.startsWith('companies.')
           }
           onNavigate={vi.fn()}
         />

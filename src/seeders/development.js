@@ -102,6 +102,7 @@ export async function seedDevelopmentData(credentials, dependencies = {}) {
       ? await userService.update(existingAdmin.uuid, adminValues)
       : await userService.create(adminValues);
   await userRepository.setRoles(admin, [adminRole]);
+  await userRepository.setCompanies(admin, []);
 }
 
 /** Runs the local seed only after migrations and explicit safety checks. */

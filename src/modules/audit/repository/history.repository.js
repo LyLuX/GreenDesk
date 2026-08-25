@@ -14,6 +14,7 @@ import MaintenanceTask from '../../maintenance/model/maintenance-task.model.js';
 import User from '../../users/model/user.model.js';
 import AuditLog from '../model/audit-log.model.js';
 import { HISTORY_SECTIONS } from '../history.constants.js';
+import { companyWhere, getCompanyScope } from '../../../core/company/company-context.js';
 
 const AUDIT_TYPES = Object.freeze({
   MATERIAL: 'material',
@@ -116,7 +117,19 @@ export default class HistoryRepository {
     );
     if (!entities.length) return { count: 0, rows: [] };
 
-    const where = { entity: { [Op.in]: entities } };
+    const companyScope = getCompanyScope();
+    const where = {
+      entity: { [Op.in]: entities },
+      ...(section === HISTORY_SECTIONS.ADMINISTRATION && companyScope?.accessAll
+        ? {
+            [Op.and]: [
+              {
+                [Op.or]: [{ companyId: companyScope.companyId }, { companyId: null }],
+              },
+            ],
+          }
+        : companyWhere()),
+    };
     if (query.action) where.action = query.action.toUpperCase();
     if (query.from || query.through) where.createdAt = createdAtWhere(query);
     if (section === HISTORY_SECTIONS.MAINTENANCE) {
@@ -178,7 +191,7 @@ export default class HistoryRepository {
     ) {
       return { count: 0, rows: [] };
     }
-    const where = {};
+    const where = companyWhere();
     if (query.action?.toUpperCase() === 'EXECUTE') {
       where.executionType = MAINTENANCE_EXECUTION_TYPES.STANDARD;
     } else if (query.action?.toUpperCase() === 'EXECUTE_WITHOUT_PARTS') {
@@ -224,7 +237,7 @@ export default class HistoryRepository {
     if (!appliesTo(query, 'unplanned_intervention', 'INTERVENTION')) {
       return { count: 0, rows: [] };
     }
-    const where = {};
+    const where = companyWhere();
     if (query.from || query.through) where.performedAt = dateOnlyWhere(query);
     if (query.search) {
       const pattern = `%${query.search}%`;
@@ -254,7 +267,7 @@ export default class HistoryRepository {
 
   async findStockMovements(query, fetchLimit) {
     if (query.type && query.type !== 'stock_movement') return { count: 0, rows: [], parts: [] };
-    const where = { stockableType: STOCKABLE_TYPES.MAINTENANCE_PART };
+    const where = companyWhere({ stockableType: STOCKABLE_TYPES.MAINTENANCE_PART });
     if (query.action) where.operation = query.action.toLowerCase();
     if (query.from || query.through) where.performedAt = dateOnlyWhere(query);
     let matchingPartIds = [];
@@ -262,13 +275,13 @@ export default class HistoryRepository {
       const pattern = `%${query.search}%`;
       const parts = await MaintenancePart.findAll({
         attributes: ['id'],
-        where: {
+        where: companyWhere({
           [Op.or]: [
             { name: { [Op.like]: pattern } },
             { reference: { [Op.like]: pattern } },
             { supplierReference: { [Op.like]: pattern } },
           ],
-        },
+        }),
         paranoid: false,
       });
       matchingPartIds = parts.map(({ id }) => id);
@@ -294,7 +307,7 @@ export default class HistoryRepository {
     const parts = partIds.length
       ? await MaintenancePart.findAll({
           attributes: ['id', 'uuid', 'name', 'reference'],
-          where: { id: { [Op.in]: partIds } },
+          where: companyWhere({ id: { [Op.in]: partIds } }),
           paranoid: false,
         })
       : [];
@@ -303,7 +316,7 @@ export default class HistoryRepository {
 
   async findPriceChanges(query, fetchLimit) {
     if (!appliesTo(query, 'price_change', 'PRICE_UPDATE')) return { count: 0, rows: [] };
-    const where = {};
+    const where = companyWhere();
     if (query.from || query.through) where.performedAt = dateOnlyWhere(query);
     if (query.search) {
       const pattern = `%${query.search}%`;

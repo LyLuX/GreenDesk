@@ -110,6 +110,7 @@ describe('local development seeder safety', () => {
       const userRepository = {
         findByEmail: jest.fn().mockResolvedValue(existingAdmin),
         setRoles: jest.fn().mockResolvedValue(undefined),
+        setCompanies: jest.fn().mockResolvedValue(undefined),
       };
       const userService = {
         update: jest.fn().mockResolvedValue(admin),

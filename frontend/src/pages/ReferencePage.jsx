@@ -32,6 +32,7 @@ export default function ReferencePage({
   pagination = true,
   detailPath,
   fileField,
+  onChanged,
 }) {
   const { hasPermission } = useAuth();
   const { notify } = useNotification();
@@ -210,6 +211,7 @@ export default function ReferencePage({
         `${title.slice(0, -1)} ${editing?.uuid ? 'modifiée' : 'créée'} avec succès.`,
       );
       await load();
+      await onChanged?.();
     } catch (error) {
       setFormError(getApiErrorMessage(error));
     } finally {
@@ -224,6 +226,7 @@ export default function ReferencePage({
       await api.update(row.uuid, { active: !row.active });
       notify('success', `Statut de « ${row.name} » mis à jour.`);
       await load();
+      await onChanged?.();
       return true;
     } catch (error) {
       setStatusError(getApiErrorMessage(error));
@@ -240,6 +243,7 @@ export default function ReferencePage({
       await api.remove(row.uuid);
       notify('success', `${title.slice(0, -1)} supprimée.`);
       await load();
+      await onChanged?.();
       return true;
     } catch (error) {
       setStatusError(getApiErrorMessage(error));
@@ -287,7 +291,7 @@ export default function ReferencePage({
               required={field.required}
               multiline={field.multiline}
               options={selectOptions(field)}
-              disabled={Boolean(editing?.uuid && !canUpdateRecord)}
+              disabled={Boolean(editing?.uuid && (!canUpdateRecord || field.immutableOnEdit))}
             />
           </div>
         );

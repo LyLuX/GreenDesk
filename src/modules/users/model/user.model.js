@@ -10,6 +10,14 @@ class User extends Model {
     const values = { ...this.get() };
     delete values.passwordHash;
     delete values.authorizationVersion;
+    if (Array.isArray(values.companies)) {
+      values.companies = values.companies.map((company) => {
+        const companyValues = typeof company.toJSON === 'function' ? company.toJSON() : company;
+        const publicCompany = { ...companyValues };
+        delete publicCompany.id;
+        return publicCompany;
+      });
+    }
     return values;
   }
 }

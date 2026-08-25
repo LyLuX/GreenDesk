@@ -1,4 +1,5 @@
 import AuditRepository from '../repository/audit.repository.js';
+import { companyValues } from '../../../core/company/company-context.js';
 
 /** Records domain events in a format reusable by future GreenDesk modules. */
 export default class AuditService {
@@ -6,17 +7,18 @@ export default class AuditService {
     this.auditRepository = auditRepository;
   }
 
-  /** @param {{userId?: number, action: string, entity: string, entityUuid?: string, oldValues?: object, newValues?: object}} event - Audit event. */
+  /** Records an audit event, using its explicit company only when no request scope exists. */
   async record(event, options = {}) {
     return this.auditRepository.create(
-      {
+      companyValues({
+        companyId: event.companyId ?? null,
         userId: event.userId ?? null,
         action: event.action,
         entity: event.entity,
         entityUuid: event.entityUuid ?? null,
         oldValues: event.oldValues ?? null,
         newValues: event.newValues ?? null,
-      },
+      }),
       options,
     );
   }

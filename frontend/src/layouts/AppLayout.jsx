@@ -11,7 +11,14 @@ const focusableElements = (container) =>
   );
 
 export default function AppLayout() {
-  const { user, logout, hasPermission } = useAuth();
+  const {
+    user,
+    logout,
+    hasPermission,
+    companies = [],
+    activeCompany,
+    selectCompany = () => false,
+  } = useAuth();
   const { notify } = useNotification();
   const navigate = useNavigate();
   const [isLoggingOut, setLoggingOut] = useState(false);
@@ -84,6 +91,29 @@ export default function AppLayout() {
             </NavLink>
           </div>
           <div className="d-flex align-items-center gap-3 text-white">
+            {companies.length > 1 ? (
+              <label className="d-flex align-items-center gap-2 small" htmlFor="active-company">
+                <span className="d-none d-lg-inline">Société</span>
+                <select
+                  className="form-select form-select-sm"
+                  id="active-company"
+                  value={activeCompany?.uuid ?? ''}
+                  onChange={(event) => {
+                    if (selectCompany(event.target.value)) window.location.reload();
+                  }}
+                >
+                  {companies.map((company) => (
+                    <option key={company.uuid} value={company.uuid}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              activeCompany && (
+                <span className="d-none d-lg-inline small">{activeCompany.name}</span>
+              )
+            )}
             <span className="d-none d-sm-inline small">
               {user?.firstName} {user?.lastName}
             </span>

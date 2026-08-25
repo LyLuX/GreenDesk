@@ -10,7 +10,8 @@ Material.init(
   {
     id: { type: DataTypes.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
     uuid: { type: DataTypes.UUID, defaultValue: uuidv4, allowNull: false, unique: true },
-    name: { type: DataTypes.STRING(150), allowNull: false, unique: true },
+    companyId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, field: 'company_id' },
+    name: { type: DataTypes.STRING(150), allowNull: false },
     description: { type: DataTypes.TEXT, allowNull: true },
     unit: { type: DataTypes.STRING(50), allowNull: false },
     purchasePrice: {
@@ -29,7 +30,6 @@ Material.init(
     serialNumber: {
       type: DataTypes.STRING(150),
       allowNull: true,
-      unique: true,
       field: 'serial_number',
     },
     purchaseDate: { type: DataTypes.DATEONLY, allowNull: true, field: 'purchase_date' },
@@ -40,7 +40,16 @@ Material.init(
     createdBy: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true, field: 'created_by' },
     updatedBy: { type: DataTypes.BIGINT.UNSIGNED, allowNull: true, field: 'updated_by' },
   },
-  { sequelize, modelName: 'Material', tableName: 'materials', paranoid: true },
+  {
+    sequelize,
+    modelName: 'Material',
+    tableName: 'materials',
+    paranoid: true,
+    indexes: [
+      { unique: true, fields: ['company_id', 'name'] },
+      { unique: true, fields: ['company_id', 'serial_number'] },
+    ],
+  },
 );
 
 export default Material;

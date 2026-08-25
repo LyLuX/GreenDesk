@@ -3,10 +3,12 @@ import { createHash, randomBytes } from 'node:crypto';
 import env from '../../../config/env.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
+import { getCompanyScope } from '../../../core/company/company-context.js';
 import logger from '../../../core/logger/logger.js';
 import { mailService as defaultMailService } from '../../../core/mail/mail.service.js';
 import { emailVerificationTemplate } from '../../../core/mail/templates/email-verification.template.js';
 import AuditService from '../../audit/service/audit.service.js';
+import companyPermissions from '../../companies/company.permissions.js';
 import UserRepository from '../../users/repository/user.repository.js';
 import EmailVerificationRepository from '../repository/email-verification.repository.js';
 
@@ -101,6 +103,7 @@ export default class EmailVerificationService {
     await Promise.resolve(
       this.auditService.record({
         userId: actorUserId,
+        companyId: user.companies?.[0]?.id,
         action: 'USER_EMAIL_VERIFICATION_SENT',
         entity: 'USER',
         entityUuid: user.uuid,
@@ -131,8 +134,13 @@ export default class EmailVerificationService {
     };
   }
 
-  async resendByUserUuid(uuid, actorUserId) {
-    const user = await this.userRepository.findByUuid(uuid);
+  async resendByUserUuid(uuid, actorUserId, actorClaims = null) {
+    const companyScope = getCompanyScope();
+    const user = await this.userRepository.findByUuid(uuid, {
+      ...(!actorClaims?.permissions?.includes(companyPermissions.accessAll) && companyScope
+        ? { companyId: companyScope.companyId }
+        : {}),
+    });
     if (!user) throw new AppError('User not found', HTTP_STATUS.NOT_FOUND);
     if (user.emailVerifiedAt) {
       throw new AppError('Email is already verified', HTTP_STATUS.CONFLICT);
@@ -172,6 +180,7 @@ export default class EmailVerificationService {
         await this.auditService.record(
           {
             userId: user.id,
+            companyId: user.companies?.[0]?.id,
             action: 'USER_EMAIL_VERIFIED',
             entity: 'USER',
             entityUuid: user.uuid,

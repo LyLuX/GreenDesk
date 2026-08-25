@@ -3,6 +3,7 @@ import client from '../api/client.js';
 import { clearSession, readSession, saveSession, SESSION_STORAGE_KEY } from './auth.storage.js';
 import { isJwtExpired } from './jwt.js';
 import { clearReturnLocation } from './return-location.js';
+import { resolveActiveCompany, saveActiveCompanyUuid } from './company.storage.js';
 import {
   ACTIVITY_THROTTLE_MS,
   getLastActivityAt,
@@ -18,6 +19,7 @@ const activityEvents = ['pointerdown', 'pointermove', 'keydown', 'scroll', 'touc
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
+  const [activeCompany, setActiveCompany] = useState(null);
   const [isInitializing, setInitializing] = useState(true);
   const [isLoggingOut, setLoggingOut] = useState(false);
   const sessionRef = useRef(null);
@@ -33,6 +35,7 @@ export function AuthProvider({ children }) {
     clearSession();
     sessionRef.current = null;
     setSession(null);
+    setActiveCompany(null);
     reloadApplication();
   }, []);
 
@@ -80,6 +83,7 @@ export function AuthProvider({ children }) {
         saveSession(next);
         sessionRef.current = next;
         setSession(next);
+        setActiveCompany(resolveActiveCompany(next.user?.companies));
       })
       .finally(() => {
         refreshPromiseRef.current = null;
@@ -98,6 +102,7 @@ export function AuthProvider({ children }) {
       saveSession(next);
       sessionRef.current = next;
       setSession(next);
+      setActiveCompany(resolveActiveCompany(next.user?.companies));
     } else {
       clearSession();
     }
@@ -107,6 +112,7 @@ export function AuthProvider({ children }) {
       clearSession();
       sessionRef.current = null;
       setSession(null);
+      setActiveCompany(null);
     };
     window.addEventListener('greendesk:unauthorized', expired);
     return () => window.removeEventListener('greendesk:unauthorized', expired);
@@ -150,12 +156,14 @@ export function AuthProvider({ children }) {
       if (!stored) {
         sessionRef.current = null;
         setSession(null);
+        setActiveCompany(null);
         return;
       }
       sessionRef.current = stored;
       lastActivityRef.current = getLastActivityAt(stored);
       lastPersistedActivityRef.current = lastActivityRef.current;
       setSession(stored);
+      setActiveCompany(resolveActiveCompany(stored.user?.companies));
     };
     const persistLatestActivity = () => {
       const current = sessionRef.current;
@@ -192,6 +200,7 @@ export function AuthProvider({ children }) {
     saveSession(next);
     sessionRef.current = next;
     setSession(next);
+    setActiveCompany(resolveActiveCompany(next.user?.companies));
     return next;
   }, []);
   const logout = useCallback(async () => {
@@ -206,13 +215,37 @@ export function AuthProvider({ children }) {
       clearSession();
       sessionRef.current = null;
       setSession(null);
+      setActiveCompany(null);
     }
   }, [session]);
   const hasPermission = useCallback(
-    (permission) =>
-      session?.user?.roles?.includes('ADMIN') || session?.user?.permissions?.includes(permission),
+    (permission) => session?.user?.permissions?.includes(permission) === true,
     [session],
   );
+  const selectCompany = useCallback(
+    (uuid) => {
+      const company = session?.user?.companies?.find((item) => item.uuid === uuid);
+      if (!company) return false;
+      saveActiveCompanyUuid(company.uuid);
+      setActiveCompany(company);
+      return true;
+    },
+    [session],
+  );
+  const refreshCompanies = useCallback(async () => {
+    if (!sessionRef.current?.accessToken) return [];
+    const { data } = await client.post('/v1/auth/refresh');
+    const companies = data.data.user?.companies ?? [];
+    const next = {
+      ...data.data,
+      lastActivityAt: lastActivityRef.current || Date.now(),
+    };
+    saveSession(next);
+    sessionRef.current = next;
+    setSession(next);
+    setActiveCompany(resolveActiveCompany(companies));
+    return companies;
+  }, []);
   const value = useMemo(
     () => ({
       user: session?.user ?? null,
@@ -223,8 +256,22 @@ export function AuthProvider({ children }) {
       login,
       logout,
       hasPermission,
+      companies: session?.user?.companies ?? [],
+      activeCompany,
+      selectCompany,
+      refreshCompanies,
     }),
-    [session, isInitializing, isLoggingOut, login, logout, hasPermission],
+    [
+      session,
+      isInitializing,
+      isLoggingOut,
+      login,
+      logout,
+      hasPermission,
+      activeCompany,
+      selectCompany,
+      refreshCompanies,
+    ],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

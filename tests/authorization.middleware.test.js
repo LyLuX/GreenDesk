@@ -1,6 +1,18 @@
 import { jest } from '@jest/globals';
 
-import { authorizeBodyFields } from '../src/core/middlewares/authorization.middleware.js';
+import {
+  authorize,
+  authorizeBodyFields,
+} from '../src/core/middlewares/authorization.middleware.js';
+
+describe('permission authorization middleware', () => {
+  it('does not bypass permissions for the ADMIN role name', () => {
+    const next = jest.fn();
+    authorize('companies.access.all')({ user: { roles: ['ADMIN'], permissions: [] } }, {}, next);
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 403 }));
+  });
+});
 
 describe('body-field authorization middleware', () => {
   it('requires every permission mapped to the submitted fields', () => {

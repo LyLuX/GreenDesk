@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../../../core/middlewares/auth.middleware.js';
+import { resolveCompanyContext } from '../../../core/middlewares/company-context.middleware.js';
 import {
   authorize,
   authorizeAll,
@@ -56,7 +57,7 @@ const authorizeOrderList = (request, response, next) => {
   }
   return authorize(maintenancePermissions.plans.read)(request, response, next);
 };
-router.use(authenticate);
+router.use(authenticate, resolveCompanyContext);
 router.get(
   '/operations',
   authorize(maintenancePermissions.operations.read, maintenancePermissions.plans.read),

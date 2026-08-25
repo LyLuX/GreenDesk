@@ -10,6 +10,7 @@ MaintenancePartUsage.init(
   {
     id: { type: DataTypes.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
     uuid: { type: DataTypes.UUID, defaultValue: uuidv4, allowNull: false, unique: true },
+    companyId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, field: 'company_id' },
     maintenanceHistoryId: {
       type: DataTypes.BIGINT.UNSIGNED,
       field: 'maintenance_history_id',

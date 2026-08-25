@@ -13,6 +13,7 @@ import Supplier from '../../suppliers/model/supplier.model.js';
 import MaintenanceTask from '../model/maintenance-task.model.js';
 import MaintenanceTaskPart from '../model/maintenance-task-part.model.js';
 import User from '../../users/model/user.model.js';
+import { companyValues, companyWhere } from '../../../core/company/company-context.js';
 
 const materialInclude = {
   model: Material,
@@ -109,7 +110,7 @@ export default class MaintenanceRepository extends TransactionalRepository {
       const matchingTasks = await MaintenanceTask.findAll({
         attributes: ['id'],
         include: [materialInclude, operationInclude],
-        where: {
+        where: companyWhere({
           [Op.or]: [
             { title: { [Op.like]: pattern } },
             { description: { [Op.like]: pattern } },
@@ -117,7 +118,7 @@ export default class MaintenanceRepository extends TransactionalRepository {
             { '$material.name$': { [Op.like]: pattern } },
             { '$operation.name$': { [Op.like]: pattern } },
           ],
-        },
+        }),
         subQuery: false,
       });
       where.id = { [Op.in]: matchingTasks.map((task) => task.id) };
@@ -138,7 +139,7 @@ export default class MaintenanceRepository extends TransactionalRepository {
     ];
     const pagination = normalizePagination({ page, limit });
     return MaintenanceTask.findAndCountAll({
-      where,
+      where: companyWhere(where),
       include,
       order: [['next_maintenance_date', 'ASC']],
       limit: pagination.limit,
@@ -155,7 +156,7 @@ export default class MaintenanceRepository extends TransactionalRepository {
       upcoming: next.toISOString().slice(0, 10),
     });
     return MaintenanceTask.findAll({
-      where: {
+      where: companyWhere({
         active: true,
         [Op.and]: [
           Sequelize.literal(
@@ -163,34 +164,35 @@ export default class MaintenanceRepository extends TransactionalRepository {
               `(${conditions.upcoming}) OR MaintenanceTask.interval_days = 0`,
           ),
         ],
-      },
+      }),
       include: [materialInclude, operationInclude, partsInclude],
       order: [['next_maintenance_date', 'ASC']],
     });
   }
   async findByUuid(uuid, options = {}) {
     return MaintenanceTask.findOne({
-      where: { uuid },
+      where: companyWhere({ uuid }),
       include: [materialInclude, operationInclude, partsInclude],
       transaction: options.transaction,
       lock: options.lock ? options.transaction?.LOCK.UPDATE : undefined,
     });
   }
   async create(values, options = {}) {
-    return MaintenanceTask.create(values, options);
+    return MaintenanceTask.create(companyValues(values), options);
   }
   async update(task, values, options = {}) {
     return task.update(values, options);
   }
   async createHistory(values, options = {}) {
-    return MaintenanceHistory.create(values, options);
+    return MaintenanceHistory.create(companyValues(values), options);
   }
   async createIntervention(values, options = {}) {
-    return MaintenanceIntervention.create(values, options);
+    return MaintenanceIntervention.create(companyValues(values), options);
   }
   async findInterventions({ materialUuid, page, limit } = {}) {
     const pagination = normalizePagination({ page, limit });
     return MaintenanceIntervention.findAndCountAll({
+      where: companyWhere(),
       include: [
         {
           ...materialInclude,
@@ -210,7 +212,7 @@ export default class MaintenanceRepository extends TransactionalRepository {
   }
   async findInterventionByUuid(uuid) {
     return MaintenanceIntervention.findOne({
-      where: { uuid },
+      where: companyWhere({ uuid }),
       include: [
         materialInclude,
         { model: User, as: 'performedByUser', attributes: ['uuid', 'firstName', 'lastName'] },
@@ -220,20 +222,25 @@ export default class MaintenanceRepository extends TransactionalRepository {
   }
   async createPartUsages(values, options = {}) {
     if (!values.length) return [];
-    return MaintenancePartUsage.bulkCreate(values, { ...options, validate: true });
+    return MaintenancePartUsage.bulkCreate(values.map(companyValues), {
+      ...options,
+      validate: true,
+    });
   }
   async replaceParts(taskId, parts, options = {}) {
     await MaintenanceTaskPart.destroy({
-      where: { maintenanceTaskId: taskId },
+      where: companyWhere({ maintenanceTaskId: taskId }),
       transaction: options.transaction,
     });
     if (!parts.length) return [];
     return MaintenanceTaskPart.bulkCreate(
-      parts.map(({ partId, quantity }) => ({
-        maintenanceTaskId: taskId,
-        maintenancePartId: partId,
-        quantity,
-      })),
+      parts.map(({ partId, quantity }) =>
+        companyValues({
+          maintenanceTaskId: taskId,
+          maintenancePartId: partId,
+          quantity,
+        }),
+      ),
       { transaction: options.transaction },
     );
   }
@@ -249,10 +256,10 @@ export default class MaintenanceRepository extends TransactionalRepository {
           },
         };
     return MaintenanceTask.findAll({
-      where: {
+      where: companyWhere({
         active: true,
         ...deadlineFilter,
-      },
+      }),
       include: [materialInclude, operationInclude, partsInclude],
       order: [['next_maintenance_date', 'ASC']],
     });
@@ -260,7 +267,7 @@ export default class MaintenanceRepository extends TransactionalRepository {
   async findHistory(taskId, query = {}) {
     const pagination = normalizePagination(query);
     return MaintenanceHistory.findAndCountAll({
-      where: { maintenanceTaskId: taskId },
+      where: companyWhere({ maintenanceTaskId: taskId }),
       include: [
         { model: User, as: 'performedByUser', attributes: ['uuid', 'firstName', 'lastName'] },
       ],

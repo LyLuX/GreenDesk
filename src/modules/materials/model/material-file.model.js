@@ -7,6 +7,7 @@ MaterialFile.init(
   {
     id: { type: DataTypes.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
     uuid: { type: DataTypes.UUID, defaultValue: uuidv4, unique: true, allowNull: false },
+    companyId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, field: 'company_id' },
     materialId: { type: DataTypes.BIGINT.UNSIGNED, field: 'material_id', allowNull: false },
     kind: { type: DataTypes.ENUM('photo', 'document'), allowNull: false },
     documentType: {

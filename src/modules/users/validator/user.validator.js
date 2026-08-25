@@ -16,6 +16,8 @@ export const createUserValidator = [
   body('password').isLength({ min: 8 }),
   body('roleUuids').optional().isArray(),
   body('roleUuids.*').optional().isUUID(),
+  body('companyUuids').optional().isArray(),
+  body('companyUuids.*').optional().isUUID(),
 ];
 export const updateUserValidator = [
   uuid,
@@ -26,5 +28,7 @@ export const updateUserValidator = [
   body('isActive').optional().isBoolean().toBoolean(),
   body('roleUuids').optional().isArray(),
   body('roleUuids.*').optional().isUUID(),
+  body('companyUuids').optional().isArray(),
+  body('companyUuids.*').optional().isUUID(),
 ];
 export const userUuidValidator = [uuid];

@@ -13,6 +13,7 @@ import Supplier from '../../suppliers/model/supplier.model.js';
 import User from '../../users/model/user.model.js';
 import { STOCK_STATUSES } from '../../../core/inventory/stock-status.js';
 import { LOW_STOCK_MAX_QUANTITY } from '../maintenance.constants.js';
+import { companyValues, companyWhere } from '../../../core/company/company-context.js';
 
 const manufacturerInclude = {
   model: PartManufacturer,
@@ -46,7 +47,7 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
     const normalizedActive = normalizeBooleanFilter(active);
     if (normalizedActive !== undefined) where.active = normalizedActive;
     return MaintenanceOperation.findAndCountAll({
-      where,
+      where: companyWhere(where),
       order: [['name', 'ASC']],
       limit: pagination.limit,
       offset: pagination.offset,
@@ -55,7 +56,7 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
 
   findOperationByUuid(uuid, { transaction, withDeleted = false } = {}) {
     return MaintenanceOperation.findOne({
-      where: { uuid },
+      where: companyWhere({ uuid }),
       paranoid: !withDeleted,
       transaction,
     });
@@ -63,14 +64,14 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
 
   findOperationByName(name, { transaction, withDeleted = false } = {}) {
     return MaintenanceOperation.findOne({
-      where: { name },
+      where: companyWhere({ name }),
       paranoid: !withDeleted,
       transaction,
     });
   }
 
   createOperation(values, { transaction } = {}) {
-    return MaintenanceOperation.create(values, { transaction });
+    return MaintenanceOperation.create(companyValues(values), { transaction });
   }
 
   updateOperation(operation, values, { transaction } = {}) {
@@ -86,11 +87,14 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
   }
 
   countTasksForOperation(operationId, { transaction } = {}) {
-    return MaintenanceTask.count({ where: { operationId }, transaction });
+    return MaintenanceTask.count({ where: companyWhere({ operationId }), transaction });
   }
 
   updateTasksForOperation(operationId, values, { transaction } = {}) {
-    return MaintenanceTask.update(values, { where: { operationId }, transaction });
+    return MaintenanceTask.update(values, {
+      where: companyWhere({ operationId }),
+      transaction,
+    });
   }
 
   findParts({ search, active, stockStatus, page, limit } = {}) {
@@ -116,7 +120,7 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
       where.quantityOnOrder = 0;
     }
     return MaintenancePart.findAndCountAll({
-      where,
+      where: companyWhere(where),
       attributes: partCostAttributes,
       include: partDirectoryIncludes,
       order: [
@@ -132,7 +136,7 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
 
   findPartByUuid(uuid, { transaction, withDeleted = false, lock = false } = {}) {
     return MaintenancePart.findOne({
-      where: { uuid },
+      where: companyWhere({ uuid }),
       attributes: partCostAttributes,
       paranoid: !withDeleted,
       include: partDirectoryIncludes,
@@ -143,7 +147,7 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
 
   findPartsByUuids(uuids, { transaction, lock = false } = {}) {
     return MaintenancePart.findAll({
-      where: { uuid: { [Op.in]: uuids }, active: true },
+      where: companyWhere({ uuid: { [Op.in]: uuids }, active: true }),
       include: partDirectoryIncludes,
       transaction,
       lock: lock ? transaction?.LOCK.UPDATE : undefined,
@@ -153,7 +157,7 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
 
   findPartsByIds(ids, { transaction, lock = false } = {}) {
     return MaintenancePart.findAll({
-      where: { id: { [Op.in]: ids } },
+      where: companyWhere({ id: { [Op.in]: ids } }),
       transaction,
       lock: lock ? transaction?.LOCK.UPDATE : undefined,
       order: [['id', 'ASC']],
@@ -162,10 +166,10 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
 
   findLowStockParts() {
     return MaintenancePart.findAll({
-      where: {
+      where: companyWhere({
         active: true,
         quantityOnHand: { [Op.lte]: LOW_STOCK_MAX_QUANTITY },
-      },
+      }),
       include: partDirectoryIncludes,
       order: [
         ['name', 'ASC'],
@@ -181,18 +185,18 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
     { transaction, withDeleted = false } = {},
   ) {
     return MaintenancePart.findOne({
-      where: {
+      where: companyWhere({
         reference,
         manufacturerId,
         ...(manufacturerId ? {} : { manufacturer: manufacturer || null }),
-      },
+      }),
       paranoid: !withDeleted,
       transaction,
     });
   }
 
   createPart(values, { transaction } = {}) {
-    return MaintenancePart.create(values, { transaction });
+    return MaintenancePart.create(companyValues(values), { transaction });
   }
 
   updatePart(part, values, { transaction } = {}) {
@@ -200,13 +204,13 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
   }
 
   createPartPriceHistory(values, { transaction } = {}) {
-    return MaintenancePartPriceHistory.create(values, { transaction });
+    return MaintenancePartPriceHistory.create(companyValues(values), { transaction });
   }
 
   findPartPriceHistory(maintenancePartId, { page, limit } = {}) {
     const pagination = normalizePagination({ page, limit });
     return MaintenancePartPriceHistory.findAndCountAll({
-      where: { maintenancePartId },
+      where: companyWhere({ maintenancePartId }),
       include: [
         {
           model: User,
@@ -233,6 +237,7 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
 
   countTasksForPart(partId, { transaction } = {}) {
     return MaintenanceTask.count({
+      where: companyWhere(),
       include: [
         {
           model: MaintenancePart,

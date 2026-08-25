@@ -10,7 +10,8 @@ Supplier.init(
   {
     id: { type: DataTypes.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
     uuid: { type: DataTypes.UUID, defaultValue: uuidv4, allowNull: false, unique: true },
-    name: { type: DataTypes.STRING(150), allowNull: false, unique: true },
+    companyId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, field: 'company_id' },
+    name: { type: DataTypes.STRING(150), allowNull: false },
     contactName: { type: DataTypes.STRING(150), field: 'contact_name', allowNull: true },
     email: { type: DataTypes.STRING(254), allowNull: true },
     phone: { type: DataTypes.STRING(50), allowNull: true },
@@ -24,6 +25,7 @@ Supplier.init(
     modelName: 'Supplier',
     tableName: 'suppliers',
     paranoid: true,
+    indexes: [{ unique: true, fields: ['company_id', 'name'] }],
   },
 );
 

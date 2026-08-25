@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **7.25.1**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **7.26.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -30,7 +30,7 @@ production.
 
 ## Modules disponibles
 
-Authentification, utilisateurs, rôles, permissions, audit, catégories, fabricants, fournisseurs et matériels.
+Authentification, sociétés, utilisateurs, rôles, permissions, audit, catégories, fabricants, fournisseurs et matériels.
 
 La navigation latérale regroupe les pages dans trois menus accordéon : `Gestion du parc`, `Maintenance` et `Administration`. Un seul groupe est ouvert à la fois, le groupe de la page active s’ouvre automatiquement et les entrées restent filtrées selon les permissions. Sur mobile, le menu devient un tiroir latéral accessible au clavier qui se ferme après la navigation.
 
@@ -49,6 +49,7 @@ Le gabarit principal occupe exactement la hauteur visible de la fenêtre, footer
 ## API
 
 - `GET|POST /api/v1/categories`, `GET|PUT|DELETE /api/v1/categories/:uuid`
+- `GET|POST /api/v1/companies`, `GET|PUT|DELETE /api/v1/companies/:uuid`
 - `GET|POST /api/v1/materials`, `GET|PUT|DELETE /api/v1/materials/:uuid`
 - `GET|POST /api/v1/manufacturers`, `PUT|DELETE /api/v1/manufacturers/:uuid`
 - `GET|POST|DELETE /api/v1/manufacturers/:uuid/logo`
@@ -77,6 +78,7 @@ Chaque fabricant peut recevoir un logo JPEG, PNG ou WebP de 2 Mo maximum. Les lo
 
 | Domaine                   | Permissions                                                                                                                      |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Sociétés                  | `companies.read`, `companies.create`, `companies.update`, `companies.status.update`, `companies.delete`, `companies.access.all`  |
 | Matériels                 | `materials.read`, `materials.create`, `materials.update`, `materials.delete`                                                     |
 | Fabricants                | `manufacturers.read`, `manufacturers.create`, `manufacturers.update`, `manufacturers.delete`                                     |
 | Fournisseurs              | `suppliers.read`, `suppliers.create`, `suppliers.update`, `suppliers.delete`                                                     |
@@ -108,7 +110,7 @@ Les plans utilisent `maintenance.read`, `maintenance.create`, `maintenance.updat
 
 Les intitulés répétitifs sont centralisés dans un catalogue d’opérations accessible via `/api/v1/maintenance/operations`. Les références réellement commandables sont enregistrées dans `/api/v1/maintenance/parts`, puis associées aux plans avec une quantité, qui accepte jusqu’à deux décimales pour les consommables mesurés comme l’huile. Une même opération, par exemple le remplacement d’une bougie, peut ainsi utiliser des références différentes selon le matériel. Dans la modale d’un plan, les pièces sont directement présentées dans une liste paginée ; les sélections et quantités sont conservées pendant la navigation entre les pages. `GET /api/v1/maintenance/order-list` regroupe les quantités nécessaires aux plans arrivant à échéance sur un horizon configurable ou selon un statut d’échéance exact. La modale « Pièces à commander » reprend le filtre d’échéance courant de la page Maintenance à son ouverture ; ses horizons libres restent ensuite modifiables indépendamment. Elle accorde le libellé `pièce` à la quantité et permet d’imprimer une liste dédiée, sans les contrôles de l’interface. L’impression génère autant de pages A4 que nécessaire pour chaque fournisseur, à raison de 13 pièces au maximum par page, avec le bandeau GreenDesk, les plans concernés pour chaque pièce et le footer commun ancré en bas de chaque page. Le fabricant y apparaît sous la pièce en texte secondaire, sans son logo.
 
-L’interface sépare les opérations et les pièces sur les pages `/maintenance/operations` et `/maintenance/parts`. Les fabricants et les fournisseurs sont des référentiels globaux accessibles sur `/manufacturers` et `/suppliers`, avec leurs permissions dédiées. Une pièce référence ainsi un fabricant et un fournisseur enregistrés, en plus de ses références fabricant et fournisseur. La modale de gestion du stock rappelle la référence de la pièce sous son titre.
+L’interface sépare les opérations et les pièces sur les pages `/maintenance/operations` et `/maintenance/parts`. Les fabricants et les fournisseurs sont des référentiels propres à chaque société, accessibles sur `/manufacturers` et `/suppliers` avec leurs permissions dédiées. Une pièce référence ainsi un fabricant et un fournisseur de la société active, en plus de ses références fabricant et fournisseur. La modale de gestion du stock rappelle la référence de la pièce sous son titre.
 
 Les migrations `20260727_zz_add_maintenance_catalogs.js` et `20260727_zzz_add_part_manufacturers_suppliers.js` sont additives : elles conservent les intitulés, les fabricants saisis auparavant et toutes les données historiques des plans. Leur annulation retire uniquement les nouveaux catalogues et leurs associations, ce qui permet de revenir au fonctionnement précédent sans perdre un plan ni son ancien fabricant texte. Les migrations `20260730_add_maintenance_catalog_permissions.js` et `20260730_zz_add_maintenance_plan_permissions.js` ajoutent toutes les permissions de maintenance aux bases existantes ; les attributions génériques déjà présentes sont recopiées vers les catalogues pour préserver les accès lors du déploiement. La migration `20260816_add_wear_based_maintenance.js` rend la prochaine échéance nullable afin de représenter les plans selon l’usure sans valeur calendaire artificielle.
 
@@ -177,11 +179,15 @@ Frontend : `cd frontend`, puis `npm test` et `npm run build`. Le build de produc
 
 Le backend organise les responsabilités en `routes`, `controller`, `service`, `repository` et `model` sous `src/modules`. Les erreurs traversent le middleware global et les accès sensibles sont protégés par JWT et permissions. Le frontend React se trouve dans `frontend/src` : `auth` gère la session, `api` centralise les appels HTTP, `layouts` l’interface authentifiée et `pages` les écrans.
 
+La société est la frontière de données la plus haute. Les matériels, catégories, fabricants, fournisseurs, plans et catalogues de maintenance, pièces, fichiers, mouvements de stock et historiques portent tous une société. La migration initiale crée « EI BOURNAZEL Paul » (`EI_BOURNAZEL_PAUL`), avec la description « Paysagiste - Élageur - Jardinier », puis lui rattache toutes les données existantes. Les rôles et permissions restent globaux.
+
+Un utilisateur peut appartenir à plusieurs sociétés. Le frontend sélectionne la société active et transmet son UUID dans `X-Company-Uuid`; avec une seule société, la sélection est automatique. Les permissions continuent seules à définir les actions autorisées, tandis que l’appartenance limite les données sur lesquelles elles s’exercent. `companies.access.all` retire cette limite d’appartenance sans remplacer les permissions métier. Aucun traitement ne déduit un accès du nom de rôle `ADMIN`.
+
 ## Authentification et permissions
 
-La connexion retourne un access token JWT et le profil utilisateur avec ses rôles et permissions. La session est conservée dans le navigateur sans mot de passe, contrôlée à la restauration et supprimée sur expiration ou réponse HTTP 401. Les permissions déterminent les menus, actions et routes, tandis que le backend reste la source d’autorité.
+La connexion retourne un access token JWT et le profil utilisateur avec ses rôles, permissions et sociétés accessibles. La session est conservée dans le navigateur sans mot de passe, contrôlée à la restauration et supprimée sur expiration ou réponse HTTP 401. Les permissions déterminent les menus, actions et routes, tandis que le backend reste la source d’autorité.
 
-La liste d’administration des utilisateurs exclut les comptes supprimés par défaut et les trie en SQL par dernière connexion décroissante. `users.read` ouvre cette consultation, ensuite limitée aux rôles couverts par les permissions lisibles `users.roles.<nom-du-rôle>.read` détenues, par exemple `users.roles.ADMIN.read` ; `users.all.read` donne accès à tous les comptes. Chaque rôle reçoit à sa création sa propre permission de visibilité, qui peut être accordée à d’autres rôles et qui est supprimée avec lui. Le nom d’un rôle est immuable après sa création. Les utilisateurs qui possèdent `users.read` et `users.deleted.read` disposent du filtre `Supprimés`. La permission indépendante `users.restore` permet d’y restaurer un compte avec son statut, ses rôles et son état de vérification précédents. Toute suppression ou restauration invalide les anciennes sessions du compte.
+La liste d’administration des utilisateurs exclut les comptes supprimés par défaut et les trie en SQL par dernière connexion décroissante. `users.read` ouvre cette consultation dans la société active, ensuite limitée aux rôles couverts par les permissions lisibles `users.roles.<nom-du-rôle>.read` détenues, par exemple `users.roles.ADMIN.read`; `users.all.read` retire le filtre de rôle et `companies.access.all` retire séparément le filtre de société. Chaque rôle reçoit à sa création sa propre permission de visibilité, qui peut être accordée à d’autres rôles et qui est supprimée avec lui. Le nom d’un rôle est immuable après sa création. `users.companies.update` protège l’attribution des sociétés. Les utilisateurs qui possèdent `users.read` et `users.deleted.read` disposent du filtre `Supprimés`. La permission indépendante `users.restore` permet d’y restaurer un compte avec son statut, ses rôles, ses sociétés et son état de vérification précédents. Toute suppression, restauration ou modification des sociétés invalide les anciennes sessions du compte.
 
 Le modèle utilisateur normalise systématiquement le nom de famille en majuscules avant chaque création ou modification. Cette règle backend couvre l’administration, l’inscription publique, le seeder et la restauration par réinscription, indépendamment de la casse saisie dans le frontend.
 
