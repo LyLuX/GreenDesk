@@ -62,6 +62,7 @@ describe('UserRepository authorization versions', () => {
 
     expect(findAndCountAll).toHaveBeenCalledWith(
       expect.objectContaining({
+        attributes: ['id', 'lastLoginAt'],
         include: [
           expect.objectContaining({
             as: 'roles',

@@ -43,7 +43,7 @@ export default class UserRepository extends TransactionalRepository {
     if (normalizedActive !== undefined) where.isActive = normalizedActive;
     if (deleted) where.deletedAt = { [Op.ne]: null };
     const pageResult = await User.findAndCountAll({
-      attributes: ['id'],
+      attributes: ['id', 'lastLoginAt'],
       where,
       include:
         roleUuid || Array.isArray(visibleRoleNames)
