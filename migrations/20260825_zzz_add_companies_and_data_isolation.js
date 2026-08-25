@@ -65,7 +65,6 @@ module.exports = {
     await queryInterface.createTable('companies', {
       id: { type: Sequelize.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
       uuid: { type: Sequelize.UUID, allowNull: false, unique: true },
-      code: { type: Sequelize.STRING(50), allowNull: false, unique: true },
       name: { type: Sequelize.STRING(150), allowNull: false, unique: true },
       description: { type: Sequelize.TEXT, allowNull: true },
       active: { type: Sequelize.BOOLEAN, allowNull: false, defaultValue: true },
@@ -76,7 +75,6 @@ module.exports = {
     await queryInterface.bulkInsert('companies', [
       {
         uuid: randomUUID(),
-        code: 'EI_BOURNAZEL_PAUL',
         name: 'EI BOURNAZEL Paul',
         description: 'Paysagiste - Élageur - Jardinier',
         active: true,
@@ -85,7 +83,7 @@ module.exports = {
       },
     ]);
     const [[defaultCompany]] = await queryInterface.sequelize.query(
-      "SELECT id, uuid FROM companies WHERE code = 'EI_BOURNAZEL_PAUL' LIMIT 1",
+      "SELECT id, uuid FROM companies WHERE name = 'EI BOURNAZEL Paul' LIMIT 1",
     );
 
     await queryInterface.createTable('user_companies', {

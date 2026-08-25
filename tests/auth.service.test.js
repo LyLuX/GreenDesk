@@ -25,7 +25,6 @@ const makeUser = async () => ({
     {
       id: 2,
       uuid: 'b5eaf09e-49b1-4fa3-a022-1a20854b06bd',
-      code: 'EI_BOURNAZEL_PAUL',
       name: 'EI BOURNAZEL Paul',
       active: true,
     },

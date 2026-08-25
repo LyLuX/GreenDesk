@@ -82,15 +82,10 @@ const role = {
 
 const company = {
   type: 'object',
-  required: ['uuid', 'code', 'name', 'active'],
+  required: ['uuid', 'name', 'active'],
   properties: {
     id: { type: 'integer', readOnly: true },
     uuid,
-    code: {
-      ...writeText(50),
-      pattern: '^[A-Za-z0-9_-]+$',
-      description: 'Identifiant métier immuable après la création.',
-    },
     name: writeText(150),
     description: { ...nullableString, maxLength: 1000 },
     active: { type: 'boolean' },
@@ -100,10 +95,9 @@ const company = {
 
 const userCompany = {
   type: 'object',
-  required: ['uuid', 'code', 'name', 'active'],
+  required: ['uuid', 'name', 'active'],
   properties: {
     uuid,
-    code: writeText(50),
     name: writeText(150),
     active: { type: 'boolean' },
   },
@@ -1108,10 +1102,9 @@ export const openApiSchemas = {
   },
   CompanyCreateRequest: {
     type: 'object',
-    required: ['code', 'name'],
+    required: ['name'],
     additionalProperties: false,
     properties: {
-      code: { ...writeText(50), pattern: '^[A-Za-z0-9_-]+$' },
       name: writeText(150),
       description: { ...nullableString, maxLength: 1000 },
     },

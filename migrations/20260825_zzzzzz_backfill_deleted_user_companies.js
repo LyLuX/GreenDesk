@@ -6,7 +6,7 @@ module.exports = {
       `INSERT IGNORE INTO user_companies (user_id, company_id, created_at, updated_at)
        SELECT users.id, companies.id, NOW(), NOW()
        FROM users
-       INNER JOIN companies ON companies.code = 'EI_BOURNAZEL_PAUL'
+       INNER JOIN companies ON companies.name = 'EI BOURNAZEL Paul'
        WHERE NOT EXISTS (
          SELECT 1
          FROM user_roles
@@ -28,7 +28,7 @@ module.exports = {
        INNER JOIN users ON users.id = memberships.user_id
        INNER JOIN companies ON companies.id = memberships.company_id
        WHERE users.deleted_at IS NOT NULL
-         AND companies.code = 'EI_BOURNAZEL_PAUL'`,
+         AND companies.name = 'EI BOURNAZEL Paul'`,
     );
   },
 };

@@ -17,12 +17,10 @@ export default function CompaniesPage() {
       statusAction
       onChanged={refreshCompanies}
       fields={[
-        { name: 'code', label: 'Code', required: true, immutableOnEdit: true },
         { name: 'name', label: 'Nom', required: true },
         { name: 'description', label: 'Description', multiline: true },
       ]}
       columns={[
-        { key: 'code', label: 'Code' },
         { key: 'name', label: 'Nom' },
         { key: 'description', label: 'Description' },
         {

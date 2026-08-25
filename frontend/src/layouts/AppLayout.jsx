@@ -86,7 +86,9 @@ export default function AppLayout() {
               <img className="brand-logo" src="/brand-logo.jpg" alt="EI BOURNAZEL Paul" />
               <span>
                 <span className="brand-name d-block">GreenDesk</span>
-                <span className="brand-company d-block">EI BOURNAZEL Paul</span>
+                <span className="brand-company d-block">
+                  {activeCompany?.name ?? 'Aucune société'}
+                </span>
               </span>
             </NavLink>
           </div>

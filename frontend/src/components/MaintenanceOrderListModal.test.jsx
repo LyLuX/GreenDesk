@@ -21,7 +21,10 @@ vi.mock('./ManufacturerLogo.jsx', () => ({
   default: ({ manufacturer }) => <img alt={`Logo ${manufacturer?.name ?? 'indisponible'}`} />,
 }));
 vi.mock('../auth/useAuth.js', () => ({
-  default: () => ({ hasPermission: mocks.hasPermission }),
+  default: () => ({
+    hasPermission: mocks.hasPermission,
+    activeCompany: { uuid: 'company-uuid', name: 'Société actuellement consultée' },
+  }),
 }));
 vi.mock('../notifications/useNotification.js', () => ({
   default: () => ({ notify: mocks.notify }),
@@ -97,6 +100,9 @@ describe('MaintenanceOrderListModal', () => {
     const logo = await within(dialog).findByRole('img', { name: 'Logo NGK' });
     expect(mocks.listManufacturers).toHaveBeenCalledWith({ limit: 25 }, expect.any(AbortSignal));
     expect(logo).toBeVisible();
+    expect(
+      document.querySelector('.maintenance-order-print-brand .brand-company'),
+    ).toHaveTextContent('Société actuellement consultée');
     expect(logo.parentElement).toHaveClass('maintenance-order-part-summary');
     expect(within(dialog).getByRole('table')).toHaveClass('maintenance-order-list-table');
     expect(within(dialog).getByText('2 pièce').closest('td')).not.toHaveClass('text-nowrap');
@@ -550,7 +556,7 @@ describe('MaintenanceOrderListModal', () => {
     expect(within(dialog).getByRole('table').closest('.table-shell')).not.toBeNull();
     const printHeader = document.querySelector('.maintenance-order-print-header');
     expect(printHeader).toHaveTextContent('GreenDesk');
-    expect(printHeader).toHaveTextContent('EI BOURNAZEL Paul');
+    expect(printHeader).toHaveTextContent('Société actuellement consultée');
     expect(printHeader).not.toHaveTextContent('Échéance');
     const printPage = document.querySelector('.maintenance-order-print-page');
     expect(printPage).toHaveTextContent('2 pièce');

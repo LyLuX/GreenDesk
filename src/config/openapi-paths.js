@@ -216,7 +216,7 @@ export const openApiPaths = {
       tags: ['Companies'],
       summary: 'Crée une société.',
       description:
-        'Nécessite `companies.create`. Le code devient immuable après la création. Sans `companies.access.all`, le créateur est automatiquement rattaché à la nouvelle société.',
+        'Nécessite `companies.create`. Sans `companies.access.all`, le créateur est automatiquement rattaché à la nouvelle société.',
       security: secure,
       requestBody: jsonBody('CompanyCreateRequest'),
       responses: {
@@ -243,7 +243,7 @@ export const openApiPaths = {
       tags: ['Companies'],
       summary: 'Modifie une société accessible.',
       description:
-        '`companies.update` protège le nom et la description ; `companies.status.update` protège le statut. Le code est immuable.',
+        '`companies.update` protège le nom et la description ; `companies.status.update` protège le statut.',
       security: secure,
       requestBody: jsonBody('CompanyUpdateRequest'),
       responses: {

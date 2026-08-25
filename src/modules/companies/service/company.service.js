@@ -30,18 +30,11 @@ export default class CompanyService {
 
   async create(values, userId, claims = {}) {
     return this.repository.withTransaction(async (transaction) => {
-      const existing = await this.repository.findByCode(values.code, {
+      const existing = await this.repository.findByName(values.name, {
         withDeleted: true,
         transaction,
       });
       if (existing && !existing.deletedAt) {
-        throw new AppError('Ce code société est déjà utilisé.', HTTP_STATUS.CONFLICT);
-      }
-      const duplicateName = await this.repository.findByName(values.name, {
-        withDeleted: true,
-        transaction,
-      });
-      if (duplicateName && duplicateName.uuid !== existing?.uuid) {
         throw new AppError('Ce nom de société est déjà utilisé.', HTTP_STATUS.CONFLICT);
       }
       let company;
@@ -74,9 +67,6 @@ export default class CompanyService {
 
   async update(uuid, values, userId, claims = null) {
     this.assertAccessible(uuid, claims);
-    if (Object.hasOwn(values, 'code')) {
-      throw new AppError('Le code d’une société est immuable.', HTTP_STATUS.BAD_REQUEST);
-    }
     return this.repository.withTransaction(async (transaction) => {
       const company = await this.getByUuid(uuid, claims, { transaction });
       const oldValues = company.toJSON();

@@ -12,7 +12,7 @@ export default class CompanyRepository extends TransactionalRepository {
     const where = {};
     if (search) {
       const pattern = `%${search}%`;
-      where[Op.or] = [{ name: { [Op.like]: pattern } }, { code: { [Op.like]: pattern } }];
+      where.name = { [Op.like]: pattern };
     }
     const normalizedActive = normalizeBooleanFilter(active);
     if (normalizedActive !== undefined) where.active = normalizedActive;
@@ -27,10 +27,6 @@ export default class CompanyRepository extends TransactionalRepository {
 
   findByUuid(uuid, { transaction, withDeleted = false } = {}) {
     return Company.findOne({ where: { uuid }, paranoid: !withDeleted, transaction });
-  }
-
-  findByCode(code, { transaction, withDeleted = false } = {}) {
-    return Company.findOne({ where: { code }, paranoid: !withDeleted, transaction });
   }
 
   findByName(name, { transaction, withDeleted = false } = {}) {

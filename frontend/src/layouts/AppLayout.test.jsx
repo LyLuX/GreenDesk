@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../auth/useAuth.js', () => ({
   default: () => ({
     user: { firstName: 'Paul', lastName: 'Bournazel' },
+    activeCompany: { uuid: 'company-uuid', name: 'Société actuellement consultée' },
+    companies: [{ uuid: 'company-uuid', name: 'Société actuellement consultée' }],
     logout: mocks.logout,
     hasPermission: () => true,
   }),
@@ -38,6 +40,14 @@ describe('AppLayout navigation drawer', () => {
     cleanup();
     vi.clearAllMocks();
     document.body.classList.remove('app-scroll-locked');
+  });
+
+  it('shows the currently selected company in the brand', () => {
+    const { container } = renderLayout();
+
+    expect(container.querySelector('.brand-company')).toHaveTextContent(
+      'Société actuellement consultée',
+    );
   });
 
   it('opens from the header and closes with Escape', async () => {

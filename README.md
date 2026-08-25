@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **7.26.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **7.26.1**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -179,7 +179,7 @@ Frontend : `cd frontend`, puis `npm test` et `npm run build`. Le build de produc
 
 Le backend organise les responsabilités en `routes`, `controller`, `service`, `repository` et `model` sous `src/modules`. Les erreurs traversent le middleware global et les accès sensibles sont protégés par JWT et permissions. Le frontend React se trouve dans `frontend/src` : `auth` gère la session, `api` centralise les appels HTTP, `layouts` l’interface authentifiée et `pages` les écrans.
 
-La société est la frontière de données la plus haute. Les matériels, catégories, fabricants, fournisseurs, plans et catalogues de maintenance, pièces, fichiers, mouvements de stock et historiques portent tous une société. La migration initiale crée « EI BOURNAZEL Paul » (`EI_BOURNAZEL_PAUL`), avec la description « Paysagiste - Élageur - Jardinier », puis lui rattache toutes les données existantes. Les rôles et permissions restent globaux.
+La société est la frontière de données la plus haute. Les matériels, catégories, fabricants, fournisseurs, plans et catalogues de maintenance, pièces, fichiers, mouvements de stock et historiques portent tous une société. La migration initiale crée « EI BOURNAZEL Paul », avec la description « Paysagiste - Élageur - Jardinier », puis lui rattache toutes les données existantes. Les rôles et permissions restent globaux.
 
 Un utilisateur peut appartenir à plusieurs sociétés. Le frontend sélectionne la société active et transmet son UUID dans `X-Company-Uuid`; avec une seule société, la sélection est automatique. Les permissions continuent seules à définir les actions autorisées, tandis que l’appartenance limite les données sur lesquelles elles s’exercent. `companies.access.all` retire cette limite d’appartenance sans remplacer les permissions métier. Aucun traitement ne déduit un accès du nom de rôle `ADMIN`.
 

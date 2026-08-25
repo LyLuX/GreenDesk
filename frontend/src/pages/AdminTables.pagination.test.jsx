@@ -45,7 +45,6 @@ const mocks = vi.hoisted(() => {
             data: [
               {
                 uuid: 'company-1',
-                code: 'EI_BOURNAZEL_PAUL',
                 name: 'EI BOURNAZEL Paul',
                 active: true,
               },

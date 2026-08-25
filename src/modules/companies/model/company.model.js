@@ -10,7 +10,6 @@ Company.init(
   {
     id: { type: DataTypes.BIGINT.UNSIGNED, autoIncrement: true, primaryKey: true },
     uuid: { type: DataTypes.UUID, defaultValue: uuidv4, allowNull: false, unique: true },
-    code: { type: DataTypes.STRING(50), allowNull: false, unique: true },
     name: { type: DataTypes.STRING(150), allowNull: false, unique: true },
     description: { type: DataTypes.TEXT, allowNull: true },
     active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },

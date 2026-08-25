@@ -134,9 +134,8 @@ export default class AuthService {
         email: safeUser.email,
         roles,
         permissions,
-        companies: accessibleCompanies.map(({ uuid, code, name, active }) => ({
+        companies: accessibleCompanies.map(({ uuid, name, active }) => ({
           uuid,
-          code,
           name,
           active,
         })),

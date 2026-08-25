@@ -252,26 +252,31 @@ function OrderPartsTable({
   );
 }
 
-function PrintBrandHeader() {
+function PrintBrandHeader({ companyName }) {
   return (
     <header className="maintenance-order-print-header">
       <div className="maintenance-order-print-brand">
         <img className="brand-logo" src="/brand-logo.jpg" alt="EI BOURNAZEL Paul" />
         <span>
           <span className="brand-name d-block">GreenDesk</span>
-          <span className="brand-company d-block">EI BOURNAZEL Paul</span>
+          <span className="brand-company d-block">{companyName ?? 'Aucune société'}</span>
         </span>
       </div>
     </header>
   );
 }
 
-function MaintenanceOrderPrintPages({ supplierPages, manufacturerByUuid, lowStockMode = false }) {
+function MaintenanceOrderPrintPages({
+  supplierPages,
+  manufacturerByUuid,
+  companyName,
+  lowStockMode = false,
+}) {
   return (
     <div className="maintenance-order-list-printable" aria-hidden="true">
       {supplierPages.map((page) => (
         <section className="maintenance-order-print-page" key={page.key}>
-          <PrintBrandHeader />
+          <PrintBrandHeader companyName={companyName} />
           <main className="maintenance-order-print-content">
             <h1>{lowStockMode ? 'Pièces avec un stock faible' : 'Pièces à commander'}</h1>
             <p className="maintenance-order-print-supplier">
@@ -304,7 +309,7 @@ function MaintenanceOrderPrintPages({ supplierPages, manufacturerByUuid, lowStoc
 
 /** Displays parts aggregated from maintenance plans due in a chosen horizon. */
 export default function MaintenanceOrderListModal({ open, onClose, initialFilters }) {
-  const { hasPermission } = useAuth();
+  const { hasPermission, activeCompany } = useAuth();
   const { notify } = useNotification();
   const [filters, setFilters] = useState(() => ({
     ...defaultOrderListFilters,
@@ -561,6 +566,7 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
             <MaintenanceOrderPrintPages
               supplierPages={supplierPages}
               manufacturerByUuid={manufacturerByUuid}
+              companyName={activeCompany?.name}
               lowStockMode={lowStockMode}
             />,
             document.body,
