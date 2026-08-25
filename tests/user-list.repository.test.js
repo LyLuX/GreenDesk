@@ -47,4 +47,14 @@ describe('UserRepository deleted-user listing', () => {
       expect.objectContaining({ where: { uuid: 'user-uuid' }, paranoid: false }),
     );
   });
+
+  it('loads authentication companies without the removed company code', async () => {
+    const findOne = jest.fn().mockResolvedValue(null);
+    jest.spyOn(User, 'scope').mockReturnValue({ findOne });
+
+    await new UserRepository().findByEmailWithPassword('user@example.test');
+
+    const companyInclude = findOne.mock.calls[0][0].include.find(({ as }) => as === 'companies');
+    expect(companyInclude.attributes).toEqual(['id', 'uuid', 'name', 'active']);
+  });
 });
