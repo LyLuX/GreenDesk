@@ -2,6 +2,7 @@ import { DataTypes, Model } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
 
 import sequelize from '../../../config/database.js';
+import { addStockQuantities } from '../../../core/inventory/stock-quantity.js';
 import { getStockAvailability } from '../../../core/inventory/stock-status.js';
 
 /** Exact orderable part reference reusable across maintenance plans. */
@@ -39,14 +40,14 @@ MaintenancePart.init(
       validate: { min: 0 },
     },
     quantityOnHand: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.DECIMAL(12, 2),
       field: 'quantity_on_hand',
       allowNull: false,
       defaultValue: 0,
       validate: { min: 0, max: 1000000 },
     },
     quantityOnOrder: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.DECIMAL(12, 2),
       field: 'quantity_on_order',
       allowNull: false,
       defaultValue: 0,
@@ -61,7 +62,7 @@ MaintenancePart.init(
     stockQuantity: {
       type: DataTypes.VIRTUAL,
       get() {
-        return Number(this.quantityOnHand ?? 0) + Number(this.quantityOnOrder ?? 0);
+        return addStockQuantities(this.quantityOnHand ?? 0, this.quantityOnOrder ?? 0);
       },
     },
     active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },

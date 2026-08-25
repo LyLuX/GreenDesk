@@ -2,6 +2,7 @@ import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import StockService from '../../../core/inventory/stock.service.js';
 import { STOCK_OPERATIONS, STOCKABLE_TYPES } from '../../../core/inventory/stock-operation.js';
+import { addStockQuantities } from '../../../core/inventory/stock-quantity.js';
 import { STOCK_STATUSES, getStockAvailability } from '../../../core/inventory/stock-status.js';
 import AuditService from '../../audit/service/audit.service.js';
 import ManufacturerRepository from '../../manufacturers/repository/manufacturer.repository.js';
@@ -424,7 +425,7 @@ export default class MaintenanceCatalogService {
           unitPrice: Number(value.unitPrice ?? 0),
           totalMaintenanceCost: Number(value.totalMaintenanceCost ?? 0),
           stockStatus: getStockAvailability(value).status,
-          stockQuantity: Number(value.quantityOnHand ?? 0) + Number(value.quantityOnOrder ?? 0),
+          stockQuantity: addStockQuantities(value.quantityOnHand ?? 0, value.quantityOnOrder ?? 0),
           manufacturerUuid,
           supplierUuid,
         }

@@ -220,9 +220,9 @@ function OrderPartsTable({
                           <input
                             className="form-control form-control-sm maintenance-order-quantity"
                             type="number"
-                            min="1"
+                            min="0.01"
                             max="1000000"
-                            step="1"
+                            step="0.01"
                             value={orderQuantities[part.uuid] ?? part.quantity}
                             onChange={(event) =>
                               onOrderQuantityChange(part.uuid, event.target.value)
@@ -379,8 +379,8 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
 
   const requestMarkOrdered = (part) => {
     const quantity = Number(orderQuantities[part.uuid]);
-    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000000) {
-      setError('La quantité commandée doit être un entier positif.');
+    if (!Number.isFinite(quantity) || quantity < 0.01 || quantity > 1000000) {
+      setError('La quantité commandée doit être positive.');
       return;
     }
     setError('');

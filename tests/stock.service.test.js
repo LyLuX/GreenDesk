@@ -58,6 +58,29 @@ describe('StockService', () => {
     expect(item).toEqual(expect.objectContaining({ quantityOnHand: 4, quantityOnOrder: 1 }));
   });
 
+  it('tracks decimal quantities without floating-point drift', async () => {
+    const movementRepository = { create: jest.fn() };
+    const service = new StockService(movementRepository);
+    const item = stockItem({ quantityOnHand: '2.50', quantityOnOrder: '0.10' });
+
+    await service.apply(item, {
+      stockableType: 'maintenancePart',
+      operation: 'order',
+      quantity: 0.2,
+    });
+    await service.apply(item, {
+      stockableType: 'maintenancePart',
+      operation: 'consume',
+      quantity: 0.6,
+    });
+
+    expect(item).toEqual(expect.objectContaining({ quantityOnHand: 1.9, quantityOnOrder: 0.3 }));
+    expect(movementRepository.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({ quantityOnHandChange: -0.6, quantityOnHandAfter: 1.9 }),
+      { transaction: undefined },
+    );
+  });
+
   it('refuses reception beyond the outstanding order', async () => {
     const service = new StockService({ create: jest.fn() });
 

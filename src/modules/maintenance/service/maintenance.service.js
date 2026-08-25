@@ -3,6 +3,10 @@ import AppError from '../../../core/errors/app-error.js';
 import { STOCK_OPERATIONS, STOCKABLE_TYPES } from '../../../core/inventory/stock-operation.js';
 import StockService from '../../../core/inventory/stock.service.js';
 import { getStockAvailability } from '../../../core/inventory/stock-status.js';
+import {
+  addStockQuantities,
+  isValidStockQuantity,
+} from '../../../core/inventory/stock-quantity.js';
 import AuditService from '../../audit/service/audit.service.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
@@ -417,7 +421,7 @@ export default class MaintenanceService {
       for (const requestedPart of requestedParts) {
         const part = partByUuid.get(requestedPart.partUuid);
         const quantity = Number(requestedPart.quantity);
-        if (!Number.isInteger(quantity) || quantity < 1) {
+        if (!isValidStockQuantity(quantity)) {
           throw new AppError('Les quantités de pièces sont invalides.', HTTP_STATUS.BAD_REQUEST);
         }
         const snapshot = partUsageSnapshot(part, quantity, true);
@@ -525,7 +529,7 @@ export default class MaintenanceService {
           quantity: 0,
           plans: [],
         };
-        current.quantity += Number(part.quantity);
+        current.quantity = addStockQuantities(current.quantity, part.quantity);
         current.plans.push({
           maintenanceUuid: task.uuid,
           title: task.title,
@@ -566,7 +570,10 @@ export default class MaintenanceService {
         return {
           ...part,
           stockStatus: availability.status,
-          stockQuantity: availability.quantityOnHand + availability.quantityOnOrder,
+          stockQuantity: addStockQuantities(
+            availability.quantityOnHand,
+            availability.quantityOnOrder,
+          ),
           quantity: availability.shortage,
           lowStock: Boolean(part.lowStock),
         };
@@ -604,7 +611,7 @@ export default class MaintenanceService {
       throw new AppError('Une pièce ne peut apparaître qu’une fois.', HTTP_STATUS.BAD_REQUEST);
     }
     if (!parts.length) return [];
-    if (parts.some(({ quantity }) => !Number.isInteger(Number(quantity)) || Number(quantity) < 1)) {
+    if (parts.some(({ quantity }) => !isValidStockQuantity(quantity, { maximum: 100000 }))) {
       throw new AppError('Les quantités de pièces sont invalides.', HTTP_STATUS.BAD_REQUEST);
     }
     const entities = await this.catalogRepository.findPartsByUuids(uniqueUuids, { transaction });
@@ -662,7 +669,10 @@ export default class MaintenanceService {
           quantityOnHand: availability.quantityOnHand,
           quantityOnOrder: availability.quantityOnOrder,
           stockStatus: availability.status,
-          stockQuantity: availability.quantityOnHand + availability.quantityOnOrder,
+          stockQuantity: addStockQuantities(
+            availability.quantityOnHand,
+            availability.quantityOnOrder,
+          ),
           quantity,
         };
       }),

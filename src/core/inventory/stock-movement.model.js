@@ -27,24 +27,24 @@ StockMovement.init(
       validate: { isIn: [STOCK_OPERATION_VALUES] },
     },
     quantityOnHandChange: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.DECIMAL(12, 2),
       field: 'quantity_on_hand_change',
       allowNull: false,
       defaultValue: 0,
     },
     quantityOnOrderChange: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.DECIMAL(12, 2),
       field: 'quantity_on_order_change',
       allowNull: false,
       defaultValue: 0,
     },
     quantityOnHandAfter: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.DECIMAL(12, 2),
       field: 'quantity_on_hand_after',
       allowNull: false,
     },
     quantityOnOrderAfter: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.DECIMAL(12, 2),
       field: 'quantity_on_order_after',
       allowNull: false,
     },

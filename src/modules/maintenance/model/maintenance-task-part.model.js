@@ -19,7 +19,12 @@ MaintenanceTaskPart.init(
       allowNull: false,
       primaryKey: true,
     },
-    quantity: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, defaultValue: 1 },
+    quantity: {
+      type: DataTypes.DECIMAL(12, 2),
+      allowNull: false,
+      defaultValue: 1,
+      validate: { min: 0.01, max: 100000 },
+    },
   },
   {
     sequelize,

@@ -790,7 +790,8 @@ export default function MaintenancePage() {
                             className="maintenance-plan-quantity form-control form-control-sm"
                             type="number"
                             name={`quantity:${part.uuid}`}
-                            min="1"
+                            min="0.01"
+                            step="0.01"
                             value={partQuantities[part.uuid] ?? assigned?.quantity ?? 1}
                             onChange={(event) =>
                               setPartQuantities((current) => ({

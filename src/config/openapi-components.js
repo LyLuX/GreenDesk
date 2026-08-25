@@ -22,6 +22,13 @@ const timestamps = {
   deletedAt: nullableDateTime,
 };
 const writeText = (maxLength) => ({ type: 'string', maxLength });
+const decimalQuantity = (maximum = 1000000, { allowZero = false } = {}) => ({
+  type: 'number',
+  format: 'double',
+  minimum: allowZero ? 0 : 0.01,
+  maximum,
+  multipleOf: 0.01,
+});
 const success = (data) => ({
   type: 'object',
   required: ['success', 'data'],
@@ -256,14 +263,12 @@ const maintenancePart = {
     },
     stockStatus: { type: 'string', enum: STOCK_STATUS_VALUES },
     stockQuantity: {
-      type: 'integer',
-      minimum: 0,
-      maximum: 2000000,
+      ...decimalQuantity(2000000, { allowZero: true }),
       deprecated: true,
       description: 'Somme de compatibilité. Utiliser les deux quantités détaillées.',
     },
-    quantityOnHand: { type: 'integer', minimum: 0, maximum: 1000000 },
-    quantityOnOrder: { type: 'integer', minimum: 0, maximum: 1000000 },
+    quantityOnHand: decimalQuantity(1000000, { allowZero: true }),
+    quantityOnOrder: decimalQuantity(1000000, { allowZero: true }),
     active: { type: 'boolean' },
     ...timestamps,
   },
@@ -312,7 +317,7 @@ const maintenanceTask = {
           {
             type: 'object',
             required: ['quantity'],
-            properties: { quantity: { type: 'integer', minimum: 1 } },
+            properties: { quantity: decimalQuantity(100000) },
           },
         ],
       },
@@ -348,7 +353,7 @@ const maintenanceHistory = {
           name: writeText(150),
           reference: writeText(150),
           unit: writeText(50),
-          quantity: { type: 'integer', minimum: 1, maximum: 100000 },
+          quantity: decimalQuantity(100000),
           unitPrice: { type: 'number', format: 'double', minimum: 0 },
           totalCost: { type: 'number', format: 'double', minimum: 0 },
           consumed: { type: 'boolean' },
@@ -459,7 +464,7 @@ const maintenanceWriteProperties = {
       required: ['partUuid', 'quantity'],
       properties: {
         partUuid: uuid,
-        quantity: { type: 'integer', minimum: 1, maximum: 100000 },
+        quantity: decimalQuantity(100000),
       },
     },
   },
@@ -601,10 +606,10 @@ export const openApiSchemas = {
     properties: {
       uuid,
       operation: { type: 'string', enum: STOCK_OPERATION_VALUES },
-      quantityOnHandChange: { type: 'integer' },
-      quantityOnOrderChange: { type: 'integer' },
-      quantityOnHandAfter: { type: 'integer', minimum: 0, maximum: 1000000 },
-      quantityOnOrderAfter: { type: 'integer', minimum: 0, maximum: 1000000 },
+      quantityOnHandChange: { type: 'number', format: 'double', multipleOf: 0.01 },
+      quantityOnOrderChange: { type: 'number', format: 'double', multipleOf: 0.01 },
+      quantityOnHandAfter: decimalQuantity(1000000, { allowZero: true }),
+      quantityOnOrderAfter: decimalQuantity(1000000, { allowZero: true }),
       sourceType: nullableString,
       sourceUuid: { ...uuid, nullable: true },
       performedAt: date,
@@ -651,7 +656,7 @@ export const openApiSchemas = {
       name: writeText(150),
       reference: writeText(150),
       unit: writeText(50),
-      quantity: { type: 'integer', minimum: 1, maximum: 1000000 },
+      quantity: decimalQuantity(),
       unitPrice: { type: 'number', format: 'double', minimum: 0 },
       totalCost: { type: 'number', format: 'double', minimum: 0 },
     },
@@ -887,7 +892,7 @@ export const openApiSchemas = {
           required: ['partUuid', 'quantity'],
           properties: {
             partUuid: uuid,
-            quantity: { type: 'integer', minimum: 1, maximum: 1000000 },
+            quantity: decimalQuantity(),
           },
         },
       },
@@ -966,8 +971,8 @@ export const openApiSchemas = {
         properties: {
           operation: { type: 'string', enum: [STOCK_OPERATIONS.ADJUST] },
           performedAt: date,
-          quantityOnHand: { type: 'integer', minimum: 0, maximum: 1000000 },
-          quantityOnOrder: { type: 'integer', minimum: 0, maximum: 1000000 },
+          quantityOnHand: decimalQuantity(1000000, { allowZero: true }),
+          quantityOnOrder: decimalQuantity(1000000, { allowZero: true }),
         },
         anyOf: [{ required: ['quantityOnHand'] }, { required: ['quantityOnOrder'] }],
         additionalProperties: false,
@@ -981,7 +986,7 @@ export const openApiSchemas = {
             enum: [STOCK_OPERATIONS.ORDER, STOCK_OPERATIONS.RECEIVE],
           },
           performedAt: date,
-          quantity: { type: 'integer', minimum: 1, maximum: 1000000 },
+          quantity: decimalQuantity(),
         },
         additionalProperties: false,
       },
@@ -991,7 +996,7 @@ export const openApiSchemas = {
         required: ['stockStatus', 'stockQuantity'],
         properties: {
           stockStatus: { type: 'string', enum: STOCK_STATUS_VALUES },
-          stockQuantity: { type: 'integer', minimum: 0, maximum: 1000000 },
+          stockQuantity: decimalQuantity(1000000, { allowZero: true }),
           performedAt: date,
         },
         additionalProperties: false,
@@ -1130,8 +1135,7 @@ export const openApiSchemas = {
               required: ['quantity', 'lowStock', 'plans'],
               properties: {
                 quantity: {
-                  type: 'integer',
-                  minimum: 0,
+                  ...decimalQuantity(1000000, { allowZero: true }),
                   description:
                     'Quantité restant à commander après déduction du stock ou de la commande en cours. Peut valoir zéro dans la vue exhaustive du stock faible.',
                 },
@@ -1161,7 +1165,7 @@ export const openApiSchemas = {
                       },
                       nextMaintenanceDate: nullableDate,
                       wearBased: { type: 'boolean' },
-                      quantity: { type: 'integer', minimum: 1 },
+                      quantity: decimalQuantity(100000),
                     },
                   },
                 },

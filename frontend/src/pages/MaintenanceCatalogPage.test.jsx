@@ -405,7 +405,7 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(materialSearch).toHaveValue('Tondeuse');
     expect(screen.queryByLabelText('Matériel concerné')).not.toBeInTheDocument();
     await user.clear(screen.getByLabelText('Quantité utilisée'));
-    await user.type(screen.getByLabelText('Quantité utilisée'), '2');
+    await user.type(screen.getByLabelText('Quantité utilisée'), '0.6');
     await user.type(screen.getByLabelText('Description de l’intervention'), 'Grille cassée');
     await user.click(screen.getByRole('button', { name: 'Enregistrer l’intervention' }));
 
@@ -414,7 +414,7 @@ describe('dedicated maintenance catalogue pages', () => {
         materialUuid: 'material-uuid',
         description: 'Grille cassée',
         performedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
-        parts: [{ partUuid: 'part-uuid', quantity: 2 }],
+        parts: [{ partUuid: 'part-uuid', quantity: 0.6 }],
       }),
     );
     expect(mocks.notify).toHaveBeenCalledWith('success', 'Intervention ponctuelle enregistrée.');

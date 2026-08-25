@@ -455,6 +455,10 @@ describe('MaintenancePage', () => {
     await user.type(within(dialog).getByLabelText('Intervalle (jours)'), '365');
     await user.type(within(dialog).getByLabelText('Dernier entretien'), '2026-07-01');
     await user.click(within(dialog).getByRole('checkbox', { name: 'Bougie — BPMR8Y' }));
+    const quantity = within(dialog).getByLabelText('Quantité');
+    expect(quantity).toHaveAttribute('step', '0.01');
+    await user.clear(quantity);
+    await user.type(quantity, '0.6');
     await user.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
 
     await waitFor(() =>
@@ -464,7 +468,7 @@ describe('MaintenancePage', () => {
           operationUuid: 'operation-uuid',
           intervalDays: 365,
           lastMaintenanceDate: '2026-07-01',
-          parts: [{ partUuid: 'part-uuid', quantity: 1 }],
+          parts: [{ partUuid: 'part-uuid', quantity: 0.6 }],
         }),
       ),
     );

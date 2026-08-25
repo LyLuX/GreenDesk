@@ -380,7 +380,11 @@ describe('OpenAPI contract', () => {
       'maintenance.execute.skip_parts',
     );
     expect(history.properties.executionType.enum).toEqual(['standard', 'withoutPartReplacement']);
-    expect(history.properties.partsSnapshot.items.properties.quantity.minimum).toBe(1);
+    expect(history.properties.partsSnapshot.items.properties.quantity).toMatchObject({
+      type: 'number',
+      minimum: 0.01,
+      multipleOf: 0.01,
+    });
     expect(swaggerSpec.paths['/maintenance/{uuid}/execute'].post.description).toContain(
       'pièces non remplacées',
     );

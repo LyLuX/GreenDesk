@@ -15,6 +15,18 @@ import {
 } from '../maintenance.constants.js';
 
 const uuid = param('uuid').isUUID();
+const normalizeDecimalSeparator = (value) =>
+  typeof value === 'string' ? value.replace(',', '.') : value;
+const quantity = (path, { optional = false, allowZero = false, max = MAX_STOCK_QUANTITY } = {}) => {
+  let validator = body(path);
+  if (optional) validator = validator.optional();
+  return validator
+    .customSanitizer(normalizeDecimalSeparator)
+    .isFloat({ min: allowZero ? 0 : 0.01, max })
+    .custom((value) => /^\d+(?:\.\d{1,2})?$/.test(String(value)))
+    .withMessage('La quantité doit comporter au maximum deux décimales.')
+    .toFloat();
+};
 const intervals = [body('intervalDays').optional({ nullable: true }).isInt({ min: 0 }).toInt()];
 const fields = [
   body('operationUuid').optional().isUUID(),
@@ -27,7 +39,7 @@ const fields = [
   body('notes').optional().trim(),
   body('parts').optional().isArray({ max: 50 }),
   body('parts.*.partUuid').isUUID(),
-  body('parts.*.quantity').isInt({ min: 1, max: 100000 }).toInt(),
+  quantity('parts.*.quantity', { max: 100000 }),
 ];
 export const listValidator = [
   query('search').optional({ values: 'falsy' }).trim().isLength({ max: 150 }),
@@ -64,7 +76,7 @@ export const createInterventionValidator = [
     .matches(/^\d{4}-\d{2}-\d{2}$/),
   body('parts').isArray({ min: 1, max: 50 }),
   body('parts.*.partUuid').isUUID(),
-  body('parts.*.quantity').isInt({ min: 1, max: MAX_STOCK_QUANTITY }).toInt(),
+  quantity('parts.*.quantity'),
 ];
 export const statusValidator = [uuid, body('active').isBoolean().toBoolean()];
 export const executeValidator = [
@@ -148,21 +160,21 @@ export const updatePartStockValidator = [
     .isISO8601({ strict: true })
     .matches(/^\d{4}-\d{2}-\d{2}$/),
   body('operation').optional().isIn(PUBLIC_STOCK_OPERATION_VALUES),
-  body('quantity').optional().isInt({ min: 1, max: MAX_STOCK_QUANTITY }).toInt(),
-  body('quantityOnHand').optional().isInt({ min: 0, max: MAX_STOCK_QUANTITY }).toInt(),
-  body('quantityOnOrder').optional().isInt({ min: 0, max: MAX_STOCK_QUANTITY }).toInt(),
+  quantity('quantity', { optional: true }),
+  quantity('quantityOnHand', { optional: true, allowZero: true }),
+  quantity('quantityOnOrder', { optional: true, allowZero: true }),
   body('stockStatus').optional().isIn(STOCK_STATUS_VALUES),
-  body('stockQuantity').optional().isInt({ min: 0, max: MAX_STOCK_QUANTITY }).toInt(),
+  quantity('stockQuantity', { optional: true, allowZero: true }),
   body().custom((value) => {
     if (!value.operation) {
-      if (value.stockStatus && Number.isInteger(value.stockQuantity)) return true;
+      if (value.stockStatus && Number.isFinite(value.stockQuantity)) return true;
       throw new Error('Une opération de stock doit être renseignée.');
     }
     if (value.operation === STOCK_OPERATIONS.ADJUST) {
       if (value.quantityOnHand !== undefined || value.quantityOnOrder !== undefined) return true;
       throw new Error('Une quantité à ajuster doit être renseignée.');
     }
-    if (Number.isInteger(value.quantity)) return true;
+    if (Number.isFinite(value.quantity)) return true;
     throw new Error('Une quantité positive doit être renseignée.');
   }),
 ];

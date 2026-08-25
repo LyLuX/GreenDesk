@@ -229,6 +229,36 @@ describe('maintenance catalogue route permissions', () => {
       .expect(204);
   });
 
+  it('accepts a decimal plan quantity written with a comma', async () => {
+    const payload = {
+      materialUuid: uuid,
+      operationUuid: uuid,
+      parts: [{ partUuid: uuid, quantity: '0,6' }],
+    };
+
+    await request(app)
+      .post('/api/v1/maintenance')
+      .set('Authorization', authorization(['maintenance.create']))
+      .send(payload)
+      .expect(201);
+
+    await request(app)
+      .post('/api/v1/maintenance')
+      .set('Authorization', authorization(['maintenance.create']))
+      .send({ ...payload, parts: [{ partUuid: uuid, quantity: 0.005 }] })
+      .expect(400);
+
+    expect(maintenanceController.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        body: expect.objectContaining({
+          parts: [expect.objectContaining({ quantity: 0.6 })],
+        }),
+      }),
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
   it('requires part-specific permissions for part writes', async () => {
     const payload = { name: 'Bougie', reference: 'BPMR8Y', unit: 'pièce', unitPrice: 12.5 };
     await request(app)
@@ -311,7 +341,7 @@ describe('maintenance catalogue route permissions', () => {
     await request(app)
       .patch(path)
       .set('Authorization', authorization([permissions.order]))
-      .send({ operation: 'order', quantity: 3, performedAt: '2026-08-20' })
+      .send({ operation: 'order', quantity: 0.6, performedAt: '2026-08-20' })
       .expect(200);
     await request(app)
       .patch(path)

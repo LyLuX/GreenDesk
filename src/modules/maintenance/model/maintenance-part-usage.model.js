@@ -33,7 +33,11 @@ MaintenancePartUsage.init(
       allowNull: false,
     },
     unit: { type: DataTypes.STRING(50), allowNull: false },
-    quantity: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
+    quantity: {
+      type: DataTypes.DECIMAL(12, 2),
+      allowNull: false,
+      validate: { min: 0.01, max: 1000000 },
+    },
     unitPrice: { type: DataTypes.DECIMAL(12, 2), field: 'unit_price', allowNull: false },
     totalCost: { type: DataTypes.DECIMAL(14, 2), field: 'total_cost', allowNull: false },
     performedAt: { type: DataTypes.DATEONLY, field: 'performed_at', allowNull: false },

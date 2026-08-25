@@ -2,17 +2,14 @@ import HTTP_STATUS from '../constants/http-status.js';
 import AppError from '../errors/app-error.js';
 import StockMovementRepository from './stock-movement.repository.js';
 import { MAX_STOCK_QUANTITY, STOCK_OPERATIONS } from './stock-operation.js';
+import { addStockQuantities, isValidStockQuantity, roundStockQuantity } from './stock-quantity.js';
 
-const integer = (value, label, { allowZero = false } = {}) => {
+const decimalQuantity = (value, label, { allowZero = false } = {}) => {
   const quantity = Number(value);
-  if (
-    !Number.isInteger(quantity) ||
-    quantity < (allowZero ? 0 : 1) ||
-    quantity > MAX_STOCK_QUANTITY
-  ) {
+  if (!isValidStockQuantity(quantity, { allowZero, maximum: MAX_STOCK_QUANTITY })) {
     throw new AppError(`${label} est invalide.`, HTTP_STATUS.BAD_REQUEST);
   }
-  return quantity;
+  return roundStockQuantity(quantity);
 };
 
 /** Applies atomic stock operations to any entity exposing the shared quantity fields. */
@@ -35,8 +32,12 @@ export default class StockService {
     },
     { transaction } = {},
   ) {
-    const currentOnHand = Number(item.quantityOnHand ?? 0);
-    const currentOnOrder = Number(item.quantityOnOrder ?? 0);
+    const currentOnHand = decimalQuantity(item.quantityOnHand ?? 0, 'La quantité en stock', {
+      allowZero: true,
+    });
+    const currentOnOrder = decimalQuantity(item.quantityOnOrder ?? 0, 'La quantité commandée', {
+      allowZero: true,
+    });
     let nextOnHand = currentOnHand;
     let nextOnOrder = currentOnOrder;
 
@@ -45,23 +46,26 @@ export default class StockService {
         throw new AppError('Une quantité à ajuster doit être renseignée.', HTTP_STATUS.BAD_REQUEST);
       }
       if (quantityOnHand !== undefined) {
-        nextOnHand = integer(quantityOnHand, 'La quantité en stock', { allowZero: true });
+        nextOnHand = decimalQuantity(quantityOnHand, 'La quantité en stock', { allowZero: true });
       }
       if (quantityOnOrder !== undefined) {
-        nextOnOrder = integer(quantityOnOrder, 'La quantité commandée', { allowZero: true });
+        nextOnOrder = decimalQuantity(quantityOnOrder, 'La quantité commandée', {
+          allowZero: true,
+        });
       }
     } else {
-      const amount = integer(quantity, 'La quantité');
-      if (operation === STOCK_OPERATIONS.ORDER) nextOnOrder += amount;
-      else if (operation === STOCK_OPERATIONS.RECEIVE) {
+      const amount = decimalQuantity(quantity, 'La quantité');
+      if (operation === STOCK_OPERATIONS.ORDER) {
+        nextOnOrder = addStockQuantities(nextOnOrder, amount);
+      } else if (operation === STOCK_OPERATIONS.RECEIVE) {
         if (amount > currentOnOrder) {
           throw new AppError(
             'La quantité reçue dépasse la quantité actuellement commandée.',
             HTTP_STATUS.CONFLICT,
           );
         }
-        nextOnOrder -= amount;
-        nextOnHand += amount;
+        nextOnOrder = addStockQuantities(nextOnOrder, -amount);
+        nextOnHand = addStockQuantities(nextOnHand, amount);
       } else if (operation === STOCK_OPERATIONS.CONSUME) {
         if (amount > currentOnHand) {
           throw new AppError(
@@ -69,7 +73,7 @@ export default class StockService {
             HTTP_STATUS.CONFLICT,
           );
         }
-        nextOnHand -= amount;
+        nextOnHand = addStockQuantities(nextOnHand, -amount);
       } else {
         throw new AppError('Opération de stock inconnue.', HTTP_STATUS.BAD_REQUEST);
       }
@@ -79,8 +83,8 @@ export default class StockService {
       throw new AppError('La quantité maximale de stock est dépassée.', HTTP_STATUS.BAD_REQUEST);
     }
 
-    const quantityOnHandChange = nextOnHand - currentOnHand;
-    const quantityOnOrderChange = nextOnOrder - currentOnOrder;
+    const quantityOnHandChange = addStockQuantities(nextOnHand, -currentOnHand);
+    const quantityOnOrderChange = addStockQuantities(nextOnOrder, -currentOnOrder);
     if (!quantityOnHandChange && !quantityOnOrderChange) {
       throw new AppError('Cet ajustement ne modifie aucune quantité.', HTTP_STATUS.BAD_REQUEST);
     }

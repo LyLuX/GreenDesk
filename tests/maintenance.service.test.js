@@ -82,10 +82,10 @@ describe('MaintenanceService', () => {
       parts: [
         {
           ...part,
-          name: 'Bougie',
-          reference: 'BPMR8Y',
-          unit: 'pièce',
-          MaintenanceTaskPart: { quantity: 1 },
+          name: 'Huile moteur',
+          reference: 'HUILE-5W30',
+          unit: 'litre',
+          MaintenanceTaskPart: { quantity: 0.6 },
         },
       ],
       toJSON() {
@@ -118,7 +118,7 @@ describe('MaintenanceService', () => {
         operationUuid: operation.uuid,
         intervalDays: 365,
         lastMaintenanceDate: '2026-07-01',
-        parts: [{ partUuid: part.uuid, quantity: 1 }],
+        parts: [{ partUuid: part.uuid, quantity: 0.6 }],
       },
       42,
     );
@@ -135,10 +135,12 @@ describe('MaintenanceService', () => {
     );
     expect(repository.replaceParts).toHaveBeenCalledWith(
       createdTask.id,
-      [{ partId: part.id, quantity: 1 }],
+      [{ partId: part.id, quantity: 0.6 }],
       { transaction: { id: 'transaction' } },
     );
-    expect(result.parts).toEqual([expect.objectContaining({ reference: 'BPMR8Y', quantity: 1 })]);
+    expect(result.parts).toEqual([
+      expect.objectContaining({ reference: 'HUILE-5W30', quantity: 0.6 }),
+    ]);
   });
 
   it('aggregates parts still required by plans even when the catalogue entry is inactive', async () => {
@@ -467,7 +469,7 @@ describe('MaintenanceService', () => {
     const taskPart = {
       id: 9,
       uuid: '99999999-9999-4999-8999-999999999999',
-      MaintenanceTaskPart: { quantity: 2 },
+      MaintenanceTaskPart: { quantity: 0.6 },
     };
     const task = {
       id: 1,
@@ -490,9 +492,9 @@ describe('MaintenanceService', () => {
     const lockedPart = {
       id: 9,
       uuid: taskPart.uuid,
-      name: 'Filtre',
-      reference: 'F-100',
-      unit: 'pièce',
+      name: 'Huile moteur',
+      reference: 'HUILE-5W30',
+      unit: 'litre',
       unitPrice: 12.5,
       quantityOnHand: 3,
       quantityOnOrder: 0,
@@ -517,7 +519,7 @@ describe('MaintenanceService', () => {
       lockedPart,
       expect.objectContaining({
         operation: 'consume',
-        quantity: 2,
+        quantity: 0.6,
         performedAt: today,
         source: { type: 'maintenanceTask', uuid: task.uuid },
       }),
@@ -528,9 +530,9 @@ describe('MaintenanceService', () => {
         expect.objectContaining({
           maintenanceHistoryId: 12,
           maintenancePartId: 9,
-          quantity: 2,
+          quantity: 0.6,
           unitPrice: 12.5,
-          totalCost: 25,
+          totalCost: 7.5,
           performedAt: today,
         }),
       ],
