@@ -6,13 +6,17 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   logout: vi.fn(),
   notify: vi.fn(),
+  activeCompany: { uuid: 'company-uuid', name: 'Société actuellement consultée' },
+  companies: [{ uuid: 'company-uuid', name: 'Société actuellement consultée' }],
+  selectCompany: vi.fn(),
 }));
 
 vi.mock('../auth/useAuth.js', () => ({
   default: () => ({
     user: { firstName: 'Paul', lastName: 'Bournazel' },
-    activeCompany: { uuid: 'company-uuid', name: 'Société actuellement consultée' },
-    companies: [{ uuid: 'company-uuid', name: 'Société actuellement consultée' }],
+    activeCompany: mocks.activeCompany,
+    companies: mocks.companies,
+    selectCompany: mocks.selectCompany,
     logout: mocks.logout,
     hasPermission: () => true,
   }),
@@ -39,7 +43,19 @@ describe('AppLayout navigation drawer', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+    mocks.activeCompany = { uuid: 'company-uuid', name: 'Société actuellement consultée' };
+    mocks.companies = [mocks.activeCompany];
     document.body.classList.remove('app-scroll-locked');
+  });
+
+  it('keeps an accessible company selector when several companies are available', () => {
+    mocks.companies = [mocks.activeCompany, { uuid: 'other-company-uuid', name: 'Autre société' }];
+
+    renderLayout();
+
+    expect(screen.getByRole('combobox', { name: 'Société actuellement consultée' })).toHaveValue(
+      'company-uuid',
+    );
   });
 
   it('shows the currently selected company in the brand', () => {

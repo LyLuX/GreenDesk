@@ -95,8 +95,8 @@ export default function AppLayout() {
           <div className="d-flex align-items-center gap-3 text-white">
             {companies.length > 1 ? (
               <label className="d-flex align-items-center gap-2 small" htmlFor="active-company">
-                <span className="d-none d-lg-inline">Société</span>
                 <select
+                  aria-label="Société actuellement consultée"
                   className="form-select form-select-sm"
                   id="active-company"
                   value={activeCompany?.uuid ?? ''}
@@ -111,11 +111,7 @@ export default function AppLayout() {
                   ))}
                 </select>
               </label>
-            ) : (
-              activeCompany && (
-                <span className="d-none d-lg-inline small">{activeCompany.name}</span>
-              )
-            )}
+            ) : null}
             <span className="d-none d-sm-inline small">
               {user?.firstName} {user?.lastName}
             </span>

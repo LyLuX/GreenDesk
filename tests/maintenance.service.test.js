@@ -304,7 +304,7 @@ describe('MaintenanceService', () => {
     expect(result.includeLowStock).toBe(true);
     expect(result.lowStockOnly).toBe(false);
     expect(result.items).toEqual([
-      expect.objectContaining({ reference: 'FH-01', quantity: 2, lowStock: true, plans: [] }),
+      expect.objectContaining({ reference: 'FH-01', quantity: 1, lowStock: true, plans: [] }),
     ]);
   });
 

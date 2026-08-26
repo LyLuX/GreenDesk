@@ -24,7 +24,7 @@ const emptyRole = () => ({ name: '', description: '', permissionUuids: [] });
 const roleUserReadPermissionName = (roleName) => `users.roles.${roleName}.read`;
 const rolesApi = createReferenceApi('roles');
 const permissionsApi = createReferenceApi('permissions');
-const visiblePermissionCount = 6;
+const visiblePermissionCount = 5;
 
 function PermissionActionFamilyCheckbox({
   controlsId,

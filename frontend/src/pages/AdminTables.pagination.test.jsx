@@ -443,7 +443,7 @@ describe('administrator table pagination', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('shows only the first six role permissions followed by an ellipsis', async () => {
+  it('shows only the first five role permissions followed by an ellipsis', async () => {
     const permissions = Array.from({ length: 8 }, (_value, index) => ({
       uuid: `permission-${index + 1}`,
       name: `permission.${index + 1}`,
@@ -466,11 +466,12 @@ describe('administrator table pagination', () => {
 
     const row = (await screen.findByText('Rôle résumé')).closest('tr');
     expect(row).toHaveTextContent(
-      'permission.1, permission.2, permission.3, permission.4, permission.5, permission.6, …',
+      'permission.1, permission.2, permission.3, permission.4, permission.5, …',
     );
+    expect(row).not.toHaveTextContent('permission.6');
     expect(row).not.toHaveTextContent('permission.7');
     expect(row).not.toHaveTextContent('permission.8');
-    expect(within(row).getByLabelText('2 permissions supplémentaires')).toBeVisible();
+    expect(within(row).getByLabelText('3 permissions supplémentaires')).toBeVisible();
   });
 
   it('presents permissions by description and sorts their technical names', async () => {
