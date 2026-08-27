@@ -1419,6 +1419,34 @@ export const openApiPaths = {
       },
     },
   },
+  '/relations': {
+    get: {
+      operationId: 'getCompanyRelations',
+      tags: ['Relations'],
+      summary: 'Retourne la cartographie des relations de la société active.',
+      description:
+        'Nécessite `relations.read`. Les nœuds et compteurs sont filtrés avec les permissions de consultation propres à chaque ressource. Le mode `simplified` expose les relations métier principales ; le mode `complete` ajoute les associations, exécutions et journaux techniques autorisés.',
+      security: secure,
+      parameters: [
+        {
+          name: 'mode',
+          in: 'query',
+          schema: {
+            type: 'string',
+            enum: ['simplified', 'complete'],
+            default: 'simplified',
+          },
+        },
+      ],
+      responses: {
+        200: jsonResponse('RelationGraphResponse', 'Cartographie retournée.'),
+        400: responseRef('BadRequest'),
+        401: responseRef('Unauthorized'),
+        403: responseRef('Forbidden'),
+        500: responseRef('InternalError'),
+      },
+    },
+  },
   '/history/{section}': {
     get: {
       operationId: 'listConsolidatedHistory',
@@ -1481,6 +1509,7 @@ const companyScopedPrefixes = [
   '/suppliers',
   '/maintenance',
   '/dashboard',
+  '/relations',
   '/history',
 ];
 

@@ -6,6 +6,7 @@ describe('frontend navigation', () => {
   it('declares every business and history route', () => {
     expect(navigationItems.map((item) => item.path)).toEqual([
       '/dashboard',
+      '/relations',
       '/materials',
       '/categories',
       '/manufacturers',
@@ -26,6 +27,7 @@ describe('frontend navigation', () => {
   it('groups the sidebar into business, history and administration dropdowns', () => {
     expect(navigationSections.map((section) => section.item?.label ?? section.label)).toEqual([
       'Tableau de bord',
+      'Relations des entités',
       'Gestion du parc',
       'Maintenance',
       'Historique',

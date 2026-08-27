@@ -13,6 +13,7 @@ import roleRoutes from '../modules/roles/routes/role.routes.js';
 import supplierRoutes from '../modules/suppliers/routes/supplier.routes.js';
 import userRoutes from '../modules/users/routes/user.routes.js';
 import companyRoutes from '../modules/companies/routes/company.routes.js';
+import relationsRoutes from '../modules/relations/routes/relations.routes.js';
 
 /**
  * Single source of truth for mounted HTTP routers.
@@ -44,6 +45,7 @@ export const routeRegistry = [
   },
   { mountPath: '/api/v1/dashboard', router: dashboardRoutes, openApiBasePath: '/dashboard' },
   { mountPath: '/api/v1/history', router: historyRoutes, openApiBasePath: '/history' },
+  { mountPath: '/api/v1/relations', router: relationsRoutes, openApiBasePath: '/relations' },
   {
     mountPath: '/api/v1/manufacturers',
     router: manufacturerRoutes,

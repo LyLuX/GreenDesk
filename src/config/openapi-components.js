@@ -1337,6 +1337,51 @@ export const openApiSchemas = {
       },
     },
   },
+  RelationGraphNode: {
+    type: 'object',
+    required: ['id', 'label', 'kind'],
+    properties: {
+      id: { type: 'string' },
+      label: { type: 'string' },
+      description: { type: 'string' },
+      kind: { type: 'string', enum: ['company', 'domain', 'entity', 'technical'] },
+      count: { type: 'integer', minimum: 0 },
+      path: {
+        type: 'string',
+        description: 'Route frontend autorisée ouverte depuis le nœud.',
+      },
+    },
+  },
+  RelationGraphEdge: {
+    type: 'object',
+    required: ['id', 'source', 'target', 'label', 'kind'],
+    properties: {
+      id: { type: 'string' },
+      source: { type: 'string' },
+      target: { type: 'string' },
+      label: { type: 'string' },
+      kind: { type: 'string', enum: ['group', 'direct', 'association', 'derived'] },
+      hierarchy: {
+        type: 'boolean',
+        description: 'Indique que la relation participe au dépliage de la hiérarchie.',
+      },
+    },
+  },
+  RelationGraph: {
+    type: 'object',
+    required: ['mode', 'company', 'nodes', 'edges'],
+    properties: {
+      mode: { type: 'string', enum: ['simplified', 'complete'] },
+      company: {
+        type: 'object',
+        nullable: true,
+        required: ['uuid', 'name'],
+        properties: { uuid, name: writeText(150) },
+      },
+      nodes: arrayOf(reference('RelationGraphNode')),
+      edges: arrayOf(reference('RelationGraphEdge')),
+    },
+  },
   ApiEntryResponse: success({
     type: 'object',
     required: ['name', 'version'],
@@ -1423,6 +1468,7 @@ export const openApiSchemas = {
   MaintenanceInterventionResponse: success(reference('MaintenanceIntervention')),
   MaintenanceInterventionListResponse: success(reference('MaintenanceInterventionPage')),
   DashboardResponse: success(reference('DashboardSummary')),
+  RelationGraphResponse: success(reference('RelationGraph')),
 };
 
 export const openApiResponses = {

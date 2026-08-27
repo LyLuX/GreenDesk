@@ -5,10 +5,11 @@ describe('permission definitions', () => {
     const names = permissionDefinitions.map(({ name }) => name);
 
     expect(new Set(names).size).toBe(names.length);
-    expect(names).toHaveLength(83);
+    expect(names).toHaveLength(84);
     expect(names).toEqual(
       expect.arrayContaining([
         'maintenance.operations.read',
+        'relations.read',
         'maintenance.operations.create',
         'maintenance.operations.update',
         'maintenance.operations.delete',

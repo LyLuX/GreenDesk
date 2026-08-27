@@ -35,6 +35,10 @@ const swaggerSpec = {
     { name: 'Maintenance', description: 'Plans et historique d’entretien.' },
     { name: 'History', description: 'Historiques consolidés par domaine.' },
     { name: 'Dashboard', description: 'Indicateurs du tableau de bord.' },
+    {
+      name: 'Relations',
+      description: 'Cartographie des relations entre les modèles de la société active.',
+    },
   ],
   components: {
     securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } },

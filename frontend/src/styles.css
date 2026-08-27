@@ -1,5 +1,239 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
 
+/* Relationship map */
+.relation-page-header,
+.relations-toolbar,
+.relations-legend,
+.relation-node-heading {
+  display: flex;
+  align-items: center;
+}
+
+.relation-page-header,
+.relations-toolbar {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.relation-mode-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.relations-card {
+  overflow: hidden;
+  border: 1px solid #dce5df;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 0.5rem 1.5rem rgb(30 68 46 / 8%);
+}
+
+.relations-toolbar {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #e2e9e5;
+  background: #f8faf9;
+}
+
+.relations-legend {
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  color: #52635a;
+  font-size: 0.8rem;
+}
+
+.relations-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.relation-legend-line {
+  display: inline-block;
+  width: 1.8rem;
+  border-top: 2px solid;
+}
+
+.relation-legend-direct {
+  border-color: #287a50;
+}
+
+.relation-legend-association {
+  border-color: #6b57a4;
+}
+
+.relation-legend-derived {
+  border-color: #b37816;
+  border-top-style: dashed;
+}
+
+.relations-canvas {
+  position: relative;
+  height: clamp(34rem, calc(100vh - 18rem), 58rem);
+  min-height: 34rem;
+  background: #f7faf8;
+}
+
+.relations-canvas > .app-loader {
+  position: absolute;
+  inset: 0;
+}
+
+.relations-help {
+  padding: 0.7rem 1rem;
+  border-top: 1px solid #e2e9e5;
+  color: #63736b;
+  font-size: 0.82rem;
+}
+
+.relation-node {
+  width: 230px;
+  min-height: 104px;
+  padding: 0.8rem 0.85rem;
+  border: 2px solid #8fa69a;
+  border-radius: 0.8rem;
+  background: #fff;
+  box-shadow: 0 0.35rem 0.9rem rgb(30 68 46 / 12%);
+  color: #213b2d;
+  transition:
+    opacity 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.relation-node-company {
+  border-color: #236941;
+  background: #eaf5ee;
+}
+
+.relation-node-domain {
+  border-color: #7aa88c;
+  background: #f0f7f2;
+}
+
+.relation-node-entity {
+  border-color: #7b69ad;
+}
+
+.relation-node-technical {
+  border-color: #d6aa5c;
+  background: #fffaf0;
+}
+
+.relation-node-heading {
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.relation-node-heading strong {
+  overflow-wrap: anywhere;
+  font-size: 0.94rem;
+  line-height: 1.2;
+}
+
+.relation-node .relation-node-handle {
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 2px solid #fff;
+  background: #52705f;
+}
+
+.relation-node-toggle {
+  display: grid;
+  flex: 0 0 1.65rem;
+  width: 1.65rem;
+  height: 1.65rem;
+  padding: 0;
+  place-content: center;
+  border: 1px solid #8ca095;
+  border-radius: 50%;
+  background: #fff;
+  color: #28563e;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.relation-node-toggle:hover,
+.relation-node-toggle:focus-visible {
+  border-color: #236941;
+  box-shadow: 0 0 0 0.18rem rgb(35 105 65 / 18%);
+}
+
+.relation-node-count,
+.relation-node-description {
+  display: block;
+  margin-top: 0.45rem;
+  color: #617168;
+  font-size: 0.76rem;
+}
+
+.relation-node-link {
+  margin-top: 0.55rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #236941;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.16rem;
+}
+
+.relation-node-selected {
+  box-shadow:
+    0 0 0 0.24rem rgb(35 105 65 / 24%),
+    0 0.45rem 1rem rgb(30 68 46 / 18%);
+  transform: translateY(-2px);
+}
+
+.relation-node-related {
+  box-shadow:
+    0 0 0 0.16rem rgb(179 120 22 / 20%),
+    0 0.4rem 0.9rem rgb(30 68 46 / 14%);
+}
+
+.relation-node-dimmed {
+  opacity: 0.34;
+}
+
+.relations-canvas .react-flow__edge-label {
+  pointer-events: none;
+}
+
+.relations-canvas .react-flow__minimap {
+  border: 1px solid #cfdad4;
+  border-radius: 0.55rem;
+  background: rgb(255 255 255 / 92%);
+}
+
+.relations-canvas .react-flow__controls {
+  overflow: hidden;
+  border: 1px solid #cfdad4;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.25rem 0.75rem rgb(30 68 46 / 10%);
+}
+
+@media (max-width: 767.98px) {
+  .relation-page-header,
+  .relations-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .relation-mode-switch .btn {
+    flex: 1 1 10rem;
+  }
+
+  .relations-canvas {
+    height: calc(100vh - 20rem);
+    min-height: 30rem;
+  }
+
+  .relations-canvas .react-flow__minimap {
+    display: none;
+  }
+}
+
 :root {
   --brand-forest: #0d4a32;
   --brand-forest-dark: #083726;

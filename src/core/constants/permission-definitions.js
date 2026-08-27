@@ -4,6 +4,7 @@ import maintenancePermissions from '../../modules/maintenance/maintenance.permis
 import historyPermissions from '../../modules/audit/history.permissions.js';
 import dashboardPermissions from '../../modules/dashboard/dashboard.permissions.js';
 import companyPermissions from '../../modules/companies/company.permissions.js';
+import relationsPermissions from '../../modules/relations/relations.permissions.js';
 
 /** Canonical permission descriptions displayed when administrators configure roles. */
 const permissionDefinitions = [
@@ -171,6 +172,10 @@ const permissionDefinitions = [
   {
     name: dashboardPermissions.financial,
     description: 'Consulter les indicateurs financiers du tableau de bord.',
+  },
+  {
+    name: relationsPermissions.read,
+    description: 'Consulter la cartographie des relations de la société active.',
   },
   {
     name: fleetPermissions.manufacturers.read,

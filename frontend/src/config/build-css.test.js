@@ -19,6 +19,7 @@ describe('production CSS build', () => {
       expect.objectContaining({ test: expect.any(Function) }),
     ]);
     expect(purgeCssOptions.safelist.standard[0].test('app-loader-sm')).toBe(true);
+    expect(purgeCssOptions.safelist.greedy[0].test('.react-flow__node.selectable')).toBe(true);
   });
 
   it('centers consistently sized table shells and prevents horizontal overflow', () => {

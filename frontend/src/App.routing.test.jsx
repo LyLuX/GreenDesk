@@ -18,6 +18,9 @@ vi.mock('./layouts/AppLayout.jsx', () => ({
 vi.mock('./pages/DashboardPage.jsx', () => ({
   default: () => <h1>Tableau de bord</h1>,
 }));
+vi.mock('./pages/RelationsPage.jsx', () => ({
+  default: () => <h1>Relations des entités</h1>,
+}));
 vi.mock('./pages/MaintenanceOperationsPage.jsx', () => ({
   default: () => <h1>Opérations de maintenance</h1>,
 }));
@@ -62,6 +65,7 @@ describe('root route', () => {
   });
 
   it.each([
+    ['/relations', 'Relations des entités', 'relations.read'],
     ['/maintenance/operations', 'Opérations de maintenance', 'maintenance.operations.read'],
     ['/maintenance/parts', 'Pièces de maintenance', 'maintenance.parts.read'],
   ])('protects %s with its dedicated permission', async (path, heading, permission) => {

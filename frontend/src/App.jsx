@@ -11,6 +11,7 @@ import historyPermissions from './history/history.permissions.js';
 import dashboardPermissions from './dashboard/dashboard.permissions.js';
 import administrationPermissions from './permissions/administration.permissions.js';
 import companyPermissions from './permissions/company.permissions.js';
+import relationsPermissions from './relations/relations.permissions.js';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'));
 const ForbiddenPage = lazy(() => import('./pages/ForbiddenPage.jsx'));
@@ -32,6 +33,7 @@ const RolesPage = lazy(() => import('./pages/RolesPage.jsx'));
 const PermissionsPage = lazy(() => import('./pages/PermissionsPage.jsx'));
 const HistoryPage = lazy(() => import('./pages/HistoryPage.jsx'));
 const CompaniesPage = lazy(() => import('./pages/CompaniesPage.jsx'));
+const RelationsPage = lazy(() => import('./pages/RelationsPage.jsx'));
 const secure = (permission, page) => (
   <PermissionRoute permission={permission}>{page}</PermissionRoute>
 );
@@ -48,6 +50,7 @@ export const getModuleTitle = (pathname) => {
       '/verify-email': 'Vérification de l’email',
       '/403': 'Accès refusé',
       '/dashboard': 'Tableau de bord',
+      '/relations': 'Relations des entités',
       '/categories': 'Catégories',
       '/materials': 'Matériels',
       '/maintenance': 'Maintenance',
@@ -98,6 +101,10 @@ export default function App() {
               <Route
                 path="/dashboard"
                 element={secure(dashboardPermissions.read, <DashboardPage />)}
+              />
+              <Route
+                path="/relations"
+                element={secure(relationsPermissions.read, <RelationsPage />)}
               />
               <Route path="/categories" element={secure('categories.read', <CategoriesPage />)} />
               <Route path="/materials" element={secure('materials.read', <MaterialsPage />)} />

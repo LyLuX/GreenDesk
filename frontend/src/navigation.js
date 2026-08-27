@@ -3,6 +3,7 @@ import historyPermissions from './history/history.permissions.js';
 import dashboardPermissions from './dashboard/dashboard.permissions.js';
 import administrationPermissions from './permissions/administration.permissions.js';
 import companyPermissions from './permissions/company.permissions.js';
+import relationsPermissions from './relations/relations.permissions.js';
 
 /** Hierarchical navigation model shared by the sidebar and its tests. */
 export const navigationSections = [
@@ -12,6 +13,14 @@ export const navigationSections = [
       label: 'Tableau de bord',
       path: '/dashboard',
       permission: dashboardPermissions.read,
+    },
+  },
+  {
+    key: 'relations',
+    item: {
+      label: 'Relations des entités',
+      path: '/relations',
+      permission: relationsPermissions.read,
     },
   },
   {

@@ -1,7 +1,7 @@
 {
   "name": "greendesk-frontend",
   "private": true,
-  "version": "7.27.1",
+  "version": "7.28.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,9 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@dagrejs/dagre": "1.1.5",
     "@vitejs/plugin-react": "4.4.1",
+    "@xyflow/react": "12.8.4",
     "axios": "1.8.4",
     "bootstrap": "5.3.8",
     "react": "19.1.0",

@@ -293,6 +293,22 @@ describe('OpenAPI contract', () => {
     );
   });
 
+  it('documents the permission-filtered relationship graph modes', () => {
+    const operation = swaggerSpec.paths['/relations'].get;
+    const mode = operation.parameters.find((parameter) => parameter.name === 'mode');
+
+    expect(operation.description).toContain('`relations.read`');
+    expect(operation.description).toContain('permissions de consultation');
+    expect(mode.schema).toEqual({
+      type: 'string',
+      enum: ['simplified', 'complete'],
+      default: 'simplified',
+    });
+    expect(swaggerSpec.components.schemas.RelationGraph.properties).toEqual(
+      expect.objectContaining({ nodes: expect.any(Object), edges: expect.any(Object) }),
+    );
+  });
+
   it('documents granular administration and file permissions', () => {
     expect(swaggerSpec.paths['/users'].get.description).toContain('`users.read`');
     expect(swaggerSpec.paths['/users'].get.description).toContain(

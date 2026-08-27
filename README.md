@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **7.27.1**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **7.28.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -30,7 +30,9 @@ production.
 
 ## Modules disponibles
 
-Authentification, sociétés, utilisateurs, rôles, permissions, audit, catégories, fabricants, fournisseurs et matériels.
+Authentification, sociétés, utilisateurs, rôles, permissions, audit, catégories, fabricants, fournisseurs, matériels et cartographie relationnelle.
+
+La page `Relations des entités` présente la société active comme racine d’un graphe React Flow interactif. La vue simplifiée montre les relations métier principales ; la vue complète ajoute les fichiers, associations de pièces et quantités, exécutions, interventions, consommations, mouvements de stock, changements de prix et journaux autorisés. Les branches peuvent être repliées, les relations directes d’un nœud mises en évidence et chaque ressource disposant d’une page peut être ouverte depuis sa carte. Les nœuds et leurs compteurs sont filtrés avec les permissions de lecture propres aux ressources, en plus de l’accès global `relations.read` à la cartographie.
 
 La navigation latérale regroupe les pages dans trois menus accordéon : `Gestion du parc`, `Maintenance` et `Administration`. Un seul groupe est ouvert à la fois, le groupe de la page active s’ouvre automatiquement et les entrées restent filtrées selon les permissions. Sur mobile, le menu devient un tiroir latéral accessible au clavier qui se ferme après la navigation.
 
@@ -59,6 +61,7 @@ Le gabarit principal occupe exactement la hauteur visible de la fenêtre, footer
 - `POST /api/v1/auth/logout` révoque le JWT courant avant son expiration
 - `GET /api/v1/materials/files/:fileUuid/content`, `GET /api/v1/materials/files/:fileUuid/download`
 - `PATCH /api/v1/materials/files/:fileUuid/primary`, `DELETE /api/v1/materials/files/:fileUuid`
+- `GET /api/v1/relations?mode=simplified|complete`
 
 Les permissions ajoutées sont `categories.*` et `materials.*` avec les actions `read`, `create`, `update`, `delete`.
 
@@ -83,6 +86,7 @@ Chaque fabricant peut recevoir un logo JPEG, PNG ou WebP de 2 Mo maximum. Les lo
 | Fabricants                | `manufacturers.read`, `manufacturers.create`, `manufacturers.update`, `manufacturers.delete`                                                                                          |
 | Fournisseurs              | `suppliers.read`, `suppliers.create`, `suppliers.update`, `suppliers.delete`                                                                                                          |
 | Catégories                | `categories.read`, `categories.create`, `categories.update`, `categories.delete`                                                                                                      |
+| Relations des entités     | `relations.read`                                                                                                                                                                      |
 | Plans de maintenance      | `maintenance.read`, `maintenance.create`, `maintenance.update`, `maintenance.delete`, `maintenance.execute`                                                                           |
 | Opérations de maintenance | `maintenance.operations.read`, `maintenance.operations.create`, `maintenance.operations.update`, `maintenance.operations.delete`                                                      |
 | Pièces de maintenance     | `maintenance.parts.read`, `maintenance.parts.create`, `maintenance.parts.update`, `maintenance.parts.delete`                                                                          |

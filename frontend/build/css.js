@@ -5,6 +5,7 @@ export const purgeCssOptions = Object.freeze({
   content: ['./index.html', './src/**/*.{js,jsx}'],
   safelist: {
     standard: [/^app-loader-/],
+    greedy: [/react-flow/],
   },
 });
 
