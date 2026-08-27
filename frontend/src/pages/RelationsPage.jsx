@@ -206,11 +206,8 @@ function RelationsGraphPage() {
         id: item.id,
         source: item.source,
         target: item.target,
-        label: item.label,
         type: 'smoothstep',
         markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
-        labelStyle: { fill: '#405149', fontSize: 11, fontWeight: 600 },
-        labelBgStyle: { fill: '#f7faf8', fillOpacity: 0.92 },
         style: {
           ...edgeStyles[item.kind],
           opacity: isRelated ? 1 : 0.16,
@@ -277,21 +274,7 @@ function RelationsGraphPage() {
       ) : (
         <section className="relations-card" aria-label="Cartographie des relations">
           <div className="relations-toolbar">
-            <div className="relations-legend" aria-label="Légende des relations">
-              <span>
-                <i className="relation-legend-line relation-legend-direct" />
-                Relation directe
-              </span>
-              <span>
-                <i className="relation-legend-line relation-legend-association" />
-                Association
-              </span>
-              <span>
-                <i className="relation-legend-line relation-legend-derived" />
-                Relation déduite
-              </span>
-            </div>
-            <div className="d-flex flex-wrap gap-2">
+            <div className="d-flex flex-wrap gap-2 ms-auto">
               <button
                 type="button"
                 className="btn btn-sm btn-outline-secondary"

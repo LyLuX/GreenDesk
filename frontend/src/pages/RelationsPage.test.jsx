@@ -22,13 +22,14 @@ vi.mock('@xyflow/react', () => ({
   Position: { Left: 'left', Right: 'right' },
   ReactFlowProvider: ({ children }) => children,
   useReactFlow: () => ({ fitView: vi.fn() }),
-  ReactFlow: ({ nodes, onNodeClick }) => (
+  ReactFlow: ({ nodes, edges, onNodeClick }) => (
     <div aria-label="Graphe simulé">
       {nodes.map((node) => (
         <button type="button" key={node.id} onClick={(event) => onNodeClick(event, node)}>
           {node.data.label}
         </button>
       ))}
+      {edges.map((edge) => (edge.label ? <span key={edge.id}>{edge.label}</span> : null))}
     </div>
   ),
 }));
@@ -44,8 +45,22 @@ const simplifiedGraph = {
     { id: 'materials', label: 'Matériels', kind: 'entity', count: 3 },
   ],
   edges: [
-    { id: 'company-fleet', source: 'company', target: 'fleet', kind: 'group', hierarchy: true },
-    { id: 'fleet-materials', source: 'fleet', target: 'materials', kind: 'group', hierarchy: true },
+    {
+      id: 'company-fleet',
+      source: 'company',
+      target: 'fleet',
+      label: 'contient',
+      kind: 'group',
+      hierarchy: true,
+    },
+    {
+      id: 'fleet-materials',
+      source: 'fleet',
+      target: 'materials',
+      label: 'fabrique',
+      kind: 'group',
+      hierarchy: true,
+    },
   ],
 };
 
@@ -88,6 +103,9 @@ describe('RelationsPage', () => {
     expect(await screen.findByRole('button', { name: 'Matériels' })).toBeVisible();
     expect(mocks.getRelationsGraph).toHaveBeenCalledWith('simplified', 'records');
     expect(screen.queryByRole('button', { name: 'Fichiers des matériels' })).toBeNull();
+    expect(screen.queryByText('contient')).not.toBeInTheDocument();
+    expect(screen.queryByText('fabrique')).not.toBeInTheDocument();
+    expect(screen.queryByText('Relation directe')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Vue complète' }));
 

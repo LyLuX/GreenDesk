@@ -44,30 +44,19 @@ describe('RelationsRepository', () => {
     });
   });
 
-  it('loads every visible user page and scopes actual records to the selected company', async () => {
-    const firstRows = Array.from({ length: 100 }, (_, id) => ({ id: id + 1 }));
-    const userRepository = {
-      findAll: jest
-        .fn()
-        .mockResolvedValueOnce({ count: 101, rows: firstRows })
-        .mockResolvedValueOnce({ count: 101, rows: [{ id: 101 }] }),
-    };
+  it('scopes actual fleet records to the selected company', async () => {
     const materialFindAll = jest
       .spyOn(Material, 'findAll')
       .mockResolvedValue([{ id: 10, uuid: 'material-uuid', name: 'Compresseur' }]);
-    const repository = new RecordRelationsRepository(userRepository);
+    const repository = new RecordRelationsRepository();
 
     const records = await runWithCompanyScope(
       { companyId: 42, companyUuid: 'company-uuid', accessAll: false },
-      () => repository.getRecords(['users', 'materials'], { visibleRoleNames: ['MANAGER'] }),
+      () => repository.getRecords(['materials']),
     );
 
-    expect(records.users).toHaveLength(101);
-    expect(userRepository.findAll).toHaveBeenNthCalledWith(2, {
-      companyId: 42,
-      visibleRoleNames: ['MANAGER'],
-      page: 2,
-      limit: 100,
+    expect(records).toEqual({
+      materials: [{ id: 10, uuid: 'material-uuid', name: 'Compresseur' }],
     });
     expect(materialFindAll).toHaveBeenCalledWith(
       expect.objectContaining({ where: { companyId: 42 } }),

@@ -169,18 +169,30 @@ describe('RecordRelationsService', () => {
         expect.objectContaining({
           source: 'material:material-uuid',
           target: 'plan:plan-uuid',
-          label: 'possède',
+          label: '',
         }),
         expect.objectContaining({
           source: 'plan:plan-uuid',
           target: 'part:part-uuid',
-          label: 'prévoit 2 pièces',
+          label: '',
         }),
       ]),
     );
     expect(dataSource.getRecords).toHaveBeenCalledWith(
       expect.arrayContaining(['materials', 'plans', 'parts', 'taskParts']),
-      { visibleRoleNames: [] },
+    );
+    expect(dataSource.getRecords.mock.calls[0][0]).toEqual(
+      expect.not.arrayContaining([
+        'users',
+        'roles',
+        'permissions',
+        'planExecutions',
+        'interventions',
+        'partUsages',
+        'priceHistory',
+        'stockMovements',
+        'auditLogs',
+      ]),
     );
   });
 

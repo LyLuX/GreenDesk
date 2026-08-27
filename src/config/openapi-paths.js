@@ -1425,7 +1425,7 @@ export const openApiPaths = {
       tags: ['Relations'],
       summary: 'Retourne la cartographie des relations de la société active.',
       description:
-        'Nécessite `relations.read`. Les nœuds sont filtrés avec les permissions de consultation propres à chaque ressource. Le scope `records` expose les enregistrements réels de la société active et leurs associations persistées ; `models` conserve la cartographie structurelle et ses compteurs. Le mode `simplified` expose les relations métier principales ; le mode `complete` ajoute les exécutions, fichiers, consommations et les 100 journaux d’audit les plus récents parmi ceux autorisés. Les pages d’historique dédiées restent disponibles pour consulter les journaux plus anciens.',
+        'Nécessite `relations.read`. Les nœuds sont filtrés avec les permissions de consultation propres à chaque ressource. Le scope `records` expose uniquement les enregistrements réels des branches Gestion du parc et Maintenance de la société active, avec leurs associations persistées sans libellé ; son mode `complete` ajoute les fichiers des matériels autorisés. Le scope `models` conserve la cartographie structurelle et ses compteurs, avec ses deux niveaux de détail.',
       security: secure,
       parameters: [
         {

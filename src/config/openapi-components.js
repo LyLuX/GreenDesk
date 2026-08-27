@@ -1342,7 +1342,10 @@ export const openApiSchemas = {
     required: ['id', 'label', 'kind'],
     properties: {
       id: { type: 'string' },
-      label: { type: 'string' },
+      label: {
+        type: 'string',
+        description: 'Libellé structurel, vide pour les relations entre enregistrements réels.',
+      },
       description: { type: 'string' },
       kind: { type: 'string', enum: ['company', 'domain', 'entity', 'technical'] },
       count: { type: 'integer', minimum: 0 },

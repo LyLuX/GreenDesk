@@ -3,7 +3,6 @@
 /* Relationship map */
 .relation-page-header,
 .relations-toolbar,
-.relations-legend,
 .relation-node-heading {
   display: flex;
   align-items: center;
@@ -33,38 +32,6 @@
   padding: 0.85rem 1rem;
   border-bottom: 1px solid #e2e9e5;
   background: #f8faf9;
-}
-
-.relations-legend {
-  flex-wrap: wrap;
-  gap: 0.65rem 1rem;
-  color: #52635a;
-  font-size: 0.8rem;
-}
-
-.relations-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.relation-legend-line {
-  display: inline-block;
-  width: 1.8rem;
-  border-top: 2px solid;
-}
-
-.relation-legend-direct {
-  border-color: #287a50;
-}
-
-.relation-legend-association {
-  border-color: #6b57a4;
-}
-
-.relation-legend-derived {
-  border-color: #b37816;
-  border-top-style: dashed;
 }
 
 .relations-canvas {
@@ -194,10 +161,6 @@
 
 .relation-node-dimmed {
   opacity: 0.34;
-}
-
-.relations-canvas .react-flow__edge-label {
-  pointer-events: none;
 }
 
 .relations-canvas .react-flow__controls {
