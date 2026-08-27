@@ -10,12 +10,16 @@ describe('RelationsController', () => {
     const response = { json: jest.fn() };
 
     await controller.getGraph(
-      { query: { mode: 'complete' }, user: { permissions: ['relations.read'] } },
+      {
+        query: { mode: 'complete', scope: 'records' },
+        user: { permissions: ['relations.read'] },
+      },
       response,
     );
 
     expect(service.getGraph).toHaveBeenCalledWith({
       mode: 'complete',
+      scope: 'records',
       permissions: ['relations.read'],
     });
     expect(response.json).toHaveBeenCalledWith({ success: true, data: graph });

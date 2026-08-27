@@ -19,7 +19,6 @@ vi.mock('@xyflow/react', () => ({
   Controls: () => null,
   Handle: () => null,
   MarkerType: { ArrowClosed: 'arrow-closed' },
-  MiniMap: () => null,
   Position: { Left: 'left', Right: 'right' },
   ReactFlowProvider: ({ children }) => children,
   useReactFlow: () => ({ fitView: vi.fn() }),
@@ -87,13 +86,16 @@ describe('RelationsPage', () => {
     );
 
     expect(await screen.findByRole('button', { name: 'Matériels' })).toBeVisible();
-    expect(mocks.getRelationsGraph).toHaveBeenCalledWith('simplified');
+    expect(mocks.getRelationsGraph).toHaveBeenCalledWith('simplified', 'records');
     expect(screen.queryByRole('button', { name: 'Fichiers des matériels' })).toBeNull();
 
     await user.click(screen.getByRole('button', { name: 'Vue complète' }));
 
     expect(await screen.findByRole('button', { name: 'Fichiers des matériels' })).toBeVisible();
-    await waitFor(() => expect(mocks.getRelationsGraph).toHaveBeenCalledWith('complete'));
+    await waitFor(() =>
+      expect(mocks.getRelationsGraph).toHaveBeenCalledWith('complete', 'records'),
+    );
+    expect(screen.queryByText(/Utilisez la molette/i)).not.toBeInTheDocument();
   });
 
   it('removes the descendants of a collapsed hierarchy branch', () => {

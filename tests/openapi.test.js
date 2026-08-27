@@ -296,6 +296,7 @@ describe('OpenAPI contract', () => {
   it('documents the permission-filtered relationship graph modes', () => {
     const operation = swaggerSpec.paths['/relations'].get;
     const mode = operation.parameters.find((parameter) => parameter.name === 'mode');
+    const scope = operation.parameters.find((parameter) => parameter.name === 'scope');
 
     expect(operation.description).toContain('`relations.read`');
     expect(operation.description).toContain('permissions de consultation');
@@ -304,8 +305,17 @@ describe('OpenAPI contract', () => {
       enum: ['simplified', 'complete'],
       default: 'simplified',
     });
+    expect(scope.schema).toEqual({
+      type: 'string',
+      enum: ['models', 'records'],
+      default: 'models',
+    });
     expect(swaggerSpec.components.schemas.RelationGraph.properties).toEqual(
-      expect.objectContaining({ nodes: expect.any(Object), edges: expect.any(Object) }),
+      expect.objectContaining({
+        scope: expect.any(Object),
+        nodes: expect.any(Object),
+        edges: expect.any(Object),
+      }),
     );
   });
 

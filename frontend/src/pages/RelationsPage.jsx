@@ -6,7 +6,6 @@ import {
   Controls,
   Handle,
   MarkerType,
-  MiniMap,
   Position,
   ReactFlow,
   ReactFlowProvider,
@@ -21,7 +20,7 @@ import Loader from '../components/Loader.jsx';
 import StatusPanel from '../components/StatusPanel.jsx';
 
 const NODE_WIDTH = 230;
-const NODE_HEIGHT = 104;
+const NODE_HEIGHT = 124;
 const edgeStyles = Object.freeze({
   group: { stroke: '#82918a', strokeWidth: 1.5 },
   direct: { stroke: '#287a50', strokeWidth: 2 },
@@ -59,7 +58,9 @@ export const layoutRelationGraph = (nodes, edges) => {
   layout.setDefaultEdgeLabel(() => ({}));
   layout.setGraph({ rankdir: 'LR', ranksep: 105, nodesep: 46, marginx: 28, marginy: 28 });
   nodes.forEach(({ id }) => layout.setNode(id, { width: NODE_WIDTH, height: NODE_HEIGHT }));
-  edges.forEach(({ source, target }) => layout.setEdge(source, target));
+  edges
+    .filter(({ hierarchy, layout: affectsLayout }) => hierarchy || affectsLayout)
+    .forEach(({ source, target }) => layout.setEdge(source, target));
   dagre.layout(layout);
   return nodes.map((item) => {
     const position = layout.node(item.id);
@@ -138,7 +139,7 @@ function RelationsGraphPage() {
     setLoading(true);
     setError('');
     try {
-      const response = await getRelationsGraph(mode);
+      const response = await getRelationsGraph(mode, 'records');
       const next = response.data?.data;
       if (!next || !Array.isArray(next.nodes) || !Array.isArray(next.edges)) {
         throw new Error('Réponse de cartographie invalide.');
@@ -240,7 +241,7 @@ function RelationsGraphPage() {
         <div>
           <h1 className="page-title">Relations des entités</h1>
           <p className="page-subtitle">
-            Explorez les modèles et leurs relations pour{' '}
+            Explorez les enregistrements et leurs relations pour{' '}
             {graph?.company?.name ?? 'la société active'}.
           </p>
         </div>
@@ -335,25 +336,10 @@ function RelationsGraphPage() {
                 aria-label="Graphe interactif des relations entre les entités"
               >
                 <Background gap={22} size={1} color="#d8e2dc" />
-                <MiniMap
-                  pannable
-                  zoomable
-                  nodeColor={(item) => {
-                    const kind = item.data?.kind;
-                    if (kind === 'company') return '#236941';
-                    if (kind === 'domain') return '#7aa88c';
-                    if (kind === 'technical') return '#d6aa5c';
-                    return '#7b69ad';
-                  }}
-                />
                 <Controls showInteractive={false} />
               </ReactFlow>
             )}
           </div>
-          <p className="relations-help mb-0">
-            Utilisez la molette pour zoomer, faites glisser le fond pour vous déplacer et cliquez
-            sur un nœud pour isoler ses relations directes.
-          </p>
         </section>
       )}
     </main>

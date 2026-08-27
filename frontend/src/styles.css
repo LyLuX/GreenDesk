@@ -69,8 +69,8 @@
 
 .relations-canvas {
   position: relative;
-  height: clamp(34rem, calc(100vh - 18rem), 58rem);
-  min-height: 34rem;
+  height: clamp(24rem, calc(100dvh - 22rem), 42rem);
+  min-height: 24rem;
   background: #f7faf8;
 }
 
@@ -79,16 +79,9 @@
   inset: 0;
 }
 
-.relations-help {
-  padding: 0.7rem 1rem;
-  border-top: 1px solid #e2e9e5;
-  color: #63736b;
-  font-size: 0.82rem;
-}
-
 .relation-node {
   width: 230px;
-  min-height: 104px;
+  height: 124px;
   padding: 0.8rem 0.85rem;
   border: 2px solid #8fa69a;
   border-radius: 0.8rem;
@@ -167,6 +160,13 @@
   font-size: 0.76rem;
 }
 
+.relation-node-description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .relation-node-link {
   margin-top: 0.55rem;
   padding: 0;
@@ -200,12 +200,6 @@
   pointer-events: none;
 }
 
-.relations-canvas .react-flow__minimap {
-  border: 1px solid #cfdad4;
-  border-radius: 0.55rem;
-  background: rgb(255 255 255 / 92%);
-}
-
 .relations-canvas .react-flow__controls {
   overflow: hidden;
   border: 1px solid #cfdad4;
@@ -225,12 +219,8 @@
   }
 
   .relations-canvas {
-    height: calc(100vh - 20rem);
-    min-height: 30rem;
-  }
-
-  .relations-canvas .react-flow__minimap {
-    display: none;
+    height: clamp(22rem, calc(100dvh - 25rem), 34rem);
+    min-height: 22rem;
   }
 }
 

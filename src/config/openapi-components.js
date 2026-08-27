@@ -1346,6 +1346,10 @@ export const openApiSchemas = {
       description: { type: 'string' },
       kind: { type: 'string', enum: ['company', 'domain', 'entity', 'technical'] },
       count: { type: 'integer', minimum: 0 },
+      recordType: {
+        type: 'string',
+        description: 'Type métier de l’enregistrement lorsque le scope vaut `records`.',
+      },
       path: {
         type: 'string',
         description: 'Route frontend autorisée ouverte depuis le nœud.',
@@ -1365,12 +1369,17 @@ export const openApiSchemas = {
         type: 'boolean',
         description: 'Indique que la relation participe au dépliage de la hiérarchie.',
       },
+      layout: {
+        type: 'boolean',
+        description: 'Indique que la relation influence la disposition des nœuds.',
+      },
     },
   },
   RelationGraph: {
     type: 'object',
-    required: ['mode', 'company', 'nodes', 'edges'],
+    required: ['scope', 'mode', 'company', 'nodes', 'edges'],
     properties: {
+      scope: { type: 'string', enum: ['models', 'records'] },
       mode: { type: 'string', enum: ['simplified', 'complete'] },
       company: {
         type: 'object',

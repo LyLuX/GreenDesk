@@ -1425,7 +1425,7 @@ export const openApiPaths = {
       tags: ['Relations'],
       summary: 'Retourne la cartographie des relations de la société active.',
       description:
-        'Nécessite `relations.read`. Les nœuds et compteurs sont filtrés avec les permissions de consultation propres à chaque ressource. Le mode `simplified` expose les relations métier principales ; le mode `complete` ajoute les associations, exécutions et journaux techniques autorisés.',
+        'Nécessite `relations.read`. Les nœuds sont filtrés avec les permissions de consultation propres à chaque ressource. Le scope `records` expose les enregistrements réels de la société active et leurs associations persistées ; `models` conserve la cartographie structurelle et ses compteurs. Le mode `simplified` expose les relations métier principales ; le mode `complete` ajoute les exécutions, fichiers, consommations et les 100 journaux d’audit les plus récents parmi ceux autorisés. Les pages d’historique dédiées restent disponibles pour consulter les journaux plus anciens.',
       security: secure,
       parameters: [
         {
@@ -1435,6 +1435,15 @@ export const openApiPaths = {
             type: 'string',
             enum: ['simplified', 'complete'],
             default: 'simplified',
+          },
+        },
+        {
+          name: 'scope',
+          in: 'query',
+          schema: {
+            type: 'string',
+            enum: ['models', 'records'],
+            default: 'models',
           },
         },
       ],

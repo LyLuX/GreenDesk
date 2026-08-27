@@ -4,6 +4,8 @@ import { runWithCompanyScope } from '../src/core/company/company-context.js';
 import { STOCKABLE_TYPES } from '../src/core/inventory/stock-operation.js';
 import StockMovement from '../src/core/inventory/stock-movement.model.js';
 import AuditLog from '../src/modules/audit/model/audit-log.model.js';
+import Material from '../src/modules/materials/model/material.model.js';
+import RecordRelationsRepository from '../src/modules/relations/repository/record-relations.repository.js';
 import RelationsRepository from '../src/modules/relations/repository/relations.repository.js';
 
 describe('RelationsRepository', () => {
@@ -40,5 +42,35 @@ describe('RelationsRepository', () => {
     expect(auditCount).toHaveBeenCalledWith({
       where: expect.objectContaining({ companyId: 42 }),
     });
+  });
+
+  it('loads every visible user page and scopes actual records to the selected company', async () => {
+    const firstRows = Array.from({ length: 100 }, (_, id) => ({ id: id + 1 }));
+    const userRepository = {
+      findAll: jest
+        .fn()
+        .mockResolvedValueOnce({ count: 101, rows: firstRows })
+        .mockResolvedValueOnce({ count: 101, rows: [{ id: 101 }] }),
+    };
+    const materialFindAll = jest
+      .spyOn(Material, 'findAll')
+      .mockResolvedValue([{ id: 10, uuid: 'material-uuid', name: 'Compresseur' }]);
+    const repository = new RecordRelationsRepository(userRepository);
+
+    const records = await runWithCompanyScope(
+      { companyId: 42, companyUuid: 'company-uuid', accessAll: false },
+      () => repository.getRecords(['users', 'materials'], { visibleRoleNames: ['MANAGER'] }),
+    );
+
+    expect(records.users).toHaveLength(101);
+    expect(userRepository.findAll).toHaveBeenNthCalledWith(2, {
+      companyId: 42,
+      visibleRoleNames: ['MANAGER'],
+      page: 2,
+      limit: 100,
+    });
+    expect(materialFindAll).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { companyId: 42 } }),
+    );
   });
 });

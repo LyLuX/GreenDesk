@@ -12,6 +12,7 @@ export default class RelationsController {
       successResponse(
         await this.service.getGraph({
           mode: request.query.mode,
+          scope: request.query.scope,
           permissions: request.user?.permissions ?? [],
         }),
       ),

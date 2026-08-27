@@ -4,6 +4,7 @@ import { readableRoleNames } from '../../../core/constants/user-visibility-permi
 import historyPermissions from '../../audit/history.permissions.js';
 import maintenancePermissions from '../../maintenance/maintenance.permissions.js';
 import RelationsRepository from '../repository/relations.repository.js';
+import RecordRelationsService from './record-relations.service.js';
 
 const node = (id, label, options = {}) => ({ id, label, ...options });
 const nodes = [
@@ -232,11 +233,17 @@ const hasNodePermission = (definition, permissionNames) => {
 
 /** Builds a permission-filtered map of the current company's model relationships. */
 export default class RelationsService {
-  constructor(repository = new RelationsRepository()) {
+  constructor(
+    repository = new RelationsRepository(),
+    recordService = new RecordRelationsService(),
+  ) {
     this.repository = repository;
+    this.recordService = recordService;
   }
 
-  async getGraph({ mode = 'simplified', permissions = [] } = {}) {
+  async getGraph({ mode = 'simplified', scope = 'models', permissions = [] } = {}) {
+    if (scope === 'records') return this.recordService.getGraph({ mode, permissions });
+
     const permissionNames = new Set(permissions);
     const complete = mode === 'complete';
     const allowedDefinitions = nodes.filter(
@@ -272,6 +279,7 @@ export default class RelationsService {
     );
 
     return {
+      scope: 'models',
       mode,
       company: company ? { uuid: company.uuid, name: company.name } : null,
       nodes: visibleDefinitions.map(
