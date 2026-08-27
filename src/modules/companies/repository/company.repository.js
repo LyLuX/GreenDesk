@@ -7,7 +7,7 @@ import Company from '../model/company.model.js';
 
 /** Persistence operations for global companies and user affiliations. */
 export default class CompanyRepository extends TransactionalRepository {
-  findAll({ search, active, page, limit, accessibleUuids } = {}) {
+  findAll({ search, active, deleted = false, page, limit, accessibleUuids } = {}) {
     const pagination = normalizePagination({ page, limit });
     const where = {};
     if (search) {
@@ -16,12 +16,14 @@ export default class CompanyRepository extends TransactionalRepository {
     }
     const normalizedActive = normalizeBooleanFilter(active);
     if (normalizedActive !== undefined) where.active = normalizedActive;
+    if (deleted) where.deletedAt = { [Op.ne]: null };
     if (Array.isArray(accessibleUuids)) where.uuid = { [Op.in]: accessibleUuids };
     return Company.findAndCountAll({
       where,
       order: [['name', 'ASC']],
       limit: pagination.limit,
       offset: pagination.offset,
+      paranoid: !deleted,
     });
   }
 

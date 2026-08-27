@@ -8,6 +8,7 @@ const { api, createReferenceApi, hasPermission, notify } = vi.hoisted(() => ({
     create: vi.fn(),
     update: vi.fn(),
     remove: vi.fn(),
+    restore: vi.fn(),
   },
   createReferenceApi: vi.fn(),
   hasPermission: vi.fn(),
@@ -34,6 +35,7 @@ describe('ReferencePage pagination', () => {
     hasPermission.mockReturnValue(true);
     createReferenceApi.mockReturnValue(api);
     api.update.mockResolvedValue({ data: { data: {} } });
+    api.restore.mockResolvedValue({ data: { data: {} } });
   });
 
   afterEach(cleanup);
@@ -114,6 +116,44 @@ describe('ReferencePage pagination', () => {
       expect.not.objectContaining({ active: 'false' }),
       expect.any(AbortSignal),
     );
+  });
+
+  it('restores a deleted record only through its dedicated permission action', async () => {
+    api.list.mockResolvedValue({
+      data: {
+        data: [
+          {
+            uuid: 'deleted-company',
+            name: 'Société supprimée',
+            deletedAt: '2026-08-27T08:00:00.000Z',
+          },
+        ],
+      },
+    });
+    const user = userEvent.setup();
+
+    render(
+      <ReferencePage
+        title="Sociétés"
+        resource="companies"
+        createPermission="companies.create"
+        updatePermission="companies.update"
+        deletePermission="companies.delete"
+        deletedUpdatePermission="companies.deleted.update"
+        fields={[{ name: 'name', label: 'Nom' }]}
+        columns={[{ key: 'name', label: 'Nom' }]}
+      />,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Restaurer Société supprimée' }));
+    const dialog = within(screen.getByRole('dialog', { name: 'Restaurer société' }));
+    expect(dialog.getByText(/statut précédent/)).toBeVisible();
+    expect(dialog.getByRole('button', { name: 'Restaurer' })).toHaveClass('btn-outline-activation');
+
+    await user.click(dialog.getByRole('button', { name: 'Restaurer' }));
+
+    expect(api.restore).toHaveBeenCalledWith('deleted-company');
+    expect(notify).toHaveBeenCalledWith('success', 'Société restaurée.');
   });
 
   it('sends the default material status and purchase-date sort to the backend', async () => {

@@ -8,6 +8,7 @@ export const createReferenceApi = (resource) => ({
   create: (payload) => client.post(`/v1/${resource}`, payload),
   update: (uuid, payload) => client.put(`/v1/${resource}/${uuid}`, payload),
   remove: (uuid) => client.delete(`/v1/${resource}/${uuid}`),
+  restore: (uuid) => client.post(`/v1/${resource}/${uuid}/restore`),
 });
 
 export const listMaterialOptions = (params, signal) =>

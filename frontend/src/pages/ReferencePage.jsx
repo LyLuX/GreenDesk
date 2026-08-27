@@ -26,6 +26,7 @@ export default function ReferencePage({
   createPermission,
   updatePermission,
   deletePermission,
+  deletedUpdatePermission,
   statusPermission = updatePermission,
   statusAction = false,
   filters = [],
@@ -63,6 +64,9 @@ export default function ReferencePage({
   const [formError, setFormError] = useState('');
   const [statusError, setStatusError] = useState('');
   const canUpdateRecord = hasPermission(updatePermission);
+  const canRestoreRecord = Boolean(
+    deletedUpdatePermission && hasPermission(deletedUpdatePermission),
+  );
   const canUploadFile = Boolean(
     fileField && (!fileField.uploadPermission || hasPermission(fileField.uploadPermission)),
   );
@@ -75,11 +79,11 @@ export default function ReferencePage({
     async (signal) => {
       setIsLoading(true);
       try {
-        const apiFilterValues = Object.fromEntries(
-          Object.entries(filterValues).filter(
-            ([name]) => !filters.find((filter) => filter.name === name)?.clientSide,
-          ),
-        );
+        const apiFilterValues = filters.reduce((values, filter) => {
+          if (filter.clientSide) return values;
+          const value = filterValues[filter.name];
+          return { ...values, ...(filter.toQuery?.(value) ?? { [filter.name]: value }) };
+        }, {});
         const response = await api.list(
           {
             ...(debouncedSearch ? { search: debouncedSearch } : {}),
@@ -94,8 +98,10 @@ export default function ReferencePage({
             filters.every(
               (filter) =>
                 !filter.clientSide ||
-                !filterValues[filter.name] ||
-                String(row[filter.name]) === filterValues[filter.name],
+                filter.matches?.(row, filterValues[filter.name]) ||
+                (!filter.matches &&
+                  (!filterValues[filter.name] ||
+                    String(row[filter.name]) === filterValues[filter.name])),
             ),
           );
           if (pagination) {
@@ -252,6 +258,24 @@ export default function ReferencePage({
       setStatusActionId(null);
     }
   };
+  const restore = async (row) => {
+    if (statusActionId) return false;
+    setStatusActionId(row.uuid);
+    setStatusError('');
+    try {
+      await api.restore(row.uuid);
+      notify('success', `${title.slice(0, -1)} restaurée.`);
+      if (rows.length === 1 && page > 1) setPage((current) => current - 1);
+      else await load();
+      await onChanged?.();
+      return true;
+    } catch (error) {
+      setStatusError(getApiErrorMessage(error));
+      return false;
+    } finally {
+      setStatusActionId(null);
+    }
+  };
   const requestStatusChange = (row) => {
     if (!row.active) {
       toggle(row);
@@ -264,7 +288,9 @@ export default function ReferencePage({
     const completed =
       confirmation.action === 'delete'
         ? await remove(confirmation.row)
-        : await toggle(confirmation.row);
+        : confirmation.action === 'restore'
+          ? await restore(confirmation.row)
+          : await toggle(confirmation.row);
     if (completed) setConfirmation(null);
   };
   const emptyMessage = debouncedSearch
@@ -437,6 +463,9 @@ export default function ReferencePage({
             ? (row) => setConfirmation({ action: 'delete', row })
             : undefined
         }
+        onRestore={
+          canRestoreRecord ? (row) => setConfirmation({ action: 'restore', row }) : undefined
+        }
         onView={detailPath ? (row) => navigate(detailPath(row)) : undefined}
       />
       <PaginationControls
@@ -482,17 +511,28 @@ export default function ReferencePage({
         title={
           confirmation?.action === 'delete'
             ? `Supprimer ${title.slice(0, -1).toLowerCase()}`
-            : `Désactiver ${title.slice(0, -1).toLowerCase()}`
+            : confirmation?.action === 'restore'
+              ? `Restaurer ${title.slice(0, -1).toLowerCase()}`
+              : `Désactiver ${title.slice(0, -1).toLowerCase()}`
         }
         description={
           confirmation?.action === 'delete'
             ? `« ${confirmation?.row.name ?? ''} » sera supprimé de la liste.`
-            : `« ${confirmation?.row.name ?? ''} » ne sera plus disponible dans les sélections.`
+            : confirmation?.action === 'restore'
+              ? `« ${confirmation?.row.name ?? ''} » sera de nouveau disponible avec son statut précédent.`
+              : `« ${confirmation?.row.name ?? ''} » ne sera plus disponible dans les sélections.`
         }
-        confirmLabel={confirmation?.action === 'delete' ? 'Supprimer' : 'Désactiver'}
+        confirmLabel={
+          confirmation?.action === 'delete'
+            ? 'Supprimer'
+            : confirmation?.action === 'restore'
+              ? 'Restaurer'
+              : 'Désactiver'
+        }
         onClose={() => !statusActionId && setConfirmation(null)}
         onConfirm={confirmAction}
         busy={Boolean(statusActionId)}
+        destructive={confirmation?.action !== 'restore'}
       />
     </main>
   );

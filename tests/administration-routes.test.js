@@ -19,6 +19,7 @@ describe('granular administration route permissions', () => {
   beforeAll(() => {
     jest.spyOn(User, 'findOne').mockResolvedValue({ id: 1 });
     jest.spyOn(Company, 'findOne').mockResolvedValue({ id: 1, uuid, active: true });
+    jest.spyOn(Company, 'findAndCountAll').mockResolvedValue({ count: 0, rows: [] });
     jest.spyOn(User, 'findAndCountAll').mockResolvedValue({ count: 0, rows: [] });
   });
 
@@ -120,7 +121,33 @@ describe('granular administration route permissions', () => {
       .expect(403);
     await request(app)
       .post('/api/v1/users/invalid/restore')
-      .set('Authorization', authorization(['users.restore']))
+      .set('Authorization', authorization(['users.deleted.update']))
+      .expect(400);
+  });
+
+  it('requires dedicated permissions for deleted company visibility and restoration', async () => {
+    await request(app)
+      .get('/api/v1/companies?deleted=true')
+      .set('Authorization', authorization(['companies.read', 'companies.access.all']))
+      .expect(403);
+    await request(app)
+      .get('/api/v1/companies?deleted=true')
+      .set(
+        'Authorization',
+        authorization(['companies.read', 'companies.deleted.read', 'companies.access.all']),
+      )
+      .expect(200);
+    expect(Company.findAndCountAll).toHaveBeenLastCalledWith(
+      expect.objectContaining({ paranoid: false }),
+    );
+
+    await request(app)
+      .post('/api/v1/companies/invalid/restore')
+      .set('Authorization', authorization(['companies.deleted.read']))
+      .expect(403);
+    await request(app)
+      .post('/api/v1/companies/invalid/restore')
+      .set('Authorization', authorization(['companies.deleted.update']))
       .expect(400);
   });
 

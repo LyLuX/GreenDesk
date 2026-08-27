@@ -5,8 +5,10 @@ const administrationPermissions = Object.freeze({
     create: 'users.create',
     update: 'users.update',
     delete: 'users.delete',
-    restore: 'users.restore',
-    deleted: Object.freeze({ read: 'users.deleted.read' }),
+    deleted: Object.freeze({
+      read: 'users.deleted.read',
+      update: 'users.deleted.update',
+    }),
     status: Object.freeze({ update: 'users.status.update' }),
     password: Object.freeze({ update: 'users.password.update' }),
     roles: Object.freeze({ update: 'users.roles.update' }),

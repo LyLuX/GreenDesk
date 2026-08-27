@@ -210,6 +210,7 @@ describe('UserService', () => {
       },
       2,
       'USER',
+      { actorClaims: { permissions: ['users.deleted.update'] } },
     );
 
     expect(userRepository.restore).toHaveBeenCalledWith(deletedUser, { transaction });
@@ -229,6 +230,28 @@ describe('UserService', () => {
       expect.objectContaining({ action: 'USER_RESTORED' }),
       { transaction },
     );
+  });
+
+  it('requires deleted-user update permission before recreating a deleted account', async () => {
+    const deletedUser = { ...user, deletedAt: new Date() };
+    const { service, userRepository } = createService();
+    userRepository.findByEmail.mockResolvedValue(deletedUser);
+
+    await expect(
+      service.create(
+        {
+          firstName: 'Ada',
+          lastName: 'Lovelace',
+          email: 'ADA@GREENDESK.LOCAL',
+          password: 'NewSecurePass123!',
+        },
+        2,
+        'USER',
+        { actorClaims: { permissions: ['users.create'] } },
+      ),
+    ).rejects.toMatchObject({ statusCode: 403 });
+
+    expect(userRepository.restore).not.toHaveBeenCalled();
   });
 
   it('invalidates sessions when deleting a user', async () => {

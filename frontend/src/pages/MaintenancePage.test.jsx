@@ -644,10 +644,10 @@ describe('MaintenancePage', () => {
     );
 
     expect(screen.queryByLabelText('Heures moteur')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Effectuer sans changement de pièce' })).toHaveClass(
-      'btn-outline-danger',
-    );
-    await user.click(screen.getByRole('button', { name: 'Effectuer en changeant la pièce' }));
+    expect(
+      screen.getByRole('button', { name: 'Effectuer sans remplacement de pièce' }),
+    ).toHaveClass('btn-outline-danger');
+    await user.click(screen.getByRole('button', { name: 'Effectuer en remplaçant la pièce' }));
 
     await waitFor(() =>
       expect(mocks.executeMaintenance).toHaveBeenCalledWith('maintenance-uuid', {
@@ -668,20 +668,20 @@ describe('MaintenancePage', () => {
       }),
     );
 
-    await user.click(screen.getByRole('button', { name: 'Effectuer sans changement de pièce' }));
+    await user.click(screen.getByRole('button', { name: 'Effectuer sans remplacement de pièce' }));
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'Un commentaire est obligatoire sans changement de pièce.',
+      'Un commentaire est obligatoire sans remplacement de pièce.',
     );
     await user.type(screen.getByLabelText('Commentaire'), 'Bougie encore en bon état');
-    await user.click(screen.getByRole('button', { name: 'Effectuer sans changement de pièce' }));
+    await user.click(screen.getByRole('button', { name: 'Effectuer sans remplacement de pièce' }));
 
     const confirmation = screen.getByRole('dialog', {
-      name: 'Effectuer sans changement de pièce',
+      name: 'Effectuer sans remplacement de pièce',
     });
     expect(confirmation).toHaveTextContent('Bougie × 1');
     expect(confirmation).toHaveTextContent('ne seront pas retirées du stock');
     await user.click(
-      within(confirmation).getByRole('button', { name: 'Confirmer sans changer les pièces' }),
+      within(confirmation).getByRole('button', { name: 'Confirmer sans remplacer les pièces' }),
     );
 
     await waitFor(() =>
@@ -706,9 +706,9 @@ describe('MaintenancePage', () => {
       }),
     );
 
-    expect(screen.getByRole('button', { name: 'Effectuer en changeant la pièce' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Effectuer en remplaçant la pièce' })).toBeVisible();
     expect(
-      screen.queryByRole('button', { name: 'Effectuer sans changement de pièce' }),
+      screen.queryByRole('button', { name: 'Effectuer sans remplacement de pièce' }),
     ).not.toBeInTheDocument();
   });
 

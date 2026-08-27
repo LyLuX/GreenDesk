@@ -186,7 +186,7 @@ describe('administrator table pagination', () => {
     mocks.users[0].deletedAt = '2026-08-23T08:00:00.000Z';
     mocks.restoreUser.mockResolvedValue({ data: { success: true, data: mocks.users[0] } });
     mocks.hasPermission.mockImplementation((permission) =>
-      ['users.read', 'users.deleted.read', 'users.restore'].includes(permission),
+      ['users.read', 'users.deleted.read', 'users.deleted.update'].includes(permission),
     );
 
     render(<UsersPage />);

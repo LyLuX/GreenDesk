@@ -90,6 +90,11 @@ const company = {
     description: { ...nullableString, maxLength: 1000 },
     active: { type: 'boolean' },
     ...timestamps,
+    deletedAt: {
+      ...nullableDateTime,
+      description:
+        'Date de suppression logique de la société, remise à `null` après une restauration réussie.',
+    },
   },
 };
 

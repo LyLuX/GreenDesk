@@ -35,4 +35,11 @@ export default class CompanyController {
     await this.service.remove(request.params.uuid, request.user.userId, request.user);
     response.status(HTTP_STATUS.NO_CONTENT).send();
   }
+  async restore(request, response) {
+    response.json(
+      successResponse(
+        await this.service.restore(request.params.uuid, request.user.userId, request.user),
+      ),
+    );
+  }
 }

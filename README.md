@@ -4,7 +4,7 @@ Backend Node.js et frontend React pour la gestion de parc matériel des espaces 
 
 ## Versionnement
 
-La version actuelle de GreenDesk est **7.26.4**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
+La version actuelle de GreenDesk est **7.27.0**. Le backend, le frontend, leurs lockfiles, l’endpoint de santé et le contrat Swagger/OpenAPI utilisent la même version.
 
 GreenDesk suit le versionnement sémantique `MAJOR.MINOR.PATCH` :
 
@@ -49,7 +49,7 @@ Le gabarit principal occupe exactement la hauteur visible de la fenêtre, footer
 ## API
 
 - `GET|POST /api/v1/categories`, `GET|PUT|DELETE /api/v1/categories/:uuid`
-- `GET|POST /api/v1/companies`, `GET|PUT|DELETE /api/v1/companies/:uuid`
+- `GET|POST /api/v1/companies`, `GET|PUT|DELETE /api/v1/companies/:uuid`, `POST /api/v1/companies/:uuid/restore`
 - `GET|POST /api/v1/materials`, `GET|PUT|DELETE /api/v1/materials/:uuid`
 - `GET|POST /api/v1/manufacturers`, `PUT|DELETE /api/v1/manufacturers/:uuid`
 - `GET|POST|DELETE /api/v1/manufacturers/:uuid/logo`
@@ -76,16 +76,16 @@ Chaque fabricant peut recevoir un logo JPEG, PNG ou WebP de 2 Mo maximum. Les lo
 
 ### Permissions
 
-| Domaine                   | Permissions                                                                                                                      |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Sociétés                  | `companies.read`, `companies.create`, `companies.update`, `companies.status.update`, `companies.delete`, `companies.access.all`  |
-| Matériels                 | `materials.read`, `materials.create`, `materials.update`, `materials.delete`                                                     |
-| Fabricants                | `manufacturers.read`, `manufacturers.create`, `manufacturers.update`, `manufacturers.delete`                                     |
-| Fournisseurs              | `suppliers.read`, `suppliers.create`, `suppliers.update`, `suppliers.delete`                                                     |
-| Catégories                | `categories.read`, `categories.create`, `categories.update`, `categories.delete`                                                 |
-| Plans de maintenance      | `maintenance.read`, `maintenance.create`, `maintenance.update`, `maintenance.delete`, `maintenance.execute`                      |
-| Opérations de maintenance | `maintenance.operations.read`, `maintenance.operations.create`, `maintenance.operations.update`, `maintenance.operations.delete` |
-| Pièces de maintenance     | `maintenance.parts.read`, `maintenance.parts.create`, `maintenance.parts.update`, `maintenance.parts.delete`                     |
+| Domaine                   | Permissions                                                                                                                                                                           |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sociétés                  | `companies.read`, `companies.create`, `companies.update`, `companies.status.update`, `companies.delete`, `companies.deleted.read`, `companies.deleted.update`, `companies.access.all` |
+| Matériels                 | `materials.read`, `materials.create`, `materials.update`, `materials.delete`                                                                                                          |
+| Fabricants                | `manufacturers.read`, `manufacturers.create`, `manufacturers.update`, `manufacturers.delete`                                                                                          |
+| Fournisseurs              | `suppliers.read`, `suppliers.create`, `suppliers.update`, `suppliers.delete`                                                                                                          |
+| Catégories                | `categories.read`, `categories.create`, `categories.update`, `categories.delete`                                                                                                      |
+| Plans de maintenance      | `maintenance.read`, `maintenance.create`, `maintenance.update`, `maintenance.delete`, `maintenance.execute`                                                                           |
+| Opérations de maintenance | `maintenance.operations.read`, `maintenance.operations.create`, `maintenance.operations.update`, `maintenance.operations.delete`                                                      |
+| Pièces de maintenance     | `maintenance.parts.read`, `maintenance.parts.create`, `maintenance.parts.update`, `maintenance.parts.delete`                                                                          |
 
 L’activation et la désactivation des matériels, catégories, fabricants et fournisseurs utilisent
 la permission `update` de leur domaine ; aucune permission de statut supplémentaire n’est requise.
@@ -187,7 +187,7 @@ Un utilisateur peut appartenir à plusieurs sociétés. Le frontend sélectionne
 
 La connexion retourne un access token JWT et le profil utilisateur avec ses rôles, permissions et sociétés accessibles. La session est conservée dans le navigateur sans mot de passe, contrôlée à la restauration et supprimée sur expiration ou réponse HTTP 401. Les permissions déterminent les menus, actions et routes, tandis que le backend reste la source d’autorité.
 
-La liste d’administration des utilisateurs exclut les comptes supprimés par défaut et les trie en SQL par dernière connexion décroissante. `users.read` ouvre cette consultation dans la société active, ensuite limitée aux rôles couverts par les permissions lisibles `users.roles.<nom-du-rôle>.read` détenues, par exemple `users.roles.ADMIN.read`; `users.all.read` retire le filtre de rôle et `companies.access.all` retire séparément le filtre de société. Chaque rôle reçoit à sa création sa propre permission de visibilité, qui peut être accordée à d’autres rôles et qui est supprimée avec lui. Le nom d’un rôle est immuable après sa création. `users.companies.update` protège l’attribution des sociétés. Les utilisateurs qui possèdent `users.read` et `users.deleted.read` disposent du filtre `Supprimés`. La permission indépendante `users.restore` permet d’y restaurer un compte avec son statut, ses rôles, ses sociétés et son état de vérification précédents. Toute suppression, restauration ou modification des sociétés invalide les anciennes sessions du compte.
+La liste d’administration des utilisateurs exclut les comptes supprimés par défaut et les trie en SQL par dernière connexion décroissante. `users.read` ouvre cette consultation dans la société active, ensuite limitée aux rôles couverts par les permissions lisibles `users.roles.<nom-du-rôle>.read` détenues, par exemple `users.roles.ADMIN.read`; `users.all.read` retire le filtre de rôle et `companies.access.all` retire séparément le filtre de société. Chaque rôle reçoit à sa création sa propre permission de visibilité, qui peut être accordée à d’autres rôles et qui est supprimée avec lui. Le nom d’un rôle est immuable après sa création. `users.companies.update` protège l’attribution des sociétés. Les utilisateurs qui possèdent `users.read` et `users.deleted.read` disposent du filtre `Supprimés`; `users.deleted.update` permet d’y restaurer un compte avec son statut, ses rôles, ses sociétés et son état de vérification précédents. La liste des sociétés suit la même séparation avec `companies.deleted.read` pour consulter les sociétés supprimées et `companies.deleted.update` pour les restaurer en conservant leur statut précédent. Toute suppression, restauration ou modification des sociétés invalide les anciennes sessions du compte.
 
 Le modèle utilisateur normalise systématiquement le nom de famille en majuscules avant chaque création ou modification. Cette règle backend couvre l’administration, l’inscription publique, le seeder et la restauration par réinscription, indépendamment de la casse saisie dans le frontend.
 

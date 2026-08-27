@@ -102,6 +102,9 @@ export default class UserService {
         throw new AppError('Email is already in use', HTTP_STATUS.CONFLICT);
       const oldValues = existingUser ? this.publicUser(existingUser) : null;
       if (existingUser) {
+        if (!actorClaims?.permissions?.includes(administrationPermissions.users.deleted.update)) {
+          throw new AppError('Insufficient permissions', HTTP_STATUS.FORBIDDEN);
+        }
         await this.userRepository.restore(existingUser, { transaction });
         await this.userRepository.update(
           existingUser,

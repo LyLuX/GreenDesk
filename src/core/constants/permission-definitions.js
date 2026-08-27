@@ -22,7 +22,7 @@ const permissionDefinitions = [
   },
   { name: administrationPermissions.users.delete, description: 'Supprimer des utilisateurs.' },
   {
-    name: administrationPermissions.users.restore,
+    name: administrationPermissions.users.deleted.update,
     description: 'Restaurer des comptes utilisateur supprimés.',
   },
   {
@@ -59,6 +59,14 @@ const permissionDefinitions = [
     description: 'Activer ou désactiver des sociétés.',
   },
   { name: companyPermissions.delete, description: 'Supprimer des sociétés vides.' },
+  {
+    name: companyPermissions.deleted.read,
+    description: 'Consulter les sociétés supprimées.',
+  },
+  {
+    name: companyPermissions.deleted.update,
+    description: 'Restaurer des sociétés supprimées.',
+  },
   {
     name: companyPermissions.accessAll,
     description: 'Accéder aux données de toutes les sociétés sans restriction d’appartenance.',

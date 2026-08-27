@@ -18,6 +18,10 @@ import {
 
 const router = Router();
 const controller = new CompanyController();
+const authorizeDeletedCompanyListing = (request, response, next) => {
+  if (!request.query.deleted) return next();
+  return authorize(companyPermissions.deleted.read)(request, response, next);
+};
 
 router.use(authenticate);
 router.get(
@@ -25,6 +29,7 @@ router.get(
   authorize(companyPermissions.read),
   listCompanyValidator,
   validateRequest,
+  authorizeDeletedCompanyListing,
   asyncHandler(controller.getAll.bind(controller)),
 );
 router.get(
@@ -55,6 +60,13 @@ router.delete(
   companyUuidValidator,
   validateRequest,
   asyncHandler(controller.remove.bind(controller)),
+);
+router.post(
+  '/:uuid/restore',
+  authorize(companyPermissions.deleted.update),
+  companyUuidValidator,
+  validateRequest,
+  asyncHandler(controller.restore.bind(controller)),
 );
 
 export default router;

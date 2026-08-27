@@ -76,7 +76,7 @@ router.delete(
 );
 router.post(
   '/:uuid/restore',
-  authorize(administrationPermissions.users.restore),
+  authorize(administrationPermissions.users.deleted.update),
   userUuidValidator,
   validateRequest,
   asyncHandler(controller.restore.bind(controller)),

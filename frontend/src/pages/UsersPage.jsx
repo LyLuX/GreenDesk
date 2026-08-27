@@ -54,7 +54,7 @@ export default function UsersPage() {
   const canUpdateRoles = hasPermission(administrationPermissions.users.roles.update);
   const canUpdateCompanies = hasPermission(administrationPermissions.users.companies.update);
   const canDelete = hasPermission(administrationPermissions.users.delete);
-  const canRestore = hasPermission(administrationPermissions.users.restore);
+  const canRestore = hasPermission(administrationPermissions.users.deleted.update);
   const canReadDeletedUsers = hasPermission(administrationPermissions.users.deleted.read);
   const canResendVerification = hasPermission(
     administrationPermissions.users.emailVerification.resend,

@@ -322,7 +322,7 @@ export default function MaintenancePage() {
       notify(
         'success',
         partsAction === 'skip'
-          ? 'Entretien enregistré sans changement de pièce.'
+          ? 'Entretien enregistré sans remplacement de pièce.'
           : 'Entretien enregistré.',
       );
       close();
@@ -346,7 +346,7 @@ export default function MaintenancePage() {
     if (!form?.reportValidity()) return;
     const values = Object.fromEntries(new FormData(form));
     if (!values.comment?.trim()) {
-      setFormError('Un commentaire est obligatoire sans changement de pièce.');
+      setFormError('Un commentaire est obligatoire sans remplacement de pièce.');
       return;
     }
     setFormError('');
@@ -423,9 +423,9 @@ export default function MaintenancePage() {
   );
   const executeWithPartsLabel =
     executionPartCount === 1
-      ? 'Effectuer en changeant la pièce'
+      ? 'Effectuer en remplaçant la pièce'
       : executionPartCount > 1
-        ? 'Effectuer en changeant les pièces'
+        ? 'Effectuer en remplaçant les pièces'
         : 'Effectuer l’entretien';
   const skippedPartsDescription = activeItem?.parts
     ?.map((part) => `${part.name} × ${part.quantity}`)
@@ -872,7 +872,7 @@ export default function MaintenancePage() {
                 disabled={busy}
                 onClick={requestExecuteWithoutParts}
               >
-                Effectuer sans changement de pièce
+                Effectuer sans remplacement de pièce
               </button>
             )}
           </div>
@@ -882,9 +882,9 @@ export default function MaintenancePage() {
         open={
           dialog?.type === 'executeWithoutPartsConfirmation' && canExecuteWithoutPartReplacement
         }
-        title="Effectuer sans changement de pièce"
+        title="Effectuer sans remplacement de pièce"
         description={`Les pièces suivantes ne seront pas retirées du stock : ${skippedPartsDescription}. La prochaine échéance sera néanmoins recalculée.`}
-        confirmLabel="Confirmer sans changer les pièces"
+        confirmLabel="Confirmer sans remplacer les pièces"
         busy={busy}
         onClose={() =>
           !busy && setDialog({ type: 'execute', item: activeItem, draft: dialog?.values ?? {} })

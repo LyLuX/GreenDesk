@@ -6,13 +6,16 @@ export default function DataTable({
   onEdit,
   onStatus,
   onDelete,
+  onRestore,
   onView,
   renderActions,
   emptyMessage = 'Aucun élément trouvé.',
   actionLoadingId,
   compact = false,
 }) {
-  const hasActions = Boolean(renderActions || onView || onEdit || onStatus || onDelete);
+  const hasActions = Boolean(
+    renderActions || onView || onEdit || onStatus || onDelete || onRestore,
+  );
   const cellSpacing = compact ? 'px-3 py-3' : 'px-4 py-3';
   return (
     <div className="table-shell">
@@ -55,7 +58,18 @@ export default function DataTable({
                   {hasActions ? (
                     <td className={cellSpacing}>
                       {renderActions?.(row)}
-                      {onView && (
+                      {row.deletedAt && onRestore ? (
+                        <button
+                          aria-label={`Restaurer ${row.name ?? 'l’élément'}`}
+                          className="btn btn-sm btn-outline-activation flex-fill"
+                          type="button"
+                          onClick={() => onRestore(row)}
+                          disabled={actionLoadingId === row.uuid}
+                        >
+                          {actionLoadingId === row.uuid ? 'Restauration…' : 'Restaurer'}
+                        </button>
+                      ) : null}
+                      {!row.deletedAt && onView && (
                         <button
                           aria-label={`Voir ${row.name ?? 'l’élément'}`}
                           className="btn btn-sm btn-outline-brand flex-fill"
@@ -65,7 +79,7 @@ export default function DataTable({
                           Voir
                         </button>
                       )}
-                      {onEdit && (
+                      {!row.deletedAt && onEdit && (
                         <button
                           aria-label={`Modifier ${row.name ?? 'l’élément'}`}
                           className="btn btn-sm btn-outline-brand flex-fill ms-1 me-1"
@@ -76,7 +90,7 @@ export default function DataTable({
                           Editer
                         </button>
                       )}
-                      {onStatus && (
+                      {!row.deletedAt && onStatus && (
                         <button
                           aria-label={`${row.active ? 'Désactiver' : 'Activer'} ${row.name ?? 'l’élément'}`}
                           className={`btn btn-sm ${getStatusActionButtonClass(row.active)} ms-1 me-1`}
@@ -91,7 +105,7 @@ export default function DataTable({
                               : 'Activer'}
                         </button>
                       )}
-                      {onDelete && (
+                      {!row.deletedAt && onDelete && (
                         <button
                           aria-label={`Supprimer ${row.name ?? 'l’élément'}`}
                           className="btn btn-sm btn-outline-danger ms-1 me-1"

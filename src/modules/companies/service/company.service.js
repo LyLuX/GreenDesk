@@ -39,6 +39,9 @@ export default class CompanyService {
       }
       let company;
       if (existing) {
+        if (!claims.permissions?.includes(companyPermissions.deleted.update)) {
+          throw new AppError('Insufficient permissions', HTTP_STATUS.FORBIDDEN);
+        }
         await this.repository.restore(existing, { transaction });
         company = await this.repository.update(
           existing,
@@ -120,6 +123,34 @@ export default class CompanyService {
         },
         { transaction },
       );
+    });
+  }
+
+  async restore(uuid, userId, claims = null) {
+    this.assertAccessible(uuid, claims);
+    return this.repository.withTransaction(async (transaction) => {
+      const company = await this.repository.findByUuid(uuid, {
+        withDeleted: true,
+        transaction,
+      });
+      if (!company) throw new AppError('Société introuvable.', HTTP_STATUS.NOT_FOUND);
+      if (!company.deletedAt) {
+        throw new AppError('Cette société n’est pas supprimée.', HTTP_STATUS.CONFLICT);
+      }
+      const oldValues = company.toJSON();
+      await this.repository.restore(company, { transaction });
+      await this.auditService.record(
+        {
+          userId,
+          action: 'RESTORE',
+          entity: 'COMPANY',
+          entityUuid: company.uuid,
+          oldValues,
+          newValues: company.toJSON(),
+        },
+        { transaction },
+      );
+      return company;
     });
   }
 

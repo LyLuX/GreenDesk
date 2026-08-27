@@ -198,11 +198,17 @@ export const openApiPaths = {
       tags: ['Companies'],
       summary: 'Liste les sociétés accessibles.',
       description:
-        'Nécessite `companies.read`. Sans `companies.access.all`, seules les sociétés attribuées à l’utilisateur sont retournées.',
+        'Nécessite `companies.read`. Sans `companies.access.all`, seules les sociétés attribuées à l’utilisateur sont retournées. Le filtre `deleted=true` nécessite également `companies.deleted.read`.',
       security: secure,
       parameters: [
         searchParameter,
         { name: 'active', in: 'query', schema: { type: 'boolean' } },
+        {
+          name: 'deleted',
+          in: 'query',
+          description: 'Retourne uniquement les sociétés supprimées logiquement.',
+          schema: { type: 'boolean', default: false },
+        },
         pageParameter,
         limitParameter,
       ],
@@ -216,7 +222,7 @@ export const openApiPaths = {
       tags: ['Companies'],
       summary: 'Crée une société.',
       description:
-        'Nécessite `companies.create`. Sans `companies.access.all`, le créateur est automatiquement rattaché à la nouvelle société.',
+        'Nécessite `companies.create`. Sans `companies.access.all`, le créateur est automatiquement rattaché à la nouvelle société. Restaurer implicitement une société supprimée portant le même nom nécessite aussi `companies.deleted.update`.',
       security: secure,
       requestBody: jsonBody('CompanyCreateRequest'),
       responses: {
@@ -261,6 +267,21 @@ export const openApiPaths = {
       responses: { 204: noContent, ...writeErrors },
     },
   },
+  '/companies/{uuid}/restore': {
+    parameters: [uuidParameter],
+    post: {
+      operationId: 'restoreCompany',
+      tags: ['Companies'],
+      summary: 'Restaure une société supprimée logiquement.',
+      description:
+        'Nécessite `companies.deleted.update` et l’accès à la société demandée ; `companies.access.all` permet de restaurer toute société supprimée. Le statut actif ou inactif précédent est conservé.',
+      security: secure,
+      responses: {
+        200: jsonResponse('CompanyResponse', 'Société restaurée.'),
+        ...writeErrors,
+      },
+    },
+  },
   '/users': {
     get: {
       operationId: 'listUsers',
@@ -294,7 +315,7 @@ export const openApiPaths = {
       tags: ['Users'],
       summary: 'Crée un utilisateur et lui attribue éventuellement des rôles.',
       description:
-        'Nécessite `users.create`. Fournir `roleUuids` nécessite `users.roles.update` et fournir `companyUuids` nécessite `users.companies.update`. Sans `companyUuids`, la société active est attribuée. Le nom de famille est stocké en majuscules.',
+        'Nécessite `users.create`. Fournir `roleUuids` nécessite `users.roles.update` et fournir `companyUuids` nécessite `users.companies.update`. Restaurer implicitement un compte supprimé portant le même email nécessite aussi `users.deleted.update`. Sans `companyUuids`, la société active est attribuée. Le nom de famille est stocké en majuscules.',
       security: secure,
       requestBody: jsonBody('UserCreateRequest'),
       responses: {
@@ -366,7 +387,7 @@ export const openApiPaths = {
       tags: ['Users'],
       summary: 'Restaure un utilisateur supprimé logiquement.',
       description:
-        'Nécessite `users.restore`. Le statut, les rôles et l’état de vérification précédents sont conservés, tandis que les anciennes sessions sont invalidées.',
+        'Nécessite `users.deleted.update`. Le statut, les rôles et l’état de vérification précédents sont conservés, tandis que les anciennes sessions sont invalidées.',
       security: secure,
       responses: {
         200: jsonResponse('UserResponse', 'Utilisateur restauré.'),

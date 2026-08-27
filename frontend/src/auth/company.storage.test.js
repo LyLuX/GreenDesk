@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import {
-  ACTIVE_COMPANY_STORAGE_KEY,
-  resolveActiveCompany,
-} from './company.storage.js';
+import { ACTIVE_COMPANY_STORAGE_KEY, resolveActiveCompany } from './company.storage.js';
 
 const companies = [
   { uuid: 'zulu-uuid', name: 'Zulu' },
