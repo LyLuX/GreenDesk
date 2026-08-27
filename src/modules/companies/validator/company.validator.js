@@ -5,6 +5,7 @@ export const listCompanyValidator = [
   query('search').optional({ values: 'falsy' }).trim().isLength({ max: 150 }),
   query('active').optional({ values: 'falsy' }).isBoolean(),
   query('deleted').optional({ values: 'falsy' }).isBoolean().toBoolean(),
+  query('includeDeleted').optional({ values: 'falsy' }).isBoolean().toBoolean(),
   ...paginationValidator,
 ];
 export const companyUuidValidator = [param('uuid').isUUID()];

@@ -19,7 +19,7 @@ import {
 const router = Router();
 const controller = new CompanyController();
 const authorizeDeletedCompanyListing = (request, response, next) => {
-  if (!request.query.deleted) return next();
+  if (!request.query.deleted && !request.query.includeDeleted) return next();
   return authorize(companyPermissions.deleted.read)(request, response, next);
 };
 

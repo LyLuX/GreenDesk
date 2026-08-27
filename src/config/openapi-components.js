@@ -93,7 +93,7 @@ const company = {
     deletedAt: {
       ...nullableDateTime,
       description:
-        'Date de suppression logique de la société, remise à `null` après une restauration réussie.',
+        'Date de suppression logique de la société, exposée par les filtres de suppression et remise à `null` après une restauration réussie.',
     },
   },
 };
@@ -142,7 +142,7 @@ const user = {
     deletedAt: {
       ...nullableDateTime,
       description:
-        'Date de suppression logique du compte, remise à `null` après une restauration réussie.',
+        'Date de suppression logique du compte, exposée par les filtres de suppression et remise à `null` après une restauration réussie.',
     },
   },
 };

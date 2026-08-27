@@ -198,7 +198,7 @@ export const openApiPaths = {
       tags: ['Companies'],
       summary: 'Liste les sociétés accessibles.',
       description:
-        'Nécessite `companies.read`. Sans `companies.access.all`, seules les sociétés attribuées à l’utilisateur sont retournées. Le filtre `deleted=true` nécessite également `companies.deleted.read`.',
+        'Nécessite `companies.read`. Sans `companies.access.all`, seules les sociétés attribuées à l’utilisateur sont retournées. `deleted=true` retourne uniquement les sociétés supprimées et `includeDeleted=true` les inclut avec les autres statuts ; ces deux filtres nécessitent également `companies.deleted.read`.',
       security: secure,
       parameters: [
         searchParameter,
@@ -207,6 +207,12 @@ export const openApiPaths = {
           name: 'deleted',
           in: 'query',
           description: 'Retourne uniquement les sociétés supprimées logiquement.',
+          schema: { type: 'boolean', default: false },
+        },
+        {
+          name: 'includeDeleted',
+          in: 'query',
+          description: 'Inclut les sociétés supprimées avec les sociétés actives et inactives.',
           schema: { type: 'boolean', default: false },
         },
         pageParameter,
@@ -288,7 +294,7 @@ export const openApiPaths = {
       tags: ['Users'],
       summary: 'Liste les utilisateurs.',
       description:
-        'Nécessite `users.read`. Les résultats appartiennent à la société active, sauf avec `companies.access.all`, et restent limités aux rôles couverts par les permissions dynamiques `users.roles.<nom-du-rôle>.read` ; `users.all.read` retire uniquement ce filtre de rôle. Les résultats sont triés par dernière connexion décroissante. Le filtre `deleted=true` nécessite également `users.deleted.read`.',
+        'Nécessite `users.read`. Les résultats appartiennent à la société active, sauf avec `companies.access.all`, et restent limités aux rôles couverts par les permissions dynamiques `users.roles.<nom-du-rôle>.read` ; `users.all.read` retire uniquement ce filtre de rôle. Les résultats sont triés par dernière connexion décroissante. `deleted=true` retourne uniquement les comptes supprimés et `includeDeleted=true` les inclut avec les autres statuts ; ces deux filtres nécessitent également `users.deleted.read`.',
       security: secure,
       parameters: [
         searchParameter,
@@ -297,6 +303,12 @@ export const openApiPaths = {
           name: 'deleted',
           in: 'query',
           description: 'Retourne uniquement les comptes supprimés logiquement.',
+          schema: { type: 'boolean', default: false },
+        },
+        {
+          name: 'includeDeleted',
+          in: 'query',
+          description: 'Inclut les comptes supprimés avec les comptes actifs et inactifs.',
           schema: { type: 'boolean', default: false },
         },
         { name: 'roleUuid', in: 'query', schema: { type: 'string', format: 'uuid' } },

@@ -6,6 +6,7 @@ export const listUserValidator = [
   query('search').optional({ values: 'falsy' }).trim().isLength({ max: 150 }),
   query('active').optional({ values: 'falsy' }).isBoolean().toBoolean(),
   query('deleted').optional({ values: 'falsy' }).isBoolean().toBoolean(),
+  query('includeDeleted').optional({ values: 'falsy' }).isBoolean().toBoolean(),
   query('roleUuid').optional({ values: 'falsy' }).isUUID(),
   ...paginationValidator,
 ];

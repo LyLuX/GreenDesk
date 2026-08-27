@@ -300,6 +300,23 @@ describe('administrator table pagination', () => {
     expect(screen.getByText('user6@example.test')).toBeInTheDocument();
   });
 
+  it('includes deleted users when all statuses are selected with read permission', async () => {
+    const user = userEvent.setup();
+    mocks.users[0].deletedAt = '2026-08-23T08:00:00.000Z';
+    mocks.hasPermission.mockImplementation((permission) =>
+      ['users.read', 'users.deleted.read'].includes(permission),
+    );
+
+    render(<UsersPage />);
+    expect(await screen.findByText('user5@example.test')).toBeVisible();
+    expect(screen.queryByText('user1@example.test')).not.toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText('Filtrer par statut'), '');
+
+    expect(await screen.findByText('user1@example.test')).toBeVisible();
+    expect(screen.getByText('Supprimé')).toBeVisible();
+  });
+
   it('paginates roles at five items by default', async () => {
     const user = userEvent.setup();
     render(<RolesPage />);

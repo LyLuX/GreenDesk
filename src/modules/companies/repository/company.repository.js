@@ -7,7 +7,15 @@ import Company from '../model/company.model.js';
 
 /** Persistence operations for global companies and user affiliations. */
 export default class CompanyRepository extends TransactionalRepository {
-  findAll({ search, active, deleted = false, page, limit, accessibleUuids } = {}) {
+  findAll({
+    search,
+    active,
+    deleted = false,
+    includeDeleted = false,
+    page,
+    limit,
+    accessibleUuids,
+  } = {}) {
     const pagination = normalizePagination({ page, limit });
     const where = {};
     if (search) {
@@ -23,7 +31,7 @@ export default class CompanyRepository extends TransactionalRepository {
       order: [['name', 'ASC']],
       limit: pagination.limit,
       offset: pagination.offset,
-      paranoid: !deleted,
+      paranoid: !(deleted || includeDeleted),
     });
   }
 

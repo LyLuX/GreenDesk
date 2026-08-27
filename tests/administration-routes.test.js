@@ -112,6 +112,14 @@ describe('granular administration route permissions', () => {
       .get('/api/v1/users')
       .set('Authorization', authorization(['users.read']))
       .expect(200);
+    await request(app)
+      .get('/api/v1/users?includeDeleted=true')
+      .set('Authorization', authorization(['users.read']))
+      .expect(403);
+    await request(app)
+      .get('/api/v1/users?includeDeleted=true')
+      .set('Authorization', authorization(['users.read', 'users.deleted.read']))
+      .expect(200);
   });
 
   it('protects user restoration with its own permission', async () => {
@@ -132,6 +140,20 @@ describe('granular administration route permissions', () => {
       .expect(403);
     await request(app)
       .get('/api/v1/companies?deleted=true')
+      .set(
+        'Authorization',
+        authorization(['companies.read', 'companies.deleted.read', 'companies.access.all']),
+      )
+      .expect(200);
+    expect(Company.findAndCountAll).toHaveBeenLastCalledWith(
+      expect.objectContaining({ paranoid: false }),
+    );
+    await request(app)
+      .get('/api/v1/companies?includeDeleted=true')
+      .set('Authorization', authorization(['companies.read', 'companies.access.all']))
+      .expect(403);
+    await request(app)
+      .get('/api/v1/companies?includeDeleted=true')
       .set(
         'Authorization',
         authorization(['companies.read', 'companies.deleted.read', 'companies.access.all']),

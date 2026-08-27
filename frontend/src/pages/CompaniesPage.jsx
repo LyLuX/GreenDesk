@@ -56,7 +56,13 @@ export default function CompaniesPage() {
             ...(canReadDeletedCompanies ? [{ value: 'deleted', label: 'Supprimées' }] : []),
           ],
           toQuery: (value) =>
-            value === 'deleted' ? { deleted: true } : value ? { active: value } : {},
+            value === 'deleted'
+              ? { deleted: true }
+              : value
+                ? { active: value }
+                : canReadDeletedCompanies
+                  ? { includeDeleted: true }
+                  : {},
         },
       ]}
     />

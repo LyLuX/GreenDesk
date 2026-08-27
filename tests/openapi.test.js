@@ -309,6 +309,10 @@ describe('OpenAPI contract', () => {
           name: 'deleted',
           schema: expect.objectContaining({ type: 'boolean' }),
         }),
+        expect.objectContaining({
+          name: 'includeDeleted',
+          schema: expect.objectContaining({ type: 'boolean' }),
+        }),
       ]),
     );
     expect(swaggerSpec.paths['/users/{uuid}/restore'].post.description).toContain(
@@ -323,6 +327,10 @@ describe('OpenAPI contract', () => {
       expect.arrayContaining([
         expect.objectContaining({
           name: 'deleted',
+          schema: expect.objectContaining({ type: 'boolean' }),
+        }),
+        expect.objectContaining({
+          name: 'includeDeleted',
           schema: expect.objectContaining({ type: 'boolean' }),
         }),
       ]),

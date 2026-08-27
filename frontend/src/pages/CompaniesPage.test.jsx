@@ -34,6 +34,7 @@ describe('CompaniesPage', () => {
     expect(props.filters[0].options).toContainEqual({ value: 'deleted', label: 'Supprimées' });
     expect(props.filters[0].toQuery('deleted')).toEqual({ deleted: true });
     expect(props.filters[0].toQuery('false')).toEqual({ active: 'false' });
+    expect(props.filters[0].toQuery('')).toEqual({ includeDeleted: true });
   });
 
   it('hides the deleted-company filter without its read permission', () => {
@@ -44,5 +45,6 @@ describe('CompaniesPage', () => {
     expect(referencePage.mock.calls[0][0].filters[0].options).not.toContainEqual(
       expect.objectContaining({ value: 'deleted' }),
     );
+    expect(referencePage.mock.calls[0][0].filters[0].toQuery('')).toEqual({});
   });
 });

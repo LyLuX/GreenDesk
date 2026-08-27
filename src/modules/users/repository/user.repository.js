@@ -36,6 +36,7 @@ export default class UserRepository extends TransactionalRepository {
     search,
     active,
     deleted = false,
+    includeDeleted = false,
     roleUuid,
     visibleRoleNames,
     companyId,
@@ -96,7 +97,7 @@ export default class UserRepository extends TransactionalRepository {
       order: userListOrder,
       limit: pagination.limit,
       offset: pagination.offset,
-      paranoid: !deleted,
+      paranoid: !(deleted || includeDeleted),
     });
     const ids = pageResult.rows.map((user) => user.id);
     const rows = ids.length
@@ -107,7 +108,7 @@ export default class UserRepository extends TransactionalRepository {
           },
           include: userIncludes,
           order: userListOrder,
-          paranoid: !deleted,
+          paranoid: !(deleted || includeDeleted),
         })
       : [];
     return { count: pageResult.count, rows };

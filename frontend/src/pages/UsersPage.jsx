@@ -99,6 +99,7 @@ export default function UsersPage() {
             limit,
             ...(debouncedSearch ? { search: debouncedSearch } : {}),
             ...(active === 'deleted' ? { deleted: true } : active !== '' ? { active } : {}),
+            ...(active === '' && canReadDeletedUsers ? { includeDeleted: true } : {}),
             ...(roleUuid ? { roleUuid } : {}),
           },
           signal,
@@ -114,7 +115,11 @@ export default function UsersPage() {
                     .filter(Boolean)
                     .some((value) => value.toLocaleLowerCase('fr').includes(term));
                 const matchesDeleted =
-                  active === 'deleted' ? Boolean(user.deletedAt) : !user.deletedAt;
+                  active === 'deleted'
+                    ? Boolean(user.deletedAt)
+                    : active === ''
+                      ? true
+                      : !user.deletedAt;
                 const matchesActive =
                   active === '' || active === 'deleted' || String(user.isActive) === active;
                 const matchesRole =
@@ -134,7 +139,7 @@ export default function UsersPage() {
         if (!signal?.aborted) setLoading(false);
       }
     },
-    [active, debouncedSearch, limit, page, roleUuid],
+    [active, canReadDeletedUsers, debouncedSearch, limit, page, roleUuid],
   );
 
   useEffect(() => {
