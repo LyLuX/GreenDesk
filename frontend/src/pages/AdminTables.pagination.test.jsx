@@ -170,6 +170,7 @@ describe('administrator table pagination', () => {
 
     expect(await screen.findByText('user1@example.test')).toBeVisible();
     expect(screen.getByText('Supprimé')).toHaveClass('status-badge', 'deleted');
+    expect(screen.getByText(/23\/08\/2026/)).toHaveClass('fw-lighter', 'fst-italic');
     expect(
       screen.queryByRole('button', { name: 'Modifier Utilisateur 1' }),
     ).not.toBeInTheDocument();

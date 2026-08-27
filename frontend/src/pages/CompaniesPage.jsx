@@ -39,7 +39,7 @@ export default function CompaniesPage() {
                 {company.deletedAt ? 'Supprimée' : value ? 'Active' : 'Inactive'}
               </span>
               {company.deletedAt ? (
-                <span className="d-block small mt-1 text-body-secondary">
+                <span className="d-block small mt-1 text-body-secondary fw-lighter fst-italic">
                   {formatDateTime(company.deletedAt)}
                 </span>
               ) : null}

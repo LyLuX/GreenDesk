@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { hasPermission, referencePage } = vi.hoisted(() => ({
@@ -35,6 +35,11 @@ describe('CompaniesPage', () => {
     expect(props.filters[0].toQuery('deleted')).toEqual({ deleted: true });
     expect(props.filters[0].toQuery('false')).toEqual({ active: 'false' });
     expect(props.filters[0].toQuery('')).toEqual({ includeDeleted: true });
+
+    render(
+      props.columns[2].render(true, { deletedAt: '2026-08-23T08:00:00.000Z' }),
+    );
+    expect(screen.getByText(/23\/08\/2026/)).toHaveClass('fw-lighter', 'fst-italic');
   });
 
   it('hides the deleted-company filter without its read permission', () => {

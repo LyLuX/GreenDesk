@@ -466,7 +466,7 @@ export default function UsersPage() {
                         {user.deletedAt ? 'Supprimé' : user.isActive ? 'Actif' : 'Inactif'}
                       </span>
                       {user.deletedAt ? (
-                        <span className="d-block small mt-1 text-body-secondary">
+                        <span className="d-block small mt-1 text-body-secondary fw-lighter fst-italic">
                           {formatDateTime(user.deletedAt)}
                         </span>
                       ) : (
