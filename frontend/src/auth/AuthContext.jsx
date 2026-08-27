@@ -200,7 +200,7 @@ export function AuthProvider({ children }) {
     saveSession(next);
     sessionRef.current = next;
     setSession(next);
-    setActiveCompany(resolveActiveCompany(next.user?.companies));
+    setActiveCompany(resolveActiveCompany(next.user?.companies, { preserveSelection: false }));
     return next;
   }, []);
   const logout = useCallback(async () => {
@@ -213,6 +213,7 @@ export function AuthProvider({ children }) {
     } finally {
       clearReturnLocation();
       clearSession();
+      saveActiveCompanyUuid(null);
       sessionRef.current = null;
       setSession(null);
       setActiveCompany(null);
