@@ -150,7 +150,7 @@ describe('production CSS build', () => {
       /\.status-badge\.maintenance-wear-based\s*\{[^}]*--status-badge-color:\s*var\(--status-badge-maintenance-color\);[^}]*--status-badge-background:\s*var\(--status-badge-maintenance-background\);/,
     );
     expect(styles).toMatch(
-      /\.maintenance-order-plan-wear-based\s*\{[^}]*color:\s*var\(--maintenance-wear-based-color\);/,
+      /\.maintenance-order-list-table \.maintenance-order-plans\s*>\s*ul\s*>\s*li\.maintenance-order-plan-wear-based\s*\{[^}]*color:\s*var\(--maintenance-wear-based-color\)\s*!important;/,
     );
   });
 

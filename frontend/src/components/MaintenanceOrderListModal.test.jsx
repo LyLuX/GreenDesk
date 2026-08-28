@@ -492,6 +492,11 @@ describe('MaintenanceOrderListModal', () => {
     expect(await screen.findByText('Tondeuse — 1')).toHaveClass(
       'maintenance-order-plan-wear-based',
     );
+    expect(
+      document.querySelector(
+        '.maintenance-order-list-printable .maintenance-order-plan-wear-based',
+      ),
+    ).toHaveTextContent('Tondeuse');
     expect(screen.queryByText('Selon l’usure')).not.toBeInTheDocument();
   });
 

@@ -1492,8 +1492,8 @@ body.app-scroll-locked {
   flex-wrap: wrap;
 }
 
-.maintenance-order-plan-wear-based {
-  color: var(--maintenance-wear-based-color);
+.maintenance-order-list-table .maintenance-order-plans > ul > li.maintenance-order-plan-wear-based {
+  color: var(--maintenance-wear-based-color) !important;
 }
 
 .maintenance-order-list-table .maintenance-order-plans > ul > li.maintenance-order-low-stock {

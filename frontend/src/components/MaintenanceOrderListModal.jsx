@@ -131,7 +131,12 @@ function OrderPartsTable({
                           </li>
                         ) : null}
                         {(part.plans ?? []).map((plan) => (
-                          <li key={plan.maintenanceUuid}>
+                          <li
+                            key={plan.maintenanceUuid}
+                            className={
+                              plan.wearBased ? 'maintenance-order-plan-wear-based' : undefined
+                            }
+                          >
                             {plan.title}
                             {plan.material?.name ? ` — ${plan.material.name}` : null}
                           </li>
