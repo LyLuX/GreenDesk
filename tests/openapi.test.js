@@ -175,6 +175,7 @@ describe('OpenAPI contract', () => {
     expect(swaggerSpec.paths).not.toHaveProperty('/maintenance/manufacturers');
     expect(swaggerSpec.paths).not.toHaveProperty('/maintenance/suppliers');
     expect(swaggerSpec.paths).toHaveProperty('/maintenance/order-list');
+    expect(swaggerSpec.paths).toHaveProperty('/maintenance/sheets');
     expect(swaggerSpec.paths).toHaveProperty('/maintenance/parts/{uuid}/price');
     expect(swaggerSpec.paths).toHaveProperty('/maintenance/parts/{uuid}/minimum-stock');
     expect(swaggerSpec.paths).toHaveProperty('/maintenance/parts/{uuid}/price-history');
@@ -254,6 +255,12 @@ describe('OpenAPI contract', () => {
         ({ name }) => name === 'includeWearBased',
       )?.schema,
     ).toEqual(expect.objectContaining({ type: 'boolean', default: false }));
+    expect(swaggerSpec.paths['/maintenance/sheets'].get.description).toContain(
+      '`maintenance.sheets.read`',
+    );
+    expect(
+      swaggerSpec.components.schemas.MaintenanceSheetList.properties.items.items.allOf,
+    ).toHaveLength(2);
     expect(
       swaggerSpec.paths['/maintenance/order-list'].get.parameters.find(
         ({ name }) => name === 'includeLowStock',

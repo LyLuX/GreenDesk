@@ -57,3 +57,8 @@ export const getMaintenanceOrderList = (params, signal) =>
     params: compactQueryParams(params),
     signal,
   });
+export const getMaintenanceSheets = (params, signal) =>
+  client.get('/v1/maintenance/sheets', {
+    params: compactQueryParams(params),
+    signal,
+  });

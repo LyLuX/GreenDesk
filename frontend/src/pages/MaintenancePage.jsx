@@ -23,6 +23,7 @@ import Loader from '../components/Loader.jsx';
 import MaintenanceOrderListModal, {
   getOrderListFiltersForDeadline,
 } from '../components/MaintenanceOrderListModal.jsx';
+import MaintenanceSheetsModal from '../components/MaintenanceSheetsModal.jsx';
 import Modal from '../components/Modal.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
@@ -38,6 +39,7 @@ import {
   maintenanceTypeLabels,
 } from '../maintenance/maintenance.labels.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
+import { getMaintenanceDeadlineFilters } from '../maintenance/maintenance-deadline-filters.js';
 import { getStatusActionButtonClass } from '../utils/status-action.js';
 import { formatDate, formatOperationDateTime } from '../utils/formatters.js';
 
@@ -141,6 +143,7 @@ export default function MaintenancePage() {
   const [busy, setBusy] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
   const [orderListOpen, setOrderListOpen] = useState(false);
+  const [sheetsOpen, setSheetsOpen] = useState(false);
 
   const loadTasks = useCallback(
     async (signal) => {
@@ -438,6 +441,15 @@ export default function MaintenancePage() {
           <p className="page-subtitle">Plans d’entretien préventif</p>
         </div>
         <div className="d-flex flex-wrap gap-2">
+          {hasPermission(maintenancePermissions.sheets.read) ? (
+            <button
+              type="button"
+              className="btn btn-outline-brand"
+              onClick={() => setSheetsOpen(true)}
+            >
+              Fiches de maintenance
+            </button>
+          ) : null}
           <button
             type="button"
             className="btn btn-outline-brand"
@@ -834,6 +846,13 @@ export default function MaintenancePage() {
           open
           initialFilters={getOrderListFiltersForDeadline(filters.status)}
           onClose={() => setOrderListOpen(false)}
+        />
+      ) : null}
+      {sheetsOpen ? (
+        <MaintenanceSheetsModal
+          open
+          initialFilters={getMaintenanceDeadlineFilters(filters.status)}
+          onClose={() => setSheetsOpen(false)}
         />
       ) : null}
       <Modal

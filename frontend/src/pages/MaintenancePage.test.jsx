@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   listMaterials: vi.fn(),
   listManufacturers: vi.fn(),
   getOrderList: vi.fn(),
+  getSheets: vi.fn(),
   createMaintenance: vi.fn(),
   updateMaintenance: vi.fn(),
   executeMaintenance: vi.fn(),
@@ -34,6 +35,7 @@ vi.mock('../api/maintenance.api.js', () => ({
   updateMaintenancePart: vi.fn(),
   deleteMaintenancePart: vi.fn(),
   getMaintenanceOrderList: mocks.getOrderList,
+  getMaintenanceSheets: mocks.getSheets,
 }));
 vi.mock('../api/reference.api.js', () => ({
   listMaterialOptions: mocks.listMaterials,
@@ -67,6 +69,16 @@ describe('MaintenancePage', () => {
         data: {
           horizonDays: 30,
           includeOverdue: false,
+          items: [],
+        },
+      },
+    });
+    mocks.getSheets.mockResolvedValue({
+      data: {
+        data: {
+          horizonDays: 30,
+          includeOverdue: true,
+          includeWearBased: false,
           items: [],
         },
       },
@@ -276,6 +288,36 @@ describe('MaintenancePage', () => {
           includeWearBased: false,
           includeLowStock: false,
           lowStockOnly: false,
+        },
+        expect.any(AbortSignal),
+      ),
+    );
+  });
+
+  it('shows maintenance sheets only with their dedicated permission', async () => {
+    mocks.hasPermission.mockImplementation(
+      (permission) => permission !== 'maintenance.sheets.read',
+    );
+    const firstRender = renderPage();
+
+    await screen.findByText('12 jours');
+    expect(screen.queryByRole('button', { name: 'Fiches de maintenance' })).not.toBeInTheDocument();
+    firstRender.unmount();
+
+    mocks.hasPermission.mockReturnValue(true);
+    const user = userEvent.setup();
+    renderPage('/maintenance?status=dueToday');
+    await screen.findByText('12 jours');
+    await user.click(screen.getByRole('button', { name: 'Fiches de maintenance' }));
+
+    expect(screen.getByRole('dialog', { name: 'Fiches de maintenance' })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(mocks.getSheets).toHaveBeenCalledWith(
+        {
+          status: 'dueToday',
+          horizonDays: 0,
+          includeOverdue: false,
+          includeWearBased: false,
         },
         expect.any(AbortSignal),
       ),

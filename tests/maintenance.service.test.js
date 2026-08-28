@@ -273,6 +273,71 @@ describe('MaintenanceService', () => {
     expect(result.includeWearBased).toBe(true);
   });
 
+  it('returns printable maintenance sheets with material identification', async () => {
+    const calendarTask = {
+      uuid: '11111111-1111-4111-8111-111111111111',
+      title: 'Vidange annuelle',
+      description: 'Remplacer l’huile moteur.',
+      maintenanceType: 'preventive',
+      priority: 'normal',
+      intervalDays: 365,
+      lastMaintenanceDate: '2025-09-01',
+      nextMaintenanceDate: '2026-09-01',
+      material: {
+        uuid: '22222222-2222-4222-8222-222222222222',
+        name: 'Tondeuse',
+        model: 'LM-42',
+        serialNumber: 'SN-2026',
+      },
+      parts: [],
+    };
+    const wearTask = {
+      ...calendarTask,
+      uuid: '33333333-3333-4333-8333-333333333333',
+      title: 'Contrôle de lame',
+      intervalDays: 0,
+      nextMaintenanceDate: null,
+    };
+    const repository = {
+      findForOrderList: jest
+        .fn()
+        .mockResolvedValueOnce([calendarTask])
+        .mockResolvedValueOnce([wearTask]),
+    };
+    const service = new MaintenanceService(repository, {}, {}, {});
+
+    const result = await service.getMaintenanceSheets({
+      horizonDays: 60,
+      includeOverdue: 'false',
+      includeWearBased: 'true',
+    });
+
+    expect(repository.findForOrderList).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ from: expect.any(String), through: expect.any(String) }),
+    );
+    expect(repository.findForOrderList).toHaveBeenNthCalledWith(2, { status: 'wearBased' });
+    expect(result).toEqual(
+      expect.objectContaining({
+        horizonDays: 60,
+        includeOverdue: false,
+        includeWearBased: true,
+        items: expect.arrayContaining([
+          expect.objectContaining({
+            title: 'Vidange annuelle',
+            material: {
+              uuid: calendarTask.material.uuid,
+              name: 'Tondeuse',
+              model: 'LM-42',
+              serialNumber: 'SN-2026',
+            },
+          }),
+          expect.objectContaining({ title: 'Contrôle de lame', status: 'wearBased' }),
+        ]),
+      }),
+    );
+  });
+
   it('optionally adds uncovered low-stock parts to the order list', async () => {
     const repository = { findForOrderList: jest.fn().mockResolvedValue([]) };
     const catalogRepository = {

@@ -1237,6 +1237,46 @@ export const openApiPaths = {
       },
     },
   },
+  '/maintenance/sheets': {
+    get: {
+      operationId: 'getMaintenanceSheets',
+      tags: ['Maintenance'],
+      summary: 'Liste les fiches de maintenance à consulter ou à imprimer.',
+      description:
+        'Nécessite la permission dédiée `maintenance.sheets.read`. Le filtre `status`, lorsqu’il est renseigné, prend la priorité sur la période. `includeWearBased` ajoute une fois chaque plan actif suivi selon l’usure.',
+      security: secure,
+      parameters: [
+        {
+          name: 'status',
+          in: 'query',
+          description: 'Statut exact d’échéance, partagé avec le filtre de la page Maintenance.',
+          schema: {
+            type: 'string',
+            enum: MAINTENANCE_DEADLINE_STATUSES,
+          },
+        },
+        {
+          name: 'horizonDays',
+          in: 'query',
+          schema: { type: 'integer', minimum: 0, maximum: 365, default: 30 },
+        },
+        {
+          name: 'includeOverdue',
+          in: 'query',
+          schema: { type: 'boolean', default: true },
+        },
+        {
+          name: 'includeWearBased',
+          in: 'query',
+          schema: { type: 'boolean', default: false },
+        },
+      ],
+      responses: {
+        200: jsonResponse('MaintenanceSheetListResponse', 'Fiches de maintenance retournées.'),
+        ...standardErrors,
+      },
+    },
+  },
   '/maintenance/interventions': {
     get: {
       operationId: 'listMaintenanceInterventions',

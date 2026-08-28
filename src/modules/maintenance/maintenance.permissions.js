@@ -1,5 +1,8 @@
 /** Canonical maintenance permission codes shared by routes and permission definitions. */
 const maintenancePermissions = Object.freeze({
+  sheets: Object.freeze({
+    read: 'maintenance.sheets.read',
+  }),
   plans: Object.freeze({
     read: 'maintenance.read',
     create: 'maintenance.create',

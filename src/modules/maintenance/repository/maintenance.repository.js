@@ -18,7 +18,7 @@ import { companyValues, companyWhere } from '../../../core/company/company-conte
 const materialInclude = {
   model: Material,
   as: 'material',
-  attributes: ['uuid', 'name', 'active'],
+  attributes: ['uuid', 'name', 'model', 'serialNumber', 'active'],
 };
 const operationInclude = {
   model: MaintenanceOperation,

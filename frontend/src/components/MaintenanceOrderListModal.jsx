@@ -7,6 +7,11 @@ import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
 import { formatStockQuantity, STOCK_OPERATIONS } from '../inventory/stock-status.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
+import {
+  defaultMaintenanceDeadlineFilters,
+  getMaintenanceDeadlineFilters,
+  maintenanceHorizonOptions,
+} from '../maintenance/maintenance-deadline-filters.js';
 import useNotification from '../notifications/useNotification.js';
 import { extractPageItems, paginateItems } from '../utils/pagination.js';
 import AppFooter from './AppFooter.jsx';
@@ -16,68 +21,21 @@ import Loader from './Loader.jsx';
 import ManufacturerLogo from './ManufacturerLogo.jsx';
 import Modal from './Modal.jsx';
 import PaginationControls from './PaginationControls.jsx';
-
-const horizonOptions = [
-  { value: 0, label: 'Aujourd’hui' },
-  { value: 30, label: 'Sous 30 jours' },
-  { value: 60, label: 'Sous 60 jours' },
-  { value: 90, label: 'Sous 90 jours' },
-  { value: 365, label: 'Sous un an' },
-];
+import PrintableBrandHeader from './PrintableBrandHeader.jsx';
 
 const defaultOrderListFilters = Object.freeze({
-  horizonDays: 30,
-  includeOverdue: true,
-  includeWearBased: false,
+  ...defaultMaintenanceDeadlineFilters,
   includeLowStock: false,
   lowStockOnly: false,
 });
 
 /** Converts the maintenance page deadline filter into the matching order-list period. */
 export const getOrderListFiltersForDeadline = (deadlineStatus) => {
-  const filtersByDeadline = {
-    overdue: {
-      status: 'overdue',
-      horizonDays: 0,
-      includeOverdue: true,
-      includeWearBased: false,
-      includeLowStock: false,
-      lowStockOnly: false,
-    },
-    dueToday: {
-      status: 'dueToday',
-      horizonDays: 0,
-      includeOverdue: false,
-      includeWearBased: false,
-      includeLowStock: false,
-      lowStockOnly: false,
-    },
-    upcoming: {
-      status: 'upcoming',
-      horizonDays: 30,
-      includeOverdue: false,
-      includeWearBased: false,
-      includeLowStock: false,
-      lowStockOnly: false,
-    },
-    upToDate: {
-      status: 'upToDate',
-      horizonDays: 365,
-      includeOverdue: false,
-      includeWearBased: false,
-      includeLowStock: false,
-      lowStockOnly: false,
-    },
-    wearBased: {
-      status: 'wearBased',
-      horizonDays: 30,
-      includeOverdue: false,
-      includeWearBased: true,
-      includeLowStock: false,
-      lowStockOnly: false,
-    },
+  return {
+    ...getMaintenanceDeadlineFilters(deadlineStatus),
+    includeLowStock: false,
+    lowStockOnly: false,
   };
-  return filtersByDeadline[deadlineStatus] ?? { ...defaultOrderListFilters };
 };
 
 /** Groups ordered parts by supplier for one printed page per supplier. */
@@ -252,20 +210,6 @@ function OrderPartsTable({
   );
 }
 
-function PrintBrandHeader({ companyName }) {
-  return (
-    <header className="maintenance-order-print-header">
-      <div className="maintenance-order-print-brand">
-        <img className="brand-logo" src="/brand-logo.jpg" alt="EI BOURNAZEL Paul" />
-        <span>
-          <span className="brand-name d-block">GreenDesk</span>
-          <span className="brand-company d-block">{companyName ?? 'Aucune société'}</span>
-        </span>
-      </div>
-    </header>
-  );
-}
-
 function MaintenanceOrderPrintPages({
   supplierPages,
   manufacturerByUuid,
@@ -276,7 +220,7 @@ function MaintenanceOrderPrintPages({
     <div className="maintenance-order-list-printable" aria-hidden="true">
       {supplierPages.map((page) => (
         <section className="maintenance-order-print-page" key={page.key}>
-          <PrintBrandHeader companyName={companyName} />
+          <PrintableBrandHeader companyName={companyName} />
           <main className="maintenance-order-print-content">
             <h1>{lowStockMode ? 'Pièces avec un stock faible' : 'Pièces à commander'}</h1>
             <p className="maintenance-order-print-supplier">
@@ -440,7 +384,7 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
                     }))
                   }
                 >
-                  {horizonOptions.map((option) => (
+                  {maintenanceHorizonOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>

@@ -230,6 +230,10 @@ const permissionDefinitions = [
     description: 'Consulter les plans et l’historique de maintenance.',
   },
   {
+    name: maintenancePermissions.sheets.read,
+    description: 'Consulter et imprimer les fiches de maintenance.',
+  },
+  {
     name: maintenancePermissions.plans.create,
     description: 'Créer de nouveaux plans de maintenance.',
   },

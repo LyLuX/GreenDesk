@@ -167,6 +167,13 @@ router.get(
   asyncHandler(controller.orderList.bind(controller)),
 );
 router.get(
+  '/sheets',
+  authorize(maintenancePermissions.sheets.read),
+  validator.maintenanceSheetListValidator,
+  validateRequest,
+  asyncHandler(controller.sheets.bind(controller)),
+);
+router.get(
   '/interventions',
   authorize(maintenancePermissions.plans.read),
   validator.interventionListValidator,

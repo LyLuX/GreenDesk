@@ -8,7 +8,7 @@ Sa finalité est de réunir dans un même outil les informations souvent dispers
 papier, tableaux et documents : matériels en service, caractéristiques, photos, entretiens à
 prévoir, pièces nécessaires, état des stocks, coûts et historique des actions réalisées.
 
-La version actuelle de GreenDesk est **7.30.4**.
+La version actuelle de GreenDesk est **7.31.0**.
 
 ## Ce que permet GreenDesk
 
@@ -47,7 +47,8 @@ consomme les pièces prévues. Une exécution exceptionnelle sans remplacement d
 afin de conserver une vision complète des travaux et des coûts réels.
 
 Le tableau de bord met en évidence les entretiens à réaliser aujourd’hui, à venir, en retard ou
-selon l’usure.
+selon l’usure. Depuis la page Maintenance, les plans correspondant à une échéance peuvent aussi
+être préparés sous forme de fiches de maintenance consultables et imprimables pour les techniciens.
 
 ### Gérer les pièces et les stocks
 

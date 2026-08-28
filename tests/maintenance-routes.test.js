@@ -31,6 +31,7 @@ const maintenanceController = {
   getAll: jest.fn((_request, response) => response.json({ success: true, data: [] })),
   getByUuid: jest.fn((_request, response) => response.json({ success: true, data: {} })),
   orderList: jest.fn((_request, response) => response.json({ success: true, data: [] })),
+  sheets: jest.fn((_request, response) => response.json({ success: true, data: [] })),
   interventions: jest.fn((_request, response) => response.json({ success: true, data: [] })),
   createIntervention: jest.fn((_request, response) =>
     response.status(201).json({ success: true, data: {} }),
@@ -83,6 +84,7 @@ jest.unstable_mockModule('../src/modules/maintenance/controller/maintenance.cont
     getAll = maintenanceController.getAll;
     getByUuid = maintenanceController.getByUuid;
     orderList = maintenanceController.orderList;
+    sheets = maintenanceController.sheets;
     interventions = maintenanceController.interventions;
     createIntervention = maintenanceController.createIntervention;
     create = maintenanceController.create;
@@ -215,6 +217,23 @@ describe('maintenance catalogue route permissions', () => {
     await request(app)
       .get(`${path}?includeLowStock=invalid`)
       .set('Authorization', authorization(['maintenance.read', 'maintenance.parts.read']))
+      .expect(400);
+  });
+
+  it('protects maintenance sheets with their dedicated permission', async () => {
+    const path = '/api/v1/maintenance/sheets';
+
+    await request(app)
+      .get(path)
+      .set('Authorization', authorization(['maintenance.read']))
+      .expect(403);
+    await request(app)
+      .get(path)
+      .set('Authorization', authorization(['maintenance.sheets.read']))
+      .expect(200);
+    await request(app)
+      .get(`${path}?horizonDays=366`)
+      .set('Authorization', authorization(['maintenance.sheets.read']))
       .expect(400);
   });
 

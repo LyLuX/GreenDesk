@@ -475,6 +475,41 @@ export default class MaintenanceService {
       this.toIntervention(intervention),
     );
   }
+  async getMaintenanceSheets({
+    horizonDays = 30,
+    includeOverdue = true,
+    includeWearBased = false,
+    status,
+  } = {}) {
+    const normalizedHorizon = Math.min(Math.max(Number(horizonDays) || 0, 0), 365);
+    const normalizedStatus = MAINTENANCE_DEADLINE_STATUSES.includes(status) ? status : undefined;
+    const normalizedIncludeOverdue = normalizeBooleanFilter(includeOverdue) ?? true;
+    const includeWearBasedPlans = normalizeBooleanFilter(includeWearBased) ?? false;
+    const from = todayDateOnly();
+    const through = addDaysDateOnly(from, normalizedHorizon);
+    const [deadlineTasks, wearBasedTasks] = await Promise.all([
+      this.repository.findForOrderList({
+        from: normalizedIncludeOverdue ? undefined : from,
+        through,
+        status: normalizedStatus,
+      }),
+      includeWearBasedPlans && normalizedStatus !== 'wearBased'
+        ? this.repository.findForOrderList({ status: 'wearBased' })
+        : Promise.resolve([]),
+    ]);
+    const tasks = [
+      ...new Map([...deadlineTasks, ...wearBasedTasks].map((task) => [task.uuid, task])).values(),
+    ];
+    return {
+      status: normalizedStatus ?? null,
+      horizonDays: normalizedHorizon,
+      includeOverdue: normalizedIncludeOverdue,
+      includeWearBased: includeWearBasedPlans,
+      from,
+      through,
+      items: tasks.map((task) => this.toMaintenanceSheet(task)),
+    };
+  }
   async getOrderList({
     horizonDays = 30,
     includeOverdue = true,
@@ -679,6 +714,20 @@ export default class MaintenanceService {
         };
       }),
       ...getDeadlineDetails(publicValue),
+    };
+  }
+  toMaintenanceSheet(task) {
+    const value = typeof task.toJSON === 'function' ? task.toJSON() : task;
+    const publicTask = this.toPublic(value);
+    return {
+      ...publicTask,
+      material: publicTask.material
+        ? {
+            ...publicTask.material,
+            model: value.material?.model ?? null,
+            serialNumber: value.material?.serialNumber ?? null,
+          }
+        : null,
     };
   }
   toHistory(history) {

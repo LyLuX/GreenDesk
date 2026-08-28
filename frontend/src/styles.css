@@ -1338,6 +1338,14 @@ body.app-scroll-locked {
   overflow: hidden;
 }
 
+.modal-surface.maintenance-sheets-modal {
+  display: flex;
+  width: min(72rem, calc(100vw - 3rem));
+  height: calc(90vh - 3rem);
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .modal-surface.material-form-modal {
   display: flex;
   flex-direction: column;
@@ -1346,6 +1354,7 @@ body.app-scroll-locked {
 }
 
 .maintenance-order-list-modal > :first-child,
+.maintenance-sheets-modal > :first-child,
 .material-form-modal > :first-child {
   flex: 0 0 auto;
 }
@@ -1359,6 +1368,116 @@ body.app-scroll-locked {
 
 .maintenance-order-list-printable {
   display: none;
+}
+
+.maintenance-sheets-screen {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.maintenance-sheets-printable {
+  display: none;
+}
+
+.maintenance-sheets-scroll {
+  display: grid;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 1rem;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+  scrollbar-gutter: stable;
+}
+
+.maintenance-sheet {
+  display: grid;
+  gap: 1rem;
+}
+
+.maintenance-sheet-preview {
+  padding: 1.25rem;
+  background: var(--bs-body-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.maintenance-sheet-kicker {
+  color: var(--brand-forest);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.maintenance-sheet-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}
+
+.maintenance-sheet-details > div {
+  padding: 0.65rem 0.75rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.maintenance-sheet-details dt,
+.maintenance-sheet-section h3,
+.maintenance-sheet-completion h3 {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.maintenance-sheet-details dd {
+  margin: 0.15rem 0 0;
+}
+
+.maintenance-sheet-section h3,
+.maintenance-sheet-completion h3 {
+  margin-bottom: 0.5rem;
+}
+
+.maintenance-sheet-completion {
+  display: grid;
+  gap: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.maintenance-sheet-completion p {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.maintenance-sheet-completion p > span {
+  flex: 1 1 auto;
+  min-width: 4rem;
+  border-bottom: 1px solid var(--muted);
+}
+
+.maintenance-sheet-completion-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.maintenance-sheet-signature {
+  width: min(50%, 22rem);
+  margin-left: auto !important;
+}
+
+.maintenance-sheets-actions {
+  flex: 0 0 auto;
 }
 
 .maintenance-order-list-scroll {
@@ -1736,11 +1855,29 @@ body.app-scroll-locked {
   .history-changes li > span[aria-hidden='true'] {
     display: none;
   }
+
+  .modal-surface.maintenance-sheets-modal {
+    width: calc(100vw - 1.5rem);
+    height: calc(100dvh - 1.5rem);
+  }
+
+  .maintenance-sheet-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 575.98px) {
   .app-footer {
     text-align: center;
+  }
+
+  .maintenance-sheet-details,
+  .maintenance-sheet-completion-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .maintenance-sheet-signature {
+    width: 100%;
   }
 }
 
@@ -1811,13 +1948,32 @@ body.app-scroll-locked {
     display: none !important;
   }
 
-  .maintenance-order-list-printable {
+  .maintenance-order-list-printable,
+  .maintenance-sheets-printable {
     display: block;
     width: 100%;
     color: #000;
     background: #fff;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  .maintenance-sheet-print-page {
+    position: relative;
+    display: flex;
+    width: 210mm;
+    max-width: 100%;
+    min-height: 297mm;
+    padding: 10mm 8mm;
+    flex-direction: column;
+    box-sizing: border-box;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .maintenance-sheet-print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
   }
 
   .maintenance-order-print-page {
@@ -1881,6 +2037,43 @@ body.app-scroll-locked {
     overflow: hidden;
   }
 
+  .maintenance-sheet-print-content {
+    flex: 1 1 auto;
+    padding-bottom: 13mm;
+  }
+
+  .maintenance-sheet-print-content .maintenance-sheet {
+    gap: 4mm;
+    color: var(--bs-body-color);
+    font-size: 9.5pt;
+  }
+
+  .maintenance-sheet-print-content .maintenance-sheet-details > div {
+    padding: 2mm 2.5mm;
+  }
+
+  .maintenance-sheet-print-content .maintenance-sheet-section h3,
+  .maintenance-sheet-print-content .maintenance-sheet-completion h3,
+  .maintenance-sheet-print-content .maintenance-sheet-details dt {
+    font-size: 7.5pt;
+  }
+
+  .maintenance-sheet-print-content .table {
+    margin-bottom: 0;
+    font-size: 8.5pt;
+  }
+
+  .maintenance-sheet-print-content .table th,
+  .maintenance-sheet-print-content .table td {
+    color: var(--bs-body-color);
+    border-color: var(--border);
+  }
+
+  .maintenance-sheet-print-content .table-shell {
+    border-color: var(--border);
+    box-shadow: none;
+  }
+
   .maintenance-order-print-content h1 {
     margin: 0 0 0.15cm;
     color: var(--brand-forest-dark);
@@ -1932,7 +2125,15 @@ body.app-scroll-locked {
     display: block;
   }
 
-  .maintenance-order-print-footer .app-footer {
+  .maintenance-sheet-print-footer {
+    position: absolute;
+    right: 8mm;
+    bottom: 10mm;
+    left: 8mm;
+  }
+
+  .maintenance-order-print-footer .app-footer,
+  .maintenance-sheet-print-footer .app-footer {
     padding: 0.2cm 0.4cm;
     color: var(--muted);
     background: #fff;

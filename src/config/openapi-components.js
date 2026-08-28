@@ -688,6 +688,27 @@ export const openApiSchemas = {
     },
   },
   MaintenanceTask: maintenanceTask,
+  MaintenanceSheet: {
+    allOf: [
+      reference('MaintenanceTask'),
+      {
+        type: 'object',
+        properties: {
+          material: {
+            type: 'object',
+            nullable: true,
+            required: ['uuid', 'name', 'model', 'serialNumber'],
+            properties: {
+              uuid,
+              name: writeText(150),
+              model: { ...nullableString, maxLength: 150 },
+              serialNumber: { ...nullableString, maxLength: 150 },
+            },
+          },
+        },
+      },
+    ],
+  },
   MaintenanceHistory: maintenanceHistory,
   MaintenanceInterventionPart: {
     type: 'object',
@@ -1265,6 +1286,31 @@ export const openApiSchemas = {
       },
     },
   },
+  MaintenanceSheetList: {
+    type: 'object',
+    required: [
+      'status',
+      'horizonDays',
+      'includeOverdue',
+      'includeWearBased',
+      'from',
+      'through',
+      'items',
+    ],
+    properties: {
+      status: {
+        type: 'string',
+        enum: MAINTENANCE_DEADLINE_STATUSES,
+        nullable: true,
+      },
+      horizonDays: { type: 'integer', minimum: 0, maximum: 365 },
+      includeOverdue: { type: 'boolean' },
+      includeWearBased: { type: 'boolean' },
+      from: date,
+      through: date,
+      items: arrayOf(reference('MaintenanceSheet')),
+    },
+  },
   DashboardSummary: {
     type: 'object',
     required: ['materials', 'categories', 'manufacturers', 'fleet'],
@@ -1494,6 +1540,7 @@ export const openApiSchemas = {
   StockMovementListResponse: success(reference('StockMovementPage')),
   MaintenancePartPriceHistoryListResponse: success(reference('MaintenancePartPriceHistoryPage')),
   MaintenanceOrderListResponse: success(reference('MaintenanceOrderList')),
+  MaintenanceSheetListResponse: success(reference('MaintenanceSheetList')),
   MaintenanceHistoryResponse: success(reference('MaintenanceHistoryPage')),
   MaintenanceExecutionResponse: success(reference('MaintenanceExecution')),
   MaintenanceInterventionResponse: success(reference('MaintenanceIntervention')),

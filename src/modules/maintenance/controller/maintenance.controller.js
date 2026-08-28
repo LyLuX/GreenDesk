@@ -15,6 +15,9 @@ export default class MaintenanceController {
   async orderList(request, response) {
     response.json(successResponse(await this.service.getOrderList(request.query)));
   }
+  async sheets(request, response) {
+    response.json(successResponse(await this.service.getMaintenanceSheets(request.query)));
+  }
   async interventions(request, response) {
     response.json(successResponse(await this.service.getInterventions(request.query)));
   }

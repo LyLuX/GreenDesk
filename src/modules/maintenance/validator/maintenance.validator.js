@@ -89,11 +89,15 @@ export const executeValidator = [
     throw new Error('Un commentaire est obligatoire sans changement de pièce.');
   }),
 ];
-export const orderListValidator = [
+const deadlineSelectionValidator = [
   query('status').optional({ values: 'falsy' }).isIn(MAINTENANCE_DEADLINE_STATUSES),
   query('horizonDays').optional().isInt({ min: 0, max: 365 }).toInt(),
   query('includeOverdue').optional().isBoolean().toBoolean(),
   query('includeWearBased').optional().isBoolean().toBoolean(),
+];
+export const maintenanceSheetListValidator = [...deadlineSelectionValidator];
+export const orderListValidator = [
+  ...deadlineSelectionValidator,
   query('includeLowStock').optional().isBoolean().toBoolean(),
   query('lowStockOnly').optional().isBoolean().toBoolean(),
 ];
