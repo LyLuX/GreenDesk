@@ -13,6 +13,7 @@ export default function AutocompleteField({
   getSuggestionKey,
   loading = false,
   emptyMessage = 'Aucune proposition',
+  suggestionsPlacement = 'bottom',
   onChange,
   onSelect,
   ...inputProps
@@ -107,7 +108,9 @@ export default function AutocompleteField({
         {suggestionsVisible && (
           <div
             id={listboxId}
-            className="autocomplete-options list-group position-absolute start-0 end-0"
+            className={`autocomplete-options list-group position-absolute start-0 end-0 ${
+              suggestionsPlacement === 'top' ? 'autocomplete-options-top' : ''
+            }`.trim()}
             role="listbox"
           >
             {loading ? (

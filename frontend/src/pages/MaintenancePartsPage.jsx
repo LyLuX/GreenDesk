@@ -112,6 +112,7 @@ export default function MaintenancePartsPage() {
       label: 'Unité',
       required: true,
       suggestionsFromRecords: true,
+      suggestionsPlacement: 'top',
     },
     {
       name: 'unitPrice',

@@ -56,7 +56,15 @@ describe('production CSS build', () => {
       /\.stock-summary-grid\s*\{[^}]*display:\s*flex;[^}]*flex-wrap:\s*wrap;[^}]*justify-content:\s*space-evenly;[^}]*align-items:\s*center;[^}]*align-content:\s*space-between;/,
     );
     expect(styles).toMatch(
-      /\.stock-summary-card\s*\{[^}]*display:\s*flex;[^}]*flex:\s*0 1 10rem;[^}]*flex-direction:\s*column;[^}]*align-items:\s*center;[^}]*justify-content:\s*center;/,
+      /\.stock-summary-card\s*\{[^}]*display:\s*flex;[^}]*flex:\s*0 1 8rem;[^}]*flex-direction:\s*column;[^}]*align-items:\s*center;[^}]*justify-content:\s*center;[^}]*min-width:\s*8rem;[^}]*min-height:\s*4\.5rem;/,
+    );
+  });
+
+  it('can display autocomplete suggestions above fields near a modal footer', () => {
+    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+
+    expect(styles).toMatch(
+      /\.autocomplete-options-top\s*\{[^}]*top:\s*auto;[^}]*bottom:\s*calc\(100% \+ 0\.35rem\);/,
     );
   });
 

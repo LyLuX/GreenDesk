@@ -278,6 +278,7 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(unit).toHaveValue('');
     await user.clear(unit);
     await user.type(unit, 'iè');
+    expect(screen.getByRole('listbox')).toHaveClass('autocomplete-options-top');
     await user.click(screen.getByRole('option', { name: 'pièce' }));
     expect(unit).toHaveValue('pièce');
     await user.selectOptions(screen.getByLabelText('Fabricant'), 'manufacturer-uuid');
@@ -312,6 +313,7 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(unit).toHaveValue('pièce');
     await user.clear(unit);
     await user.type(unit, 'iè');
+    expect(screen.getByRole('listbox')).toHaveClass('autocomplete-options-top');
     await user.click(screen.getByRole('option', { name: 'pièce' }));
     expect(unit).toHaveValue('pièce');
   });
