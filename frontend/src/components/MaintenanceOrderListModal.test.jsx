@@ -495,6 +495,43 @@ describe('MaintenanceOrderListModal', () => {
     expect(screen.queryByText('Selon l’usure')).not.toBeInTheDocument();
   });
 
+  it('colors low-stock details with the themed minimum-stock color', async () => {
+    mocks.getOrderList.mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'low-stock-part-uuid',
+              name: 'Filtre à huile',
+              reference: 'FH-01',
+              quantity: 1,
+              quantityOnHand: 0,
+              unit: 'pièce',
+              lowStock: true,
+              plans: [],
+            },
+          ],
+        },
+      },
+    });
+
+    render(
+      <MaintenanceOrderListModal
+        open
+        onClose={vi.fn()}
+        initialFilters={{ includeLowStock: true }}
+      />,
+    );
+
+    const dialog = screen.getByRole('dialog');
+    expect(await within(dialog).findByText('Stock faible : 0 pièce')).toHaveClass(
+      'maintenance-order-low-stock',
+    );
+    expect(
+      document.querySelector('.maintenance-order-list-printable .maintenance-order-low-stock'),
+    ).toHaveTextContent('Stock faible : 0 pièce');
+  });
+
   it('groups suppliers alphabetically and keeps missing suppliers together', () => {
     expect(
       groupOrderPartsBySupplier([

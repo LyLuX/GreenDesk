@@ -126,7 +126,7 @@ function OrderPartsTable({
                     <td className="maintenance-order-plans">
                       <ul className="mb-0 ps-3">
                         {part.lowStock ? (
-                          <li key="low-stock">
+                          <li className="maintenance-order-low-stock" key="low-stock">
                             Stock faible : {formatStockQuantity(part.quantityOnHand, part.unit)}
                           </li>
                         ) : null}
@@ -151,7 +151,7 @@ function OrderPartsTable({
                     <td className="maintenance-order-plans">
                       <ul className="mb-0 ps-3">
                         {part.lowStock ? (
-                          <li key="low-stock">
+                          <li className="maintenance-order-low-stock" key="low-stock">
                             Stock faible : {formatStockQuantity(part.quantityOnHand, part.unit)}
                           </li>
                         ) : null}
