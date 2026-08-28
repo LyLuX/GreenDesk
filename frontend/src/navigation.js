@@ -90,8 +90,3 @@ export const navigationSections = [
     ],
   },
 ];
-
-/** Flat route list kept available for route-level checks and other consumers. */
-export const navigationItems = navigationSections.flatMap((section) =>
-  section.item ? [section.item] : section.items,
-);

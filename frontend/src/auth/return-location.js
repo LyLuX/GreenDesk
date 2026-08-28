@@ -57,10 +57,3 @@ export const resolveReturnLocation = (preferredLocation, fallback = '/dashboard'
   readReturnLocation() ??
   sanitizeReturnLocation(fallback) ??
   '/dashboard';
-
-/** Consumes the preferred router destination, then the persisted one, exactly once. */
-export const consumeReturnLocation = (preferredLocation, fallback = '/dashboard') => {
-  const destination = resolveReturnLocation(preferredLocation, fallback);
-  clearReturnLocation();
-  return destination;
-};

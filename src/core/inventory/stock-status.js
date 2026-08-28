@@ -8,8 +8,6 @@ export const STOCK_STATUSES = Object.freeze({
 
 export const STOCK_STATUS_VALUES = Object.freeze(Object.values(STOCK_STATUSES));
 
-export const isStockStatus = (value) => STOCK_STATUS_VALUES.includes(value);
-
 /** Calculates the user-facing state and shortage for a concrete requirement. */
 export const getStockAvailability = (
   { quantityOnHand = 0, quantityOnOrder = 0 } = {},

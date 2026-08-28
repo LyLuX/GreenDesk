@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getMaterialFileContent } from '../api/material-files.api.js';
-import AuthenticatedImage, { clearAuthenticatedImageCache } from './AuthenticatedImage.jsx';
+import { clearAuthenticatedImageCache } from '../utils/authenticated-image-cache.js';
+import AuthenticatedImage from './AuthenticatedImage.jsx';
 
 vi.mock('../api/material-files.api.js', () => ({ getMaterialFileContent: vi.fn() }));
 

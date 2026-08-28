@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { navigationItems, navigationSections } from './navigation.js';
+import { navigationSections } from './navigation.js';
 import client from './api/client.js';
 
 describe('frontend navigation', () => {
   it('declares every business and history route', () => {
+    const navigationItems = navigationSections.flatMap((section) =>
+      section.item ? [section.item] : section.items,
+    );
     expect(navigationItems.map((item) => item.path)).toEqual([
       '/dashboard',
       '/relations',

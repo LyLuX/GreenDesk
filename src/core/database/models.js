@@ -15,7 +15,6 @@ import MaintenancePartPriceHistory from '../../modules/maintenance/model/mainten
 import MaintenancePartUsage from '../../modules/maintenance/model/maintenance-part-usage.model.js';
 import Supplier from '../../modules/suppliers/model/supplier.model.js';
 import MaintenanceTaskPart from '../../modules/maintenance/model/maintenance-task-part.model.js';
-import RevokedAccessToken from '../../modules/auth/model/revoked-access-token.model.js';
 import EmailVerificationToken from '../../modules/auth/model/email-verification-token.model.js';
 import StockMovement from '../inventory/stock-movement.model.js';
 import Company from '../../modules/companies/model/company.model.js';
@@ -237,27 +236,3 @@ export function initializeModels() {
 
   initialized = true;
 }
-
-export {
-  AuditLog,
-  Permission,
-  Role,
-  User,
-  Category,
-  Material,
-  PartManufacturer,
-  MaterialFile,
-  MaintenanceTask,
-  MaintenanceHistory,
-  MaintenanceIntervention,
-  MaintenanceOperation,
-  MaintenancePart,
-  MaintenancePartPriceHistory,
-  MaintenancePartUsage,
-  Supplier,
-  MaintenanceTaskPart,
-  RevokedAccessToken,
-  EmailVerificationToken,
-  StockMovement,
-  Company,
-};

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  consumeReturnLocation,
+  clearReturnLocation,
   readReturnLocation,
   rememberReturnLocation,
   resolveReturnLocation,
@@ -15,8 +15,6 @@ describe('return location', () => {
 
     expect(rememberReturnLocation(destination)).toBe(true);
     expect(readReturnLocation()).toBe(destination);
-    expect(consumeReturnLocation()).toBe(destination);
-    expect(readReturnLocation()).toBeNull();
   });
 
   it.each([
@@ -32,7 +30,8 @@ describe('return location', () => {
   it('prefers the current router destination and clears an older stored path', () => {
     rememberReturnLocation('/materials');
 
-    expect(consumeReturnLocation('/roles')).toBe('/roles');
+    expect(resolveReturnLocation('/roles')).toBe('/roles');
+    clearReturnLocation();
     expect(readReturnLocation()).toBeNull();
   });
 

@@ -1,12 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getMaterialFileContent } from '../api/material-files.api.js';
-import {
-  clearAuthenticatedImageCache,
-  loadAuthenticatedImageBlob,
-} from '../utils/authenticated-image-cache.js';
+import { loadAuthenticatedImageBlob } from '../utils/authenticated-image-cache.js';
 import Loader from './Loader.jsx';
-
-export { clearAuthenticatedImageCache };
 
 /** Displays a protected image through an authenticated blob request. */
 export default function AuthenticatedImage({
