@@ -20,8 +20,8 @@ export const maintenancePriorityBadgeClasses = Object.freeze({
 });
 export const maintenanceStatusLabels = Object.freeze({
   upToDate: 'À jour',
-  upcoming: 'Sous 30 jours',
   dueToday: 'À faire aujourd’hui',
+  upcoming: 'Sous 30 jours',
   overdue: 'En retard',
   wearBased: 'Selon l’usure',
 });

@@ -8,7 +8,7 @@ Sa finalité est de réunir dans un même outil les informations souvent dispers
 papier, tableaux et documents : matériels en service, caractéristiques, photos, entretiens à
 prévoir, pièces nécessaires, état des stocks, coûts et historique des actions réalisées.
 
-La version actuelle de GreenDesk est **7.31.0**.
+La version actuelle de GreenDesk est **7.31.1**.
 
 ## Ce que permet GreenDesk
 
