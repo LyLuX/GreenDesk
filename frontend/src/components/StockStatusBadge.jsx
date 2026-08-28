@@ -1,4 +1,4 @@
-import { stockStatusPresentation } from '../inventory/stock-status.js';
+import { STOCK_STATUSES, stockStatusPresentation } from '../inventory/stock-status.js';
 
 const minimumStockPresentation = {
   label: 'Stock minimum',
@@ -8,7 +8,10 @@ const minimumStockPresentation = {
 /** Shared visual representation for inventory states. */
 export default function StockStatusBadge({ status, quantityOnHand, minimumStockQuantity }) {
   const hasQuantities = quantityOnHand !== undefined && minimumStockQuantity !== undefined;
-  const isAtMinimumStock = hasQuantities && Number(quantityOnHand) === Number(minimumStockQuantity);
+  const isAtMinimumStock =
+    status !== STOCK_STATUSES.ORDERED &&
+    hasQuantities &&
+    Number(quantityOnHand) === Number(minimumStockQuantity);
   const presentation = isAtMinimumStock
     ? minimumStockPresentation
     : (stockStatusPresentation[status] ?? {

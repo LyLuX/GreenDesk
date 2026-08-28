@@ -328,6 +328,31 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(screen.queryByText('À commander', { selector: 'span' })).not.toBeInTheDocument();
   });
 
+  it('keeps the ordered badge when a zero-minimum part has a current order', async () => {
+    mocks.listParts.mockResolvedValue({
+      data: {
+        data: [
+          {
+            uuid: 'zero-stock-ordered-part-uuid',
+            name: 'Pièce sans réserve commandée',
+            reference: 'ZERO-ORDERED',
+            unit: 'pièce',
+            stockStatus: 'ordered',
+            quantityOnHand: 0,
+            quantityOnOrder: 2,
+            minimumStockQuantity: 0,
+            unitPrice: 0,
+            active: true,
+          },
+        ],
+      },
+    });
+    render(<MaintenancePartsPage />);
+
+    expect(await screen.findByText('Commandée', { selector: 'span' })).toHaveClass('stock-ordered');
+    expect(screen.queryByText('Stock minimum', { selector: 'span' })).not.toBeInTheDocument();
+  });
+
   it('keeps tracked price changes out of the general part edit form', async () => {
     const user = userEvent.setup();
     render(<MaintenancePartsPage />);

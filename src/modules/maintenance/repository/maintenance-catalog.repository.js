@@ -116,18 +116,28 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
           Op.gte,
           sequelize.col('minimum_stock_quantity'),
         ),
+        sequelize.literal(
+          'NOT (minimum_stock_quantity = 0 AND quantity_on_hand = 0 AND quantity_on_order > 0)',
+        ),
       ];
     } else if (stockStatus === STOCK_STATUSES.ORDERED) {
-      where[Op.and] = [
-        sequelize.where(
-          sequelize.col('quantity_on_hand'),
-          Op.lt,
-          sequelize.col('minimum_stock_quantity'),
-        ),
-        sequelize.where(
-          sequelize.literal('quantity_on_hand + quantity_on_order'),
-          Op.gte,
-          sequelize.col('minimum_stock_quantity'),
+      where[Op.or] = [
+        {
+          [Op.and]: [
+            sequelize.where(
+              sequelize.col('quantity_on_hand'),
+              Op.lt,
+              sequelize.col('minimum_stock_quantity'),
+            ),
+            sequelize.where(
+              sequelize.literal('quantity_on_hand + quantity_on_order'),
+              Op.gte,
+              sequelize.col('minimum_stock_quantity'),
+            ),
+          ],
+        },
+        sequelize.literal(
+          'minimum_stock_quantity = 0 AND quantity_on_hand = 0 AND quantity_on_order > 0',
         ),
       ];
     } else if (stockStatus === STOCK_STATUSES.TO_ORDER) {

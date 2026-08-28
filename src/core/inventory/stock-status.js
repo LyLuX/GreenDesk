@@ -17,9 +17,10 @@ export const getStockAvailability = (
   const onHand = Math.max(roundStockQuantity(Number(quantityOnHand) || 0), 0);
   const onOrder = Math.max(roundStockQuantity(Number(quantityOnOrder) || 0), 0);
   const shortage = Math.max(addStockQuantities(addStockQuantities(required, -onHand), -onOrder), 0);
+  const orderedAtZeroMinimum = required === 0 && onHand === 0 && onOrder > 0;
   const status = shortage
     ? STOCK_STATUSES.TO_ORDER
-    : onHand >= required
+    : onHand >= required && !orderedAtZeroMinimum
       ? STOCK_STATUSES.IN_STOCK
       : STOCK_STATUSES.ORDERED;
 

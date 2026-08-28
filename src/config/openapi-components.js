@@ -304,7 +304,7 @@ const maintenancePart = {
       type: 'string',
       enum: STOCK_STATUS_VALUES,
       description:
-        'État calculé par rapport au stock minimum de la pièce : disponible lorsque le stock atelier atteint le seuil, commandé lorsque les commandes couvrent le manque, sinon à commander.',
+        'État calculé par rapport au stock minimum de la pièce : disponible lorsque le stock atelier atteint le seuil, commandé lorsque les commandes couvrent le manque ou qu’une commande existe pour un seuil nul sans stock atelier, sinon à commander.',
     },
     stockQuantity: {
       ...decimalQuantity(2000000, { allowZero: true }),

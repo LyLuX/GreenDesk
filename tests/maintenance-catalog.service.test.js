@@ -233,6 +233,20 @@ describe('MaintenanceCatalogService', () => {
       minimumStockQuantity: 0,
       stockStatus: 'inStock',
     });
+
+    expect(
+      service.toPublic({
+        uuid: '11111111-1111-4111-8111-111111111111',
+        name: 'Pièce sans réserve commandée',
+        reference: 'ZERO-ORDERED',
+        quantityOnHand: 0,
+        quantityOnOrder: 2,
+        minimumStockQuantity: 0,
+      }),
+    ).toMatchObject({
+      minimumStockQuantity: 0,
+      stockStatus: 'ordered',
+    });
   });
 
   it('updates a part price and records its immutable history in one transaction', async () => {
