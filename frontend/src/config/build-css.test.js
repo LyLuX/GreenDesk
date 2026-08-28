@@ -153,4 +153,12 @@ describe('production CSS build', () => {
       /\.maintenance-order-plan-wear-based\s*\{[^}]*color:\s*var\(--maintenance-wear-based-color\);/,
     );
   });
+
+  it('forces the themed low-stock color over Bootstrap table states', () => {
+    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+
+    expect(styles).toMatch(
+      /\.maintenance-order-list-table \.maintenance-order-plans\s*>\s*ul\s*>\s*li\.maintenance-order-low-stock\s*\{[^}]*color:\s*var\(--status-badge-minimum-color\)\s*!important;/,
+    );
+  });
 });

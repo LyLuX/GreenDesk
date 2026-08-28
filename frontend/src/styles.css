@@ -1495,8 +1495,8 @@ body.app-scroll-locked {
   color: var(--maintenance-wear-based-color);
 }
 
-.maintenance-order-low-stock {
-  color: var(--status-badge-minimum-color);
+.maintenance-order-list-table .maintenance-order-plans > ul > li.maintenance-order-low-stock {
+  color: var(--status-badge-minimum-color) !important;
 }
 
 .maintenance-order-list-actions {
