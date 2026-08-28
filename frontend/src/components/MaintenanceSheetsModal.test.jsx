@@ -51,11 +51,8 @@ describe('MaintenanceSheetsModal', () => {
       data: {
         data: {
           status: null,
-          horizonDays: 30,
-          includeOverdue: true,
+          includeOverdue: false,
           includeWearBased: false,
-          from: '2026-08-28',
-          through: '2026-09-27',
           items: [sheet],
         },
       },
@@ -89,7 +86,6 @@ describe('MaintenanceSheetsModal', () => {
         onClose={vi.fn()}
         initialFilters={{
           status: 'upcoming',
-          horizonDays: 30,
           includeOverdue: false,
           includeWearBased: false,
         }}
@@ -100,7 +96,6 @@ describe('MaintenanceSheetsModal', () => {
       expect(mocks.getSheets).toHaveBeenCalledWith(
         {
           status: 'upcoming',
-          horizonDays: 30,
           includeOverdue: false,
           includeWearBased: false,
         },
@@ -109,13 +104,18 @@ describe('MaintenanceSheetsModal', () => {
     );
 
     const dialog = screen.getByRole('dialog', { name: 'Fiches de maintenance' });
-    await user.selectOptions(within(dialog).getByLabelText('Échéance'), '60');
+    expect(within(dialog).getByLabelText('Échéance')).toHaveValue('upcoming');
+    expect(within(dialog).getByRole('option', { name: 'À faire aujourd’hui' })).toHaveValue(
+      'dueToday',
+    );
+    expect(within(dialog).getByRole('option', { name: 'À jour' })).toHaveValue('upToDate');
+    await user.selectOptions(within(dialog).getByLabelText('Échéance'), 'dueToday');
     await user.click(within(dialog).getByLabelText('Inclure les plans selon usure'));
 
     await waitFor(() =>
       expect(mocks.getSheets).toHaveBeenLastCalledWith(
         {
-          horizonDays: 60,
+          status: 'dueToday',
           includeOverdue: false,
           includeWearBased: true,
         },

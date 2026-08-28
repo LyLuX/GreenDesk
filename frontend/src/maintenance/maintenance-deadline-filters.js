@@ -12,6 +12,17 @@ export const defaultMaintenanceDeadlineFilters = Object.freeze({
   includeWearBased: false,
 });
 
+export const defaultMaintenanceSheetFilters = Object.freeze({
+  includeOverdue: false,
+  includeWearBased: false,
+});
+
+/** Keeps the maintenance page's exact deadline when opening printable sheets. */
+export const getMaintenanceSheetFiltersForDeadline = (deadlineStatus) => ({
+  ...(deadlineStatus ? { status: deadlineStatus } : {}),
+  ...defaultMaintenanceSheetFilters,
+});
+
 /** Converts the maintenance page deadline filter into an equivalent printable period. */
 export const getMaintenanceDeadlineFilters = (deadlineStatus) => {
   const filtersByDeadline = {

@@ -232,7 +232,7 @@ describe('maintenance catalogue route permissions', () => {
       .set('Authorization', authorization(['maintenance.sheets.read']))
       .expect(200);
     await request(app)
-      .get(`${path}?horizonDays=366`)
+      .get(`${path}?status=invalid`)
       .set('Authorization', authorization(['maintenance.sheets.read']))
       .expect(400);
   });

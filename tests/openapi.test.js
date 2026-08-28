@@ -258,6 +258,16 @@ describe('OpenAPI contract', () => {
     expect(swaggerSpec.paths['/maintenance/sheets'].get.description).toContain(
       '`maintenance.sheets.read`',
     );
+    const maintenanceSheetParameters = swaggerSpec.paths['/maintenance/sheets'].get.parameters.map(
+      ({ name }) => name,
+    );
+    expect(maintenanceSheetParameters).toEqual(
+      expect.arrayContaining(['status', 'includeOverdue', 'includeWearBased']),
+    );
+    expect(maintenanceSheetParameters).not.toContain('horizonDays');
+    expect(swaggerSpec.paths['/maintenance/sheets'].get.description).toContain(
+      'tous les plans actifs',
+    );
     expect(
       swaggerSpec.components.schemas.MaintenanceSheetList.properties.items.items.allOf,
     ).toHaveLength(2);

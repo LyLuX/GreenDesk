@@ -264,6 +264,17 @@ export default class MaintenanceRepository extends TransactionalRepository {
       order: [['next_maintenance_date', 'ASC']],
     });
   }
+  async findForMaintenanceSheets({ status } = {}) {
+    const statusFilter = getStatusFilter(status);
+    return MaintenanceTask.findAll({
+      where: companyWhere({
+        active: true,
+        ...(statusFilter ? { [Op.and]: [statusFilter] } : {}),
+      }),
+      include: [materialInclude, operationInclude, partsInclude],
+      order: [['next_maintenance_date', 'ASC']],
+    });
+  }
   async findHistory(taskId, query = {}) {
     const pagination = normalizePagination(query);
     return MaintenanceHistory.findAndCountAll({

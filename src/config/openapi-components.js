@@ -1288,26 +1288,15 @@ export const openApiSchemas = {
   },
   MaintenanceSheetList: {
     type: 'object',
-    required: [
-      'status',
-      'horizonDays',
-      'includeOverdue',
-      'includeWearBased',
-      'from',
-      'through',
-      'items',
-    ],
+    required: ['status', 'includeOverdue', 'includeWearBased', 'items'],
     properties: {
       status: {
         type: 'string',
         enum: MAINTENANCE_DEADLINE_STATUSES,
         nullable: true,
       },
-      horizonDays: { type: 'integer', minimum: 0, maximum: 365 },
       includeOverdue: { type: 'boolean' },
       includeWearBased: { type: 'boolean' },
-      from: date,
-      through: date,
       items: arrayOf(reference('MaintenanceSheet')),
     },
   },

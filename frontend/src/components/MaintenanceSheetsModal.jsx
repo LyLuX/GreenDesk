@@ -4,10 +4,7 @@ import { createPortal } from 'react-dom';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import { getMaintenanceSheets } from '../api/maintenance.api.js';
 import useAuth from '../auth/useAuth.js';
-import {
-  defaultMaintenanceDeadlineFilters,
-  maintenanceHorizonOptions,
-} from '../maintenance/maintenance-deadline-filters.js';
+import { defaultMaintenanceSheetFilters } from '../maintenance/maintenance-deadline-filters.js';
 import {
   maintenancePriorityBadgeClasses,
   maintenancePriorityLabels,
@@ -159,7 +156,7 @@ function MaintenanceSheetPrintPages({ items, companyName }) {
 export default function MaintenanceSheetsModal({ open, onClose, initialFilters }) {
   const { activeCompany } = useAuth();
   const [filters, setFilters] = useState(() => ({
-    ...defaultMaintenanceDeadlineFilters,
+    ...defaultMaintenanceSheetFilters,
     ...initialFilters,
   }));
   const [data, setData] = useState(null);
@@ -198,9 +195,12 @@ export default function MaintenanceSheetsModal({ open, onClose, initialFilters }
     };
   }, [load, open]);
 
-  const updateFilter = (values) =>
-    setFilters((current) => ({ ...current, status: undefined, ...values }));
   const items = data?.items ?? [];
+  const includesEveryDeadline = !filters.status;
+  const includesOverdue =
+    includesEveryDeadline || filters.status === 'overdue' || filters.includeOverdue;
+  const includesWearBased =
+    includesEveryDeadline || filters.status === 'wearBased' || filters.includeWearBased;
 
   return (
     <>
@@ -218,12 +218,18 @@ export default function MaintenanceSheetsModal({ open, onClose, initialFilters }
               Échéance
               <select
                 className="form-select"
-                value={filters.horizonDays}
-                onChange={(event) => updateFilter({ horizonDays: Number(event.target.value) })}
+                value={filters.status ?? ''}
+                onChange={(event) =>
+                  setFilters({
+                    ...(event.target.value ? { status: event.target.value } : {}),
+                    ...defaultMaintenanceSheetFilters,
+                  })
+                }
               >
-                {maintenanceHorizonOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                <option value="">Toutes les échéances</option>
+                {Object.entries(maintenanceStatusLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
                   </option>
                 ))}
               </select>
@@ -232,8 +238,14 @@ export default function MaintenanceSheetsModal({ open, onClose, initialFilters }
               <input
                 type="checkbox"
                 className="form-check-input"
-                checked={filters.includeOverdue}
-                onChange={(event) => updateFilter({ includeOverdue: event.target.checked })}
+                checked={includesOverdue}
+                disabled={includesEveryDeadline || filters.status === 'overdue'}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    includeOverdue: event.target.checked,
+                  }))
+                }
               />
               <span className="form-check-label">Inclure les plans en retard</span>
             </label>
@@ -241,8 +253,14 @@ export default function MaintenanceSheetsModal({ open, onClose, initialFilters }
               <input
                 type="checkbox"
                 className="form-check-input"
-                checked={filters.includeWearBased}
-                onChange={(event) => updateFilter({ includeWearBased: event.target.checked })}
+                checked={includesWearBased}
+                disabled={includesEveryDeadline || filters.status === 'wearBased'}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    includeWearBased: event.target.checked,
+                  }))
+                }
               />
               <span className="form-check-label">Inclure les plans selon usure</span>
             </label>

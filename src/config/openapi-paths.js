@@ -1243,7 +1243,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Liste les fiches de maintenance à consulter ou à imprimer.',
       description:
-        'Nécessite la permission dédiée `maintenance.sheets.read`. Le filtre `status`, lorsqu’il est renseigné, prend la priorité sur la période. `includeWearBased` ajoute une fois chaque plan actif suivi selon l’usure.',
+        'Nécessite la permission dédiée `maintenance.sheets.read`. Le filtre `status` reprend exactement les échéances de la liste des plans. Sans statut, tous les plans actifs sont retournés. `includeOverdue` et `includeWearBased` permettent d’ajouter respectivement les plans en retard et ceux suivis selon l’usure à une échéance sélectionnée.',
       security: secure,
       parameters: [
         {
@@ -1256,14 +1256,9 @@ export const openApiPaths = {
           },
         },
         {
-          name: 'horizonDays',
-          in: 'query',
-          schema: { type: 'integer', minimum: 0, maximum: 365, default: 30 },
-        },
-        {
           name: 'includeOverdue',
           in: 'query',
-          schema: { type: 'boolean', default: true },
+          schema: { type: 'boolean', default: false },
         },
         {
           name: 'includeWearBased',

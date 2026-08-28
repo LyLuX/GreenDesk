@@ -299,7 +299,7 @@ describe('MaintenanceService', () => {
       nextMaintenanceDate: null,
     };
     const repository = {
-      findForOrderList: jest
+      findForMaintenanceSheets: jest
         .fn()
         .mockResolvedValueOnce([calendarTask])
         .mockResolvedValueOnce([wearTask]),
@@ -307,19 +307,20 @@ describe('MaintenanceService', () => {
     const service = new MaintenanceService(repository, {}, {}, {});
 
     const result = await service.getMaintenanceSheets({
-      horizonDays: 60,
+      status: 'upcoming',
       includeOverdue: 'false',
       includeWearBased: 'true',
     });
 
-    expect(repository.findForOrderList).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({ from: expect.any(String), through: expect.any(String) }),
-    );
-    expect(repository.findForOrderList).toHaveBeenNthCalledWith(2, { status: 'wearBased' });
+    expect(repository.findForMaintenanceSheets).toHaveBeenNthCalledWith(1, {
+      status: 'upcoming',
+    });
+    expect(repository.findForMaintenanceSheets).toHaveBeenNthCalledWith(2, {
+      status: 'wearBased',
+    });
     expect(result).toEqual(
       expect.objectContaining({
-        horizonDays: 60,
+        status: 'upcoming',
         includeOverdue: false,
         includeWearBased: true,
         items: expect.arrayContaining([
@@ -335,6 +336,18 @@ describe('MaintenanceService', () => {
           expect.objectContaining({ title: 'Contrôle de lame', status: 'wearBased' }),
         ]),
       }),
+    );
+  });
+
+  it('returns every active plan when maintenance sheets have no deadline filter', async () => {
+    const repository = { findForMaintenanceSheets: jest.fn().mockResolvedValue([]) };
+    const service = new MaintenanceService(repository, {}, {}, {});
+
+    const result = await service.getMaintenanceSheets();
+
+    expect(repository.findForMaintenanceSheets).toHaveBeenCalledWith();
+    expect(result).toEqual(
+      expect.objectContaining({ status: null, includeOverdue: false, includeWearBased: false }),
     );
   });
 

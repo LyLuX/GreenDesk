@@ -475,38 +475,29 @@ export default class MaintenanceService {
       this.toIntervention(intervention),
     );
   }
-  async getMaintenanceSheets({
-    horizonDays = 30,
-    includeOverdue = true,
-    includeWearBased = false,
-    status,
-  } = {}) {
-    const normalizedHorizon = Math.min(Math.max(Number(horizonDays) || 0, 0), 365);
+  async getMaintenanceSheets({ includeOverdue = false, includeWearBased = false, status } = {}) {
     const normalizedStatus = MAINTENANCE_DEADLINE_STATUSES.includes(status) ? status : undefined;
-    const normalizedIncludeOverdue = normalizeBooleanFilter(includeOverdue) ?? true;
+    const normalizedIncludeOverdue = normalizeBooleanFilter(includeOverdue) ?? false;
     const includeWearBasedPlans = normalizeBooleanFilter(includeWearBased) ?? false;
-    const from = todayDateOnly();
-    const through = addDaysDateOnly(from, normalizedHorizon);
-    const [deadlineTasks, wearBasedTasks] = await Promise.all([
-      this.repository.findForOrderList({
-        from: normalizedIncludeOverdue ? undefined : from,
-        through,
-        status: normalizedStatus,
-      }),
-      includeWearBasedPlans && normalizedStatus !== 'wearBased'
-        ? this.repository.findForOrderList({ status: 'wearBased' })
-        : Promise.resolve([]),
-    ]);
-    const tasks = [
-      ...new Map([...deadlineTasks, ...wearBasedTasks].map((task) => [task.uuid, task])).values(),
-    ];
+    const statuses = normalizedStatus
+      ? [
+          normalizedStatus,
+          ...(normalizedIncludeOverdue && normalizedStatus !== 'overdue' ? ['overdue'] : []),
+          ...(includeWearBasedPlans && normalizedStatus !== 'wearBased' ? ['wearBased'] : []),
+        ]
+      : [];
+    const groups = statuses.length
+      ? await Promise.all(
+          statuses.map((deadlineStatus) =>
+            this.repository.findForMaintenanceSheets({ status: deadlineStatus }),
+          ),
+        )
+      : [await this.repository.findForMaintenanceSheets()];
+    const tasks = [...new Map(groups.flat().map((task) => [task.uuid, task])).values()];
     return {
       status: normalizedStatus ?? null,
-      horizonDays: normalizedHorizon,
       includeOverdue: normalizedIncludeOverdue,
       includeWearBased: includeWearBasedPlans,
-      from,
-      through,
       items: tasks.map((task) => this.toMaintenanceSheet(task)),
     };
   }

@@ -315,7 +315,6 @@ describe('MaintenancePage', () => {
       expect(mocks.getSheets).toHaveBeenCalledWith(
         {
           status: 'dueToday',
-          horizonDays: 0,
           includeOverdue: false,
           includeWearBased: false,
         },

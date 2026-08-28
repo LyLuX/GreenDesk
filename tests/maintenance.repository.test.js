@@ -46,4 +46,18 @@ describe('MaintenanceRepository order list', () => {
     const query = findAndCountAll.mock.calls[0][0];
     expect(query.where[Op.and][0].val).toContain('MaintenanceTask.interval_days = 0');
   });
+
+  it('loads all active plans or the exact status for maintenance sheets', async () => {
+    const findAll = jest.spyOn(MaintenanceTask, 'findAll').mockResolvedValue([]);
+    const repository = new MaintenanceRepository();
+
+    await repository.findForMaintenanceSheets();
+    expect(findAll.mock.calls[0][0].where.active).toBe(true);
+    expect(findAll.mock.calls[0][0].where[Op.and]).toBeUndefined();
+
+    await repository.findForMaintenanceSheets({ status: 'dueToday' });
+    expect(findAll.mock.calls[1][0].where[Op.and][0].val).toContain(
+      'MaintenanceTask.next_maintenance_date',
+    );
+  });
 });

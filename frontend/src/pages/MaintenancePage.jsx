@@ -39,7 +39,7 @@ import {
   maintenanceTypeLabels,
 } from '../maintenance/maintenance.labels.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
-import { getMaintenanceDeadlineFilters } from '../maintenance/maintenance-deadline-filters.js';
+import { getMaintenanceSheetFiltersForDeadline } from '../maintenance/maintenance-deadline-filters.js';
 import { getStatusActionButtonClass } from '../utils/status-action.js';
 import { formatDate, formatOperationDateTime } from '../utils/formatters.js';
 
@@ -851,7 +851,7 @@ export default function MaintenancePage() {
       {sheetsOpen ? (
         <MaintenanceSheetsModal
           open
-          initialFilters={getMaintenanceDeadlineFilters(filters.status)}
+          initialFilters={getMaintenanceSheetFiltersForDeadline(filters.status)}
           onClose={() => setSheetsOpen(false)}
         />
       ) : null}
