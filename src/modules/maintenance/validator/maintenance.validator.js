@@ -187,4 +187,8 @@ export const updatePartPriceValidator = [
     .isISO8601({ strict: true })
     .matches(/^\d{4}-\d{2}-\d{2}$/),
 ];
+export const updatePartMinimumStockValidator = [
+  uuid,
+  quantity('minimumStockQuantity', { allowZero: true }),
+];
 export const priceHistoryListValidator = [uuid, ...paginationValidator];

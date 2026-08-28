@@ -65,6 +65,18 @@ export default class MaintenanceCatalogController {
     );
   }
 
+  async updatePartMinimumStock(request, response) {
+    response.json(
+      successResponse(
+        await this.service.updatePartMinimumStock(
+          request.params.uuid,
+          request.body,
+          request.user.userId,
+        ),
+      ),
+    );
+  }
+
   async partStockMovements(request, response) {
     response.json(
       successResponse(await this.service.getPartStockMovements(request.params.uuid, request.query)),

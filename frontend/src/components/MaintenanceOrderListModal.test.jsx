@@ -287,7 +287,7 @@ describe('MaintenanceOrderListModal', () => {
     render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
 
     const includeLowStock = await screen.findByRole('checkbox', {
-      name: 'Inclure les pièces avec un stock inférieur ou égal à 1',
+      name: 'Inclure les pièces avec un stock faible',
     });
     expect(includeLowStock).not.toBeChecked();
 
@@ -345,7 +345,7 @@ describe('MaintenanceOrderListModal', () => {
     expect(within(dialog).getByText('3 pièces')).toBeVisible();
     expect(
       within(dialog).queryByRole('checkbox', {
-        name: 'Inclure les pièces avec un stock inférieur ou égal à 1',
+        name: 'Inclure les pièces avec un stock faible',
       }),
     ).not.toBeInTheDocument();
     expect(within(dialog).queryByRole('button', { name: /Marquer .* commandée/ })).toBeNull();
@@ -637,7 +637,7 @@ describe('MaintenanceOrderListModal', () => {
     expect(screen.queryByLabelText('Quantité commandée pour Bougie')).not.toBeInTheDocument();
     expect(
       screen.queryByRole('checkbox', {
-        name: 'Inclure les pièces avec un stock inférieur ou égal à 1',
+        name: 'Inclure les pièces avec un stock faible',
       }),
     ).not.toBeInTheDocument();
   });

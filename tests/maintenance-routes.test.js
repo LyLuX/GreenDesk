@@ -16,6 +16,9 @@ const catalogController = {
   updatePart: jest.fn((_request, response) => response.json({ success: true, data: {} })),
   updatePartStock: jest.fn((_request, response) => response.json({ success: true, data: {} })),
   updatePartPrice: jest.fn((_request, response) => response.json({ success: true, data: {} })),
+  updatePartMinimumStock: jest.fn((_request, response) =>
+    response.json({ success: true, data: {} }),
+  ),
   partStockMovements: jest.fn((_request, response) =>
     response.json({ success: true, data: { items: [], pagination: {} } }),
   ),
@@ -68,6 +71,7 @@ jest.unstable_mockModule(
       updatePart = catalogController.updatePart;
       updatePartStock = catalogController.updatePartStock;
       updatePartPrice = catalogController.updatePartPrice;
+      updatePartMinimumStock = catalogController.updatePartMinimumStock;
       partStockMovements = catalogController.partStockMovements;
       partPriceHistory = catalogController.partPriceHistory;
       removePart = catalogController.removePart;
@@ -407,6 +411,26 @@ describe('maintenance catalogue route permissions', () => {
       .send({ unitPrice: 12.5, performedAt: '19/08/2026' })
       .expect(400);
     expect(catalogController.updatePartPrice).toHaveBeenCalled();
+  });
+
+  it('requires the dedicated minimum-stock update permission', async () => {
+    const path = `/api/v1/maintenance/parts/${uuid}/minimum-stock`;
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization(['maintenance.parts.update']))
+      .send({ minimumStockQuantity: 2.5 })
+      .expect(403);
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization(['maintenance.parts.stock.minimum.update']))
+      .send({ minimumStockQuantity: 2.5 })
+      .expect(200);
+    await request(app)
+      .patch(path)
+      .set('Authorization', authorization(['maintenance.parts.stock.minimum.update']))
+      .send({ minimumStockQuantity: -1 })
+      .expect(400);
+    expect(catalogController.updatePartMinimumStock).toHaveBeenCalled();
   });
 
   it('validates stock updates and rejects unrelated permissions', async () => {

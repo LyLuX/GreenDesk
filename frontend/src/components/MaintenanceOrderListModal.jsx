@@ -490,9 +490,7 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
                       }))
                     }
                   />
-                  <span className="form-check-label">
-                    Inclure les pièces avec un stock inférieur ou égal à 1
-                  </span>
+                  <span className="form-check-label">Inclure les pièces avec un stock faible</span>
                 </label>
               ) : null}
             </div>
@@ -534,7 +532,7 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
             ) : (
               <p className="mb-0">
                 {lowStockMode
-                  ? 'Aucune pièce avec un stock inférieur ou égal à 1.'
+                  ? 'Aucune pièce avec un stock faible.'
                   : 'Aucune pièce à commander sur cette période.'}
               </p>
             )}

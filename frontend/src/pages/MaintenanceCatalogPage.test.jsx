@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   updatePart: vi.fn(),
   updatePartStock: vi.fn(),
   updatePartPrice: vi.fn(),
+  updatePartMinimumStock: vi.fn(),
   listPartStockMovements: vi.fn(),
   listPartPriceHistory: vi.fn(),
   createIntervention: vi.fn(),
@@ -33,6 +34,7 @@ vi.mock('../api/maintenance.api.js', () => ({
   updateMaintenancePart: mocks.updatePart,
   updateMaintenancePartStock: mocks.updatePartStock,
   updateMaintenancePartPrice: mocks.updatePartPrice,
+  updateMaintenancePartMinimumStock: mocks.updatePartMinimumStock,
   listMaintenancePartStockMovements: mocks.listPartStockMovements,
   listMaintenancePartPriceHistory: mocks.listPartPriceHistory,
   createMaintenanceIntervention: mocks.createIntervention,
@@ -100,6 +102,7 @@ describe('dedicated maintenance catalogue pages', () => {
             stockQuantity: 0,
             quantityOnHand: 0,
             quantityOnOrder: 0,
+            minimumStockQuantity: 1,
             unitPrice: 10,
             totalMaintenanceCost: 25,
             active: true,
@@ -148,6 +151,7 @@ describe('dedicated maintenance catalogue pages', () => {
           unit: 'pièce',
           quantityOnHand: 2,
           quantityOnOrder: 3,
+          minimumStockQuantity: 1,
           unitPrice: 10,
           totalMaintenanceCost: 25,
           stockStatus: 'inStock',
@@ -163,6 +167,21 @@ describe('dedicated maintenance catalogue pages', () => {
           quantityOnHand: 0,
           quantityOnOrder: 0,
           unitPrice: 12.5,
+          totalMaintenanceCost: 25,
+          stockStatus: 'toOrder',
+        },
+      },
+    });
+    mocks.updatePartMinimumStock.mockResolvedValue({
+      data: {
+        data: {
+          uuid: 'part-uuid',
+          name: 'Bougie',
+          unit: 'pièce',
+          quantityOnHand: 0,
+          quantityOnOrder: 0,
+          minimumStockQuantity: 2.5,
+          unitPrice: 10,
           totalMaintenanceCost: 25,
           stockStatus: 'toOrder',
         },
@@ -439,7 +458,7 @@ describe('dedicated maintenance catalogue pages', () => {
     await user.click(await screen.findByRole('button', { name: 'Gérer le stock de Bougie' }));
     const stockDialog = screen.getByRole('dialog');
     const cards = stockDialog.querySelectorAll('.stock-summary-card');
-    expect(cards).toHaveLength(4);
+    expect(cards).toHaveLength(5);
     expect(
       within(stockDialog).getByText('Coût cumulé utilisé').nextElementSibling,
     ).toHaveTextContent('25,00 €');
@@ -464,6 +483,36 @@ describe('dedicated maintenance catalogue pages', () => {
       }),
     );
     expect(mocks.notify).toHaveBeenCalledWith('success', 'Prix unitaire mis à jour.');
+  });
+
+  it('changes the minimum stock only with its dedicated permission action', async () => {
+    const user = userEvent.setup();
+    mocks.hasPermission.mockImplementation(
+      (permission) =>
+        permission === 'maintenance.parts.read' ||
+        permission === 'maintenance.parts.stock.minimum.update',
+    );
+    render(<MaintenancePartsPage />);
+
+    await user.click(await screen.findByRole('button', { name: 'Gérer le stock de Bougie' }));
+    expect(screen.getByRole('option', { name: 'Modifier le stock minimum' })).toBeVisible();
+    expect(
+      screen.queryByRole('option', { name: 'Corriger les quantités' }),
+    ).not.toBeInTheDocument();
+    const minimumStock = screen.getByLabelText('Stock minimum');
+    expect(minimumStock).toHaveValue(1);
+    expect(screen.queryByLabelText('Date de l’opération')).not.toBeInTheDocument();
+
+    await user.clear(minimumStock);
+    await user.type(minimumStock, '2.5');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer le stock minimum' }));
+
+    await waitFor(() =>
+      expect(mocks.updatePartMinimumStock).toHaveBeenCalledWith('part-uuid', {
+        minimumStockQuantity: 2.5,
+      }),
+    );
+    expect(mocks.notify).toHaveBeenCalledWith('success', 'Stock minimum mis à jour.');
   });
 
   it('reports that no designation is proposed when the database is empty', async () => {

@@ -39,6 +39,8 @@ export const updateMaintenancePartStock = (uuid, payload) =>
   client.patch(`/v1/maintenance/parts/${uuid}/stock`, payload);
 export const updateMaintenancePartPrice = (uuid, payload) =>
   client.patch(`/v1/maintenance/parts/${uuid}/price`, payload);
+export const updateMaintenancePartMinimumStock = (uuid, payload) =>
+  client.patch(`/v1/maintenance/parts/${uuid}/minimum-stock`, payload);
 export const listMaintenancePartStockMovements = (uuid, params, signal) =>
   client.get(`/v1/maintenance/parts/${uuid}/stock-movements`, {
     params: compactQueryParams(params),

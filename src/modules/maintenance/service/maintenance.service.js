@@ -18,7 +18,6 @@ import {
   MAINTENANCE_DEADLINE_STATUSES,
   MAINTENANCE_EXECUTION_TYPES,
   MAINTENANCE_PART_ACTIONS,
-  LOW_STOCK_TARGET_QUANTITY,
 } from '../maintenance.constants.js';
 import {
   addDaysDateOnly,
@@ -525,6 +524,7 @@ export default class MaintenanceService {
           unitPrice: Number(part.unitPrice ?? 0),
           quantityOnHand: part.quantityOnHand,
           quantityOnOrder: part.quantityOnOrder,
+          minimumStockQuantity: Number(part.minimumStockQuantity ?? 1),
           active: part.active,
           quantity: 0,
           plans: [],
@@ -556,12 +556,13 @@ export default class MaintenanceService {
         unitPrice: Number(part.unitPrice ?? 0),
         quantityOnHand: Number(part.quantityOnHand ?? 0),
         quantityOnOrder: Number(part.quantityOnOrder ?? 0),
+        minimumStockQuantity: Number(part.minimumStockQuantity ?? 1),
         active: part.active,
         quantity: 0,
         plans: [],
       };
       current.lowStock = true;
-      current.quantity = Math.max(current.quantity, LOW_STOCK_TARGET_QUANTITY);
+      current.quantity = Math.max(current.quantity, current.minimumStockQuantity);
       grouped.set(part.uuid, current);
     }
     const items = [...grouped.values()]
@@ -668,6 +669,7 @@ export default class MaintenanceService {
           active: part.active,
           quantityOnHand: availability.quantityOnHand,
           quantityOnOrder: availability.quantityOnOrder,
+          minimumStockQuantity: Number(part.minimumStockQuantity ?? 1),
           stockStatus: availability.status,
           stockQuantity: addStockQuantities(
             availability.quantityOnHand,

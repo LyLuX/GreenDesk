@@ -176,6 +176,7 @@ describe('OpenAPI contract', () => {
     expect(swaggerSpec.paths).not.toHaveProperty('/maintenance/suppliers');
     expect(swaggerSpec.paths).toHaveProperty('/maintenance/order-list');
     expect(swaggerSpec.paths).toHaveProperty('/maintenance/parts/{uuid}/price');
+    expect(swaggerSpec.paths).toHaveProperty('/maintenance/parts/{uuid}/minimum-stock');
     expect(swaggerSpec.paths).toHaveProperty('/maintenance/parts/{uuid}/price-history');
     expect(swaggerSpec.paths['/materials/options'].get.responses[200]).toBeDefined();
     expect(
@@ -209,6 +210,9 @@ describe('OpenAPI contract', () => {
     expect(swaggerSpec.paths['/maintenance/parts/{uuid}/price'].patch.description).toContain(
       '`maintenance.parts.price.update`',
     );
+    expect(
+      swaggerSpec.paths['/maintenance/parts/{uuid}/minimum-stock'].patch.description,
+    ).toContain('`maintenance.parts.stock.minimum.update`');
     expect(swaggerSpec.paths['/maintenance/interventions'].post.description).toContain(
       '`maintenance.parts.stock.consume`',
     );

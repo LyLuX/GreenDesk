@@ -74,8 +74,10 @@ describe('DashboardRepository', () => {
     });
 
     expect(lowStockCount).toHaveBeenCalledWith({
-      where: { active: true, quantityOnHand: expect.any(Object) },
+      where: expect.objectContaining({ active: true }),
     });
+    expect(lowStockCount.mock.calls[0][0].where).not.toHaveProperty('quantityOnHand');
+    expect(Object.getOwnPropertySymbols(lowStockCount.mock.calls[0][0].where)).toHaveLength(1);
     expect(counts.maintenanceLowStock).toBe(3);
   });
 });

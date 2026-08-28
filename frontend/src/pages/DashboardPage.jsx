@@ -169,7 +169,7 @@ export default function DashboardPage() {
                                 label: 'Pièces avec un stock faible',
                                 value: maintenance.lowStock ?? 0,
                                 className: 'maintenance-low-stock',
-                                ariaLabel: 'Voir les pièces avec un stock inférieur ou égal à 1',
+                                ariaLabel: 'Voir les pièces avec un stock faible',
                                 onClick: () => setLowStockOpen(true),
                               },
                             ]

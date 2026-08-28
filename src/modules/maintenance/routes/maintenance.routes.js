@@ -131,6 +131,13 @@ router.patch(
   validateRequest,
   asyncHandler(catalogController.updatePartPrice.bind(catalogController)),
 );
+router.patch(
+  '/parts/:uuid/minimum-stock',
+  authorize(maintenancePermissions.parts.stock.minimumUpdate),
+  validator.updatePartMinimumStockValidator,
+  validateRequest,
+  asyncHandler(catalogController.updatePartMinimumStock.bind(catalogController)),
+);
 router.get(
   '/parts/:uuid/stock-movements',
   authorize(maintenancePermissions.parts.read),

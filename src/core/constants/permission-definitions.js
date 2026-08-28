@@ -302,6 +302,10 @@ const permissionDefinitions = [
     description: 'Corriger directement la quantité actuellement enregistrée comme commandée.',
   },
   {
+    name: maintenancePermissions.parts.stock.minimumUpdate,
+    description: 'Modifier la quantité de stock minimum d’une pièce de maintenance.',
+  },
+  {
     name: maintenancePermissions.parts.stock.order,
     description: 'Enregistrer une nouvelle commande de pièces destinées à la maintenance.',
   },

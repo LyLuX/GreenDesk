@@ -278,6 +278,7 @@ const maintenancePart = {
     'unitPrice',
     'quantityOnHand',
     'quantityOnOrder',
+    'minimumStockQuantity',
     'stockStatus',
     'stockQuantity',
     'active',
@@ -307,6 +308,11 @@ const maintenancePart = {
     },
     quantityOnHand: decimalQuantity(1000000, { allowZero: true }),
     quantityOnOrder: decimalQuantity(1000000, { allowZero: true }),
+    minimumStockQuantity: {
+      ...decimalQuantity(1000000, { allowZero: true }),
+      default: 1,
+      description: 'Seuil individuel utilisé pour identifier un stock faible.',
+    },
     active: { type: 'boolean' },
     ...timestamps,
   },
@@ -1059,6 +1065,14 @@ export const openApiSchemas = {
       performedAt: date,
     },
   },
+  MaintenancePartMinimumStockRequest: {
+    type: 'object',
+    required: ['minimumStockQuantity'],
+    additionalProperties: false,
+    properties: {
+      minimumStockQuantity: decimalQuantity(1000000, { allowZero: true }),
+    },
+  },
   StockMovementPage: {
     type: 'object',
     required: ['items', 'pagination'],
@@ -1212,7 +1226,7 @@ export const openApiSchemas = {
                 lowStock: {
                   type: 'boolean',
                   description:
-                    'Indique que le stock disponible de la pièce est inférieur ou égal à une unité.',
+                    'Indique que le stock disponible de la pièce est inférieur ou égal à son stock minimum.',
                 },
                 plans: {
                   type: 'array',
@@ -1297,7 +1311,7 @@ export const openApiSchemas = {
             type: 'integer',
             minimum: 0,
             description:
-              'Présent uniquement avec `maintenance.parts.read`. Nombre de pièces de maintenance actives dont le stock disponible est inférieur ou égal à une unité.',
+              'Présent uniquement avec `maintenance.parts.read`. Nombre de pièces de maintenance actives dont le stock disponible est inférieur ou égal à leur stock minimum.',
           },
           stockValues: {
             type: 'object',

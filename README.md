@@ -8,7 +8,7 @@ Sa finalité est de réunir dans un même outil les informations souvent dispers
 papier, tableaux et documents : matériels en service, caractéristiques, photos, entretiens à
 prévoir, pièces nécessaires, état des stocks, coûts et historique des actions réalisées.
 
-La version actuelle de GreenDesk est **7.29.4**.
+La version actuelle de GreenDesk est **7.30.0**.
 
 ## Ce que permet GreenDesk
 
@@ -51,13 +51,13 @@ selon l’usure.
 
 ### Gérer les pièces et les stocks
 
-Le catalogue des pièces associe chaque référence à son fabricant, son fournisseur, son prix et ses
-quantités en atelier ou déjà commandées. GreenDesk conserve l’historique des mouvements et des
-changements de prix.
+Le catalogue des pièces associe chaque référence à son fabricant, son fournisseur, son prix, son
+stock minimum et ses quantités en atelier ou déjà commandées. GreenDesk conserve l’historique des
+mouvements et des changements de prix.
 
 Les principales opérations de stock sont prises en charge : ajustement, commande, réception et
 consommation. Une liste de pièces à commander peut être calculée à partir des besoins des plans de
-maintenance sur différents horizons, puis imprimée par fournisseur.
+maintenance et du stock minimum propre à chaque pièce, puis imprimée par fournisseur.
 
 ### Retrouver les liens et l’historique
 

@@ -6,7 +6,6 @@ import MaintenanceRepository from '../../maintenance/repository/maintenance.repo
 import MaintenancePart from '../../maintenance/model/maintenance-part.model.js';
 import MaintenancePartUsage from '../../maintenance/model/maintenance-part-usage.model.js';
 import { Op } from 'sequelize';
-import { LOW_STOCK_MAX_QUANTITY } from '../../maintenance/maintenance.constants.js';
 import { companyWhere } from '../../../core/company/company-context.js';
 
 /** Efficient aggregate queries used by the dashboard. */
@@ -68,7 +67,13 @@ export default class DashboardRepository {
         ? MaintenancePart.count({
             where: companyWhere({
               active: true,
-              quantityOnHand: { [Op.lte]: LOW_STOCK_MAX_QUANTITY },
+              [Op.and]: [
+                sequelize.where(
+                  sequelize.col('quantity_on_hand'),
+                  Op.lte,
+                  sequelize.col('minimum_stock_quantity'),
+                ),
+              ],
             }),
           })
         : undefined,

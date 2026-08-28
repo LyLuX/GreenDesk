@@ -7,6 +7,7 @@ import {
   listMaintenancePartPriceHistory,
   listMaintenancePartStockMovements,
   updateMaintenancePartPrice,
+  updateMaintenancePartMinimumStock,
   updateMaintenancePartStock,
 } from '../api/maintenance.api.js';
 import { listMaterialOptions } from '../api/reference.api.js';
@@ -31,6 +32,7 @@ const formatChange = (quantity, unit) => {
   return `${value > 0 ? '+' : '−'}${formatStockQuantity(Math.abs(value), unit)}`;
 };
 const PRICE_OPERATION = 'price';
+const MINIMUM_STOCK_OPERATION = 'minimumStock';
 const getMaterialLabel = (material) => material.name;
 const getMaterialKey = (material) => material.uuid;
 const operationDateFormatter = new Intl.DateTimeFormat('fr-FR', {
@@ -59,6 +61,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
   const canReceive = hasPermission(maintenancePermissions.parts.stock.receive);
   const canConsume = hasPermission(maintenancePermissions.parts.stock.consume);
   const canUpdatePrice = hasPermission(maintenancePermissions.parts.price.update);
+  const canUpdateMinimumStock = hasPermission(maintenancePermissions.parts.stock.minimumUpdate);
   const permittedOperations = [
     ...(canAdjustOnHand || canAdjustOnOrder
       ? [{ value: STOCK_OPERATIONS.ADJUST, label: 'Corriger les quantités' }]
@@ -69,6 +72,9 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
       : []),
     ...(canConsume ? [{ value: STOCK_OPERATIONS.CONSUME, label: 'Utiliser en maintenance' }] : []),
     ...(canUpdatePrice ? [{ value: PRICE_OPERATION, label: 'Modifier le prix unitaire' }] : []),
+    ...(canUpdateMinimumStock
+      ? [{ value: MINIMUM_STOCK_OPERATION, label: 'Modifier le stock minimum' }]
+      : []),
   ];
   const initialOperation = permittedOperations[0]?.value ?? '';
   const [currentPart, setCurrentPart] = useState(part);
@@ -77,6 +83,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
   const [quantityOnHand, setQuantityOnHand] = useState('0');
   const [quantityOnOrder, setQuantityOnOrder] = useState('0');
   const [unitPrice, setUnitPrice] = useState('0');
+  const [minimumStockQuantity, setMinimumStockQuantity] = useState('1');
   const [performedAt, setPerformedAt] = useState(getCurrentOperationDate);
   const [materialUuid, setMaterialUuid] = useState('');
   const [materialSearch, setMaterialSearch] = useState('');
@@ -112,6 +119,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
     setQuantityOnHand(String(part.quantityOnHand ?? 0));
     setQuantityOnOrder(String(part.quantityOnOrder ?? 0));
     setUnitPrice(String(part.unitPrice ?? 0));
+    setMinimumStockQuantity(String(part.minimumStockQuantity ?? 1));
     setPerformedAt(getCurrentOperationDate());
     setQuantity('1');
     setMaterialUuid('');
@@ -195,18 +203,25 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
               unitPrice: Number(unitPrice),
               performedAt,
             })
-          : await updateMaintenancePartStock(part.uuid, stockPayload);
+          : operation === MINIMUM_STOCK_OPERATION
+            ? await updateMaintenancePartMinimumStock(part.uuid, {
+                minimumStockQuantity: Number(minimumStockQuantity),
+              })
+            : await updateMaintenancePartStock(part.uuid, stockPayload);
       const updatedPart = response.data.data;
       setCurrentPart(updatedPart);
       setQuantityOnHand(String(updatedPart.quantityOnHand));
       setQuantityOnOrder(String(updatedPart.quantityOnOrder));
       setUnitPrice(String(updatedPart.unitPrice ?? 0));
+      setMinimumStockQuantity(String(updatedPart.minimumStockQuantity ?? 1));
       setQuantity('1');
       notify(
         'success',
         operation === PRICE_OPERATION
           ? 'Prix unitaire mis à jour.'
-          : `Mouvement de stock enregistré : ${stockOperationPresentation[operation]}.`,
+          : operation === MINIMUM_STOCK_OPERATION
+            ? 'Stock minimum mis à jour.'
+            : `Mouvement de stock enregistré : ${stockOperationPresentation[operation]}.`,
       );
       await loadHistory(part.uuid);
       await onUpdated?.(updatedPart);
@@ -234,6 +249,12 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
         <div className="stock-summary-card">
           <span>Commandée</span>
           <strong>{formatStockQuantity(currentPart.quantityOnOrder, currentPart.unit)}</strong>
+        </div>
+        <div className="stock-summary-card">
+          <span>Stock minimum</span>
+          <strong>
+            {formatStockQuantity(currentPart.minimumStockQuantity ?? 1, currentPart.unit)}
+          </strong>
         </div>
         <div className="stock-summary-card">
           <span>Coût cumulé utilisé</span>
@@ -279,17 +300,19 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
             </select>
           </label>
 
-          <label className="form-label mb-0 text-body-secondary">
-            Date de l’opération
-            <input
-              className="form-control"
-              type="date"
-              max={getCurrentOperationDate()}
-              required
-              value={performedAt}
-              onChange={(event) => setPerformedAt(event.target.value)}
-            />
-          </label>
+          {operation !== MINIMUM_STOCK_OPERATION ? (
+            <label className="form-label mb-0 text-body-secondary">
+              Date de l’opération
+              <input
+                className="form-control"
+                type="date"
+                max={getCurrentOperationDate()}
+                required
+                value={performedAt}
+                onChange={(event) => setPerformedAt(event.target.value)}
+              />
+            </label>
+          ) : null}
 
           {operation === STOCK_OPERATIONS.CONSUME ? (
             <>
@@ -349,6 +372,20 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                 required
                 value={unitPrice}
                 onChange={(event) => setUnitPrice(event.target.value)}
+              />
+            </label>
+          ) : operation === MINIMUM_STOCK_OPERATION ? (
+            <label className="form-label mb-0 text-body-secondary">
+              Stock minimum
+              <input
+                className="form-control"
+                type="number"
+                min="0"
+                max="1000000"
+                step="0.01"
+                required
+                value={minimumStockQuantity}
+                onChange={(event) => setMinimumStockQuantity(event.target.value)}
               />
             </label>
           ) : operation === STOCK_OPERATIONS.ADJUST ? (
@@ -425,9 +462,11 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
               ? 'Enregistrement…'
               : operation === PRICE_OPERATION
                 ? 'Enregistrer le prix'
-                : operation === STOCK_OPERATIONS.CONSUME
-                  ? 'Enregistrer l’intervention'
-                  : 'Enregistrer le mouvement'}
+                : operation === MINIMUM_STOCK_OPERATION
+                  ? 'Enregistrer le stock minimum'
+                  : operation === STOCK_OPERATIONS.CONSUME
+                    ? 'Enregistrer l’intervention'
+                    : 'Enregistrer le mouvement'}
           </Button>
         </form>
       ) : (

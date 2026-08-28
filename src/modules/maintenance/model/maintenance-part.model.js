@@ -54,6 +54,13 @@ MaintenancePart.init(
       defaultValue: 0,
       validate: { min: 0, max: 1000000 },
     },
+    minimumStockQuantity: {
+      type: DataTypes.DECIMAL(12, 2),
+      field: 'minimum_stock_quantity',
+      allowNull: false,
+      defaultValue: 1,
+      validate: { min: 0, max: 1000000 },
+    },
     stockStatus: {
       type: DataTypes.VIRTUAL,
       get() {

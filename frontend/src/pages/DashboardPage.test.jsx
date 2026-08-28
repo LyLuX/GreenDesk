@@ -206,7 +206,7 @@ describe('DashboardPage', () => {
 
     await user.click(
       await screen.findByRole('button', {
-        name: 'Voir les pièces avec un stock inférieur ou égal à 1',
+        name: 'Voir les pièces avec un stock faible',
       }),
     );
 

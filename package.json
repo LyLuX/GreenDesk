@@ -1,6 +1,6 @@
 {
   "name": "greendesk-backend",
-  "version": "7.29.4",
+  "version": "7.30.0",
   "private": true,
   "description": "Backend API foundation for GreenDesk.",
   "type": "module",

@@ -1151,6 +1151,22 @@ export const openApiPaths = {
       },
     },
   },
+  '/maintenance/parts/{uuid}/minimum-stock': {
+    parameters: [uuidParameter],
+    patch: {
+      operationId: 'updateMaintenancePartMinimumStock',
+      tags: ['Maintenance'],
+      summary: 'Modifie le stock minimum d’une pièce.',
+      description:
+        'Nécessite `maintenance.parts.stock.minimum.update`. La valeur propre à la pièce détermine son état de stock faible et la quantité de réapprovisionnement proposée.',
+      security: secure,
+      requestBody: jsonBody('MaintenancePartMinimumStockRequest'),
+      responses: {
+        200: jsonResponse('MaintenancePartResponse', 'Stock minimum de la pièce mis à jour.'),
+        ...writeErrors,
+      },
+    },
+  },
   '/maintenance/parts/{uuid}/price-history': {
     parameters: [uuidParameter],
     get: {
@@ -1176,7 +1192,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Agrège les pièces nécessaires aux échéances et aux plans selon l’usure.',
       description:
-        'Nécessite `maintenance.read`. Une échéance correspond à un besoin de pièces. La quantité en stock atelier ou déjà commandée est déduite du besoin agrégé ; seules les quantités restant à commander sont retournées. Une pièce désactivée reste comptée lorsqu’un besoin non couvert subsiste. Le filtre `status`, lorsqu’il est renseigné, prend la priorité sur la période. `includeWearBased` ajoute une fois les besoins de chaque plan actif suivi selon l’usure. `includeLowStock` nécessite aussi `maintenance.parts.read` et ajoute les pièces actives dont le stock disponible est inférieur ou égal à une unité lorsqu’une commande reste nécessaire pour atteindre deux unités. `lowStockOnly` nécessite uniquement `maintenance.parts.read` et retourne la vue exhaustive de ces pièces pour le dashboard, y compris lorsqu’une commande couvre déjà le réapprovisionnement.',
+        'Nécessite `maintenance.read`. Une échéance correspond à un besoin de pièces. La quantité en stock atelier ou déjà commandée est déduite du besoin agrégé ; seules les quantités restant à commander sont retournées. Une pièce désactivée reste comptée lorsqu’un besoin non couvert subsiste. Le filtre `status`, lorsqu’il est renseigné, prend la priorité sur la période. `includeWearBased` ajoute une fois les besoins de chaque plan actif suivi selon l’usure. `includeLowStock` nécessite aussi `maintenance.parts.read` et ajoute les pièces actives dont le stock disponible est inférieur ou égal à leur stock minimum lorsqu’une commande reste nécessaire pour atteindre ce minimum. `lowStockOnly` nécessite uniquement `maintenance.parts.read` et retourne la vue exhaustive de ces pièces pour le dashboard, y compris lorsqu’une commande couvre déjà le réapprovisionnement.',
       security: secure,
       parameters: [
         {
@@ -1409,7 +1425,7 @@ export const openApiPaths = {
       tags: ['Dashboard'],
       summary: 'Retourne les indicateurs autorisés du tableau de bord.',
       description:
-        'Nécessite `dashboard.read`. Les valorisations du parc nécessitent en plus `dashboard.read.financial`. Les échéances de maintenance sont incluses avec `maintenance.read` ; le nombre de pièces actives avec zéro ou une unité disponible nécessite `maintenance.parts.read`. Les valorisations de stock et coûts annuels nécessitent `maintenance.read` et `dashboard.read.financial`. Les coûts correspondent aux pièces réellement consommées pendant l’année de réalisation. Les listes `today`, `upcoming`, `overdue` et `wearBased` correspondent exactement aux compteurs affichés. Alias historique déprécié : `/api/dashboard/summary`.',
+        'Nécessite `dashboard.read`. Les valorisations du parc nécessitent en plus `dashboard.read.financial`. Les échéances de maintenance sont incluses avec `maintenance.read` ; le nombre de pièces actives dont la quantité disponible est inférieure ou égale à leur stock minimum nécessite `maintenance.parts.read`. Les valorisations de stock et coûts annuels nécessitent `maintenance.read` et `dashboard.read.financial`. Les coûts correspondent aux pièces réellement consommées pendant l’année de réalisation. Les listes `today`, `upcoming`, `overdue` et `wearBased` correspondent exactement aux compteurs affichés. Alias historique déprécié : `/api/dashboard/summary`.',
       security: secure,
       responses: {
         200: jsonResponse('DashboardResponse', 'Synthèse retournée.'),

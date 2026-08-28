@@ -12,7 +12,6 @@ import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.
 import Supplier from '../../suppliers/model/supplier.model.js';
 import User from '../../users/model/user.model.js';
 import { STOCK_STATUSES } from '../../../core/inventory/stock-status.js';
-import { LOW_STOCK_MAX_QUANTITY } from '../maintenance.constants.js';
 import { companyValues, companyWhere } from '../../../core/company/company-context.js';
 
 const manufacturerInclude = {
@@ -168,7 +167,13 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
     return MaintenancePart.findAll({
       where: companyWhere({
         active: true,
-        quantityOnHand: { [Op.lte]: LOW_STOCK_MAX_QUANTITY },
+        [Op.and]: [
+          sequelize.where(
+            sequelize.col('quantity_on_hand'),
+            Op.lte,
+            sequelize.col('minimum_stock_quantity'),
+          ),
+        ],
       }),
       include: partDirectoryIncludes,
       order: [

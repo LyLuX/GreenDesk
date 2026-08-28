@@ -67,6 +67,7 @@ export const historyActionLabels = Object.freeze({
   ADJUST: 'Correction de stock',
   MIGRATE: 'Reprise de stock',
   PRICE_UPDATE: 'Changement de prix',
+  MINIMUM_STOCK_UPDATE: 'Modification du stock minimum',
 });
 
 export const historyActionVariants = Object.freeze({
@@ -92,4 +93,5 @@ export const historyActionVariants = Object.freeze({
   ADJUST: 'info',
   MIGRATE: 'info',
   PRICE_UPDATE: 'info',
+  MINIMUM_STOCK_UPDATE: 'info',
 });

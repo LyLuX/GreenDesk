@@ -284,6 +284,7 @@ describe('MaintenanceService', () => {
           unit: 'pièce',
           quantityOnHand: 0,
           quantityOnOrder: 0,
+          minimumStockQuantity: 3,
           active: true,
         },
         {
@@ -293,6 +294,7 @@ describe('MaintenanceService', () => {
           unit: 'pièce',
           quantityOnHand: 1,
           quantityOnOrder: 1,
+          minimumStockQuantity: 2,
           active: true,
         },
       ]),
@@ -304,7 +306,13 @@ describe('MaintenanceService', () => {
     expect(result.includeLowStock).toBe(true);
     expect(result.lowStockOnly).toBe(false);
     expect(result.items).toEqual([
-      expect.objectContaining({ reference: 'FH-01', quantity: 1, lowStock: true, plans: [] }),
+      expect.objectContaining({
+        reference: 'FH-01',
+        minimumStockQuantity: 3,
+        quantity: 3,
+        lowStock: true,
+        plans: [],
+      }),
     ]);
   });
 
@@ -319,6 +327,7 @@ describe('MaintenanceService', () => {
           unit: 'pièce',
           quantityOnHand: 1,
           quantityOnOrder: 3,
+          minimumStockQuantity: 2,
           active: true,
         },
       ]),

@@ -2,7 +2,11 @@ import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import StockService from '../../../core/inventory/stock.service.js';
 import { STOCK_OPERATIONS, STOCKABLE_TYPES } from '../../../core/inventory/stock-operation.js';
-import { addStockQuantities } from '../../../core/inventory/stock-quantity.js';
+import {
+  addStockQuantities,
+  isValidStockQuantity,
+  roundStockQuantity,
+} from '../../../core/inventory/stock-quantity.js';
 import { STOCK_STATUSES, getStockAvailability } from '../../../core/inventory/stock-status.js';
 import AuditService from '../../audit/service/audit.service.js';
 import ManufacturerRepository from '../../manufacturers/repository/manufacturer.repository.js';
@@ -269,6 +273,33 @@ export default class MaintenanceCatalogService {
     return this.toPublic(await this.repository.findPartByUuid(part.uuid));
   }
 
+  async updatePartMinimumStock(uuid, values, userId) {
+    if (!isValidStockQuantity(values.minimumStockQuantity, { allowZero: true })) {
+      throw new AppError('Le stock minimum est invalide.', HTTP_STATUS.BAD_REQUEST);
+    }
+    const minimumStockQuantity = roundStockQuantity(values.minimumStockQuantity);
+    let part;
+    await this.repository.withTransaction(async (transaction) => {
+      part = await this.getPartEntity(uuid, { transaction, lock: true });
+      if (Number(part.minimumStockQuantity) === minimumStockQuantity) {
+        throw new AppError(
+          'Le nouveau stock minimum doit être différent de la valeur actuelle.',
+          HTTP_STATUS.BAD_REQUEST,
+        );
+      }
+      const oldValues = this.toPublic(part);
+      await this.repository.updatePart(
+        part,
+        { minimumStockQuantity, updatedBy: userId },
+        { transaction },
+      );
+      await this.record(userId, 'MINIMUM_STOCK_UPDATE', 'MAINTENANCE_PART', part, oldValues, {
+        transaction,
+      });
+    });
+    return this.toPublic(await this.repository.findPartByUuid(part.uuid));
+  }
+
   async getPartStockMovements(uuid, query = {}) {
     const part = await this.getPartEntity(uuid);
     const result = await this.stockService.getMovements(
@@ -337,6 +368,7 @@ export default class MaintenanceCatalogService {
     delete partValues.stockQuantity;
     delete partValues.quantityOnHand;
     delete partValues.quantityOnOrder;
+    delete partValues.minimumStockQuantity;
     delete partValues.unitPrice;
 
     if (includeUnitPrice) {
@@ -422,6 +454,7 @@ export default class MaintenanceCatalogService {
           ...publicValue,
           quantityOnHand: Number(value.quantityOnHand ?? 0),
           quantityOnOrder: Number(value.quantityOnOrder ?? 0),
+          minimumStockQuantity: Number(value.minimumStockQuantity ?? 1),
           unitPrice: Number(value.unitPrice ?? 0),
           totalMaintenanceCost: Number(value.totalMaintenanceCost ?? 0),
           stockStatus: getStockAvailability(value).status,

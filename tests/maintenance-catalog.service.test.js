@@ -261,6 +261,44 @@ describe('MaintenanceCatalogService', () => {
     expect(result.unitPrice).toBe(12.5);
   });
 
+  it('updates a part minimum stock and audits the dedicated action', async () => {
+    const transaction = { id: 'transaction' };
+    const part = {
+      id: 8,
+      uuid: '88888888-8888-4888-8888-888888888888',
+      name: 'Filtre',
+      reference: 'F-01',
+      minimumStockQuantity: '1.00',
+      toJSON() {
+        return { ...this, toJSON: undefined };
+      },
+    };
+    const repository = {
+      withTransaction: jest.fn((callback) => callback(transaction)),
+      findPartByUuid: jest.fn().mockImplementation(() => Promise.resolve(part)),
+      updatePart: jest.fn((item, values) => Object.assign(item, values)),
+    };
+    const auditService = { record: jest.fn() };
+    const service = new MaintenanceCatalogService(repository, auditService);
+
+    const result = await service.updatePartMinimumStock(
+      part.uuid,
+      { minimumStockQuantity: 2.5 },
+      42,
+    );
+
+    expect(repository.updatePart).toHaveBeenCalledWith(
+      part,
+      { minimumStockQuantity: 2.5, updatedBy: 42 },
+      { transaction },
+    );
+    expect(auditService.record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'MINIMUM_STOCK_UPDATE', entity: 'MAINTENANCE_PART' }),
+      { transaction },
+    );
+    expect(result.minimumStockQuantity).toBe(2.5);
+  });
+
   it('rejects future business dates before changing stock', async () => {
     const stockService = { apply: jest.fn() };
     const service = new MaintenanceCatalogService({}, {}, {}, {}, stockService);
