@@ -457,7 +457,7 @@ export default class MaintenanceCatalogService {
           minimumStockQuantity: Number(value.minimumStockQuantity ?? 1),
           unitPrice: Number(value.unitPrice ?? 0),
           totalMaintenanceCost: Number(value.totalMaintenanceCost ?? 0),
-          stockStatus: getStockAvailability(value).status,
+          stockStatus: getStockAvailability(value, value.minimumStockQuantity ?? 1).status,
           stockQuantity: addStockQuantities(value.quantityOnHand ?? 0, value.quantityOnOrder ?? 0),
           manufacturerUuid,
           supplierUuid,

@@ -217,6 +217,24 @@ describe('MaintenanceCatalogService', () => {
     });
   });
 
+  it('uses each part minimum stock to calculate its catalogue status', () => {
+    const service = new MaintenanceCatalogService({}, {}, {}, {}, {});
+
+    expect(
+      service.toPublic({
+        uuid: '00000000-0000-4000-8000-000000000000',
+        name: 'Pièce sans réserve',
+        reference: 'ZERO',
+        quantityOnHand: 0,
+        quantityOnOrder: 0,
+        minimumStockQuantity: 0,
+      }),
+    ).toMatchObject({
+      minimumStockQuantity: 0,
+      stockStatus: 'inStock',
+    });
+  });
+
   it('updates a part price and records its immutable history in one transaction', async () => {
     const transaction = { id: 'transaction' };
     const part = {

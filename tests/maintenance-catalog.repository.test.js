@@ -8,10 +8,16 @@ describe('MaintenanceCatalogRepository stock filters', () => {
   afterEach(() => jest.restoreAllMocks());
 
   it.each([
-    ['inStock', { [Op.gt]: 0 }, undefined],
-    ['ordered', 0, { [Op.gt]: 0 }],
-    ['toOrder', 0, 0],
-  ])('filters %s parts before applying pagination', async (stockStatus, onHand, onOrder) => {
+    ['inStock', ['`quantity_on_hand` >= `minimum_stock_quantity`']],
+    [
+      'ordered',
+      [
+        '`quantity_on_hand` < `minimum_stock_quantity`',
+        'quantity_on_hand + quantity_on_order >= `minimum_stock_quantity`',
+      ],
+    ],
+    ['toOrder', ['quantity_on_hand + quantity_on_order < `minimum_stock_quantity`']],
+  ])('filters %s parts against their own minimum stock', async (stockStatus, sqlFragments) => {
     const findAndCountAll = jest
       .spyOn(MaintenancePart, 'findAndCountAll')
       .mockResolvedValue({ count: 0, rows: [] });
@@ -25,8 +31,11 @@ describe('MaintenanceCatalogRepository stock filters', () => {
 
     const query = findAndCountAll.mock.calls[0][0];
     expect(query.where.active).toBe(true);
-    expect(query.where.quantityOnHand).toEqual(onHand);
-    expect(query.where.quantityOnOrder).toEqual(onOrder);
+    expect(query.where[Op.and]).toHaveLength(sqlFragments.length);
+    const whereSql = MaintenancePart.sequelize
+      .getQueryInterface()
+      .queryGenerator.whereQuery(query.where);
+    for (const fragment of sqlFragments) expect(whereSql).toContain(fragment);
     expect(query.limit).toBe(10);
     expect(query.offset).toBe(10);
   });

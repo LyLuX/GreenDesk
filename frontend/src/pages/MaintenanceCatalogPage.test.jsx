@@ -301,6 +301,33 @@ describe('dedicated maintenance catalogue pages', () => {
     );
   });
 
+  it('shows the minimum-stock badge when on-hand stock equals a zero minimum', async () => {
+    mocks.listParts.mockResolvedValue({
+      data: {
+        data: [
+          {
+            uuid: 'zero-stock-part-uuid',
+            name: 'Pièce sans réserve',
+            reference: 'ZERO',
+            unit: 'pièce',
+            stockStatus: 'inStock',
+            quantityOnHand: 0,
+            quantityOnOrder: 0,
+            minimumStockQuantity: 0,
+            unitPrice: 0,
+            active: true,
+          },
+        ],
+      },
+    });
+    render(<MaintenancePartsPage />);
+
+    expect(await screen.findByText('Stock minimum', { selector: 'span' })).toHaveClass(
+      'stock-minimum',
+    );
+    expect(screen.queryByText('À commander', { selector: 'span' })).not.toBeInTheDocument();
+  });
+
   it('keeps tracked price changes out of the general part edit form', async () => {
     const user = userEvent.setup();
     render(<MaintenancePartsPage />);
@@ -515,6 +542,11 @@ describe('dedicated maintenance catalogue pages', () => {
       }),
     );
     expect(mocks.notify).toHaveBeenCalledWith('success', 'Stock minimum mis à jour.');
+    expect(
+      within(screen.getByRole('dialog')).getByText('Stock minimum', {
+        selector: '.stock-summary-card span',
+      }).nextElementSibling,
+    ).toHaveTextContent('2,5 pièces');
   });
 
   it('reports that no designation is proposed when the database is empty', async () => {

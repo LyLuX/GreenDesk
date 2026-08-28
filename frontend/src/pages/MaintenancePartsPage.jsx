@@ -152,7 +152,13 @@ export default function MaintenancePartsPage() {
           {
             key: 'stockStatus',
             label: 'Stock',
-            render: (value) => <StockStatusBadge status={value} />,
+            render: (value, part) => (
+              <StockStatusBadge
+                status={value}
+                quantityOnHand={part.quantityOnHand}
+                minimumStockQuantity={part.minimumStockQuantity}
+              />
+            ),
           },
           {
             key: 'quantityOnHand',
@@ -188,7 +194,17 @@ export default function MaintenancePartsPage() {
         <StockManagementModal
           part={stockDialog.part}
           onClose={() => setStockDialog(null)}
-          onUpdated={() => stockDialog.reload()}
+          onUpdated={async (updatedPart) => {
+            setStockDialog((current) =>
+              current
+                ? {
+                    ...current,
+                    part: { ...current.part, ...updatedPart },
+                  }
+                : current,
+            );
+            await stockDialog.reload();
+          }}
         />
       ) : null}
     </>

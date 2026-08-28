@@ -1216,6 +1216,11 @@ a:hover {
   color: #6b5700;
 }
 
+.status-badge.stock-minimum {
+  background: #f4e2cf;
+  color: #754514;
+}
+
 .status-badge.stock-ordered {
   background: #dcecf1;
   color: var(--brand-blue-dark);
@@ -1236,11 +1241,11 @@ a:hover {
 
 .stock-summary-card {
   display: flex;
-  flex: 0 1 8rem;
+  flex: 0 1 10rem;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 8rem;
+  min-width: 10rem;
   min-height: 4.5rem;
   gap: 0.2rem;
   padding: 0.5rem 0.75rem;

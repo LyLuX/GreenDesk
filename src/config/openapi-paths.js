@@ -1056,6 +1056,7 @@ export const openApiPaths = {
         {
           name: 'stockStatus',
           in: 'query',
+          description: 'Filtre selon l’état calculé par rapport au stock minimum de chaque pièce.',
           schema: { type: 'string', enum: STOCK_STATUS_VALUES },
         },
         pageParameter,

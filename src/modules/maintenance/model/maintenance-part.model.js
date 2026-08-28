@@ -64,7 +64,7 @@ MaintenancePart.init(
     stockStatus: {
       type: DataTypes.VIRTUAL,
       get() {
-        return getStockAvailability(this).status;
+        return getStockAvailability(this, this.minimumStockQuantity).status;
       },
     },
     stockQuantity: {

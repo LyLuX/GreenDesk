@@ -300,7 +300,12 @@ const maintenancePart = {
       minimum: 0,
       description: 'Coût cumulé des utilisations réelles de cette pièce en maintenance.',
     },
-    stockStatus: { type: 'string', enum: STOCK_STATUS_VALUES },
+    stockStatus: {
+      type: 'string',
+      enum: STOCK_STATUS_VALUES,
+      description:
+        'État calculé par rapport au stock minimum de la pièce : disponible lorsque le stock atelier atteint le seuil, commandé lorsque les commandes couvrent le manque, sinon à commander.',
+    },
     stockQuantity: {
       ...decimalQuantity(2000000, { allowZero: true }),
       deprecated: true,

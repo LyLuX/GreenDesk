@@ -110,13 +110,34 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
     const normalizedActive = normalizeBooleanFilter(active);
     if (normalizedActive !== undefined) where.active = normalizedActive;
     if (stockStatus === STOCK_STATUSES.IN_STOCK) {
-      where.quantityOnHand = { [Op.gt]: 0 };
+      where[Op.and] = [
+        sequelize.where(
+          sequelize.col('quantity_on_hand'),
+          Op.gte,
+          sequelize.col('minimum_stock_quantity'),
+        ),
+      ];
     } else if (stockStatus === STOCK_STATUSES.ORDERED) {
-      where.quantityOnHand = 0;
-      where.quantityOnOrder = { [Op.gt]: 0 };
+      where[Op.and] = [
+        sequelize.where(
+          sequelize.col('quantity_on_hand'),
+          Op.lt,
+          sequelize.col('minimum_stock_quantity'),
+        ),
+        sequelize.where(
+          sequelize.literal('quantity_on_hand + quantity_on_order'),
+          Op.gte,
+          sequelize.col('minimum_stock_quantity'),
+        ),
+      ];
     } else if (stockStatus === STOCK_STATUSES.TO_ORDER) {
-      where.quantityOnHand = 0;
-      where.quantityOnOrder = 0;
+      where[Op.and] = [
+        sequelize.where(
+          sequelize.literal('quantity_on_hand + quantity_on_order'),
+          Op.lt,
+          sequelize.col('minimum_stock_quantity'),
+        ),
+      ];
     }
     return MaintenancePart.findAndCountAll({
       where: companyWhere(where),

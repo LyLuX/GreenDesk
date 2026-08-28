@@ -208,7 +208,13 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                 minimumStockQuantity: Number(minimumStockQuantity),
               })
             : await updateMaintenancePartStock(part.uuid, stockPayload);
-      const updatedPart = response.data.data;
+      const updatedPart = {
+        ...currentPart,
+        ...response.data.data,
+        ...(operation === MINIMUM_STOCK_OPERATION
+          ? { minimumStockQuantity: Number(minimumStockQuantity) }
+          : {}),
+      };
       setCurrentPart(updatedPart);
       setQuantityOnHand(String(updatedPart.quantityOnHand));
       setQuantityOnOrder(String(updatedPart.quantityOnOrder));
@@ -247,18 +253,14 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
           <strong>{formatStockQuantity(currentPart.quantityOnHand, currentPart.unit)}</strong>
         </div>
         <div className="stock-summary-card">
-          <span>Commandée</span>
-          <strong>{formatStockQuantity(currentPart.quantityOnOrder, currentPart.unit)}</strong>
-        </div>
-        <div className="stock-summary-card">
           <span>Stock minimum</span>
           <strong>
             {formatStockQuantity(currentPart.minimumStockQuantity ?? 1, currentPart.unit)}
           </strong>
         </div>
         <div className="stock-summary-card">
-          <span>Coût cumulé utilisé</span>
-          <strong>{formatCurrency(currentPart.totalMaintenanceCost ?? 0)}</strong>
+          <span>Commandée</span>
+          <strong>{formatStockQuantity(currentPart.quantityOnOrder, currentPart.unit)}</strong>
         </div>
         <div className="stock-summary-card">
           <span>Valeur du stock actuel</span>
@@ -267,6 +269,10 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
               Number(currentPart.quantityOnHand ?? 0) * Number(currentPart.unitPrice ?? 0),
             )}
           </strong>
+        </div>
+        <div className="stock-summary-card">
+          <span>Coût cumulé utilisé</span>
+          <strong>{formatCurrency(currentPart.totalMaintenanceCost ?? 0)}</strong>
         </div>
       </div>
 
