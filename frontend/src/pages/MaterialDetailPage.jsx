@@ -22,6 +22,7 @@ import {
   maintenanceStatusLabels,
 } from '../maintenance/maintenance.labels.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
+import { auditValuesAreEqual } from '../history/audit-values.js';
 import fleetPermissions from '../permissions/fleet.permissions.js';
 import {
   formatCurrency,
@@ -85,12 +86,6 @@ const Field = ({ label, value }) => (
     <td>{value ?? '—'}</td>
   </tr>
 );
-const auditValuesAreEqual = (key, before, after) => {
-  if (key === 'purchasePrice' && before !== null && after !== null) {
-    return Number(before) === Number(after);
-  }
-  return JSON.stringify(before) === JSON.stringify(after);
-};
 const displayAuditValue = (key, value) => {
   if (value === null || value === undefined || value === '') return '—';
   if (key === 'active') return value ? 'Actif' : 'Inactif';

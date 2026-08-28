@@ -91,6 +91,37 @@ describe('HistoryPage', () => {
     }
   });
 
+  it('does not report equivalent numeric values as audit changes', async () => {
+    listHistory.mockResolvedValueOnce({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'material-update',
+              occurredAt: '2026-08-28T18:00:00.000Z',
+              recordedAt: '2026-08-28T18:00:00.000Z',
+              type: 'material',
+              action: 'UPDATE',
+              subject: { label: 'RM 520-ES' },
+              user: { firstName: 'Paul', lastName: 'Bournazel' },
+              details: {
+                oldValues: { purchasePrice: '950.00', serialNumber: 'RM-001' },
+                newValues: { purchasePrice: 950, serialNumber: 'RM-002' },
+              },
+            },
+          ],
+          pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
+        },
+      },
+    });
+
+    render(<HistoryPage section="fleet" />);
+
+    expect(await screen.findByText('RM 520-ES')).toBeVisible();
+    expect(screen.getByText('serialNumber : RM-001 → RM-002')).toBeVisible();
+    expect(screen.queryByText(/950\.00.*950/)).not.toBeInTheDocument();
+  });
+
   it('resets every filter when the history section changes', async () => {
     const user = userEvent.setup();
     const { rerender } = render(<HistoryPage section="maintenance" />);

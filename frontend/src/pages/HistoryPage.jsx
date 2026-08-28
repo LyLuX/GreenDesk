@@ -14,6 +14,7 @@ import {
   historySectionConfig,
   historyTypeLabels,
 } from '../history/history.config.js';
+import { auditValuesAreEqual } from '../history/audit-values.js';
 import { formatCurrency, formatOperationDateTime } from '../utils/formatters.js';
 
 const fieldLabels = Object.freeze({
@@ -47,7 +48,7 @@ const displayValue = (value) => {
 const auditChanges = ({ oldValues, newValues }) => {
   const keys = new Set([...Object.keys(oldValues || {}), ...Object.keys(newValues || {})]);
   return [...keys]
-    .filter((key) => JSON.stringify(oldValues?.[key]) !== JSON.stringify(newValues?.[key]))
+    .filter((key) => !auditValuesAreEqual(key, oldValues?.[key], newValues?.[key]))
     .slice(0, 3)
     .map((key) => {
       const label = fieldLabels[key] || key;
