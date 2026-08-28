@@ -868,7 +868,7 @@ export default function MaintenancePage() {
             </p>
           )}
           <FormField
-            label="Date réalisée"
+            label="Date d'intervention"
             name="performedAt"
             type="date"
             required

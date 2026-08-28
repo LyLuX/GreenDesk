@@ -255,7 +255,7 @@ export default class MaintenanceService {
         );
       if (task.lastMaintenanceDate && date < parseDateOnly(task.lastMaintenanceDate))
         throw new AppError(
-          'La date réalisée ne peut pas précéder le dernier entretien.',
+          "La date d'intervention ne peut pas précéder le dernier entretien.",
           HTTP_STATUS.BAD_REQUEST,
         );
       const taskParts = task.parts ?? [];
