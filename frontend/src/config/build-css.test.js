@@ -20,6 +20,9 @@ describe('production CSS build', () => {
     ]);
     expect(purgeCssOptions.safelist.standard[0].test('app-loader-sm')).toBe(true);
     expect(purgeCssOptions.safelist.greedy[0].test('.react-flow__node.selectable')).toBe(true);
+    expect(purgeCssOptions.safelist.greedy[1].test('.status-badge.history-action-danger')).toBe(
+      true,
+    );
   });
 
   it('centers consistently sized table shells and prevents horizontal overflow', () => {
@@ -58,9 +61,27 @@ describe('production CSS build', () => {
     expect(styles).toMatch(
       /\.stock-summary-card\s*\{[^}]*display:\s*flex;[^}]*flex:\s*0 1 10rem;[^}]*flex-direction:\s*column;[^}]*align-items:\s*center;[^}]*justify-content:\s*center;[^}]*min-width:\s*10rem;[^}]*min-height:\s*4\.5rem;/,
     );
-    expect(styles).toMatch(
-      /\.status-badge\.stock-minimum\s*\{[^}]*background:\s*#f4e2cf;[^}]*color:\s*#754514;/,
+  });
+
+  it('derives every status badge color from theme variables', () => {
+    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+    const badgeRuleBodies = [...styles.matchAll(/\.status-badge[^{]*\{([^}]*)\}/g)].map(
+      (match) => match[1],
     );
+
+    expect(styles).toMatch(
+      /--status-badge-success-background:\s*color-mix\(\s*in srgb,\s*var\(--brand-leaf\) 15%,\s*var\(--bs-body-bg\)\s*\);/,
+    );
+    expect(styles).toMatch(
+      /\.status-badge\s*\{[^}]*background:\s*var\(--status-badge-background\);[^}]*color:\s*var\(--status-badge-color\);/,
+    );
+    expect(styles).toMatch(
+      /\.status-badge\.stock-minimum\s*\{[^}]*--status-badge-color:\s*var\(--status-badge-minimum-color\);[^}]*--status-badge-background:\s*var\(--status-badge-minimum-background\);/,
+    );
+    expect(badgeRuleBodies.length).toBeGreaterThan(1);
+    for (const ruleBody of badgeRuleBodies) {
+      expect(ruleBody).not.toMatch(/#[\da-f]{3,8}|rgba?\(/i);
+    }
   });
 
   it('can display autocomplete suggestions above fields near a modal footer', () => {
@@ -116,15 +137,17 @@ describe('production CSS build', () => {
   it('uses one shared color for every wear-based maintenance indicator', () => {
     const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
 
-    expect(styles).toMatch(/--maintenance-wear-based-color:\s*var\(--bs-purple\);/);
     expect(styles).toMatch(
-      /--maintenance-wear-based-background:\s*color-mix\(\s*in srgb,\s*var\(--maintenance-wear-based-color\) 15%,\s*#fff\s*\);/,
+      /--maintenance-wear-based-color:\s*var\(--status-badge-maintenance-color\);/,
+    );
+    expect(styles).toMatch(
+      /--maintenance-wear-based-background:\s*var\(--status-badge-maintenance-background\);/,
     );
     expect(styles).toMatch(
       /\.metric-card\.maintenance-wear-based\s*\{[^}]*--metric-card-accent:\s*var\(--maintenance-wear-based-color\);/,
     );
     expect(styles).toMatch(
-      /\.status-badge\.maintenance-wear-based\s*\{[^}]*background:\s*var\(--maintenance-wear-based-background\);[^}]*color:\s*var\(--maintenance-wear-based-color\);/,
+      /\.status-badge\.maintenance-wear-based\s*\{[^}]*--status-badge-color:\s*var\(--status-badge-maintenance-color\);[^}]*--status-badge-background:\s*var\(--status-badge-maintenance-background\);/,
     );
     expect(styles).toMatch(
       /\.maintenance-order-plan-wear-based\s*\{[^}]*color:\s*var\(--maintenance-wear-based-color\);/,

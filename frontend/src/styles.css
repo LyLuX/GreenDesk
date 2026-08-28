@@ -195,16 +195,32 @@
   --brand-blue: #2c7189;
   --brand-blue-dark: #20566b;
   --brand-mist: #f3f6f1;
-  --dashboard-background: color-mix(in srgb, var(--brand-mist) 92%, var(--brand-forest) 8%);
-  --maintenance-wear-based-color: var(--bs-purple);
-  --maintenance-wear-based-background: color-mix(
-    in srgb,
-    var(--maintenance-wear-based-color) 15%,
-    #fff
-  );
   --ink: #1f2a25;
   --muted: #64716a;
   --border: #dbe3dc;
+  --dashboard-background: color-mix(in srgb, var(--brand-mist) 92%, var(--brand-forest) 8%);
+  --status-badge-success-color: var(--brand-forest-dark);
+  --status-badge-success-background: color-mix(in srgb, var(--brand-leaf) 15%, var(--bs-body-bg));
+  --status-badge-info-color: var(--brand-blue-dark);
+  --status-badge-info-background: color-mix(in srgb, var(--brand-blue) 14%, var(--bs-body-bg));
+  --status-badge-warning-color: var(--bs-warning-text-emphasis);
+  --status-badge-warning-background: color-mix(in srgb, var(--brand-sun) 25%, var(--bs-body-bg));
+  --status-badge-danger-color: var(--bs-danger-text-emphasis);
+  --status-badge-danger-background: color-mix(in srgb, var(--bs-danger) 16%, var(--bs-body-bg));
+  --status-badge-maintenance-color: var(--bs-purple);
+  --status-badge-maintenance-background: color-mix(
+    in srgb,
+    var(--bs-purple) 14%,
+    var(--bs-body-bg)
+  );
+  --status-badge-access-color: color-mix(in srgb, var(--bs-teal) 50%, var(--brand-forest-dark));
+  --status-badge-access-background: color-mix(in srgb, var(--bs-teal) 13%, var(--bs-body-bg));
+  --status-badge-neutral-color: var(--muted);
+  --status-badge-neutral-background: color-mix(in srgb, var(--bs-secondary) 12%, var(--bs-body-bg));
+  --status-badge-minimum-color: color-mix(in srgb, var(--bs-orange) 55%, var(--brand-forest-dark));
+  --status-badge-minimum-background: color-mix(in srgb, var(--bs-orange) 15%, var(--bs-body-bg));
+  --maintenance-wear-based-color: var(--status-badge-maintenance-color);
+  --maintenance-wear-based-background: var(--status-badge-maintenance-background);
 }
 
 * {
@@ -1151,79 +1167,66 @@ a:hover {
 }
 
 .status-badge {
+  --status-badge-color: var(--status-badge-success-color);
+  --status-badge-background: var(--status-badge-success-background);
+
   display: inline-block;
   white-space: nowrap;
   padding: 0.25rem 0.55rem;
   border-radius: 99px;
-  background: #e3eddc;
-  color: #365d16;
+  background: var(--status-badge-background);
+  color: var(--status-badge-color);
   font-size: 0.76rem;
   font-weight: 700;
 }
 
-.status-badge.inactive {
-  background: #eef0ee;
-  color: #59635d;
+.status-badge.inactive,
+.status-badge.history-action-neutral,
+.status-badge.priority-low {
+  --status-badge-color: var(--status-badge-neutral-color);
+  --status-badge-background: var(--status-badge-neutral-background);
 }
 
-.status-badge.deleted {
-  background: #f5d8d8;
-  color: #8a2525;
+.status-badge.deleted,
+.status-badge.history-action-danger,
+.status-badge.audit-delete,
+.status-badge.priority-critical,
+.status-badge.maintenance-overdue,
+.status-badge.maintenance-history-exception {
+  --status-badge-color: var(--status-badge-danger-color);
+  --status-badge-background: var(--status-badge-danger-background);
 }
 
-.status-badge.history-action-success {
-  background: #e3eddc;
-  color: #365d16;
+.status-badge.history-action-info,
+.status-badge.stock-ordered,
+.status-badge.audit-update {
+  --status-badge-color: var(--status-badge-info-color);
+  --status-badge-background: var(--status-badge-info-background);
 }
 
-.status-badge.history-action-info {
-  background: #deedf2;
-  color: #20566b;
+.status-badge.history-action-warning,
+.status-badge.stock-to-order,
+.status-badge.audit-restore,
+.status-badge.priority-high,
+.status-badge.maintenance-due-today {
+  --status-badge-color: var(--status-badge-warning-color);
+  --status-badge-background: var(--status-badge-warning-background);
 }
 
-.status-badge.history-action-warning {
-  background: #f7edbd;
-  color: #6b5700;
-}
-
-.status-badge.history-action-danger {
-  background: #f5d8d8;
-  color: #8a2525;
-}
-
-.status-badge.history-action-maintenance {
-  background: #ebe3f2;
-  color: #5c3675;
+.status-badge.history-action-maintenance,
+.status-badge.maintenance-wear-based {
+  --status-badge-color: var(--status-badge-maintenance-color);
+  --status-badge-background: var(--status-badge-maintenance-background);
 }
 
 .status-badge.history-action-access {
-  background: #dcebec;
-  color: #245d61;
-}
-
-.status-badge.history-action-neutral {
-  background: #eef0ee;
-  color: #59635d;
-}
-
-.status-badge.stock-in-stock {
-  background: #e3eddc;
-  color: #365d16;
-}
-
-.status-badge.stock-to-order {
-  background: #f7edbd;
-  color: #6b5700;
+  --status-badge-color: var(--status-badge-access-color);
+  --status-badge-background: var(--status-badge-access-background);
 }
 
 .status-badge.stock-minimum {
-  background: #f4e2cf;
-  color: #754514;
-}
-
-.status-badge.stock-ordered {
-  background: #dcecf1;
-  color: var(--brand-blue-dark);
+  --status-badge-color: var(--status-badge-minimum-color);
+  --status-badge-background: var(--status-badge-minimum-background);
 }
 
 .stock-management-modal {
@@ -1273,46 +1276,6 @@ a:hover {
   }
 }
 
-.status-badge.audit-create {
-  background: #e3eddc;
-  color: #365d16;
-}
-
-.status-badge.audit-update {
-  background: #dcecf1;
-  color: var(--brand-blue-dark);
-}
-
-.status-badge.audit-restore {
-  background: #f7edbd;
-  color: #6b5700;
-}
-
-.status-badge.audit-delete {
-  background: #f5d8d8;
-  color: #8a2525;
-}
-
-.status-badge.priority-low {
-  background: #eef0ee;
-  color: #59635d;
-}
-
-.status-badge.priority-normal {
-  background: #e3eddc;
-  color: #365d16;
-}
-
-.status-badge.priority-high {
-  background: #f7edbd;
-  color: #6b5700;
-}
-
-.status-badge.priority-critical {
-  background: #f5d8d8;
-  color: #8a2525;
-}
-
 .metric-card.maintenance-upcoming {
   --metric-card-accent: var(--brand-leaf);
 }
@@ -1331,26 +1294,6 @@ a:hover {
 
 .metric-card.maintenance-low-stock {
   --metric-card-accent: #b64141;
-}
-
-.status-badge.maintenance-upcoming {
-  background: #e3eddc;
-  color: #365d16;
-}
-
-.status-badge.maintenance-due-today {
-  background: #f7edbd;
-  color: #6b5700;
-}
-
-.status-badge.maintenance-overdue {
-  background: #f5d8d8;
-  color: #8a2525;
-}
-
-.status-badge.maintenance-wear-based {
-  background: var(--maintenance-wear-based-background);
-  color: var(--maintenance-wear-based-color);
 }
 
 .modal-backdrop-custom {
@@ -1656,11 +1599,6 @@ body.app-scroll-locked {
   padding-inline: 0.75rem;
   background: #fff5f5;
   border-left: 4px solid #b64141;
-}
-
-.status-badge.maintenance-history-exception {
-  background: #f5d8d8;
-  color: #8a2525;
 }
 
 .history-table {

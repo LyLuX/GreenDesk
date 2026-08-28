@@ -12,6 +12,9 @@
   every change. Reuse the existing shared components, Bootstrap structures, labels, action colors,
   spacing, confirmation dialogs, and responsive behavior whenever an equivalent pattern already
   exists.
+- Define every badge color through GreenDesk or Bootstrap theme variables. When a badge needs a
+  tint or shade, derive it with `color-mix()` using only theme variables; never hard-code a color
+  in a badge rule.
 - Make every new or modified UI element user-friendly by default. Keep primary actions visible and
   reachable, prevent content and controls from escaping the viewport, preserve responsive and
   keyboard-accessible behavior, and provide clear labels, states, feedback, and consequences.
