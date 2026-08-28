@@ -49,6 +49,17 @@ describe('production CSS build', () => {
     expect(styles).toMatch(/\.multiline-text\s*\{[^}]*white-space:\s*pre-wrap;/);
   });
 
+  it('lays out stock summary cards with the responsive flex alignment', () => {
+    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+
+    expect(styles).toMatch(
+      /\.stock-summary-grid\s*\{[^}]*display:\s*flex;[^}]*flex-wrap:\s*wrap;[^}]*justify-content:\s*space-evenly;[^}]*align-items:\s*center;[^}]*align-content:\s*space-between;/,
+    );
+    expect(styles).toMatch(
+      /\.stock-summary-card\s*\{[^}]*display:\s*flex;[^}]*flex:\s*0 1 10rem;[^}]*flex-direction:\s*column;[^}]*align-items:\s*center;[^}]*justify-content:\s*center;/,
+    );
+  });
+
   it('keeps quick role permission actions compact, centered and vertically scrollable', () => {
     const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
 
