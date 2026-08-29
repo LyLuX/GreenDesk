@@ -7,6 +7,11 @@ const hasEvery = (permissionNames, required) =>
 const recordId = (type, record) => `${type}:${record.uuid ?? record.id}`;
 const byDatabaseId = (records = []) =>
   new Map(records.map((record) => [String(record.id), record]));
+const fleetDirectoryGroups = Object.freeze([
+  { id: 'categories', recordType: 'category', label: 'Catégories' },
+  { id: 'manufacturers', recordType: 'manufacturer', label: 'Fabricants' },
+  { id: 'suppliers', recordType: 'supplier', label: 'Fournisseurs' },
+]);
 
 /** Builds the fleet and maintenance graph from records belonging to the selected company. */
 export default class RecordRelationsService {
@@ -136,6 +141,17 @@ export default class RecordRelationsService {
       });
     }
 
+    for (const group of fleetDirectoryGroups) {
+      if (!Object.hasOwn(records, group.id)) continue;
+      domains.add('fleet');
+      addNode({
+        id: group.id,
+        label: group.label,
+        kind: 'domain',
+        count: records[group.id].length,
+      });
+    }
+
     const domainDefinitions = {
       fleet: ['Gestion du parc', 'Matériels et référentiels'],
       maintenance: ['Maintenance', 'Plans, opérations et pièces'],
@@ -145,11 +161,19 @@ export default class RecordRelationsService {
       addNode({ id: domain, label, description, kind: 'domain' });
     }
     for (const domain of domains) addEdge('company', domain, 'group', { hierarchy: true });
+    for (const group of fleetDirectoryGroups) {
+      if (nodeIds.has(group.id)) addEdge('fleet', group.id, 'group', { hierarchy: true });
+    }
     for (const item of nodes.filter(({ recordType }) => recordType)) {
-      const domain = ['operation', 'plan', 'part'].includes(item.recordType)
-        ? 'maintenance'
-        : 'fleet';
-      addEdge(domain, item.id, 'group', { hierarchy: true });
+      const directoryGroup = fleetDirectoryGroups.find(
+        ({ recordType }) => recordType === item.recordType,
+      );
+      const parent = directoryGroup
+        ? directoryGroup.id
+        : ['operation', 'plan', 'part'].includes(item.recordType)
+          ? 'maintenance'
+          : 'fleet';
+      addEdge(parent, item.id, 'group', { hierarchy: true });
     }
 
     const categories = byDatabaseId(records.categories);

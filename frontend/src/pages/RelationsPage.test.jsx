@@ -1,7 +1,7 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getRelationsGraph: vi.fn(),
@@ -25,16 +25,33 @@ vi.mock('@xyflow/react', () => ({
   ReactFlow: ({ nodes, edges, onNodeClick }) => (
     <div aria-label="Graphe simulé">
       {nodes.map((node) => (
-        <button type="button" key={node.id} onClick={(event) => onNodeClick(event, node)}>
-          {node.data.label}
-        </button>
+        <div key={node.id}>
+          <button type="button" onClick={(event) => onNodeClick(event, node)}>
+            {node.data.label}
+          </button>
+          {node.data.collapsible ? (
+            <button
+              type="button"
+              aria-label={`${node.data.collapsed ? 'Déplier' : 'Replier'} ${node.data.label}`}
+              onClick={() => node.data.onToggle(node.id)}
+            >
+              Basculer
+            </button>
+          ) : null}
+        </div>
       ))}
-      {edges.map((edge) => (edge.label ? <span key={edge.id}>{edge.label}</span> : null))}
+      {edges.map((edge) => (
+        <span data-testid={`edge-${edge.id}`} data-opacity={edge.style.opacity} key={edge.id} />
+      ))}
     </div>
   ),
 }));
 
-import RelationsPage, { filterCollapsedGraph } from './RelationsPage.jsx';
+import RelationsPage, {
+  filterCollapsedGraph,
+  getCollapsibleNodeIds,
+  INACTIVE_EDGE_OPACITY,
+} from './RelationsPage.jsx';
 
 const simplifiedGraph = {
   mode: 'simplified',
@@ -42,6 +59,12 @@ const simplifiedGraph = {
   nodes: [
     { id: 'company', label: 'Alpha', kind: 'company' },
     { id: 'fleet', label: 'Gestion du parc', kind: 'domain' },
+    { id: 'categories', label: 'Catégories', kind: 'domain', count: 1 },
+    { id: 'category:parks', label: 'Espaces verts', kind: 'entity' },
+    { id: 'manufacturers', label: 'Fabricants', kind: 'domain', count: 1 },
+    { id: 'manufacturer:husqvarna', label: 'Husqvarna', kind: 'entity' },
+    { id: 'suppliers', label: 'Fournisseurs', kind: 'domain', count: 1 },
+    { id: 'supplier:parts-pro', label: 'Pièces Pro', kind: 'entity' },
     { id: 'materials', label: 'Matériels', kind: 'entity', count: 3 },
   ],
   edges: [
@@ -50,6 +73,48 @@ const simplifiedGraph = {
       source: 'company',
       target: 'fleet',
       label: 'contient',
+      kind: 'group',
+      hierarchy: true,
+    },
+    {
+      id: 'fleet-categories',
+      source: 'fleet',
+      target: 'categories',
+      kind: 'group',
+      hierarchy: true,
+    },
+    {
+      id: 'categories-parks',
+      source: 'categories',
+      target: 'category:parks',
+      kind: 'group',
+      hierarchy: true,
+    },
+    {
+      id: 'fleet-manufacturers',
+      source: 'fleet',
+      target: 'manufacturers',
+      kind: 'group',
+      hierarchy: true,
+    },
+    {
+      id: 'manufacturers-husqvarna',
+      source: 'manufacturers',
+      target: 'manufacturer:husqvarna',
+      kind: 'group',
+      hierarchy: true,
+    },
+    {
+      id: 'fleet-suppliers',
+      source: 'fleet',
+      target: 'suppliers',
+      kind: 'group',
+      hierarchy: true,
+    },
+    {
+      id: 'suppliers-parts-pro',
+      source: 'suppliers',
+      target: 'supplier:parts-pro',
       kind: 'group',
       hierarchy: true,
     },
@@ -84,6 +149,8 @@ const completeGraph = {
 };
 
 describe('RelationsPage', () => {
+  afterEach(cleanup);
+
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.useAuth.mockReturnValue({ activeCompany: { uuid: 'company-uuid', name: 'Alpha' } });
@@ -100,20 +167,67 @@ describe('RelationsPage', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByRole('button', { name: 'Matériels' })).toBeVisible();
+    expect(await screen.findByRole('button', { name: 'Gestion du parc' })).toBeVisible();
     expect(mocks.getRelationsGraph).toHaveBeenCalledWith('simplified', 'records');
+    expect(screen.queryByRole('button', { name: 'Matériels' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Fichiers des matériels' })).toBeNull();
-    expect(screen.queryByText('contient')).not.toBeInTheDocument();
-    expect(screen.queryByText('fabrique')).not.toBeInTheDocument();
-    expect(screen.queryByText('Relation directe')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Déplier Gestion du parc' }));
+    expect(await screen.findByRole('button', { name: 'Matériels' })).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: 'Vue complète' }));
 
-    expect(await screen.findByRole('button', { name: 'Fichiers des matériels' })).toBeVisible();
     await waitFor(() =>
       expect(mocks.getRelationsGraph).toHaveBeenCalledWith('complete', 'records'),
     );
+    expect(screen.queryByRole('button', { name: 'Matériels' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Déplier Gestion du parc' }));
+    await user.click(await screen.findByRole('button', { name: 'Déplier Matériels' }));
+    expect(await screen.findByRole('button', { name: 'Fichiers des matériels' })).toBeVisible();
     expect(screen.queryByText(/Utilisez la molette/i)).not.toBeInTheDocument();
+  });
+
+  it('starts with every branch collapsed and opens fleet directories independently', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <RelationsPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('button', { name: 'Gestion du parc' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Catégories' })).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Déplier Gestion du parc' }));
+
+    expect(await screen.findByRole('button', { name: 'Catégories' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Fabricants' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Fournisseurs' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Espaces verts' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Husqvarna' })).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Déplier Catégories' }));
+
+    expect(await screen.findByRole('button', { name: 'Espaces verts' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Husqvarna' })).toBeNull();
+  });
+
+  it('makes non-active relation edges more discreet', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <RelationsPage />
+      </MemoryRouter>,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Déplier Gestion du parc' }));
+    await user.click(screen.getByRole('button', { name: 'Matériels' }));
+
+    expect(screen.getByTestId('edge-fleet-materials')).toHaveAttribute('data-opacity', '1');
+    expect(screen.getByTestId('edge-fleet-categories')).toHaveAttribute(
+      'data-opacity',
+      String(INACTIVE_EDGE_OPACITY),
+    );
   });
 
   it('removes the descendants of a collapsed hierarchy branch', () => {
@@ -121,5 +235,12 @@ describe('RelationsPage', () => {
 
     expect(filtered.nodes.map(({ id }) => id)).toEqual(['company', 'fleet']);
     expect(filtered.edges.map(({ id }) => id)).toEqual(['company-fleet']);
+  });
+
+  it('identifies every collapsible hierarchy branch except the company root', () => {
+    expect([...getCollapsibleNodeIds(simplifiedGraph)]).toEqual(
+      expect.arrayContaining(['fleet', 'categories', 'manufacturers', 'suppliers']),
+    );
+    expect(getCollapsibleNodeIds(simplifiedGraph)).not.toContain('company');
   });
 });

@@ -112,6 +112,66 @@ describe('RelationsService', () => {
 });
 
 describe('RecordRelationsService', () => {
+  it('groups fleet directories between the fleet branch and their records', async () => {
+    const dataSource = {
+      getCompany: jest.fn().mockResolvedValue({ uuid: 'company-uuid', name: 'Alpha' }),
+      getRecords: jest.fn().mockResolvedValue({
+        categories: [{ id: 1, uuid: 'category-uuid', name: 'Espaces verts' }],
+        manufacturers: [{ id: 2, uuid: 'manufacturer-uuid', name: 'Husqvarna' }],
+        suppliers: [{ id: 3, uuid: 'supplier-uuid', name: 'Pièces Pro' }],
+      }),
+    };
+
+    const result = await new RecordRelationsService(dataSource).getGraph({
+      permissions: ['categories.read', 'manufacturers.read', 'suppliers.read'],
+    });
+
+    expect(result.nodes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'categories',
+          label: 'Catégories',
+          kind: 'domain',
+          count: 1,
+        }),
+        expect.objectContaining({
+          id: 'manufacturers',
+          label: 'Fabricants',
+          kind: 'domain',
+          count: 1,
+        }),
+        expect.objectContaining({
+          id: 'suppliers',
+          label: 'Fournisseurs',
+          kind: 'domain',
+          count: 1,
+        }),
+      ]),
+    );
+    expect(result.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ source: 'fleet', target: 'categories', hierarchy: true }),
+        expect.objectContaining({
+          source: 'categories',
+          target: 'category:category-uuid',
+          hierarchy: true,
+        }),
+        expect.objectContaining({ source: 'fleet', target: 'manufacturers', hierarchy: true }),
+        expect.objectContaining({
+          source: 'manufacturers',
+          target: 'manufacturer:manufacturer-uuid',
+          hierarchy: true,
+        }),
+        expect.objectContaining({ source: 'fleet', target: 'suppliers', hierarchy: true }),
+        expect.objectContaining({
+          source: 'suppliers',
+          target: 'supplier:supplier-uuid',
+          hierarchy: true,
+        }),
+      ]),
+    );
+  });
+
   it('links actual materials, plans and required parts with their persisted identifiers', async () => {
     const dataSource = {
       getCompany: jest.fn().mockResolvedValue({ uuid: 'company-uuid', name: 'Alpha' }),

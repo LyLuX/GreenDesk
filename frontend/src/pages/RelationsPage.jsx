@@ -27,6 +27,15 @@ const edgeStyles = Object.freeze({
   association: { stroke: '#6b57a4', strokeWidth: 2 },
   derived: { stroke: '#b37816', strokeWidth: 2, strokeDasharray: '7 5' },
 });
+export const INACTIVE_EDGE_OPACITY = 0.1;
+
+/** Returns every branch that can hide hierarchy descendants, except the company root. */
+export const getCollapsibleNodeIds = (graph) =>
+  new Set(
+    graph.edges
+      .filter(({ hierarchy, source }) => hierarchy && source !== 'company')
+      .map(({ source }) => source),
+  );
 
 /** Hides descendants whose hierarchy branch has been collapsed. */
 export const filterCollapsedGraph = (graph, collapsedIds) => {
@@ -145,7 +154,7 @@ function RelationsGraphPage() {
         throw new Error('Réponse de cartographie invalide.');
       }
       setGraph(next);
-      setCollapsedIds(new Set());
+      setCollapsedIds(getCollapsibleNodeIds(next));
       setSelectedId(null);
     } catch (requestError) {
       setError(getApiErrorMessage(requestError));
@@ -210,17 +219,15 @@ function RelationsGraphPage() {
         markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
         style: {
           ...edgeStyles[item.kind],
-          opacity: isRelated ? 1 : 0.16,
+          opacity: isRelated ? 1 : INACTIVE_EDGE_OPACITY,
         },
       };
     });
     return { nodes: layoutedNodes, edges: flowEdges };
   }, [collapsedIds, graph, navigate, selectedId, toggleNode]);
 
-  const collapseDomains = () => {
-    const domainIds =
-      graph?.nodes.filter(({ kind }) => kind === 'domain').map(({ id }) => id) ?? [];
-    setCollapsedIds(new Set(domainIds));
+  const collapseBranches = () => {
+    setCollapsedIds(graph ? getCollapsibleNodeIds(graph) : new Set());
     setSelectedId(null);
   };
 
@@ -278,7 +285,7 @@ function RelationsGraphPage() {
               <button
                 type="button"
                 className="btn btn-sm btn-outline-secondary"
-                onClick={collapseDomains}
+                onClick={collapseBranches}
               >
                 Replier les branches
               </button>
