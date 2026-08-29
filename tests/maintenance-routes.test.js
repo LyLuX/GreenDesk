@@ -503,6 +503,15 @@ describe('maintenance catalogue route permissions', () => {
       .expect(403);
     await request(app)
       .post(path)
+      .set('Authorization', authorization(['maintenance.execute']))
+      .send({
+        partsAction: 'partial',
+        partUuids: [uuid],
+        comment: 'Une pièce reste utilisable.',
+      })
+      .expect(403);
+    await request(app)
+      .post(path)
       .set('Authorization', authorization([exceptionalPermission]))
       .send({ partsAction: 'skip', comment: 'Pièce encore en bon état.' })
       .expect(403);
@@ -516,8 +525,17 @@ describe('maintenance catalogue route permissions', () => {
       .set('Authorization', authorization(['maintenance.execute', exceptionalPermission]))
       .send({ partsAction: 'skip', comment: 'Pièce encore en bon état.' })
       .expect(200);
+    await request(app)
+      .post(path)
+      .set('Authorization', authorization(['maintenance.execute', exceptionalPermission]))
+      .send({
+        partsAction: 'partial',
+        partUuids: [uuid],
+        comment: 'Une pièce reste utilisable.',
+      })
+      .expect(200);
 
-    expect(maintenanceController.execute).toHaveBeenCalledTimes(2);
+    expect(maintenanceController.execute).toHaveBeenCalledTimes(3);
   });
 
   it('protects unplanned interventions with their dedicated permissions', async () => {

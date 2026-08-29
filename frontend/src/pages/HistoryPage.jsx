@@ -90,6 +90,14 @@ const renderDetails = (row) => {
       );
       lines.push(`Coût total : ${formatCurrency(details.totalCost)}`);
     }
+    const retainedParts = details.partsSnapshot?.filter((part) => !part.consumed) ?? [];
+    if (retainedParts.length) {
+      lines.push(
+        `Non remplacées : ${retainedParts
+          .map((part) => `${part.name} : ${part.quantity} ${part.unit}`)
+          .join(', ')}`,
+      );
+    }
   } else lines = auditChanges(details);
 
   return lines.length ? (

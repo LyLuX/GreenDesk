@@ -260,9 +260,11 @@ export default class MaintenanceService {
         );
       const taskParts = task.parts ?? [];
       const skipParts = values.partsAction === MAINTENANCE_PART_ACTIONS.SKIP;
-      if (skipParts && !values.comment?.trim()) {
+      const partialParts = values.partsAction === MAINTENANCE_PART_ACTIONS.PARTIAL;
+      const skipsPlannedParts = skipParts || partialParts;
+      if (skipsPlannedParts && !values.comment?.trim()) {
         throw new AppError(
-          'Un commentaire est obligatoire sans changement de pièce.',
+          'Un commentaire est obligatoire lorsque des pièces ne sont pas remplacées.',
           HTTP_STATUS.BAD_REQUEST,
         );
       }
@@ -272,29 +274,58 @@ export default class MaintenanceService {
           HTTP_STATUS.BAD_REQUEST,
         );
       }
+      const requestedPartUuids = values.partUuids ?? [];
+      const selectedPartUuids = new Set(requestedPartUuids);
+      if (partialParts) {
+        if (taskParts.length < 2) {
+          throw new AppError(
+            'Le remplacement partiel nécessite un plan contenant plusieurs pièces.',
+            HTTP_STATUS.BAD_REQUEST,
+          );
+        }
+        if (selectedPartUuids.size !== requestedPartUuids.length) {
+          throw new AppError(
+            'Une pièce ne peut être sélectionnée qu’une seule fois.',
+            HTTP_STATUS.BAD_REQUEST,
+          );
+        }
+        const taskPartUuids = new Set(taskParts.map((part) => part.uuid));
+        if ([...selectedPartUuids].some((partUuid) => !taskPartUuids.has(partUuid))) {
+          throw new AppError(
+            'Une pièce sélectionnée n’appartient pas à ce plan.',
+            HTTP_STATUS.BAD_REQUEST,
+          );
+        }
+        if (!selectedPartUuids.size || selectedPartUuids.size === taskParts.length) {
+          throw new AppError(
+            'Le remplacement partiel doit sélectionner une partie des pièces du plan.',
+            HTTP_STATUS.BAD_REQUEST,
+          );
+        }
+      }
       let partsSnapshot = taskParts.length ? [] : null;
       const partUsages = [];
-      if (skipParts) {
-        partsSnapshot = taskParts.map((part) =>
-          partUsageSnapshot(part, Number(part.MaintenanceTaskPart?.quantity ?? 1), false),
-        );
-      }
       if (!skipParts) {
-        const lockedParts = taskParts.length
+        const consumedTaskParts = partialParts
+          ? taskParts.filter((part) => selectedPartUuids.has(part.uuid))
+          : taskParts;
+        const lockedParts = consumedTaskParts.length
           ? await this.catalogRepository.findPartsByIds(
-              taskParts.map((part) => part.id),
+              consumedTaskParts.map((part) => part.id),
               { transaction, lock: true },
             )
           : [];
         const lockedPartById = new Map(lockedParts.map((part) => [String(part.id), part]));
         for (const taskPart of taskParts) {
-          const part = lockedPartById.get(String(taskPart.id));
-          if (!part) {
+          const consumed = !partialParts || selectedPartUuids.has(taskPart.uuid);
+          const part = consumed ? lockedPartById.get(String(taskPart.id)) : taskPart;
+          if (consumed && !part) {
             throw new AppError('Une pièce associée au plan est introuvable.', HTTP_STATUS.CONFLICT);
           }
           const quantity = Number(taskPart.MaintenanceTaskPart?.quantity ?? 1);
-          const snapshot = partUsageSnapshot(part, quantity, true);
+          const snapshot = partUsageSnapshot(part, quantity, consumed);
           partsSnapshot.push(snapshot);
+          if (!consumed) continue;
           partUsages.push({
             maintenancePartId: part.id,
             partUuid: snapshot.uuid,
@@ -319,6 +350,10 @@ export default class MaintenanceService {
             { transaction },
           );
         }
+      } else {
+        partsSnapshot = taskParts.map((part) =>
+          partUsageSnapshot(part, Number(part.MaintenanceTaskPart?.quantity ?? 1), false),
+        );
       }
       const update = {
         lastMaintenanceDate: performedAt,
@@ -333,7 +368,9 @@ export default class MaintenanceService {
           comment: values.comment ?? null,
           executionType: skipParts
             ? MAINTENANCE_EXECUTION_TYPES.WITHOUT_PART_REPLACEMENT
-            : MAINTENANCE_EXECUTION_TYPES.STANDARD,
+            : partialParts
+              ? MAINTENANCE_EXECUTION_TYPES.PARTIAL_PART_REPLACEMENT
+              : MAINTENANCE_EXECUTION_TYPES.STANDARD,
           partsSnapshot,
           performedBy: userId,
         },
@@ -348,7 +385,11 @@ export default class MaintenanceService {
       await this.auditService.record(
         {
           userId,
-          action: skipParts ? 'EXECUTE_WITHOUT_PARTS' : 'EXECUTE',
+          action: skipParts
+            ? 'EXECUTE_WITHOUT_PARTS'
+            : partialParts
+              ? 'EXECUTE_PARTIAL_PARTS'
+              : 'EXECUTE',
           entity: 'MAINTENANCE_TASK',
           entityUuid: task.uuid,
           oldValues,

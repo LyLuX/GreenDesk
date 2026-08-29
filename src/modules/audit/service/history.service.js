@@ -190,6 +190,8 @@ export default class HistoryService {
       action:
         row.executionType === MAINTENANCE_EXECUTION_TYPES.WITHOUT_PART_REPLACEMENT
           ? 'EXECUTE_WITHOUT_PARTS'
+          : row.executionType === MAINTENANCE_EXECUTION_TYPES.PARTIAL_PART_REPLACEMENT
+            ? 'EXECUTE_PARTIAL_PARTS'
           : 'EXECUTE',
       subject: { uuid: row.task?.uuid, label: row.task?.title || 'Plan supprimé' },
       context: row.task?.material

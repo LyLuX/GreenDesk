@@ -63,6 +63,7 @@ describe('HistoryPage', () => {
       ['DELETE', 'Suppression', 'danger'],
       ['ORDER', 'Commande', 'warning'],
       ['EXECUTE', 'Entretien réalisé', 'maintenance'],
+      ['EXECUTE_PARTIAL_PARTS', 'Remplacement partiel', 'warning'],
       ['LOGIN_SUCCESS', 'Connexion', 'access'],
       ['LOGOUT_SUCCESS', 'Déconnexion', 'neutral'],
     ];

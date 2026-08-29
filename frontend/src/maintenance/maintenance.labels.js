@@ -33,5 +33,6 @@ export const maintenanceStatusClasses = Object.freeze({
   wearBased: 'maintenance-wear-based',
 });
 export const maintenanceExecutionTypeLabels = Object.freeze({
+  partialPartReplacement: 'Remplacement partiel',
   withoutPartReplacement: 'Pièces non remplacées',
 });

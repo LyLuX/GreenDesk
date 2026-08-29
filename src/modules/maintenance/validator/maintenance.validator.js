@@ -84,9 +84,23 @@ export const executeValidator = [
   body('performedAt').optional().isISO8601(),
   body('comment').optional().trim(),
   body('partsAction').optional().isIn(Object.values(MAINTENANCE_PART_ACTIONS)),
+  body('partUuids').optional().isArray({ min: 1, max: 50 }),
+  body('partUuids.*').optional().isUUID(),
   body().custom((value) => {
-    if (value.partsAction !== MAINTENANCE_PART_ACTIONS.SKIP || value.comment) return true;
-    throw new Error('Un commentaire est obligatoire sans changement de pièce.');
+    const skipsPlannedParts = [
+      MAINTENANCE_PART_ACTIONS.PARTIAL,
+      MAINTENANCE_PART_ACTIONS.SKIP,
+    ].includes(value.partsAction);
+    if (skipsPlannedParts && !value.comment) {
+      throw new Error('Un commentaire est obligatoire lorsque des pièces ne sont pas remplacées.');
+    }
+    if (value.partsAction === MAINTENANCE_PART_ACTIONS.PARTIAL && !value.partUuids?.length) {
+      throw new Error('Au moins une pièce remplacée doit être sélectionnée.');
+    }
+    if (value.partsAction !== MAINTENANCE_PART_ACTIONS.PARTIAL && value.partUuids !== undefined) {
+      throw new Error('La sélection de pièces est réservée au remplacement partiel.');
+    }
+    return true;
   }),
 ];
 const deadlineStatusValidator = [

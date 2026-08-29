@@ -36,7 +36,13 @@ const SECTION_ENTITIES = Object.freeze({
 });
 
 const userAttributes = ['uuid', 'firstName', 'lastName', 'email'];
-const auditExcludedActions = ['EXECUTE', 'EXECUTE_WITHOUT_PARTS', 'STOCK_UPDATE', 'PRICE_UPDATE'];
+const auditExcludedActions = [
+  'EXECUTE',
+  'EXECUTE_PARTIAL_PARTS',
+  'EXECUTE_WITHOUT_PARTS',
+  'STOCK_UPDATE',
+  'PRICE_UPDATE',
+];
 const auditSubjectJoinQuery = `
   SELECT
     auditLogs.uuid AS auditUuid,
@@ -187,13 +193,17 @@ export default class HistoryRepository {
     if (query.type && query.type !== 'planned_execution') return { count: 0, rows: [] };
     if (
       query.action &&
-      !['EXECUTE', 'EXECUTE_WITHOUT_PARTS'].includes(query.action.toUpperCase())
+      !['EXECUTE', 'EXECUTE_PARTIAL_PARTS', 'EXECUTE_WITHOUT_PARTS'].includes(
+        query.action.toUpperCase(),
+      )
     ) {
       return { count: 0, rows: [] };
     }
     const where = companyWhere();
     if (query.action?.toUpperCase() === 'EXECUTE') {
       where.executionType = MAINTENANCE_EXECUTION_TYPES.STANDARD;
+    } else if (query.action?.toUpperCase() === 'EXECUTE_PARTIAL_PARTS') {
+      where.executionType = MAINTENANCE_EXECUTION_TYPES.PARTIAL_PART_REPLACEMENT;
     } else if (query.action?.toUpperCase() === 'EXECUTE_WITHOUT_PARTS') {
       where.executionType = MAINTENANCE_EXECUTION_TYPES.WITHOUT_PART_REPLACEMENT;
     }

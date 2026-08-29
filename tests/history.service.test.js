@@ -73,6 +73,8 @@ describe('HistoryService', () => {
             uuid: 'planned-1',
             performedAt: '2026-08-22',
             createdAt: '2026-08-22T08:00:00Z',
+            executionType: 'partialPartReplacement',
+            partsSnapshot: [{ name: 'Bougie', quantity: 1, consumed: false }],
             task: { uuid: 'task-1', title: 'Vidange', material: { uuid: 'm-1', name: 'Tracteur' } },
             performedByUser: null,
             partUsages: [],
@@ -91,7 +93,12 @@ describe('HistoryService', () => {
     expect(result.pagination.total).toBe(2);
     expect(result.items[0]).toMatchObject({
       type: 'planned_execution',
+      action: 'EXECUTE_PARTIAL_PARTS',
       context: { label: 'Tracteur' },
+      details: {
+        executionType: 'partialPartReplacement',
+        partsSnapshot: [{ name: 'Bougie', quantity: 1, consumed: false }],
+      },
     });
   });
 

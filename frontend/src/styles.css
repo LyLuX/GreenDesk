@@ -1206,6 +1206,7 @@ a:hover {
 }
 
 .status-badge.history-action-warning,
+.status-badge.maintenance-history-partial,
 .status-badge.stock-to-order,
 .status-badge.audit-restore,
 .status-badge.priority-high,
@@ -1859,6 +1860,24 @@ body.app-scroll-locked {
   padding-inline: 0.75rem;
   background: #fff5f5;
   border-left: 4px solid #b64141;
+}
+
+.maintenance-history-list > li.maintenance-history-partial-parts {
+  padding-inline: 0.75rem;
+  border-left: 4px solid var(--brand-sun);
+  background: color-mix(in srgb, var(--brand-sun) 10%, var(--bs-body-bg));
+}
+
+.maintenance-execution-part {
+  padding: 0.75rem 0.75rem 0.75rem 2.25rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.maintenance-execution-part:has(.form-check-input:checked) {
+  border-color: var(--brand-leaf);
+  background: color-mix(in srgb, var(--brand-leaf) 9%, var(--bs-body-bg));
 }
 
 .history-table {

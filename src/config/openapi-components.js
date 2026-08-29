@@ -950,14 +950,23 @@ export const openApiSchemas = {
       performedAt: date,
       comment: {
         type: 'string',
-        description: 'Obligatoire lorsque `partsAction` vaut `skip`.',
+        description: 'Obligatoire lorsque `partsAction` vaut `partial` ou `skip`.',
       },
       partsAction: {
         type: 'string',
         enum: Object.values(MAINTENANCE_PART_ACTIONS),
         default: MAINTENANCE_PART_ACTIONS.CONSUME,
         description:
-          '`consume` retire les pièces du stock. `skip` nécessite `maintenance.execute.skip_parts` et enregistre explicitement leur non-remplacement.',
+          '`consume` retire toutes les pièces prévues du stock. `partial` retire uniquement les pièces de `partUuids`. `partial` et `skip` nécessitent `maintenance.execute.skip_parts` et enregistrent explicitement les pièces non remplacées.',
+      },
+      partUuids: {
+        type: 'array',
+        minItems: 1,
+        maxItems: 50,
+        uniqueItems: true,
+        items: uuid,
+        description:
+          'Identifiants des pièces réellement remplacées. Requis uniquement avec `partsAction=partial` et doit constituer un sous-ensemble strict des pièces du plan.',
       },
     },
   },

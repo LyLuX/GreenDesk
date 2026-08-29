@@ -19,10 +19,12 @@ export const MAINTENANCE_DEADLINE_STATUSES = Object.freeze([
 
 export const MAINTENANCE_PART_ACTIONS = Object.freeze({
   CONSUME: 'consume',
+  PARTIAL: 'partial',
   SKIP: 'skip',
 });
 
 export const MAINTENANCE_EXECUTION_TYPES = Object.freeze({
   STANDARD: 'standard',
+  PARTIAL_PART_REPLACEMENT: 'partialPartReplacement',
   WITHOUT_PART_REPLACEMENT: 'withoutPartReplacement',
 });

@@ -255,7 +255,8 @@ const permissionDefinitions = [
   },
   {
     name: maintenancePermissions.plans.executeWithoutPartReplacement,
-    description: 'Enregistrer exceptionnellement un entretien sans remplacer les pièces prévues.',
+    description:
+      'Enregistrer exceptionnellement un entretien sans remplacer tout ou partie des pièces prévues.',
   },
   {
     name: maintenancePermissions.operations.read,

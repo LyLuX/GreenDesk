@@ -153,6 +153,28 @@ describe('MaintenancePage', () => {
         <MaintenancePage />
       </MemoryRouter>,
     );
+  const usePlanParts = (parts) =>
+    mocks.listMaintenance.mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'maintenance-uuid',
+              title: 'Vidange annuelle',
+              active: true,
+              maintenanceType: 'preventive',
+              priority: 'normal',
+              status: 'upcoming',
+              material: { name: 'Tondeuse' },
+              nextMaintenanceDate: '2026-08-05',
+              remainingDays: 12,
+              parts,
+            },
+          ],
+          pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
+        },
+      },
+    });
 
   it('shows only the date deadline and the remaining days', async () => {
     renderPage();
@@ -699,6 +721,80 @@ describe('MaintenancePage', () => {
     );
   });
 
+  it('executes a plan by consuming only the selected parts', async () => {
+    usePlanParts([
+      {
+        uuid: 'filter-uuid',
+        name: 'Filtre à huile',
+        reference: 'FH-100',
+        unit: 'pièce',
+        quantity: 1,
+      },
+      {
+        uuid: 'spark-plug-uuid',
+        name: 'Bougie',
+        reference: 'BPMR8Y',
+        unit: 'pièce',
+        quantity: 2,
+      },
+    ]);
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Effectuer Vidange annuelle' }),
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Effectuer en remplaçant les pièces' }),
+    ).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Effectuer un remplacement partiel' }));
+
+    const partialDialog = screen.getByRole('dialog', {
+      name: 'Effectuer un remplacement partiel',
+    });
+    expect(within(partialDialog).getByText(/quantités du plan seront retirées du stock/)).toBeVisible();
+    await user.click(within(partialDialog).getByRole('checkbox', { name: /Filtre à huile/ }));
+    await user.type(within(partialDialog).getByLabelText('Commentaire'), 'Bougie encore utilisable');
+    await user.click(
+      within(partialDialog).getByRole('button', {
+        name: 'Effectuer avec les pièces sélectionnées',
+      }),
+    );
+
+    await waitFor(() =>
+      expect(mocks.executeMaintenance).toHaveBeenCalledWith('maintenance-uuid', {
+        performedAt: new Date().toISOString().slice(0, 10),
+        comment: 'Bougie encore utilisable',
+        partsAction: 'partial',
+        partUuids: ['filter-uuid'],
+      }),
+    );
+  });
+
+  it('hides partial replacement without the existing skip-parts permission', async () => {
+    usePlanParts([
+      { uuid: 'filter-uuid', name: 'Filtre', reference: 'FH-100', unit: 'pièce', quantity: 1 },
+      { uuid: 'plug-uuid', name: 'Bougie', reference: 'BPMR8Y', unit: 'pièce', quantity: 1 },
+    ]);
+    mocks.hasPermission.mockImplementation(
+      (permission) => permission !== 'maintenance.execute.skip_parts',
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Effectuer Vidange annuelle' }),
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Effectuer en remplaçant les pièces' }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Effectuer un remplacement partiel' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('requires a justification and confirmation to execute without changing parts', async () => {
     const user = userEvent.setup();
     renderPage();
@@ -783,6 +879,43 @@ describe('MaintenancePage', () => {
     expect(screen.getByText('15/08/2026 10:15')).toBeVisible();
     expect(badge).toHaveClass('status-badge', 'maintenance-history-exception');
     expect(badge.closest('li')).toHaveClass('maintenance-history-without-parts');
-    expect(screen.getByText('Bougie × 1', { selector: 'small' })).toBeVisible();
+    expect(screen.getByText('Pièces non remplacées : Bougie × 1')).toBeVisible();
+  });
+
+  it('distinguishes replaced and retained parts for a partial execution in history', async () => {
+    const user = userEvent.setup();
+    mocks.maintenanceHistory.mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'partial-history-uuid',
+              performedAt: '2026-08-16',
+              createdAt: '2026-08-16T08:15:00.000Z',
+              comment: 'Bougie conservée',
+              executionType: 'partialPartReplacement',
+              partsSnapshot: [
+                { name: 'Filtre', quantity: 1, consumed: true },
+                { name: 'Bougie', quantity: 1, consumed: false },
+              ],
+              performedByUser: { firstName: 'Ada', lastName: 'Lovelace' },
+            },
+          ],
+          pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
+        },
+      },
+    });
+    renderPage();
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Voir l’historique de Vidange annuelle' }),
+    );
+
+    expect(await screen.findByText('Remplacement partiel')).toHaveClass(
+      'status-badge',
+      'maintenance-history-partial',
+    );
+    expect(screen.getByText('Pièces remplacées : Filtre × 1')).toBeVisible();
+    expect(screen.getByText('Pièces non remplacées : Bougie × 1')).toBeVisible();
   });
 });

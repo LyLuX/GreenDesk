@@ -71,6 +71,35 @@ const remainingDays = (value) => {
   if (value === null || value === undefined) return '—';
   return `${Number(value).toLocaleString('fr-FR')} ${Math.abs(Number(value)) === 1 ? 'jour' : 'jours'}`;
 };
+const maintenanceHistoryClass = (executionType) => {
+  if (executionType === 'withoutPartReplacement') return 'maintenance-history-without-parts';
+  if (executionType === 'partialPartReplacement') return 'maintenance-history-partial-parts';
+  return '';
+};
+
+function MaintenanceExecutionParts({ entry }) {
+  if (!maintenanceExecutionTypeLabels[entry.executionType] || !entry.partsSnapshot?.length) {
+    return null;
+  }
+  const consumed = entry.partsSnapshot.filter((part) => part.consumed);
+  const retained = entry.partsSnapshot.filter((part) => !part.consumed);
+  const formatParts = (parts) =>
+    parts.map((part) => `${part.name} × ${part.quantity}`).join(', ');
+  return (
+    <>
+      {consumed.length > 0 && (
+        <small className="d-block text-body-secondary">
+          Pièces remplacées : {formatParts(consumed)}
+        </small>
+      )}
+      {retained.length > 0 && (
+        <small className="d-block text-body-secondary">
+          Pièces non remplacées : {formatParts(retained)}
+        </small>
+      )}
+    </>
+  );
+}
 
 function CustomDescriptionField({ field, checked, value, onToggle, onChange }) {
   return (
@@ -134,6 +163,7 @@ export default function MaintenancePage() {
   const [partsLoading, setPartsLoading] = useState(false);
   const [partsError, setPartsError] = useState('');
   const [selectedParts, setSelectedParts] = useState({});
+  const [selectedExecutionParts, setSelectedExecutionParts] = useState({});
   const [partQuantities, setPartQuantities] = useState({});
   const [wearBasedInterval, setWearBasedInterval] = useState(false);
   const [selectedOperationUuid, setSelectedOperationUuid] = useState('');
@@ -312,7 +342,7 @@ export default function MaintenancePage() {
       setBusy(false);
     }
   };
-  const executePlan = async (values, partsAction) => {
+  const executePlan = async (values, partsAction, partUuids = []) => {
     if (busy) return;
     setBusy(true);
     setFormError('');
@@ -321,12 +351,15 @@ export default function MaintenancePage() {
         performedAt: values.performedAt,
         comment: values.comment,
         partsAction,
+        ...(partsAction === 'partial' ? { partUuids } : {}),
       });
       notify(
         'success',
         partsAction === 'skip'
           ? 'Entretien enregistré sans remplacement de pièce.'
-          : 'Entretien enregistré.',
+          : partsAction === 'partial'
+            ? 'Entretien enregistré avec un remplacement partiel.'
+            : 'Entretien enregistré.',
       );
       close();
       await loadTasks();
@@ -343,6 +376,42 @@ export default function MaintenancePage() {
     event.preventDefault();
     const values = Object.fromEntries(new FormData(event.currentTarget));
     await executePlan(values, 'consume');
+  };
+  const openPartialExecution = (event) => {
+    const form = event.currentTarget.form;
+    if (!form?.reportValidity()) return;
+    setSelectedExecutionParts({});
+    setFormError('');
+    setDialog({
+      type: 'executePartial',
+      item: dialog.item,
+      draft: Object.fromEntries(new FormData(form)),
+    });
+  };
+  const returnToExecutionOptions = (event) => {
+    const form = event.currentTarget.form;
+    setFormError('');
+    setDialog({
+      type: 'execute',
+      item: dialog.item,
+      draft: form ? Object.fromEntries(new FormData(form)) : dialog.draft,
+    });
+  };
+  const submitPartialExecution = async (event) => {
+    event.preventDefault();
+    const partUuids = Object.keys(selectedExecutionParts);
+    if (!partUuids.length) {
+      setFormError('Sélectionnez au moins une pièce réellement remplacée.');
+      return;
+    }
+    if (partUuids.length === executionPartCount) {
+      setFormError(
+        'Toutes les pièces sont sélectionnées. Utilisez l’action de remplacement complet.',
+      );
+      return;
+    }
+    const values = Object.fromEntries(new FormData(event.currentTarget));
+    await executePlan(values, 'partial', partUuids);
   };
   const requestExecuteWithoutParts = (event) => {
     const form = event.currentTarget.form;
@@ -430,6 +499,7 @@ export default function MaintenancePage() {
       : executionPartCount > 1
         ? 'Effectuer en remplaçant les pièces'
         : 'Effectuer l’entretien';
+  const partialExecution = dialog?.type === 'executePartial';
   const skippedPartsDescription = activeItem?.parts
     ?.map((part) => `${part.name} × ${part.quantity}`)
     .join(', ');
@@ -856,12 +926,15 @@ export default function MaintenancePage() {
         />
       ) : null}
       <Modal
-        open={dialog?.type === 'execute'}
-        title="Effectuer l’entretien"
+        open={dialog?.type === 'execute' || partialExecution}
+        title={partialExecution ? 'Effectuer un remplacement partiel' : 'Effectuer l’entretien'}
         onClose={close}
         busy={busy}
       >
-        <form className="d-grid gap-3" onSubmit={submitExecutePlan}>
+        <form
+          className="d-grid gap-3"
+          onSubmit={partialExecution ? submitPartialExecution : submitExecutePlan}
+        >
           {formError && (
             <p role="alert" className="alert alert-danger mb-0">
               {formError}
@@ -878,13 +951,63 @@ export default function MaintenancePage() {
             label="Commentaire"
             name="comment"
             multiline
+            required={partialExecution}
             defaultValue={dialog?.draft?.comment ?? ''}
           />
+          {partialExecution && (
+            <fieldset className="surface d-grid gap-2 p-3">
+              <legend className="h6 mb-0">Pièces réellement remplacées</legend>
+              <p className="small text-body-secondary mb-1">
+                Cochez uniquement les pièces utilisées pendant cet entretien. Les quantités du
+                plan seront retirées du stock.
+              </p>
+              {activeItem.parts.map((part) => (
+                <label
+                  className="maintenance-execution-part form-check mb-0"
+                  key={part.uuid}
+                >
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    checked={Boolean(selectedExecutionParts[part.uuid])}
+                    onChange={(event) =>
+                      setSelectedExecutionParts((current) => {
+                        if (event.target.checked) return { ...current, [part.uuid]: true };
+                        const next = { ...current };
+                        delete next[part.uuid];
+                        return next;
+                      })
+                    }
+                  />
+                  <span className="form-check-label">
+                    <strong>{part.name}</strong>
+                    <small className="d-block text-body-secondary">
+                      {part.reference} · {part.quantity} {part.unit}
+                    </small>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          )}
           <div className="d-grid gap-2">
             <Button type="submit" disabled={busy}>
-              {busy ? 'Validation…' : executeWithPartsLabel}
+              {busy
+                ? 'Validation…'
+                : partialExecution
+                  ? 'Effectuer avec les pièces sélectionnées'
+                  : executeWithPartsLabel}
             </Button>
-            {executionPartCount > 0 && canExecuteWithoutPartReplacement && (
+            {!partialExecution && executionPartCount > 1 && canExecuteWithoutPartReplacement && (
+              <button
+                type="button"
+                className="btn btn-outline-brand"
+                disabled={busy}
+                onClick={openPartialExecution}
+              >
+                Effectuer un remplacement partiel
+              </button>
+            )}
+            {!partialExecution && executionPartCount > 0 && canExecuteWithoutPartReplacement && (
               <button
                 type="button"
                 className="btn btn-outline-danger"
@@ -892,6 +1015,16 @@ export default function MaintenancePage() {
                 onClick={requestExecuteWithoutParts}
               >
                 Effectuer sans remplacement de pièce
+              </button>
+            )}
+            {partialExecution && (
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                disabled={busy}
+                onClick={returnToExecutionOptions}
+              >
+                Retour aux options d’exécution
               </button>
             )}
           </div>
@@ -923,11 +1056,7 @@ export default function MaintenancePage() {
           <ul className="maintenance-history-list">
             {history.map((entry) => (
               <li
-                className={`py-2 ${
-                  entry.executionType === 'withoutPartReplacement'
-                    ? 'maintenance-history-without-parts'
-                    : ''
-                }`}
+                className={`py-2 ${maintenanceHistoryClass(entry.executionType)}`}
                 key={entry.uuid}
               >
                 <div className="d-flex flex-wrap align-items-center gap-2">
@@ -937,22 +1066,21 @@ export default function MaintenancePage() {
                       ? `${entry.performedByUser.firstName} ${entry.performedByUser.lastName}`
                       : 'Utilisateur supprimé'}
                   </span>
-                  {entry.executionType === 'withoutPartReplacement' && (
-                    <span className="status-badge maintenance-history-exception">
+                  {maintenanceExecutionTypeLabels[entry.executionType] && (
+                    <span
+                      className={`status-badge ${
+                        entry.executionType === 'partialPartReplacement'
+                          ? 'maintenance-history-partial'
+                          : 'maintenance-history-exception'
+                      }`}
+                    >
                       {maintenanceExecutionTypeLabels[entry.executionType]}
                     </span>
                   )}
                 </div>
                 <br />
                 {entry.comment || 'Sans commentaire'}
-                {entry.executionType === 'withoutPartReplacement' &&
-                  entry.partsSnapshot?.length > 0 && (
-                    <small className="d-block text-body-secondary">
-                      {entry.partsSnapshot
-                        .map((part) => `${part.name} × ${part.quantity}`)
-                        .join(', ')}
-                    </small>
-                  )}
+                <MaintenanceExecutionParts entry={entry} />
               </li>
             ))}
           </ul>

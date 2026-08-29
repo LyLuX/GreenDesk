@@ -627,6 +627,134 @@ describe('MaintenanceService', () => {
     );
   });
 
+  it('consumes only the selected plan parts during a partial replacement', async () => {
+    const today = todayDateOnly();
+    const selectedTaskPart = {
+      id: 9,
+      uuid: '99999999-9999-4999-8999-999999999999',
+      name: 'Filtre à huile',
+      reference: 'FH-100',
+      unit: 'pièce',
+      unitPrice: 12,
+      MaintenanceTaskPart: { quantity: 1 },
+    };
+    const retainedTaskPart = {
+      id: 10,
+      uuid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      name: 'Bougie',
+      reference: 'BPMR8Y',
+      unit: 'pièce',
+      unitPrice: 8,
+      MaintenanceTaskPart: { quantity: 2 },
+    };
+    const task = {
+      id: 1,
+      uuid: '11111111-1111-4111-8111-111111111111',
+      active: true,
+      intervalDays: 30,
+      lastMaintenanceDate: addDaysDateOnly(today, -30),
+      material: { active: true },
+      parts: [selectedTaskPart, retainedTaskPart],
+      toJSON: () => ({ uuid: '11111111-1111-4111-8111-111111111111' }),
+    };
+    const transaction = { id: 'transaction' };
+    const repository = {
+      withTransaction: jest.fn((callback) => callback(transaction)),
+      findByUuid: jest.fn().mockResolvedValue(task),
+      update: jest.fn(),
+      createHistory: jest.fn().mockResolvedValue({ id: 12, uuid: 'history-uuid' }),
+      createPartUsages: jest.fn(),
+    };
+    const lockedPart = { ...selectedTaskPart, quantityOnHand: 3, quantityOnOrder: 0 };
+    const catalogRepository = { findPartsByIds: jest.fn().mockResolvedValue([lockedPart]) };
+    const stockService = { apply: jest.fn() };
+    const auditService = { record: jest.fn() };
+    const service = new MaintenanceService(
+      repository,
+      {},
+      auditService,
+      catalogRepository,
+      stockService,
+    );
+
+    await service.execute(
+      task.uuid,
+      {
+        performedAt: today,
+        comment: 'La bougie est encore utilisable.',
+        partsAction: 'partial',
+        partUuids: [selectedTaskPart.uuid],
+      },
+      42,
+    );
+
+    expect(catalogRepository.findPartsByIds).toHaveBeenCalledWith([selectedTaskPart.id], {
+      transaction,
+      lock: true,
+    });
+    expect(stockService.apply).toHaveBeenCalledTimes(1);
+    expect(stockService.apply).toHaveBeenCalledWith(
+      lockedPart,
+      expect.objectContaining({ operation: 'consume', quantity: 1 }),
+      { transaction },
+    );
+    expect(repository.createPartUsages).toHaveBeenCalledWith(
+      [expect.objectContaining({ maintenancePartId: selectedTaskPart.id, quantity: 1 })],
+      { transaction },
+    );
+    expect(repository.createHistory).toHaveBeenCalledWith(
+      expect.objectContaining({
+        executionType: 'partialPartReplacement',
+        partsSnapshot: [
+          expect.objectContaining({ uuid: selectedTaskPart.uuid, consumed: true }),
+          expect.objectContaining({ uuid: retainedTaskPart.uuid, consumed: false, totalCost: 0 }),
+        ],
+      }),
+      { transaction },
+    );
+    expect(auditService.record).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'EXECUTE_PARTIAL_PARTS' }),
+      { transaction },
+    );
+  });
+
+  it('rejects a partial replacement that selects every plan part', async () => {
+    const task = {
+      id: 1,
+      uuid: '11111111-1111-4111-8111-111111111111',
+      active: true,
+      intervalDays: 30,
+      material: { active: true },
+      parts: [
+        { id: 9, uuid: '99999999-9999-4999-8999-999999999999' },
+        { id: 10, uuid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
+      ],
+      toJSON: () => ({}),
+    };
+    const repository = {
+      withTransaction: jest.fn((callback) => callback({ id: 'transaction' })),
+      findByUuid: jest.fn().mockResolvedValue(task),
+      update: jest.fn(),
+    };
+    const service = new MaintenanceService(repository, {}, { record: jest.fn() });
+
+    await expect(
+      service.execute(
+        task.uuid,
+        {
+          comment: 'Toutes remplacées',
+          partsAction: 'partial',
+          partUuids: task.parts.map((part) => part.uuid),
+        },
+        42,
+      ),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: 'Le remplacement partiel doit sélectionner une partie des pièces du plan.',
+    });
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
   it('executes maintenance without consuming parts after an explicit justified choice', async () => {
     const today = todayDateOnly();
     const taskPart = {
@@ -725,7 +853,7 @@ describe('MaintenanceService', () => {
 
     await expect(service.execute(task.uuid, { partsAction: 'skip' }, 42)).rejects.toMatchObject({
       statusCode: 400,
-      message: 'Un commentaire est obligatoire sans changement de pièce.',
+      message: 'Un commentaire est obligatoire lorsque des pièces ne sont pas remplacées.',
     });
     expect(repository.update).not.toHaveBeenCalled();
   });

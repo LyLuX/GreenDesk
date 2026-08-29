@@ -466,14 +466,23 @@ describe('OpenAPI contract', () => {
     const history = swaggerSpec.components.schemas.MaintenanceHistory;
 
     expect(executeRequest.properties.partsAction).toMatchObject({
-      enum: ['consume', 'skip'],
+      enum: ['consume', 'partial', 'skip'],
       default: 'consume',
     });
-    expect(executeRequest.properties.comment.description).toContain('skip');
+    expect(executeRequest.properties.comment.description).toContain('partial');
+    expect(executeRequest.properties.partUuids).toMatchObject({
+      type: 'array',
+      minItems: 1,
+      uniqueItems: true,
+    });
     expect(executeRequest.properties.partsAction.description).toContain(
       'maintenance.execute.skip_parts',
     );
-    expect(history.properties.executionType.enum).toEqual(['standard', 'withoutPartReplacement']);
+    expect(history.properties.executionType.enum).toEqual([
+      'standard',
+      'partialPartReplacement',
+      'withoutPartReplacement',
+    ]);
     expect(history.properties.partsSnapshot.items.properties.quantity).toMatchObject({
       type: 'number',
       minimum: 0.01,
@@ -481,6 +490,9 @@ describe('OpenAPI contract', () => {
     });
     expect(swaggerSpec.paths['/maintenance/{uuid}/execute'].post.description).toContain(
       'pièces non remplacées',
+    );
+    expect(swaggerSpec.paths['/maintenance/{uuid}/execute'].post.description).toContain(
+      'partsAction=partial',
     );
     expect(swaggerSpec.paths['/maintenance/{uuid}/execute'].post.description).toContain(
       'maintenance.execute.skip_parts',

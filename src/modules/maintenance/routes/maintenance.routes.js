@@ -22,7 +22,12 @@ const authorizeWithoutPartReplacement = authorize(
   maintenancePermissions.plans.executeWithoutPartReplacement,
 );
 const requireWithoutPartReplacementPermission = (request, response, next) => {
-  if (request.body?.partsAction !== MAINTENANCE_PART_ACTIONS.SKIP) return next();
+  if (
+    ![MAINTENANCE_PART_ACTIONS.PARTIAL, MAINTENANCE_PART_ACTIONS.SKIP].includes(
+      request.body?.partsAction,
+    )
+  )
+    return next();
   return authorizeWithoutPartReplacement(request, response, next);
 };
 const partStockPermissions = Object.values(maintenancePermissions.parts.stock);
