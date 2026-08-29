@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   history: [],
   listMaintenance: vi.fn(),
   listInterventions: vi.fn(),
+  materialFiles: [],
   uploadPhoto: vi.fn(),
 }));
 
@@ -32,6 +33,11 @@ vi.mock('../api/maintenance.api.js', () => ({
 vi.mock('../components/ManufacturerLogo.jsx', () => ({
   default: ({ manufacturer }) => <img alt={`Logo ${manufacturer.name}`} />,
 }));
+vi.mock('../components/AuthenticatedImage.jsx', () => ({
+  default: ({ alt, className, fileUuid }) => (
+    <img alt={alt} className={className} data-file-uuid={fileUuid} />
+  ),
+}));
 
 import MaterialDetailPage from './MaterialDetailPage.jsx';
 
@@ -43,6 +49,7 @@ describe('MaterialDetailPage', () => {
     URL.createObjectURL = vi.fn().mockReturnValue('blob:preview');
     URL.revokeObjectURL = vi.fn();
     mocks.history = [];
+    mocks.materialFiles = [];
     mocks.hasPermission.mockReturnValue(false);
     mocks.listMaintenance.mockResolvedValue({ data: { data: { items: [] } } });
     mocks.listInterventions.mockResolvedValue({ data: { data: { items: [] } } });
@@ -59,7 +66,7 @@ describe('MaterialDetailPage', () => {
                   name: 'Green',
                   hasLogo: true,
                 },
-                files: [],
+                files: mocks.materialFiles,
               },
         },
       }),
@@ -119,6 +126,83 @@ describe('MaterialDetailPage', () => {
 
     expect(documentSubmit).toBeEnabled();
     expect(screen.getByText('Fichier sélectionné : facture.pdf')).toBeVisible();
+  });
+
+  it('opens stored photos in an accessible gallery and browses them with buttons and keys', async () => {
+    mocks.materialFiles = [
+      {
+        uuid: 'primary-photo',
+        kind: 'photo',
+        originalName: 'Vue avant.jpg',
+        isPrimary: true,
+        createdAt: '2026-08-28T08:30:00.000Z',
+      },
+      {
+        uuid: 'second-photo',
+        kind: 'photo',
+        originalName: 'Vue arrière.jpg',
+        isPrimary: false,
+      },
+    ];
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/materials/material-uuid']}>
+        <Routes>
+          <Route path="/materials/:uuid" element={<MaterialDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Voir la photo principale de Tronçonneuse' }),
+    );
+
+    const gallery = screen.getByRole('dialog', { name: 'Photo du matériel' });
+    expect(within(gallery).getByText('1 sur 2')).toBeVisible();
+    expect(within(gallery).getByAltText('Vue avant.jpg')).toHaveAttribute(
+      'data-file-uuid',
+      'primary-photo',
+    );
+    expect(within(gallery).getByText('Photo principale')).toBeVisible();
+    expect(within(gallery).getByText('Ajoutée le 28/08/2026 10:30')).toBeVisible();
+
+    await user.click(within(gallery).getByRole('button', { name: 'Photo suivante' }));
+    expect(within(gallery).getByText('2 sur 2')).toBeVisible();
+    expect(within(gallery).getByAltText('Vue arrière.jpg')).toHaveAttribute(
+      'data-file-uuid',
+      'second-photo',
+    );
+
+    await user.keyboard('{ArrowLeft}');
+    expect(within(gallery).getByAltText('Vue avant.jpg')).toBeVisible();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Photo du matériel' })).not.toBeInTheDocument();
+  });
+
+  it('opens a stored photo from its thumbnail', async () => {
+    mocks.materialFiles = [
+      {
+        uuid: 'stored-photo',
+        kind: 'photo',
+        originalName: 'Moteur.jpg',
+        isPrimary: false,
+      },
+    ];
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/materials/material-uuid']}>
+        <Routes>
+          <Route path="/materials/:uuid" element={<MaterialDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await user.click(await screen.findByRole('button', { name: 'Voir Moteur.jpg' }));
+
+    expect(
+      within(screen.getByRole('dialog', { name: 'Photo du matériel' })).getByAltText('Moteur.jpg'),
+    ).toBeVisible();
   });
 
   it('shows friendly history labels and ignores equivalent decimal prices', async () => {

@@ -16,6 +16,7 @@ import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Loader from '../components/Loader.jsx';
 import ManufacturerLogo from '../components/ManufacturerLogo.jsx';
+import MaterialPhotoViewer from '../components/MaterialPhotoViewer.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
 import {
   maintenanceStatusClasses,
@@ -136,6 +137,7 @@ export default function MaterialDetailPage() {
   const [uploadingDocument, setUploadingDocument] = useState(false);
   const [fileToDelete, setFileToDelete] = useState(null);
   const [removingFileUuid, setRemovingFileUuid] = useState(null);
+  const [viewedPhotoUuid, setViewedPhotoUuid] = useState(null);
   const previewsRef = useRef([]);
   const photoSequenceRef = useRef(0);
   const documentInputRef = useRef(null);
@@ -210,6 +212,7 @@ export default function MaterialDetailPage() {
     () => material?.files?.filter((file) => file.kind === 'document') ?? [],
     [material],
   );
+  const primaryPhoto = useMemo(() => photos.find((photo) => photo.isPrimary) ?? null, [photos]);
   const upload = async (file, document = false, onUploadProgress) => {
     if (file.size > 10 * 1024 * 1024) throw new Error('Le fichier dépasse la limite de 10 Mo.');
     const response = document
@@ -352,12 +355,30 @@ export default function MaterialDetailPage() {
           <Button onClick={() => navigate(`/materials/${uuid}/edit`)}>Modifier</Button>
         )}
       </div>
-      <h1 className="page-title mt-4">{material.name}</h1>
-      <p className="mt-2">
-        <span className={`status-badge ${material.active ? '' : 'inactive'}`}>
-          {material.active ? 'Actif' : 'Inactif'}
-        </span>
-      </p>
+      <div className="material-detail-heading mt-4">
+        <div>
+          <h1 className="page-title">{material.name}</h1>
+          <p className="mt-2 mb-0">
+            <span className={`status-badge ${material.active ? '' : 'inactive'}`}>
+              {material.active ? 'Actif' : 'Inactif'}
+            </span>
+          </p>
+        </div>
+        {primaryPhoto && (
+          <button
+            className="material-primary-photo"
+            type="button"
+            aria-label={`Voir la photo principale de ${material.name}`}
+            onClick={() => setViewedPhotoUuid(primaryPhoto.uuid)}
+          >
+            <AuthenticatedImage
+              className="material-primary-photo-image"
+              fileUuid={primaryPhoto.uuid}
+              alt=""
+            />
+          </button>
+        )}
+      </div>
       {error && (
         <p role="alert" className="alert alert-danger mt-3">
           {error}
@@ -475,47 +496,60 @@ export default function MaterialDetailPage() {
                 </Button>
               </div>
             )}
-            <div className="material-photo-grid mt-4">
-              {photos.map((file) => (
-                <article className="surface p-3" key={file.uuid}>
-                  <AuthenticatedImage
-                    className="material-photo-image"
-                    fileUuid={file.uuid}
-                    alt={file.originalName}
-                  />
-                  <p>
-                    {file.originalName}
-                    {file.isPrimary ? ' (principale)' : ''}
-                  </p>
-                  {(hasPermission(fleetPermissions.materials.photos.setPrimary) ||
-                    hasPermission(fleetPermissions.materials.files.delete)) && (
-                    <div className="material-photo-actions mt-2">
-                      {hasPermission(fleetPermissions.materials.photos.setPrimary) && (
-                        <Button
-                          type="button"
-                          disabled={file.isPrimary}
-                          onClick={async () => {
-                            await setPrimaryMaterialPhoto(file.uuid);
-                            load();
-                          }}
-                        >
-                          Principale
-                        </Button>
-                      )}
-                      {hasPermission(fleetPermissions.materials.files.delete) && (
-                        <Button
-                          type="button"
-                          disabled={removingFileUuid === file.uuid}
-                          onClick={() => setFileToDelete(file)}
-                        >
-                          Supprimer
-                        </Button>
-                      )}
+            {photos.length > 0 ? (
+              <div className="material-photo-grid mt-4">
+                {photos.map((file) => (
+                  <article className="surface p-3" key={file.uuid}>
+                    <button
+                      className="material-photo-thumbnail"
+                      type="button"
+                      aria-label={`Voir ${file.originalName}`}
+                      onClick={() => setViewedPhotoUuid(file.uuid)}
+                    >
+                      <AuthenticatedImage
+                        className="material-photo-image"
+                        fileUuid={file.uuid}
+                        alt=""
+                      />
+                    </button>
+                    <div className="material-photo-caption mt-2">
+                      <p className="material-file-name mb-0" title={file.originalName}>
+                        {file.originalName}
+                      </p>
+                      {file.isPrimary && <span className="status-badge">Principale</span>}
                     </div>
-                  )}
-                </article>
-              ))}
-            </div>
+                    {(hasPermission(fleetPermissions.materials.photos.setPrimary) ||
+                      hasPermission(fleetPermissions.materials.files.delete)) && (
+                      <div className="material-photo-actions mt-2">
+                        {hasPermission(fleetPermissions.materials.photos.setPrimary) && (
+                          <Button
+                            type="button"
+                            disabled={file.isPrimary}
+                            onClick={async () => {
+                              await setPrimaryMaterialPhoto(file.uuid);
+                              load();
+                            }}
+                          >
+                            Principale
+                          </Button>
+                        )}
+                        {hasPermission(fleetPermissions.materials.files.delete) && (
+                          <Button
+                            type="button"
+                            disabled={removingFileUuid === file.uuid}
+                            onClick={() => setFileToDelete(file)}
+                          >
+                            Supprimer
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="mb-0 mt-4 text-body-secondary">Aucune photo ajoutée.</p>
+            )}
           </section>
           <section className="surface mt-5 p-4">
             <h2 className="h4 mb-3">Documents</h2>
@@ -793,6 +827,12 @@ export default function MaterialDetailPage() {
           if (fileToDelete && (await removeFile(fileToDelete))) setFileToDelete(null);
         }}
         busy={Boolean(removingFileUuid)}
+      />
+      <MaterialPhotoViewer
+        photos={photos}
+        selectedUuid={viewedPhotoUuid}
+        onSelect={setViewedPhotoUuid}
+        onClose={() => setViewedPhotoUuid(null)}
       />
     </main>
   );
