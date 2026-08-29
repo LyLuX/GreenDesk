@@ -41,6 +41,6 @@ describe('ConfirmDialog', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Activer' })).toHaveClass('btn-outline-activation');
+    expect(screen.getByRole('button', { name: 'Activer' })).toHaveClass('btn-outline-brand-blue');
   });
 });

@@ -400,11 +400,11 @@ describe('MaintenancePage', () => {
     const activateButton = await screen.findByRole('button', {
       name: 'Activer Vidange annuelle',
     });
-    expect(activateButton).toHaveClass('btn-outline-activation');
+    expect(activateButton).toHaveClass('btn-outline-brand-blue');
 
     await user.click(activateButton);
     expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Activer' })).toHaveClass(
-      'btn-outline-activation',
+      'btn-outline-brand-blue',
     );
   });
 
@@ -748,7 +748,11 @@ describe('MaintenancePage', () => {
     expect(
       screen.getByRole('button', { name: 'Effectuer en remplaçant les pièces' }),
     ).toBeVisible();
-    await user.click(screen.getByRole('button', { name: 'Effectuer un remplacement partiel' }));
+    const partialReplacementButton = screen.getByRole('button', {
+      name: 'Effectuer un remplacement partiel',
+    });
+    expect(partialReplacementButton).toHaveClass('btn-outline-brand-blue');
+    await user.click(partialReplacementButton);
 
     const partialDialog = screen.getByRole('dialog', {
       name: 'Effectuer un remplacement partiel',

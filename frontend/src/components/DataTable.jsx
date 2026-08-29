@@ -61,7 +61,7 @@ export default function DataTable({
                       {row.deletedAt && onRestore ? (
                         <button
                           aria-label={`Restaurer ${row.name ?? 'l’élément'}`}
-                          className="btn btn-sm btn-outline-activation flex-fill"
+                          className="btn btn-sm btn-outline-brand-blue flex-fill"
                           type="button"
                           onClick={() => onRestore(row)}
                           disabled={actionLoadingId === row.uuid}

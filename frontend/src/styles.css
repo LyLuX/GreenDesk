@@ -369,7 +369,7 @@ a:hover {
   }
 }
 
-.btn-outline-activation {
+.btn-outline-brand-blue {
   --bs-btn-color: var(--brand-blue-dark);
   --bs-btn-border-color: var(--brand-blue);
   --bs-btn-hover-color: #fff;

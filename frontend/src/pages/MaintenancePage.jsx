@@ -1000,7 +1000,7 @@ export default function MaintenancePage() {
             {!partialExecution && executionPartCount > 1 && canExecuteWithoutPartReplacement && (
               <button
                 type="button"
-                className="btn btn-outline-brand"
+                className="btn btn-outline-brand-blue"
                 disabled={busy}
                 onClick={openPartialExecution}
               >

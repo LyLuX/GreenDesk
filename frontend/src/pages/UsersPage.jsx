@@ -484,7 +484,7 @@ export default function UsersPage() {
                           <div className="d-flex h-100 w-100 align-items-center justify-content-center">
                             <button
                               aria-label={`Restaurer ${user.firstName} ${user.lastName}`}
-                              className="btn btn-sm btn-outline-activation flex-fill"
+                              className="btn btn-sm btn-outline-brand-blue flex-fill"
                               type="button"
                               disabled={Boolean(restoring)}
                               onClick={() => setConfirmation({ action: 'restore', user })}

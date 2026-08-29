@@ -600,10 +600,10 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(screen.getByText('Contrôle')).toBeVisible();
     expect(screen.queryByText('Vidange')).not.toBeInTheDocument();
     const activateButton = screen.getByRole('button', { name: 'Activer Contrôle' });
-    expect(activateButton).toHaveClass('btn-outline-activation');
+    expect(activateButton).toHaveClass('btn-outline-brand-blue');
 
     await user.click(activateButton);
-    expect(screen.getByRole('button', { name: 'Réactiver' })).toHaveClass('btn-outline-activation');
+    expect(screen.getByRole('button', { name: 'Réactiver' })).toHaveClass('btn-outline-brand-blue');
   });
 
   it('filters maintenance parts by stock status while keeping the existing filters', async () => {

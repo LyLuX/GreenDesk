@@ -110,7 +110,7 @@ describe('ReferencePage pagination', () => {
     await waitFor(() => expect(screen.queryByText('Actif')).not.toBeInTheDocument());
     expect(screen.getByText('Inactif')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Activer Inactif' })).toHaveClass(
-      'btn-outline-activation',
+      'btn-outline-brand-blue',
     );
     expect(api.list).toHaveBeenLastCalledWith(
       expect.not.objectContaining({ active: 'false' }),
@@ -148,7 +148,7 @@ describe('ReferencePage pagination', () => {
     await user.click(await screen.findByRole('button', { name: 'Restaurer Société supprimée' }));
     const dialog = within(screen.getByRole('dialog', { name: 'Restaurer société' }));
     expect(dialog.getByText(/statut précédent/)).toBeVisible();
-    expect(dialog.getByRole('button', { name: 'Restaurer' })).toHaveClass('btn-outline-activation');
+    expect(dialog.getByRole('button', { name: 'Restaurer' })).toHaveClass('btn-outline-brand-blue');
 
     await user.click(dialog.getByRole('button', { name: 'Restaurer' }));
 

@@ -197,7 +197,7 @@ describe('administrator table pagination', () => {
     const dialog = screen.getByRole('dialog', { name: 'Restaurer l’utilisateur' });
     expect(within(dialog).getByText(/statut, ses rôles et son état de vérification/)).toBeVisible();
     const confirmButton = within(dialog).getByRole('button', { name: 'Restaurer' });
-    expect(confirmButton).toHaveClass('btn-outline-activation');
+    expect(confirmButton).toHaveClass('btn-outline-brand-blue');
     await user.click(confirmButton);
 
     expect(mocks.restoreUser).toHaveBeenCalledWith('user-1');
@@ -393,13 +393,13 @@ describe('administrator table pagination', () => {
     const activateButton = screen.getByRole('button', {
       name: 'Activer Utilisateur 6',
     });
-    expect(activateButton).toHaveClass('btn-outline-activation', 'flex-fill');
+    expect(activateButton).toHaveClass('btn-outline-brand-blue', 'flex-fill');
 
     await user.click(activateButton);
 
     dialog = within(screen.getByRole('dialog', { name: 'Activer l’utilisateur' }));
     expect(dialog.getByText(/pourra de nouveau se connecter/)).toBeVisible();
-    expect(dialog.getByRole('button', { name: 'Activer' })).toHaveClass('btn-outline-activation');
+    expect(dialog.getByRole('button', { name: 'Activer' })).toHaveClass('btn-outline-brand-blue');
     await user.click(dialog.getByRole('button', { name: 'Activer' }));
 
     expect(mocks.updateUser).toHaveBeenCalledWith('user-6', { isActive: true });
