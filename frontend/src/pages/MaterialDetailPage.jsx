@@ -473,7 +473,7 @@ export default function MaterialDetailPage() {
                         <label className="form-label mb-0">
                           <span>Nom de la photo</span>
                           <input
-                            className="form-control form-control-sm mt-1"
+                            className="form-control form-control-sm mt-1 mb-2"
                             type="text"
                             maxLength="150"
                             value={item.name}
