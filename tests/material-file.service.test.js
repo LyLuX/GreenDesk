@@ -36,9 +36,45 @@ describe('MaterialFileService', () => {
           size: 1,
         },
         'document',
-        'unknown',
+        { documentType: 'unknown' },
       ),
     ).rejects.toMatchObject({ statusCode: 400, message: 'Le type de document est invalide.' });
+  });
+
+  it('trims and persists an optional material photo name', async () => {
+    const create = jest.fn().mockResolvedValue({
+      toJSON: () => ({ uuid: 'photo-uuid', kind: 'photo', name: 'Vue du moteur' }),
+    });
+    const service = createService(
+      { countPhotos: jest.fn().mockResolvedValue(0), create },
+      { getEntityByUuid: jest.fn().mockResolvedValue({ id: 12 }) },
+    );
+    const file = {
+      filename: 'stored.jpg',
+      originalname: 'IMG_1234.jpg',
+      mimetype: 'image/jpeg',
+      size: 125,
+    };
+
+    await expect(
+      service.add('material-uuid', file, 'photo', { name: '  Vue du moteur  ' }),
+    ).resolves.toEqual(expect.objectContaining({ name: 'Vue du moteur' }));
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Vue du moteur', originalName: 'IMG_1234.jpg' }),
+      { transaction },
+    );
+  });
+
+  it('rejects a material photo name longer than 150 characters', async () => {
+    const cleanup = jest.fn().mockResolvedValue(true);
+    const service = createService();
+    service.safeDeletePhysicalFile = cleanup;
+    const file = { path: 'temporary-file', mimetype: 'image/jpeg' };
+
+    await expect(
+      service.add('material-uuid', file, 'photo', { name: 'a'.repeat(151) }),
+    ).rejects.toMatchObject({ statusCode: 400 });
+    expect(cleanup).toHaveBeenCalledWith('temporary-file');
   });
 
   it('removes a written file when the material does not exist', async () => {

@@ -15,6 +15,7 @@ MaterialFile.init(
       field: 'document_type',
       allowNull: true,
     },
+    name: { type: DataTypes.STRING(150), allowNull: true },
     originalName: { type: DataTypes.STRING(255), field: 'original_name', allowNull: false },
     fileName: { type: DataTypes.STRING(255), field: 'file_name', allowNull: false },
     mimeType: { type: DataTypes.STRING(100), field: 'mime_type', allowNull: false },

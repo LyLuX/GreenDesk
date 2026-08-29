@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -50,6 +50,7 @@ describe('MaterialDetailPage', () => {
     URL.revokeObjectURL = vi.fn();
     mocks.history = [];
     mocks.materialFiles = [];
+    mocks.uploadPhoto.mockResolvedValue({ data: { data: { uuid: 'uploaded-photo' } } });
     mocks.hasPermission.mockReturnValue(false);
     mocks.listMaintenance.mockResolvedValue({ data: { data: { items: [] } } });
     mocks.listInterventions.mockResolvedValue({ data: { data: { items: [] } } });
@@ -107,6 +108,17 @@ describe('MaterialDetailPage', () => {
 
     expect(submit).toBeEnabled();
     expect(screen.getByAltText('Aperçu photo.jpg')).toBeVisible();
+    const photoName = screen.getByRole('textbox', { name: 'Nom de la photo photo.jpg' });
+    await user.type(photoName, 'Vue du moteur');
+    await user.click(submit);
+    await waitFor(() =>
+      expect(mocks.uploadPhoto).toHaveBeenCalledWith(
+        'material-uuid',
+        expect.objectContaining({ name: 'photo.jpg' }),
+        'Vue du moteur',
+        expect.any(Function),
+      ),
+    );
 
     const documentInput = screen.getByLabelText('Ajouter un document');
     const documentSubmit = screen.getByRole('button', { name: 'Envoyer le document' });
@@ -133,6 +145,7 @@ describe('MaterialDetailPage', () => {
       {
         uuid: 'primary-photo',
         kind: 'photo',
+        name: 'Capot avant',
         originalName: 'Vue avant.jpg',
         isPrimary: true,
         createdAt: '2026-08-28T08:30:00.000Z',
@@ -159,10 +172,11 @@ describe('MaterialDetailPage', () => {
 
     const gallery = screen.getByRole('dialog', { name: 'Photo du matériel' });
     expect(within(gallery).getByText('1 sur 2')).toBeVisible();
-    expect(within(gallery).getByAltText('Vue avant.jpg')).toHaveAttribute(
+    expect(within(gallery).getByAltText('Capot avant')).toHaveAttribute(
       'data-file-uuid',
       'primary-photo',
     );
+    expect(within(gallery).getByText('Fichier : Vue avant.jpg')).toBeVisible();
     expect(within(gallery).getByText('Photo principale')).toBeVisible();
     expect(within(gallery).getByText('Ajoutée le 28/08/2026 10:30')).toBeVisible();
 
@@ -174,7 +188,7 @@ describe('MaterialDetailPage', () => {
     );
 
     await user.keyboard('{ArrowLeft}');
-    expect(within(gallery).getByAltText('Vue avant.jpg')).toBeVisible();
+    expect(within(gallery).getByAltText('Capot avant')).toBeVisible();
 
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog', { name: 'Photo du matériel' })).not.toBeInTheDocument();

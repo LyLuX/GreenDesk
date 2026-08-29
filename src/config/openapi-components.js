@@ -189,6 +189,12 @@ const materialFile = {
     uuid,
     kind: { type: 'string', enum: ['photo', 'document'] },
     documentType: { type: 'string', enum: DOCUMENT_TYPES, nullable: true },
+    name: {
+      type: 'string',
+      maxLength: 150,
+      nullable: true,
+      description: 'Nom facultatif choisi par l’utilisateur pour identifier une photo.',
+    },
     originalName: writeText(255),
     fileName: writeText(255),
     mimeType: writeText(100),

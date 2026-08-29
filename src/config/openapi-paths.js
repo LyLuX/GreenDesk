@@ -826,7 +826,7 @@ export const openApiPaths = {
       tags: ['Material files'],
       summary: 'Ajoute une photo au matériel (10 Mo, 10 photos maximum).',
       description:
-        'Nécessite `materials.photos.create`. Formats acceptés : JPEG, PNG et WebP, avec correspondance obligatoire entre le MIME déclaré et la signature binaire.',
+        'Nécessite `materials.photos.create`. Un nom facultatif de 150 caractères maximum peut identifier la photo. Formats acceptés : JPEG, PNG et WebP, avec correspondance obligatoire entre le MIME déclaré et la signature binaire.',
       security: secure,
       requestBody: {
         required: true,
@@ -835,7 +835,10 @@ export const openApiPaths = {
             schema: {
               type: 'object',
               required: ['file'],
-              properties: { file: { type: 'string', format: 'binary' } },
+              properties: {
+                file: { type: 'string', format: 'binary' },
+                name: { type: 'string', maxLength: 150 },
+              },
             },
           },
         },

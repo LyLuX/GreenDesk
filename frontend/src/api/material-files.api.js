@@ -3,9 +3,10 @@ import { clearAuthenticatedImageCache } from '../utils/authenticated-image-cache
 
 const baseUrl = (uuid) => `/v1/materials/${uuid}`;
 
-export const uploadMaterialPhoto = (uuid, file, onUploadProgress) => {
+export const uploadMaterialPhoto = (uuid, file, name, onUploadProgress) => {
   const formData = new FormData();
   formData.append('file', file);
+  if (name?.trim()) formData.append('name', name.trim());
   return client.post(`${baseUrl(uuid)}/photos`, formData, { onUploadProgress }).then((response) => {
     clearAuthenticatedImageCache();
     return response;

@@ -32,6 +32,7 @@ import {
   formatOperationDateTime,
 } from '../utils/formatters.js';
 import { paginateItems } from '../utils/pagination.js';
+import { getMaterialPhotoDisplayName } from '../utils/material-photo.js';
 
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const documentTypeLabels = Object.freeze({
@@ -213,11 +214,11 @@ export default function MaterialDetailPage() {
     [material],
   );
   const primaryPhoto = useMemo(() => photos.find((photo) => photo.isPrimary) ?? null, [photos]);
-  const upload = async (file, document = false, onUploadProgress) => {
+  const upload = async (file, document = false, onUploadProgress, photoName) => {
     if (file.size > 10 * 1024 * 1024) throw new Error('Le fichier dépasse la limite de 10 Mo.');
     const response = document
       ? await uploadMaterialDocument(uuid, file, documentType, onUploadProgress)
-      : await uploadMaterialPhoto(uuid, file, onUploadProgress);
+      : await uploadMaterialPhoto(uuid, file, photoName, onUploadProgress);
     return response.data.data;
   };
   const setQueuedPhoto = (localId, update) =>
@@ -237,6 +238,7 @@ export default function MaterialDetailPage() {
     const items = files.map((file) => ({
       localId: `${Date.now()}-${photoSequenceRef.current++}`,
       file,
+      name: '',
       previewUrl: URL.createObjectURL(file),
       progress: 0,
       status: 'pending',
@@ -266,10 +268,14 @@ export default function MaterialDetailPage() {
       for (const item of selectedPhotos.filter((photo) => photo.status !== 'success')) {
         setQueuedPhoto(item.localId, { status: 'uploading', error: '', progress: 0 });
         try {
-          await upload(item.file, false, (event) =>
-            setQueuedPhoto(item.localId, {
-              progress: Math.round((event.loaded * 100) / (event.total || 1)),
-            }),
+          await upload(
+            item.file,
+            false,
+            (event) =>
+              setQueuedPhoto(item.localId, {
+                progress: Math.round((event.loaded * 100) / (event.total || 1)),
+              }),
+            item.name,
           );
           setQueuedPhoto(item.localId, { status: 'success', progress: 100 });
         } catch (err) {
@@ -464,6 +470,21 @@ export default function MaterialDetailPage() {
                           alt={`Aperçu ${item.file.name}`}
                         />
                         <p className="material-file-name">{item.file.name}</p>
+                        <label className="form-label mb-0">
+                          <span>Nom de la photo</span>
+                          <input
+                            className="form-control form-control-sm mt-1"
+                            type="text"
+                            maxLength="150"
+                            value={item.name}
+                            aria-label={`Nom de la photo ${item.file.name}`}
+                            placeholder="Facultatif"
+                            disabled={uploadingPhotos}
+                            onChange={(event) =>
+                              setQueuedPhoto(item.localId, { name: event.target.value })
+                            }
+                          />
+                        </label>
                         {item.status === 'uploading' && (
                           <progress
                             className="material-file-progress"
@@ -498,54 +519,57 @@ export default function MaterialDetailPage() {
             )}
             {photos.length > 0 ? (
               <div className="material-photo-grid mt-4">
-                {photos.map((file) => (
-                  <article className="surface p-3" key={file.uuid}>
-                    <button
-                      className="material-photo-thumbnail"
-                      type="button"
-                      aria-label={`Voir ${file.originalName}`}
-                      onClick={() => setViewedPhotoUuid(file.uuid)}
-                    >
-                      <AuthenticatedImage
-                        className="material-photo-image"
-                        fileUuid={file.uuid}
-                        alt=""
-                      />
-                    </button>
-                    <div className="material-photo-caption mt-2">
-                      <p className="material-file-name mb-0" title={file.originalName}>
-                        {file.originalName}
-                      </p>
-                      {file.isPrimary && <span className="status-badge">Principale</span>}
-                    </div>
-                    {(hasPermission(fleetPermissions.materials.photos.setPrimary) ||
-                      hasPermission(fleetPermissions.materials.files.delete)) && (
-                      <div className="material-photo-actions mt-2">
-                        {hasPermission(fleetPermissions.materials.photos.setPrimary) && (
-                          <Button
-                            type="button"
-                            disabled={file.isPrimary}
-                            onClick={async () => {
-                              await setPrimaryMaterialPhoto(file.uuid);
-                              load();
-                            }}
-                          >
-                            Principale
-                          </Button>
-                        )}
-                        {hasPermission(fleetPermissions.materials.files.delete) && (
-                          <Button
-                            type="button"
-                            disabled={removingFileUuid === file.uuid}
-                            onClick={() => setFileToDelete(file)}
-                          >
-                            Supprimer
-                          </Button>
-                        )}
+                {photos.map((file) => {
+                  const photoName = getMaterialPhotoDisplayName(file);
+                  return (
+                    <article className="surface p-3" key={file.uuid}>
+                      <button
+                        className="material-photo-thumbnail"
+                        type="button"
+                        aria-label={`Voir ${photoName}`}
+                        onClick={() => setViewedPhotoUuid(file.uuid)}
+                      >
+                        <AuthenticatedImage
+                          className="material-photo-image"
+                          fileUuid={file.uuid}
+                          alt=""
+                        />
+                      </button>
+                      <div className="material-photo-caption mt-2">
+                        <p className="material-file-name mb-0" title={photoName}>
+                          {photoName}
+                        </p>
+                        {file.isPrimary && <span className="status-badge">Principale</span>}
                       </div>
-                    )}
-                  </article>
-                ))}
+                      {(hasPermission(fleetPermissions.materials.photos.setPrimary) ||
+                        hasPermission(fleetPermissions.materials.files.delete)) && (
+                        <div className="material-photo-actions mt-2">
+                          {hasPermission(fleetPermissions.materials.photos.setPrimary) && (
+                            <Button
+                              type="button"
+                              disabled={file.isPrimary}
+                              onClick={async () => {
+                                await setPrimaryMaterialPhoto(file.uuid);
+                                load();
+                              }}
+                            >
+                              Principale
+                            </Button>
+                          )}
+                          {hasPermission(fleetPermissions.materials.files.delete) && (
+                            <Button
+                              type="button"
+                              disabled={removingFileUuid === file.uuid}
+                              onClick={() => setFileToDelete(file)}
+                            >
+                              Supprimer
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
               </div>
             ) : (
               <p className="mb-0 mt-4 text-body-secondary">Aucune photo ajoutée.</p>
@@ -820,7 +844,11 @@ export default function MaterialDetailPage() {
       <ConfirmDialog
         open={Boolean(fileToDelete)}
         title={fileToDelete?.kind === 'photo' ? 'Supprimer la photo' : 'Supprimer le document'}
-        description={`« ${fileToDelete?.originalName ?? ''} » sera supprimé de ce matériel.`}
+        description={`« ${
+          fileToDelete?.kind === 'photo'
+            ? getMaterialPhotoDisplayName(fileToDelete)
+            : (fileToDelete?.originalName ?? '')
+        } » sera supprimé de ce matériel.`}
         confirmLabel="Supprimer"
         onClose={() => !removingFileUuid && setFileToDelete(null)}
         onConfirm={async () => {

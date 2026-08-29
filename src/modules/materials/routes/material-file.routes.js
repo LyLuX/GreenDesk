@@ -60,9 +60,12 @@ router.post(
   upload(photoUpload.single('file')),
   validatePhotoSignature,
   asyncHandler(async (request, response) =>
-    response
-      .status(201)
-      .json({ success: true, data: await service.add(request.params.uuid, request.file, 'photo') }),
+    response.status(201).json({
+      success: true,
+      data: await service.add(request.params.uuid, request.file, 'photo', {
+        name: request.body.name,
+      }),
+    }),
   ),
 );
 router.post(
@@ -73,12 +76,9 @@ router.post(
   asyncHandler(async (request, response) =>
     response.status(201).json({
       success: true,
-      data: await service.add(
-        request.params.uuid,
-        request.file,
-        'document',
-        request.body.documentType,
-      ),
+      data: await service.add(request.params.uuid, request.file, 'document', {
+        documentType: request.body.documentType,
+      }),
     }),
   ),
 );

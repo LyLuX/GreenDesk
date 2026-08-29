@@ -411,6 +411,14 @@ describe('OpenAPI contract', () => {
     expect(swaggerSpec.paths['/materials/{uuid}/photos'].post.description).toContain(
       '`materials.photos.create`',
     );
+    expect(
+      swaggerSpec.paths['/materials/{uuid}/photos'].post.requestBody.content[
+        'multipart/form-data'
+      ].schema.properties.name,
+    ).toEqual(expect.objectContaining({ type: 'string', maxLength: 150 }));
+    expect(swaggerSpec.components.schemas.MaterialFile.properties.name).toEqual(
+      expect.objectContaining({ type: 'string', maxLength: 150, nullable: true }),
+    );
     expect(swaggerSpec.paths['/materials/files/{fileUuid}'].delete.description).toContain(
       '`materials.files.delete`',
     );

@@ -1702,7 +1702,9 @@ body.app-scroll-locked {
 }
 
 .material-photo-queue-item {
-  width: 8rem;
+  flex: 1 1 14rem;
+  width: min(100%, 16rem);
+  max-width: 16rem;
 }
 
 .material-photo-queue-preview {

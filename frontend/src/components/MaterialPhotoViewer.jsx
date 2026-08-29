@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { formatDateTime } from '../utils/formatters.js';
+import { getMaterialPhotoDisplayName } from '../utils/material-photo.js';
 import AuthenticatedImage from './AuthenticatedImage.jsx';
 import Modal from './Modal.jsx';
 
@@ -7,6 +8,7 @@ import Modal from './Modal.jsx';
 export default function MaterialPhotoViewer({ photos, selectedUuid, onSelect, onClose }) {
   const selectedIndex = photos.findIndex((photo) => photo.uuid === selectedUuid);
   const selectedPhoto = photos[selectedIndex];
+  const selectedPhotoName = getMaterialPhotoDisplayName(selectedPhoto);
   const canBrowse = photos.length > 1;
 
   const selectAt = useCallback(
@@ -57,7 +59,7 @@ export default function MaterialPhotoViewer({ photos, selectedUuid, onSelect, on
             <AuthenticatedImage
               className="material-photo-viewer-image"
               fileUuid={selectedPhoto.uuid}
-              alt={selectedPhoto.originalName}
+              alt={selectedPhotoName}
             />
             {canBrowse && (
               <button
@@ -71,7 +73,12 @@ export default function MaterialPhotoViewer({ photos, selectedUuid, onSelect, on
             )}
           </div>
           <div className="material-photo-viewer-details">
-            <p className="mb-0 fw-semibold text-break">{selectedPhoto.originalName}</p>
+            <p className="mb-0 fw-semibold text-break">{selectedPhotoName}</p>
+            {selectedPhoto.name && (
+              <small className="text-body-secondary text-break">
+                Fichier : {selectedPhoto.originalName}
+              </small>
+            )}
             <div className="d-flex flex-wrap align-items-center justify-content-center gap-2">
               {selectedPhoto.isPrimary && (
                 <span className="status-badge">Photo principale</span>

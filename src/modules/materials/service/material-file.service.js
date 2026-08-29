@@ -11,13 +11,14 @@ export default class MaterialFileService {
     this.repository = repository;
     this.materialService = materialService;
   }
-  async add(materialUuid, file, kind, documentType) {
+  async add(materialUuid, file, kind, { documentType, name } = {}) {
     try {
       if (!file) throw new AppError('Aucun fichier fourni.', HTTP_STATUS.BAD_REQUEST);
       if (kind === 'photo' && !PHOTO_MIME_TYPES.includes(file.mimetype))
         throw new AppError('Le type de photo est invalide.', HTTP_STATUS.BAD_REQUEST);
       if (kind === 'document' && !DOCUMENT_TYPES.includes(documentType))
         throw new AppError('Le type de document est invalide.', HTTP_STATUS.BAD_REQUEST);
+      const normalizedName = this.normalizePhotoName(kind, name);
       const persistedFile = await this.repository.withTransaction(async (transaction) => {
         const material = await this.materialService.getEntityByUuid(materialUuid, { transaction });
         if (kind === 'photo' && (await this.repository.countPhotos(material.id)) >= 10)
@@ -31,6 +32,7 @@ export default class MaterialFileService {
               materialId: material.id,
               kind,
               documentType: documentType ?? null,
+              name: normalizedName,
               originalName: file.originalname,
               fileName: file.filename,
               mimeType: file.mimetype,
@@ -45,6 +47,19 @@ export default class MaterialFileService {
       if (file?.path) await this.safeDeletePhysicalFile(file.path);
       throw error;
     }
+  }
+  normalizePhotoName(kind, name) {
+    if (kind !== 'photo' || name === undefined || name === null || name === '') return null;
+    if (typeof name !== 'string')
+      throw new AppError('Le nom de la photo est invalide.', HTTP_STATUS.BAD_REQUEST);
+    const normalizedName = name.trim();
+    if (!normalizedName) return null;
+    if (normalizedName.length > 150)
+      throw new AppError(
+        'Le nom de la photo ne doit pas dépasser 150 caractères.',
+        HTTP_STATUS.BAD_REQUEST,
+      );
+    return normalizedName;
   }
   async remove(uuid) {
     const file = await this.repository.findByUuid(uuid);
