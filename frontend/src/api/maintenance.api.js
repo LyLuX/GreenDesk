@@ -62,3 +62,4 @@ export const getMaintenanceSheets = (params, signal) =>
     params: compactQueryParams(params),
     signal,
   });
+export const recordMaintenanceSheetPrint = () => client.post('/v1/maintenance/sheets/print-events');

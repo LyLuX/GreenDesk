@@ -2,6 +2,7 @@ const companyPermissions = Object.freeze({
   read: 'companies.read',
   create: 'companies.create',
   update: 'companies.update',
+  logo: Object.freeze({ update: 'companies.logo.update' }),
   status: Object.freeze({ update: 'companies.status.update' }),
   delete: 'companies.delete',
   deleted: Object.freeze({

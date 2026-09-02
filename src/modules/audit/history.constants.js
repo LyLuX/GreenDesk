@@ -8,6 +8,7 @@ export const HISTORY_TYPES = Object.freeze({
   [HISTORY_SECTIONS.FLEET]: Object.freeze(['material', 'category', 'manufacturer', 'supplier']),
   [HISTORY_SECTIONS.MAINTENANCE]: Object.freeze([
     'maintenance_plan',
+    'maintenance_sheet_print',
     'planned_execution',
     'unplanned_intervention',
     'maintenance_operation',

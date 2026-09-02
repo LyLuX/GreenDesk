@@ -46,6 +46,9 @@ describe('HistoryPage', () => {
     expect(screen.getByText('22/08/2026 10:15')).toBeVisible();
     expect(screen.getByText('Réception')).toHaveClass('history-action-success');
     expect(screen.getByText('1 événement(s), page 1 sur 1')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Fiches de maintenance' })).toHaveValue(
+      'maintenance_sheet_print',
+    );
 
     await user.selectOptions(screen.getByLabelText('Type'), 'stock_movement');
     await waitFor(() =>
@@ -66,6 +69,7 @@ describe('HistoryPage', () => {
       ['EXECUTE_PARTIAL_PARTS', 'Remplacement partiel', 'warning'],
       ['LOGIN_SUCCESS', 'Connexion', 'access'],
       ['LOGOUT_SUCCESS', 'Déconnexion', 'neutral'],
+      ['PRINT_MAINTENANCE_SHEETS', 'Impression des fiches de maintenance', 'info'],
     ];
     listHistory.mockResolvedValueOnce({
       data: {

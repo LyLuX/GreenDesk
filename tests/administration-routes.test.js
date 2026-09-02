@@ -173,6 +173,29 @@ describe('granular administration route permissions', () => {
       .expect(400);
   });
 
+  it('protects company logo changes with their dedicated permission', async () => {
+    await request(app)
+      .get(`/api/v1/companies/${uuid}/logo`)
+      .set('Authorization', authorization([]))
+      .expect(404);
+    await request(app)
+      .post(`/api/v1/companies/${uuid}/logo`)
+      .set('Authorization', authorization(['companies.update']))
+      .expect(403);
+    await request(app)
+      .post('/api/v1/companies/invalid/logo')
+      .set('Authorization', authorization(['companies.logo.update']))
+      .expect(400);
+    await request(app)
+      .delete(`/api/v1/companies/${uuid}/logo`)
+      .set('Authorization', authorization(['companies.update']))
+      .expect(403);
+    await request(app)
+      .delete('/api/v1/companies/invalid/logo')
+      .set('Authorization', authorization(['companies.logo.update']))
+      .expect(400);
+  });
+
   it.each([
     ['/api/v1/permissions', 'post', 'permissions.create', { name: '' }],
     [`/api/v1/permissions/${uuid}`, 'put', 'permissions.update', { name: '' }],

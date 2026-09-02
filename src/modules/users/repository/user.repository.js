@@ -21,7 +21,7 @@ const userIncludes = [
   {
     model: Company,
     as: 'companies',
-    attributes: ['id', 'uuid', 'name', 'active'],
+    attributes: ['id', 'uuid', 'name', 'active', 'logoFileName', 'updatedAt'],
     through: { attributes: [] },
   },
 ];

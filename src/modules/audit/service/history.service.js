@@ -34,6 +34,7 @@ const auditSubjectFallbacks = Object.freeze({
   MANUFACTURER: 'Fabricant supprimé',
   SUPPLIER: 'Fournisseur supprimé',
   MAINTENANCE_TASK: 'Plan de maintenance supprimé',
+  MAINTENANCE_SHEET_PRINT: 'Fiches de maintenance',
   MAINTENANCE_OPERATION: 'Opération supprimée',
   MAINTENANCE_PART: 'Pièce supprimée',
   USER: 'Utilisateur supprimé',
@@ -59,6 +60,7 @@ const auditTypes = Object.freeze({
   MANUFACTURER: 'manufacturer',
   SUPPLIER: 'supplier',
   MAINTENANCE_TASK: 'maintenance_plan',
+  MAINTENANCE_SHEET_PRINT: 'maintenance_sheet_print',
   MAINTENANCE_OPERATION: 'maintenance_operation',
   MAINTENANCE_PART: 'maintenance_part',
   USER: 'user',
@@ -192,7 +194,7 @@ export default class HistoryService {
           ? 'EXECUTE_WITHOUT_PARTS'
           : row.executionType === MAINTENANCE_EXECUTION_TYPES.PARTIAL_PART_REPLACEMENT
             ? 'EXECUTE_PARTIAL_PARTS'
-          : 'EXECUTE',
+            : 'EXECUTE',
       subject: { uuid: row.task?.uuid, label: row.task?.title || 'Plan supprimé' },
       context: row.task?.material
         ? { uuid: row.task.material.uuid, label: row.task.material.name }

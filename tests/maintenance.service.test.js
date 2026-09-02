@@ -351,6 +351,18 @@ describe('MaintenanceService', () => {
     );
   });
 
+  it('records the launch of maintenance sheet printing for the current user', async () => {
+    const auditService = { record: jest.fn().mockResolvedValue({}) };
+    const service = new MaintenanceService({}, {}, auditService, {});
+
+    await expect(service.recordSheetPrint(42)).resolves.toEqual({ recorded: true });
+    expect(auditService.record).toHaveBeenCalledWith({
+      userId: 42,
+      action: 'PRINT_MAINTENANCE_SHEETS',
+      entity: 'MAINTENANCE_SHEET_PRINT',
+    });
+  });
+
   it('optionally adds uncovered low-stock parts to the order list', async () => {
     const repository = { findForOrderList: jest.fn().mockResolvedValue([]) };
     const catalogRepository = {

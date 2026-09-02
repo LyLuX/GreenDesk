@@ -18,10 +18,14 @@ export default class CompanyService {
       ? undefined
       : (claims.companyAccess ?? []).map(({ uuid }) => uuid);
     const result = await this.repository.findAll({ ...query, accessibleUuids });
-    return paginatedResult(result, normalizePagination(query));
+    return paginatedResult(result, normalizePagination(query), (company) => this.toPublic(company));
   }
 
   async getByUuid(uuid, claims = null, options = {}) {
+    return this.toPublic(await this.getEntityByUuid(uuid, claims, options));
+  }
+
+  async getEntityByUuid(uuid, claims = null, options = {}) {
     this.assertAccessible(uuid, claims);
     const company = await this.repository.findByUuid(uuid, options);
     if (!company) throw new AppError('Société introuvable.', HTTP_STATUS.NOT_FOUND);
@@ -29,7 +33,7 @@ export default class CompanyService {
   }
 
   async create(values, userId, claims = {}) {
-    return this.repository.withTransaction(async (transaction) => {
+    const company = await this.repository.withTransaction(async (transaction) => {
       const existing = await this.repository.findByName(values.name, {
         withDeleted: true,
         transaction,
@@ -37,51 +41,52 @@ export default class CompanyService {
       if (existing && !existing.deletedAt) {
         throw new AppError('Ce nom de société est déjà utilisé.', HTTP_STATUS.CONFLICT);
       }
-      let company;
+      let savedCompany;
       if (existing) {
         if (!claims.permissions?.includes(companyPermissions.deleted.update)) {
           throw new AppError('Insufficient permissions', HTTP_STATUS.FORBIDDEN);
         }
         await this.repository.restore(existing, { transaction });
-        company = await this.repository.update(
+        savedCompany = await this.repository.update(
           existing,
           { ...values, active: true },
           { transaction },
         );
       } else {
-        company = await this.repository.create(values, { transaction });
+        savedCompany = await this.repository.create(values, { transaction });
       }
       if (!claims.permissions?.includes(companyPermissions.accessAll)) {
-        await this.repository.assignUser(company.id, userId, { transaction });
+        await this.repository.assignUser(savedCompany.id, userId, { transaction });
       }
       await this.auditService.record(
         {
           userId,
           action: existing ? 'RESTORE' : 'CREATE',
           entity: 'COMPANY',
-          entityUuid: company.uuid,
-          newValues: company.toJSON(),
+          entityUuid: savedCompany.uuid,
+          newValues: savedCompany.toJSON(),
         },
         { transaction },
       );
-      return company;
+      return savedCompany;
     });
+    return this.toPublic(company);
   }
 
   async update(uuid, values, userId, claims = null) {
     this.assertAccessible(uuid, claims);
-    return this.repository.withTransaction(async (transaction) => {
-      const company = await this.getByUuid(uuid, claims, { transaction });
-      const oldValues = company.toJSON();
+    const company = await this.repository.withTransaction(async (transaction) => {
+      const companyToUpdate = await this.getEntityByUuid(uuid, claims, { transaction });
+      const oldValues = companyToUpdate.toJSON();
       if (values.name) {
         const duplicate = await this.repository.findByName(values.name, { transaction });
         if (duplicate && duplicate.uuid !== uuid) {
           throw new AppError('Ce nom de société est déjà utilisé.', HTTP_STATUS.CONFLICT);
         }
       }
-      await this.repository.update(company, values, { transaction });
+      await this.repository.update(companyToUpdate, values, { transaction });
       if (Object.hasOwn(values, 'active') && Boolean(values.active) !== Boolean(oldValues.active)) {
-        await this.repository.invalidateUserSessions(company.id, {
+        await this.repository.invalidateUserSessions(companyToUpdate.id, {
           excludeUserId: userId,
           transaction,
         });
@@ -91,14 +96,15 @@ export default class CompanyService {
           userId,
           action: 'UPDATE',
           entity: 'COMPANY',
-          entityUuid: company.uuid,
+          entityUuid: companyToUpdate.uuid,
           oldValues,
-          newValues: company.toJSON(),
+          newValues: companyToUpdate.toJSON(),
         },
         { transaction },
       );
-      return company;
+      return companyToUpdate;
     });
+    return this.toPublic(company);
   }
 
   async remove(uuid, userId, claims = null) {
@@ -128,7 +134,7 @@ export default class CompanyService {
 
   async restore(uuid, userId, claims = null) {
     this.assertAccessible(uuid, claims);
-    return this.repository.withTransaction(async (transaction) => {
+    const company = await this.repository.withTransaction(async (transaction) => {
       const company = await this.repository.findByUuid(uuid, {
         withDeleted: true,
         transaction,
@@ -152,6 +158,7 @@ export default class CompanyService {
       );
       return company;
     });
+    return this.toPublic(company);
   }
 
   assertAccessible(uuid, claims) {
@@ -159,5 +166,14 @@ export default class CompanyService {
     if (claims.permissions?.includes(companyPermissions.accessAll)) return;
     if ((claims.companyAccess ?? []).some((company) => company.uuid === uuid)) return;
     throw new AppError('Société introuvable.', HTTP_STATUS.NOT_FOUND);
+  }
+
+  toPublic(company) {
+    const value = typeof company.toJSON === 'function' ? company.toJSON() : company;
+    const publicValue = { ...value, hasLogo: Boolean(value.logoFileName) };
+    delete publicValue.logoFileName;
+    delete publicValue.logoOriginalName;
+    delete publicValue.logoMimeType;
+    return publicValue;
   }
 }

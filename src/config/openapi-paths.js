@@ -273,6 +273,62 @@ export const openApiPaths = {
       responses: { 204: noContent, ...writeErrors },
     },
   },
+  '/companies/{uuid}/logo': {
+    parameters: [uuidParameter],
+    get: {
+      operationId: 'getCompanyLogo',
+      tags: ['Companies'],
+      summary: 'Affiche le logo protégé d’une société accessible.',
+      description:
+        'Nécessite une session authentifiée et l’accès à la société demandée. Cette lecture permet d’afficher l’identité de la société active sans permission d’administration.',
+      security: secure,
+      responses: {
+        200: binaryResponse('Image du logo.', ['image/jpeg', 'image/png', 'image/webp']),
+        ...resourceErrors,
+      },
+    },
+    post: {
+      operationId: 'uploadCompanyLogo',
+      tags: ['Companies'],
+      summary: 'Ajoute ou remplace le logo d’une société accessible (2 Mo maximum).',
+      description:
+        'Nécessite `companies.logo.update` et l’accès à la société demandée. Le MIME déclaré et la signature binaire doivent correspondre à une image JPEG, PNG ou WebP.',
+      security: secure,
+      requestBody: {
+        required: true,
+        content: {
+          'multipart/form-data': {
+            schema: {
+              type: 'object',
+              required: ['file'],
+              properties: {
+                file: {
+                  type: 'string',
+                  format: 'binary',
+                  description: 'Image JPEG, PNG ou WebP validée par sa signature binaire.',
+                },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        200: jsonResponse('LogoStatusResponse', 'Logo enregistré.'),
+        ...resourceErrors,
+      },
+    },
+    delete: {
+      operationId: 'deleteCompanyLogo',
+      tags: ['Companies'],
+      summary: 'Supprime le logo d’une société accessible.',
+      description: 'Nécessite `companies.logo.update` et l’accès à la société demandée.',
+      security: secure,
+      responses: {
+        200: jsonResponse('LogoStatusResponse', 'Logo supprimé ou déjà absent.'),
+        ...resourceErrors,
+      },
+    },
+  },
   '/companies/{uuid}/restore': {
     parameters: [uuidParameter],
     post: {
@@ -1275,6 +1331,20 @@ export const openApiPaths = {
       },
     },
   },
+  '/maintenance/sheets/print-events': {
+    post: {
+      operationId: 'recordMaintenanceSheetPrint',
+      tags: ['Maintenance'],
+      summary: 'Enregistre le lancement de l’impression des fiches de maintenance.',
+      description:
+        'Nécessite `maintenance.sheets.read`. Ajoute à l’historique un événement « Impression des fiches de maintenance » pour l’utilisateur connecté.',
+      security: secure,
+      responses: {
+        201: jsonResponse('MaintenanceSheetPrintResponse', 'Lancement de l’impression enregistré.'),
+        ...standardErrors,
+      },
+    },
+  },
   '/maintenance/interventions': {
     get: {
       operationId: 'listMaintenanceInterventions',
@@ -1319,7 +1389,8 @@ export const openApiPaths = {
       operationId: 'listMaintenanceTasks',
       tags: ['Maintenance'],
       summary: 'Liste et filtre les plans d’entretien avec pagination.',
-      description: 'Nécessite `maintenance.read`. Alias historique déprécié : `/api/maintenance`.',
+      description:
+        'Nécessite `maintenance.read`. Les plans avec une échéance sont triés par date croissante, puis par priorité décroissante, titre croissant et identifiant croissant. Les plans selon l’usure, sans échéance, sont retournés en dernier. Alias historique déprécié : `/api/maintenance`.',
       security: secure,
       parameters: [
         {

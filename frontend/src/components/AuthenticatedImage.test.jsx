@@ -48,4 +48,20 @@ describe('AuthenticatedImage', () => {
     expect(await screen.findByRole('img', { name: 'Deuxième photo' })).toBeInTheDocument();
     expect(getMaterialFileContent).toHaveBeenCalledTimes(1);
   });
+
+  it('reloads an image after its cache key changes', async () => {
+    getMaterialFileContent.mockResolvedValue({ data: new Blob(['first']) });
+    const { rerender } = render(
+      <AuthenticatedImage fileUuid="company-uuid" cacheKey="company-uuid:v1" alt="Logo société" />,
+    );
+    await screen.findByRole('img', { name: 'Logo société' });
+
+    clearAuthenticatedImageCache();
+    getMaterialFileContent.mockResolvedValue({ data: new Blob(['second']) });
+    rerender(
+      <AuthenticatedImage fileUuid="company-uuid" cacheKey="company-uuid:v2" alt="Logo société" />,
+    );
+
+    await waitFor(() => expect(getMaterialFileContent).toHaveBeenCalledTimes(2));
+  });
 });

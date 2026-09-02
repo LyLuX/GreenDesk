@@ -56,6 +56,10 @@ const permissionDefinitions = [
     description: 'Modifier les informations générales des sociétés.',
   },
   {
+    name: companyPermissions.logo.update,
+    description: 'Ajouter, remplacer ou supprimer le logo d’une société.',
+  },
+  {
     name: companyPermissions.status.update,
     description: 'Activer ou désactiver des sociétés.',
   },

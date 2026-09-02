@@ -134,10 +134,12 @@ export default class AuthService {
         email: safeUser.email,
         roles,
         permissions,
-        companies: accessibleCompanies.map(({ uuid, name, active }) => ({
+        companies: accessibleCompanies.map(({ uuid, name, active, logoFileName, updatedAt }) => ({
           uuid,
           name,
           active,
+          hasLogo: Boolean(logoFileName),
+          updatedAt,
         })),
       },
     };

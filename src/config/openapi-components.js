@@ -82,13 +82,18 @@ const role = {
 
 const company = {
   type: 'object',
-  required: ['uuid', 'name', 'active'],
+  required: ['uuid', 'name', 'active', 'hasLogo'],
   properties: {
     id: { type: 'integer', readOnly: true },
     uuid,
     name: writeText(150),
     description: { ...nullableString, maxLength: 1000 },
     active: { type: 'boolean' },
+    hasLogo: {
+      type: 'boolean',
+      readOnly: true,
+      description: 'Indique si un logo protégé est disponible pour cette société.',
+    },
     ...timestamps,
     deletedAt: {
       ...nullableDateTime,
@@ -100,11 +105,13 @@ const company = {
 
 const userCompany = {
   type: 'object',
-  required: ['uuid', 'name', 'active'],
+  required: ['uuid', 'name', 'active', 'hasLogo'],
   properties: {
     uuid,
     name: writeText(150),
     active: { type: 'boolean' },
+    hasLogo: { type: 'boolean', readOnly: true },
+    updatedAt: dateTime,
   },
 };
 
@@ -602,6 +609,7 @@ export const openApiSchemas = {
           'manufacturer',
           'supplier',
           'maintenance_plan',
+          'maintenance_sheet_print',
           'planned_execution',
           'unplanned_intervention',
           'maintenance_operation',
@@ -1212,7 +1220,11 @@ export const openApiSchemas = {
   MaterialOptionPage: pageOf('MaterialOption'),
   AuditLogPage: pageOf('AuditLog'),
   HistoryEventPage: pageOf('HistoryEvent'),
-  MaintenancePage: pageOf('MaintenanceTask'),
+  MaintenancePage: {
+    ...pageOf('MaintenanceTask'),
+    description:
+      'Page de plans triés par échéance croissante, les échéances absentes en dernier, puis par priorité décroissante, titre croissant et identifiant croissant.',
+  },
   MaintenanceOperationPage: pageOf('MaintenanceOperation'),
   MaintenancePartPage: pageOf('MaintenancePart'),
   MaintenanceHistoryPage: pageOf('MaintenanceHistory'),
@@ -1314,6 +1326,11 @@ export const openApiSchemas = {
       includeWearBased: { type: 'boolean' },
       items: arrayOf(reference('MaintenanceSheet')),
     },
+  },
+  MaintenanceSheetPrintAcknowledgement: {
+    type: 'object',
+    required: ['recorded'],
+    properties: { recorded: { type: 'boolean', enum: [true] } },
   },
   DashboardSummary: {
     type: 'object',
@@ -1545,6 +1562,7 @@ export const openApiSchemas = {
   MaintenancePartPriceHistoryListResponse: success(reference('MaintenancePartPriceHistoryPage')),
   MaintenanceOrderListResponse: success(reference('MaintenanceOrderList')),
   MaintenanceSheetListResponse: success(reference('MaintenanceSheetList')),
+  MaintenanceSheetPrintResponse: success(reference('MaintenanceSheetPrintAcknowledgement')),
   MaintenanceHistoryResponse: success(reference('MaintenanceHistoryPage')),
   MaintenanceExecutionResponse: success(reference('MaintenanceExecution')),
   MaintenanceInterventionResponse: success(reference('MaintenanceIntervention')),

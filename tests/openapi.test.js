@@ -176,6 +176,7 @@ describe('OpenAPI contract', () => {
     expect(swaggerSpec.paths).not.toHaveProperty('/maintenance/suppliers');
     expect(swaggerSpec.paths).toHaveProperty('/maintenance/order-list');
     expect(swaggerSpec.paths).toHaveProperty('/maintenance/sheets');
+    expect(swaggerSpec.paths).toHaveProperty('/maintenance/sheets/print-events');
     expect(swaggerSpec.paths).toHaveProperty('/maintenance/parts/{uuid}/price');
     expect(swaggerSpec.paths).toHaveProperty('/maintenance/parts/{uuid}/minimum-stock');
     expect(swaggerSpec.paths).toHaveProperty('/maintenance/parts/{uuid}/price-history');
@@ -192,6 +193,15 @@ describe('OpenAPI contract', () => {
     });
     expect(swaggerSpec.paths['/maintenance/operations'].post.description).toContain(
       '`maintenance.operations.create`',
+    );
+    expect(swaggerSpec.paths['/maintenance'].get.description).toContain(
+      'échéance sont triés par date croissante',
+    );
+    expect(swaggerSpec.paths['/maintenance'].get.description).toContain(
+      'plans selon l’usure, sans échéance, sont retournés en dernier',
+    );
+    expect(swaggerSpec.components.schemas.MaintenancePage.description).toContain(
+      'priorité décroissante',
     );
     expect(swaggerSpec.paths['/maintenance/parts'].post.description).toContain(
       '`maintenance.parts.create`',
@@ -271,6 +281,12 @@ describe('OpenAPI contract', () => {
     expect(
       swaggerSpec.components.schemas.MaintenanceSheetList.properties.items.items.allOf,
     ).toHaveLength(2);
+    expect(swaggerSpec.paths['/maintenance/sheets/print-events'].post.description).toContain(
+      'Impression des fiches de maintenance',
+    );
+    expect(swaggerSpec.components.schemas.HistoryEvent.properties.type.enum).toContain(
+      'maintenance_sheet_print',
+    );
     expect(
       swaggerSpec.paths['/maintenance/order-list'].get.parameters.find(
         ({ name }) => name === 'includeLowStock',
@@ -389,6 +405,14 @@ describe('OpenAPI contract', () => {
     expect(swaggerSpec.components.schemas.Company.properties.deletedAt.description).toContain(
       'restauration',
     );
+    expect(swaggerSpec.components.schemas.Company.required).toContain('hasLogo');
+    expect(swaggerSpec.components.schemas.UserCompany.required).toContain('hasLogo');
+    expect(swaggerSpec.paths['/companies/{uuid}/logo'].post.description).toContain(
+      '`companies.logo.update`',
+    );
+    expect(swaggerSpec.paths['/companies/{uuid}/logo'].delete.description).toContain(
+      '`companies.logo.update`',
+    );
     expect(swaggerSpec.paths['/users/{uuid}'].put.description).toContain('`users.password.update`');
     expect(swaggerSpec.paths['/roles/{uuid}'].put.description).toContain(
       '`roles.permissions.update`',
@@ -412,9 +436,8 @@ describe('OpenAPI contract', () => {
       '`materials.photos.create`',
     );
     expect(
-      swaggerSpec.paths['/materials/{uuid}/photos'].post.requestBody.content[
-        'multipart/form-data'
-      ].schema.properties.name,
+      swaggerSpec.paths['/materials/{uuid}/photos'].post.requestBody.content['multipart/form-data']
+        .schema.properties.name,
     ).toEqual(expect.objectContaining({ type: 'string', maxLength: 150 }));
     expect(swaggerSpec.components.schemas.MaterialFile.properties.name).toEqual(
       expect.objectContaining({ type: 'string', maxLength: 150, nullable: true }),
@@ -534,6 +557,7 @@ describe('OpenAPI contract', () => {
 
   it('documents binary-signature validation on every upload endpoint', () => {
     for (const operation of [
+      swaggerSpec.paths['/companies/{uuid}/logo'].post,
       swaggerSpec.paths['/manufacturers/{uuid}/logo'].post,
       swaggerSpec.paths['/materials/{uuid}/photos'].post,
       swaggerSpec.paths['/materials/{uuid}/documents'].post,

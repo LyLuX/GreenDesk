@@ -55,6 +55,13 @@ describe('UserRepository deleted-user listing', () => {
     await new UserRepository().findByEmailWithPassword('user@example.test');
 
     const companyInclude = findOne.mock.calls[0][0].include.find(({ as }) => as === 'companies');
-    expect(companyInclude.attributes).toEqual(['id', 'uuid', 'name', 'active']);
+    expect(companyInclude.attributes).toEqual([
+      'id',
+      'uuid',
+      'name',
+      'active',
+      'logoFileName',
+      'updatedAt',
+    ]);
   });
 });

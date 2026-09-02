@@ -12,6 +12,13 @@ Company.init(
     uuid: { type: DataTypes.UUID, defaultValue: uuidv4, allowNull: false, unique: true },
     name: { type: DataTypes.STRING(150), allowNull: false, unique: true },
     description: { type: DataTypes.TEXT, allowNull: true },
+    logoFileName: { type: DataTypes.STRING(255), allowNull: true, field: 'logo_file_name' },
+    logoOriginalName: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: 'logo_original_name',
+    },
+    logoMimeType: { type: DataTypes.STRING(100), allowNull: true, field: 'logo_mime_type' },
     active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
   },
   { sequelize, modelName: 'Company', tableName: 'companies', paranoid: true },

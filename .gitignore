@@ -5,5 +5,6 @@ frontend/dist/
 uploads/materials/
 uploads/brands/
 uploads/manufacturers/
+uploads/companies/
 logs/
 *.log

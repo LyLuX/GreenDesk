@@ -8,7 +8,7 @@ Sa finalité est de réunir dans un même outil les informations souvent dispers
 papier, tableaux et documents : matériels en service, caractéristiques, photos, entretiens à
 prévoir, pièces nécessaires, état des stocks, coûts et historique des actions réalisées.
 
-La version actuelle de GreenDesk est **7.35.3**.
+La version actuelle de GreenDesk est **7.36.0**.
 
 ## Ce que permet GreenDesk
 
@@ -17,6 +17,8 @@ La version actuelle de GreenDesk est **7.35.3**.
 GreenDesk est multi-sociétés. Un utilisateur peut être rattaché à une ou plusieurs sociétés et
 travaille toujours dans le contexte d’une société active. Les matériels, référentiels, plans de
 maintenance, stocks et historiques affichés appartiennent à cette société.
+Chaque société peut disposer de son propre logo, utilisé dans l’en-tête de l’application et les
+documents de maintenance imprimables.
 
 L’administration permet de gérer les sociétés, les utilisateurs, les rôles et les droits d’accès.
 Les sociétés et utilisateurs supprimés restent consultables et peuvent être restaurés lorsque

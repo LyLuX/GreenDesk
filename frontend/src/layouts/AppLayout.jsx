@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import useAuth from '../auth/useAuth.js';
+import CompanyLogo from '../components/CompanyLogo.jsx';
 import SidebarNavigation from '../components/SidebarNavigation.jsx';
 import useNotification from '../notifications/useNotification.js';
 import { lockPageScroll } from '../utils/page-scroll-lock.js';
@@ -83,7 +84,11 @@ export default function AppLayout() {
               to="/dashboard"
               onClick={() => setSidebarOpen(false)}
             >
-              <img className="brand-logo" src="/brand-logo.jpg" alt="EI BOURNAZEL Paul" />
+              <CompanyLogo
+                company={activeCompany}
+                className="brand-logo"
+                fallbackSrc="/brand-logo.jpg"
+              />
               <span>
                 <span className="brand-name d-block">GreenDesk</span>
                 <span className="brand-company d-block">

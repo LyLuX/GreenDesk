@@ -141,7 +141,13 @@ export default class MaintenanceRepository extends TransactionalRepository {
     return MaintenanceTask.findAndCountAll({
       where: companyWhere(where),
       include,
-      order: [['next_maintenance_date', 'ASC']],
+      order: [
+        [Sequelize.literal('nextMaintenanceDate IS NULL'), 'ASC'],
+        ['next_maintenance_date', 'ASC'],
+        ['priority', 'DESC'],
+        ['title', 'ASC'],
+        ['id', 'ASC'],
+      ],
       limit: pagination.limit,
       offset: pagination.offset,
       distinct: true,

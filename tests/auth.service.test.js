@@ -27,6 +27,8 @@ const makeUser = async () => ({
       uuid: 'b5eaf09e-49b1-4fa3-a022-1a20854b06bd',
       name: 'EI BOURNAZEL Paul',
       active: true,
+      logoFileName: 'company.png',
+      updatedAt: new Date('2026-09-02T21:00:00.000Z'),
     },
   ],
   toJSON() {
@@ -94,7 +96,16 @@ describe('AuthService', () => {
     expect(jwt.decode(result.accessToken).companyAccess).toEqual([
       { id: 2, uuid: 'b5eaf09e-49b1-4fa3-a022-1a20854b06bd' },
     ]);
-    expect(result.user).toMatchObject({ uuid, roles: ['USER'] });
+    expect(result.user).toMatchObject({
+      uuid,
+      roles: ['USER'],
+      companies: [
+        expect.objectContaining({
+          hasLogo: true,
+          updatedAt: new Date('2026-09-02T21:00:00.000Z'),
+        }),
+      ],
+    });
     expect(authRepository.update).toHaveBeenCalledWith(
       user,
       expect.objectContaining({ lastLoginAt: expect.any(Date) }),

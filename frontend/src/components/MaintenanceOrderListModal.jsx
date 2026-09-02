@@ -218,14 +218,14 @@ function OrderPartsTable({
 function MaintenanceOrderPrintPages({
   supplierPages,
   manufacturerByUuid,
-  companyName,
+  company,
   lowStockMode = false,
 }) {
   return (
     <div className="maintenance-order-list-printable" aria-hidden="true">
       {supplierPages.map((page) => (
         <section className="maintenance-order-print-page" key={page.key}>
-          <PrintableBrandHeader companyName={companyName} />
+          <PrintableBrandHeader company={company} />
           <main className="maintenance-order-print-content">
             <h1>{lowStockMode ? 'Pièces avec un stock faible' : 'Pièces à commander'}</h1>
             <p className="maintenance-order-print-supplier">
@@ -513,7 +513,7 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
             <MaintenanceOrderPrintPages
               supplierPages={supplierPages}
               manufacturerByUuid={manufacturerByUuid}
-              companyName={activeCompany?.name}
+              company={activeCompany}
               lowStockMode={lowStockMode}
             />,
             document.body,

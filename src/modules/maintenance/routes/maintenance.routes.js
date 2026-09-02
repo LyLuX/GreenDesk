@@ -178,6 +178,11 @@ router.get(
   validateRequest,
   asyncHandler(controller.sheets.bind(controller)),
 );
+router.post(
+  '/sheets/print-events',
+  authorize(maintenancePermissions.sheets.read),
+  asyncHandler(controller.recordSheetPrint.bind(controller)),
+);
 router.get(
   '/interventions',
   authorize(maintenancePermissions.plans.read),

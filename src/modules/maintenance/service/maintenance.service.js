@@ -542,6 +542,14 @@ export default class MaintenanceService {
       items: tasks.map((task) => this.toMaintenanceSheet(task)),
     };
   }
+  async recordSheetPrint(userId) {
+    await this.auditService.record({
+      userId,
+      action: 'PRINT_MAINTENANCE_SHEETS',
+      entity: 'MAINTENANCE_SHEET_PRINT',
+    });
+    return { recorded: true };
+  }
   async getOrderList({
     horizonDays = 30,
     includeOverdue = true,

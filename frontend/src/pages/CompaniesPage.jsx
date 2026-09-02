@@ -1,3 +1,5 @@
+import { deleteCompanyLogo, uploadCompanyLogo } from '../api/company-logo.api.js';
+import CompanyLogo from '../components/CompanyLogo.jsx';
 import ReferencePage from './ReferencePage.jsx';
 import companyPermissions from '../permissions/company.permissions.js';
 import { activityStatusFilter } from '../filters/filter-options.js';
@@ -23,7 +25,27 @@ export default function CompaniesPage() {
         { name: 'name', label: 'Nom', required: true },
         { name: 'description', label: 'Description', multiline: true },
       ]}
+      fileField={{
+        name: 'logo',
+        label: 'Logo',
+        accept: 'image/jpeg,image/png,image/webp',
+        help: 'Image JPEG, PNG ou WebP de 2 Mo maximum.',
+        removeLabel: 'Retirer le logo actuel',
+        hasFile: (company) => company.hasLogo,
+        renderPreview: (company) => (
+          <CompanyLogo company={company} className="brand-logo-preview" />
+        ),
+        upload: uploadCompanyLogo,
+        remove: deleteCompanyLogo,
+        uploadPermission: companyPermissions.logo.update,
+        deletePermission: companyPermissions.logo.update,
+      }}
       columns={[
+        {
+          key: 'hasLogo',
+          label: 'Logo',
+          render: (_value, company) => <CompanyLogo company={company} />,
+        },
         { key: 'name', label: 'Nom' },
         { key: 'description', label: 'Description' },
         {

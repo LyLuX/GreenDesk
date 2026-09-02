@@ -67,4 +67,11 @@ describe('consolidated history routes', () => {
       pagination: { page: 1, limit: 5, total: 0, totalPages: 1 },
     });
   });
+
+  it('accepts maintenance sheet printing as a maintenance history type', async () => {
+    await request(app)
+      .get('/api/v1/history/maintenance?type=maintenance_sheet_print')
+      .set('Authorization', `Bearer ${tokenFor(['history.maintenance.read'])}`)
+      .expect(200);
+  });
 });

@@ -18,6 +18,11 @@ export default class MaintenanceController {
   async sheets(request, response) {
     response.json(successResponse(await this.service.getMaintenanceSheets(request.query)));
   }
+  async recordSheetPrint(request, response) {
+    response
+      .status(HTTP_STATUS.CREATED)
+      .json(successResponse(await this.service.recordSheetPrint(request.user.userId)));
+  }
   async interventions(request, response) {
     response.json(successResponse(await this.service.getInterventions(request.query)));
   }

@@ -63,6 +63,17 @@ export default class CompanyRepository extends TransactionalRepository {
     return company.update(values, { transaction });
   }
 
+  async hasUserAssignment(companyId, userId, { transaction } = {}) {
+    const [rows] = await Company.sequelize.query(
+      `SELECT 1
+       FROM user_companies
+       WHERE company_id = :companyId AND user_id = :userId
+       LIMIT 1`,
+      { replacements: { companyId, userId }, transaction },
+    );
+    return rows.length > 0;
+  }
+
   restore(company, { transaction } = {}) {
     return company.restore({ transaction });
   }

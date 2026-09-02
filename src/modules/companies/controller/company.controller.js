@@ -1,10 +1,12 @@
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import { successResponse } from '../../../core/responses/api-response.js';
+import CompanyLogoService from '../service/company-logo.service.js';
 import CompanyService from '../service/company.service.js';
 
 export default class CompanyController {
-  constructor(service = new CompanyService()) {
+  constructor(service = new CompanyService(), logoService = new CompanyLogoService()) {
     this.service = service;
+    this.logoService = logoService;
   }
   async getAll(request, response) {
     response.json(successResponse(await this.service.getAll(request.query, request.user)));
@@ -41,5 +43,30 @@ export default class CompanyController {
         await this.service.restore(request.params.uuid, request.user.userId, request.user),
       ),
     );
+  }
+  async uploadLogo(request, response) {
+    response.json(
+      successResponse(
+        await this.logoService.add(
+          request.params.uuid,
+          request.file,
+          request.user.userId,
+          request.user,
+        ),
+      ),
+    );
+  }
+  async removeLogo(request, response) {
+    response.json(
+      successResponse(
+        await this.logoService.remove(request.params.uuid, request.user.userId, request.user),
+      ),
+    );
+  }
+  async logoContent(request, response) {
+    const logo = await this.logoService.getForContent(request.params.uuid, request.user);
+    response.type(logo.mimeType);
+    response.setHeader('Content-Disposition', 'inline');
+    response.sendFile(logo.filePath);
   }
 }

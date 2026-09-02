@@ -9,6 +9,7 @@ export default function AuthenticatedImage({
   alt,
   className,
   loadImage = getMaterialFileContent,
+  cacheKey = fileUuid,
 }) {
   const [url, setUrl] = useState('');
   const [error, setError] = useState(false);
@@ -31,7 +32,7 @@ export default function AuthenticatedImage({
       active = false;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [fileUuid, loadImage]);
+  }, [cacheKey, fileUuid, loadImage]);
 
   if (error)
     return <div className={className} role="img" aria-label={`Image indisponible : ${alt}`} />;

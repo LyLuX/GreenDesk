@@ -15,6 +15,26 @@ const auditRow = (overrides = {}) => ({
 });
 
 describe('HistoryService', () => {
+  it('maps maintenance sheet printing to its dedicated history event', () => {
+    const service = new HistoryService({});
+
+    expect(
+      service.mapAudit(
+        auditRow({
+          entity: 'MAINTENANCE_SHEET_PRINT',
+          entityUuid: null,
+          action: 'PRINT_MAINTENANCE_SHEETS',
+          oldValues: null,
+          newValues: null,
+        }),
+      ),
+    ).toMatchObject({
+      type: 'maintenance_sheet_print',
+      action: 'PRINT_MAINTENANCE_SHEETS',
+      subject: { uuid: null, label: 'Fiches de maintenance' },
+    });
+  });
+
   it('maps and paginates fleet audit events', async () => {
     const repository = {
       findAuditEvents: jest.fn().mockResolvedValue({ count: 1, rows: [auditRow()] }),

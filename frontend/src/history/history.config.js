@@ -16,6 +16,7 @@ export const historySectionConfig = Object.freeze({
     itemLabel: 'événement(s)',
     types: Object.freeze([
       { value: 'maintenance_plan', label: 'Plan de maintenance' },
+      { value: 'maintenance_sheet_print', label: 'Fiches de maintenance' },
       { value: 'planned_execution', label: 'Entretien planifié' },
       { value: 'unplanned_intervention', label: 'Intervention hors plan' },
       { value: 'maintenance_operation', label: 'Opération' },
@@ -69,6 +70,7 @@ export const historyActionLabels = Object.freeze({
   MIGRATE: 'Reprise de stock',
   PRICE_UPDATE: 'Changement de prix',
   MINIMUM_STOCK_UPDATE: 'Modification du stock minimum',
+  PRINT_MAINTENANCE_SHEETS: 'Impression des fiches de maintenance',
 });
 
 export const historyActionVariants = Object.freeze({
@@ -96,4 +98,5 @@ export const historyActionVariants = Object.freeze({
   MIGRATE: 'info',
   PRICE_UPDATE: 'info',
   MINIMUM_STOCK_UPDATE: 'info',
+  PRINT_MAINTENANCE_SHEETS: 'info',
 });

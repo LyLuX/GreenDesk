@@ -274,7 +274,18 @@ export default class UserService {
     delete safeUser.passwordHash;
     delete safeUser.authorizationVersion;
     if (Array.isArray(safeUser.companies)) {
-      safeUser.companies = safeUser.companies.map(({ id: _id, ...company }) => company);
+      safeUser.companies = safeUser.companies.map(
+        ({
+          id: _id,
+          logoFileName,
+          logoOriginalName: _originalName,
+          logoMimeType: _mimeType,
+          ...company
+        }) => ({
+          ...company,
+          hasLogo: Boolean(logoFileName),
+        }),
+      );
     }
     return safeUser;
   }

@@ -36,7 +36,11 @@ describe('CompanyService deleted records', () => {
       service.restore(deletedCompany.uuid, 2, {
         permissions: ['companies.access.all', 'companies.deleted.update'],
       }),
-    ).resolves.toBe(deletedCompany);
+    ).resolves.toMatchObject({
+      uuid: deletedCompany.uuid,
+      active: false,
+      hasLogo: false,
+    });
 
     expect(repository.findByUuid).toHaveBeenCalledWith(deletedCompany.uuid, {
       withDeleted: true,

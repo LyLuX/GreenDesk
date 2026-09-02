@@ -2,10 +2,11 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ getSheets: vi.fn() }));
+const mocks = vi.hoisted(() => ({ getSheets: vi.fn(), recordPrint: vi.fn() }));
 
 vi.mock('../api/maintenance.api.js', () => ({
   getMaintenanceSheets: mocks.getSheets,
+  recordMaintenanceSheetPrint: mocks.recordPrint,
 }));
 vi.mock('../auth/useAuth.js', () => ({
   default: () => ({ activeCompany: { uuid: 'company-uuid', name: 'Jardin Alpha' } }),
@@ -56,6 +57,7 @@ describe('MaintenanceSheetsModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.print = vi.fn();
+    mocks.recordPrint.mockResolvedValue({ data: { data: { recorded: true } } });
     mocks.getSheets.mockResolvedValue({
       data: {
         data: {
@@ -92,7 +94,28 @@ describe('MaintenanceSheetsModal', () => {
     );
 
     await user.click(within(dialog).getByRole('button', { name: 'Imprimer les fiches' }));
+    await waitFor(() => expect(mocks.recordPrint).toHaveBeenCalledOnce());
+    expect(mocks.recordPrint.mock.invocationCallOrder[0]).toBeLessThan(
+      window.print.mock.invocationCallOrder[0],
+    );
     expect(window.print).toHaveBeenCalledOnce();
+  });
+
+  it('still launches printing and reports when history recording fails', async () => {
+    const user = userEvent.setup();
+    mocks.recordPrint.mockRejectedValue(new Error('Historique indisponible'));
+    render(<MaintenanceSheetsModal open onClose={vi.fn()} />);
+
+    const dialog = screen.getByRole('dialog', { name: 'Fiches de maintenance' });
+    await within(dialog).findByText('Vidange annuelle');
+    await user.click(within(dialog).getByRole('button', { name: 'Imprimer les fiches' }));
+
+    expect(window.print).toHaveBeenCalledOnce();
+    expect(
+      await within(dialog).findByText(
+        'L’impression a été lancée, mais son ajout à l’historique a échoué.',
+      ),
+    ).toBeVisible();
   });
 
   it('uses the same deadline controls as maintenance filtering', async () => {

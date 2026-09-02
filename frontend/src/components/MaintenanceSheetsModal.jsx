@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import getApiErrorMessage from '../api/get-api-error-message.js';
-import { getMaintenanceSheets } from '../api/maintenance.api.js';
+import { getMaintenanceSheets, recordMaintenanceSheetPrint } from '../api/maintenance.api.js';
 import useAuth from '../auth/useAuth.js';
 import { defaultMaintenanceSheetFilters } from '../maintenance/maintenance-deadline-filters.js';
 import {
@@ -142,12 +142,12 @@ function MaintenanceSheet({ sheet, printable = false }) {
   );
 }
 
-function MaintenanceSheetPrintPages({ items, companyName }) {
+function MaintenanceSheetPrintPages({ items, company }) {
   return (
     <div className="maintenance-sheets-printable" aria-hidden="true">
       {items.map((sheet) => (
         <section className="maintenance-sheet-print-page" key={sheet.uuid}>
-          <PrintableBrandHeader companyName={companyName} />
+          <PrintableBrandHeader company={company} />
           <main className="maintenance-sheet-print-content">
             <MaintenanceSheet sheet={sheet} printable />
           </main>
@@ -169,7 +169,9 @@ export default function MaintenanceSheetsModal({ open, onClose, initialFilters }
   }));
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
+  const [printError, setPrintError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [printing, setPrinting] = useState(false);
   const latestRequestId = useRef(0);
 
   const load = useCallback(
@@ -209,6 +211,19 @@ export default function MaintenanceSheetsModal({ open, onClose, initialFilters }
     includesEveryDeadline || filters.status === 'overdue' || filters.includeOverdue;
   const includesWearBased =
     includesEveryDeadline || filters.status === 'wearBased' || filters.includeWearBased;
+  const printSheets = async () => {
+    setPrinting(true);
+    setPrintError('');
+    const recording = recordMaintenanceSheetPrint();
+    window.print();
+    try {
+      await recording;
+    } catch {
+      setPrintError('L’impression a été lancée, mais son ajout à l’historique a échoué.');
+    } finally {
+      setPrinting(false);
+    }
+  };
 
   return (
     <>
@@ -217,7 +232,7 @@ export default function MaintenanceSheetsModal({ open, onClose, initialFilters }
         title="Fiches de maintenance"
         subtitle="Sélectionnez les échéances à préparer pour les techniciens."
         onClose={onClose}
-        busy={loading}
+        busy={loading || printing}
         className="maintenance-sheets-modal"
       >
         <div className="maintenance-sheets-screen">
@@ -285,6 +300,12 @@ export default function MaintenanceSheetsModal({ open, onClose, initialFilters }
             </div>
           ) : null}
 
+          {printError ? (
+            <p role="alert" className="alert alert-warning mb-0">
+              {printError}
+            </p>
+          ) : null}
+
           <div className="maintenance-sheets-scroll">
             {loading && !data ? (
               <Loader label="Chargement des fiches de maintenance" />
@@ -297,8 +318,8 @@ export default function MaintenanceSheetsModal({ open, onClose, initialFilters }
 
           {items.length ? (
             <div className="maintenance-sheets-actions d-flex justify-content-end">
-              <Button type="button" disabled={loading} onClick={() => window.print()}>
-                Imprimer les fiches
+              <Button type="button" disabled={loading || printing} onClick={printSheets}>
+                {printing ? 'Enregistrement de l’impression…' : 'Imprimer les fiches'}
               </Button>
             </div>
           ) : null}
@@ -306,7 +327,7 @@ export default function MaintenanceSheetsModal({ open, onClose, initialFilters }
       </Modal>
       {open && items.length
         ? createPortal(
-            <MaintenanceSheetPrintPages items={items} companyName={activeCompany?.name} />,
+            <MaintenanceSheetPrintPages items={items} company={activeCompany} />,
             document.body,
           )
         : null}

@@ -333,4 +333,32 @@ describe('UserService', () => {
 
     expect(userRepository.restore).not.toHaveBeenCalled();
   });
+
+  it('exposes only the public company logo status in user payloads', () => {
+    const { service } = createService();
+
+    const publicUser = service.publicUser({
+      ...user,
+      companies: [
+        {
+          id: 3,
+          uuid: 'company-uuid',
+          name: 'Jardin Alpha',
+          active: true,
+          logoFileName: 'private-name.png',
+          logoOriginalName: 'logo.png',
+          logoMimeType: 'image/png',
+        },
+      ],
+    });
+
+    expect(publicUser.companies).toEqual([
+      {
+        uuid: 'company-uuid',
+        name: 'Jardin Alpha',
+        active: true,
+        hasLogo: true,
+      },
+    ]);
+  });
 });

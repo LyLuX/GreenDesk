@@ -32,6 +32,9 @@ const maintenanceController = {
   getByUuid: jest.fn((_request, response) => response.json({ success: true, data: {} })),
   orderList: jest.fn((_request, response) => response.json({ success: true, data: [] })),
   sheets: jest.fn((_request, response) => response.json({ success: true, data: [] })),
+  recordSheetPrint: jest.fn((_request, response) =>
+    response.status(201).json({ success: true, data: { recorded: true } }),
+  ),
   interventions: jest.fn((_request, response) => response.json({ success: true, data: [] })),
   createIntervention: jest.fn((_request, response) =>
     response.status(201).json({ success: true, data: {} }),
@@ -85,6 +88,7 @@ jest.unstable_mockModule('../src/modules/maintenance/controller/maintenance.cont
     getByUuid = maintenanceController.getByUuid;
     orderList = maintenanceController.orderList;
     sheets = maintenanceController.sheets;
+    recordSheetPrint = maintenanceController.recordSheetPrint;
     interventions = maintenanceController.interventions;
     createIntervention = maintenanceController.createIntervention;
     create = maintenanceController.create;
@@ -235,6 +239,19 @@ describe('maintenance catalogue route permissions', () => {
       .get(`${path}?status=invalid`)
       .set('Authorization', authorization(['maintenance.sheets.read']))
       .expect(400);
+  });
+
+  it('protects maintenance sheet print history with the sheets permission', async () => {
+    const path = '/api/v1/maintenance/sheets/print-events';
+
+    await request(app)
+      .post(path)
+      .set('Authorization', authorization(['maintenance.read']))
+      .expect(403);
+    await request(app)
+      .post(path)
+      .set('Authorization', authorization(['maintenance.sheets.read']))
+      .expect(201);
   });
 
   it('requires operation-specific permissions for operation writes', async () => {

@@ -7,6 +7,9 @@ const { hasPermission, referencePage } = vi.hoisted(() => ({
 }));
 
 vi.mock('./ReferencePage.jsx', () => ({ default: referencePage }));
+vi.mock('../components/CompanyLogo.jsx', () => ({
+  default: ({ company }) => <img alt={`Logo ${company.name}`} />,
+}));
 vi.mock('../auth/useAuth.js', () => ({
   default: () => ({ hasPermission, refreshCompanies: vi.fn() }),
 }));
@@ -29,17 +32,42 @@ describe('CompaniesPage', () => {
         title: 'Sociétés',
         resource: 'companies',
         deletedUpdatePermission: 'companies.deleted.update',
+        fileField: expect.objectContaining({
+          uploadPermission: 'companies.logo.update',
+          deletePermission: 'companies.logo.update',
+        }),
       }),
     );
+    expect(props.columns.map(({ key }) => key)).toEqual([
+      'hasLogo',
+      'name',
+      'description',
+      'active',
+    ]);
     expect(props.filters[0].options).toContainEqual({ value: 'deleted', label: 'Supprimées' });
     expect(props.filters[0].toQuery('deleted')).toEqual({ deleted: true });
     expect(props.filters[0].toQuery('false')).toEqual({ active: 'false' });
     expect(props.filters[0].toQuery('')).toEqual({ includeDeleted: true });
 
     render(
-      props.columns[2].render(true, { deletedAt: '2026-08-23T08:00:00.000Z' }),
+      props.columns
+        .find(({ key }) => key === 'active')
+        .render(true, {
+          deletedAt: '2026-08-23T08:00:00.000Z',
+        }),
     );
     expect(screen.getByText(/23\/08\/2026/)).toHaveClass('fw-lighter', 'fst-italic');
+  });
+
+  it('renders the company logo before its name', () => {
+    hasPermission.mockReturnValue(true);
+    render(<CompaniesPage />);
+
+    const props = referencePage.mock.calls[0][0];
+    render(props.columns[0].render(true, { name: 'Jardin Alpha', hasLogo: true }));
+
+    expect(screen.getByRole('img', { name: 'Logo Jardin Alpha' })).toBeVisible();
+    expect(props.columns[1]).toEqual({ key: 'name', label: 'Nom' });
   });
 
   it('hides the deleted-company filter without its read permission', () => {

@@ -24,6 +24,11 @@ vi.mock('../auth/useAuth.js', () => ({
 vi.mock('../notifications/useNotification.js', () => ({
   default: () => ({ notify: mocks.notify }),
 }));
+vi.mock('../components/CompanyLogo.jsx', () => ({
+  default: ({ company, className }) => (
+    <img alt={`Logo ${company?.name ?? 'GreenDesk'}`} className={className} />
+  ),
+}));
 
 import AppLayout from './AppLayout.jsx';
 
@@ -63,6 +68,9 @@ describe('AppLayout navigation drawer', () => {
 
     expect(container.querySelector('.brand-company')).toHaveTextContent(
       'Société actuellement consultée',
+    );
+    expect(screen.getByRole('img', { name: 'Logo Société actuellement consultée' })).toHaveClass(
+      'brand-logo',
     );
   });
 

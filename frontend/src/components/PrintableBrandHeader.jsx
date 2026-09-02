@@ -1,11 +1,13 @@
-export default function PrintableBrandHeader({ companyName }) {
+import CompanyLogo from './CompanyLogo.jsx';
+
+export default function PrintableBrandHeader({ company }) {
   return (
     <header className="maintenance-order-print-header">
       <div className="maintenance-order-print-brand">
-        <img className="brand-logo" src="/brand-logo.jpg" alt="EI BOURNAZEL Paul" />
+        <CompanyLogo company={company} className="brand-logo" fallbackSrc="/brand-logo.jpg" />
         <span>
           <span className="brand-name d-block">GreenDesk</span>
-          <span className="brand-company d-block">{companyName ?? 'Aucune société'}</span>
+          <span className="brand-company d-block">{company?.name ?? 'Aucune société'}</span>
         </span>
       </div>
     </header>
