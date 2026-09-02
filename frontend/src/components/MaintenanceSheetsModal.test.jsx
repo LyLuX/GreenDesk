@@ -35,8 +35,17 @@ const sheet = {
       uuid: '33333333-3333-4333-8333-333333333333',
       name: 'Huile moteur',
       reference: '5W30',
+      supplierReference: 'HUILE-5W30-FR',
       quantity: 0.6,
       unit: 'litre',
+    },
+    {
+      uuid: '44444444-4444-4444-8444-444444444444',
+      name: 'Filtre à huile',
+      reference: 'FH-42',
+      supplierReference: 'FH-42',
+      quantity: 1,
+      unit: 'pièce',
     },
   ],
 };
@@ -69,9 +78,17 @@ describe('MaintenanceSheetsModal', () => {
     expect(within(dialog).getByText('LM-42')).toBeInTheDocument();
     expect(within(dialog).getByText('SN-2026')).toBeInTheDocument();
     expect(within(dialog).getByText('0,6 litre')).toBeInTheDocument();
+    expect(within(dialog).getByText('Réf. fournisseur : HUILE-5W30-FR')).toBeInTheDocument();
+    expect(within(dialog).queryByText('Réf. fournisseur : FH-42')).not.toBeInTheDocument();
     expect(document.querySelectorAll('.maintenance-sheet-print-page')).toHaveLength(1);
     expect(document.querySelector('.maintenance-sheets-printable')).toHaveTextContent(
       'Jardin Alpha',
+    );
+    expect(document.querySelector('.maintenance-sheets-printable')).toHaveTextContent(
+      'Réf. fournisseur : HUILE-5W30-FR',
+    );
+    expect(document.querySelector('.maintenance-sheets-printable')).not.toHaveTextContent(
+      'Réf. fournisseur : FH-42',
     );
 
     await user.click(within(dialog).getByRole('button', { name: 'Imprimer les fiches' }));

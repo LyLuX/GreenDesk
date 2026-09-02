@@ -21,6 +21,12 @@ import PrintableBrandHeader from './PrintableBrandHeader.jsx';
 
 const sheetValue = (value) => value || '—';
 
+const hasDistinctSupplierReference = (part) => {
+  const reference = String(part.reference ?? '').trim();
+  const supplierReference = String(part.supplierReference ?? '').trim();
+  return supplierReference && supplierReference !== reference;
+};
+
 function MaintenanceSheet({ sheet, printable = false }) {
   const statusClass = maintenanceStatusClasses[sheet.status];
   const priorityClass = maintenancePriorityBadgeClasses[sheet.priority];
@@ -94,7 +100,14 @@ function MaintenanceSheet({ sheet, printable = false }) {
                 {sheet.parts.map((part) => (
                   <tr key={part.uuid}>
                     <td>{part.name}</td>
-                    <td>{part.reference}</td>
+                    <td>
+                      <span className="d-block">{part.reference}</span>
+                      {hasDistinctSupplierReference(part) ? (
+                        <span className="d-block small text-body-secondary">
+                          Réf. fournisseur : {part.supplierReference}
+                        </span>
+                      ) : null}
+                    </td>
                     <td>
                       {Number(part.quantity).toLocaleString('fr-FR')} {part.unit}
                     </td>
