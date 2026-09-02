@@ -442,6 +442,53 @@ describe('MaintenancePage', () => {
     );
   });
 
+  it('shows distinct supplier references when creating and editing a plan', async () => {
+    const user = userEvent.setup();
+    mocks.listParts.mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'part-uuid',
+              name: 'Bougie',
+              reference: 'BPMR8Y',
+              supplierReference: 'FOU-BPMR8Y',
+              unit: 'pièce',
+            },
+            {
+              uuid: 'filter-uuid',
+              name: 'Filtre',
+              reference: 'FH-42',
+              supplierReference: 'FH-42',
+              unit: 'pièce',
+            },
+          ],
+          pagination: { page: 1, limit: 5, total: 2, totalPages: 1 },
+        },
+      },
+    });
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Créer un plan' }));
+    const createDialog = screen.getByRole('dialog', { name: 'Créer un plan' });
+    const createPart = await within(createDialog).findByRole('checkbox', {
+      name: 'Bougie — BPMR8Y',
+    });
+    expect(createPart).toHaveAccessibleDescription('(Réf. fournisseur : FOU-BPMR8Y)');
+    expect(within(createDialog).getByText(/Réf\. fournisseur : FOU-BPMR8Y/)).toBeVisible();
+    expect(within(createDialog).queryByText(/Réf\. fournisseur : FH-42/)).toBeNull();
+
+    await user.click(within(createDialog).getByRole('button', { name: 'Fermer' }));
+    await user.click(await screen.findByRole('button', { name: 'Modifier Vidange annuelle' }));
+    const editDialog = screen.getByRole('dialog', { name: 'Modifier le plan' });
+    const editPart = await within(editDialog).findByRole('checkbox', {
+      name: 'Bougie — BPMR8Y',
+    });
+    expect(editPart).toHaveAccessibleDescription('(Réf. fournisseur : FOU-BPMR8Y)');
+    expect(within(editDialog).getByText(/Réf\. fournisseur : FOU-BPMR8Y/)).toBeVisible();
+    expect(within(editDialog).queryByText(/Réf\. fournisseur : FH-42/)).toBeNull();
+  });
+
   it('keeps every catalogue part in a dedicated scrollable region', async () => {
     const user = userEvent.setup();
     const catalogueParts = Array.from({ length: 12 }, (_, index) => ({

@@ -12,6 +12,7 @@ import {
   maintenanceStatusLabels,
   maintenanceTypeLabels,
 } from '../maintenance/maintenance.labels.js';
+import { hasDistinctSupplierReference } from '../maintenance/maintenance-part-reference.js';
 import { formatDate } from '../utils/formatters.js';
 import AppFooter from './AppFooter.jsx';
 import Button from './Button.jsx';
@@ -20,12 +21,6 @@ import Modal from './Modal.jsx';
 import PrintableBrandHeader from './PrintableBrandHeader.jsx';
 
 const sheetValue = (value) => value || '—';
-
-const hasDistinctSupplierReference = (part) => {
-  const reference = String(part.reference ?? '').trim();
-  const supplierReference = String(part.supplierReference ?? '').trim();
-  return supplierReference && supplierReference !== reference;
-};
 
 function MaintenanceSheet({ sheet, printable = false }) {
   const statusClass = maintenanceStatusClasses[sheet.status];

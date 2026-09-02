@@ -38,6 +38,7 @@ import {
   maintenanceStatusLabels,
   maintenanceTypeLabels,
 } from '../maintenance/maintenance.labels.js';
+import { hasDistinctSupplierReference } from '../maintenance/maintenance-part-reference.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import { getMaintenanceSheetFiltersForDeadline } from '../maintenance/maintenance-deadline-filters.js';
 import { getStatusActionButtonClass } from '../utils/status-action.js';
@@ -842,6 +843,10 @@ export default function MaintenancePage() {
                   )
                   .map((part) => {
                     const assigned = activeItem?.parts?.find((item) => item.uuid === part.uuid);
+                    const showSupplierReference = hasDistinctSupplierReference(part);
+                    const supplierReferenceId = showSupplierReference
+                      ? `supplier-reference-${part.uuid}`
+                      : undefined;
                     return (
                       <div
                         className="maintenance-plan-part-row d-flex flex-nowrap align-items-center justify-content-between gap-4"
@@ -852,6 +857,8 @@ export default function MaintenancePage() {
                             type="checkbox"
                             className="form-check-input"
                             name={`part:${part.uuid}`}
+                            aria-label={`${part.name} — ${part.reference}`}
+                            aria-describedby={supplierReferenceId}
                             checked={Boolean(selectedParts[part.uuid])}
                             onChange={(event) =>
                               setSelectedParts((current) => {
@@ -864,6 +871,12 @@ export default function MaintenancePage() {
                           />
                           <span className="form-check-label">
                             {part.name} — {part.reference}
+                            {showSupplierReference ? (
+                              <small
+                                className="text-body-secondary"
+                                id={supplierReferenceId}
+                              >{` (Réf. fournisseur : ${part.supplierReference})`}</small>
+                            ) : null}
                           </span>
                         </label>
                         <label className="d-flex align-items-center gap-2">
