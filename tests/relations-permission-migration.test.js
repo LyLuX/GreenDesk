@@ -17,7 +17,7 @@ describe('relations.read migration', () => {
     expect(query.mock.calls.some(([sql]) => sql.includes('INSERT INTO permissions'))).toBe(true);
     expect(query.mock.calls.some(([sql]) => sql.includes('role_permissions'))).toBe(true);
     expect(query.mock.calls.some(([sql]) => sql.includes('authorization_version'))).toBe(true);
-    expect(query.mock.calls.every(([, options]) => options?.replacements?.name !== '')).toBe(true);
+    expect(query.mock.calls.every(([, options]) => options?.bind?.name !== '')).toBe(true);
   });
 
   it('removes the grant and permission on rollback', async () => {

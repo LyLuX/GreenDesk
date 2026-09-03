@@ -31,9 +31,7 @@ describe('maintenance part action permission migration', () => {
       sql.includes('INSERT IGNORE INTO role_permissions'),
     );
     expect(grantQueries).toHaveLength(permissionNames.length);
-    expect(grantQueries.map(([, options]) => options.replacements.targetName)).toEqual(
-      permissionNames,
-    );
+    expect(grantQueries.map(([, options]) => options.bind.targetName)).toEqual(permissionNames);
     expect(query.mock.calls.at(-1)[0]).toContain('authorization_version');
   });
 

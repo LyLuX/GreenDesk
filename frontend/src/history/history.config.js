@@ -27,9 +27,10 @@ export const historySectionConfig = Object.freeze({
   }),
   administration: Object.freeze({
     title: 'Historique de l’administration',
-    subtitle: 'Utilisateurs, rôles et permissions',
+    subtitle: 'Sociétés, utilisateurs, rôles et permissions',
     itemLabel: 'événement(s)',
     types: Object.freeze([
+      { value: 'company', label: 'Société' },
       { value: 'user', label: 'Utilisateur' },
       { value: 'role', label: 'Rôle' },
       { value: 'permission', label: 'Permission' },

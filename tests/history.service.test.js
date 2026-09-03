@@ -35,6 +35,30 @@ describe('HistoryService', () => {
     });
   });
 
+  it('maps a company update to an administration history event', () => {
+    const service = new HistoryService({});
+
+    expect(
+      service.mapAudit(
+        auditRow({
+          entity: 'COMPANY',
+          entityUuid: 'company-1',
+          subjectLabel: 'GreenDesk',
+          oldValues: { name: 'GreenDesk', logoOriginalName: null },
+          newValues: { name: 'GreenDesk', logoOriginalName: 'logo.webp' },
+        }),
+      ),
+    ).toMatchObject({
+      type: 'company',
+      action: 'UPDATE',
+      subject: { uuid: 'company-1', label: 'GreenDesk' },
+      details: {
+        oldValues: { name: 'GreenDesk', logoOriginalName: null },
+        newValues: { name: 'GreenDesk', logoOriginalName: 'logo.webp' },
+      },
+    });
+  });
+
   it('maps and paginates fleet audit events', async () => {
     const repository = {
       findAuditEvents: jest.fn().mockResolvedValue({ count: 1, rows: [auditRow()] }),

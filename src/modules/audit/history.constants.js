@@ -16,7 +16,7 @@ export const HISTORY_TYPES = Object.freeze({
     'stock_movement',
     'price_change',
   ]),
-  [HISTORY_SECTIONS.ADMINISTRATION]: Object.freeze(['user', 'role', 'permission']),
+  [HISTORY_SECTIONS.ADMINISTRATION]: Object.freeze(['company', 'user', 'role', 'permission']),
 });
 
 export const HISTORY_SECTION_VALUES = Object.freeze(Object.values(HISTORY_SECTIONS));

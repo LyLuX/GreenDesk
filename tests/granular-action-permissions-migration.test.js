@@ -21,15 +21,15 @@ const createQueryInterface = () => {
   let nextId = 100;
   const records = new Map(legacyPermissions.map((name, index) => [name, { id: index + 1, name }]));
   const query = jest.fn(async (sql, options = {}) => {
-    const replacements = options.replacements ?? {};
+    const bind = options.bind ?? {};
     if (sql.startsWith('SELECT id, name FROM permissions')) {
-      const record = records.get(replacements.name);
+      const record = records.get(bind.name);
       return [record ? [record] : [], {}];
     }
     if (sql.startsWith('UPDATE permissions SET name')) {
-      const record = [...records.values()].find(({ id }) => id === replacements.id);
+      const record = [...records.values()].find(({ id }) => id === bind.id);
       records.delete(record.name);
-      record.name = replacements.to;
+      record.name = bind.to;
       records.set(record.name, record);
     }
     return [[], {}];
@@ -79,8 +79,7 @@ describe('granular action permissions migration', () => {
     expect(
       queryInterface.sequelize.query.mock.calls.some(
         ([sql, options]) =>
-          sql.startsWith('UPDATE permissions SET name') &&
-          options.replacements.legacyName === 'USER_READ',
+          sql.startsWith('UPDATE permissions SET name') && options.bind.legacyName === 'USER_READ',
       ),
     ).toBe(true);
   });

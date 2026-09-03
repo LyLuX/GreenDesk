@@ -18,6 +18,7 @@ import Loader from '../components/Loader.jsx';
 import ManufacturerLogo from '../components/ManufacturerLogo.jsx';
 import MaterialPhotoViewer from '../components/MaterialPhotoViewer.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
+import useRuntimeConfig from '../config/useRuntimeConfig.js';
 import {
   maintenanceStatusClasses,
   maintenanceStatusLabels,
@@ -116,6 +117,7 @@ export default function MaterialDetailPage() {
   const { uuid } = useParams();
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
+  const { uploadLimits } = useRuntimeConfig();
   const [material, setMaterial] = useState(null);
   const [history, setHistory] = useState([]);
   const [maintenance, setMaintenance] = useState([]);
@@ -215,7 +217,10 @@ export default function MaterialDetailPage() {
   );
   const primaryPhoto = useMemo(() => photos.find((photo) => photo.isPrimary) ?? null, [photos]);
   const upload = async (file, document = false, onUploadProgress, photoName) => {
-    if (file.size > 10 * 1024 * 1024) throw new Error('Le fichier dépasse la limite de 10 Mo.');
+    const limit = document ? uploadLimits.document : uploadLimits.image;
+    if (file.size > limit.maxSizeBytes) {
+      throw new Error(`Le fichier dépasse la limite de ${limit.maxSizeMb} Mo.`);
+    }
     const response = document
       ? await uploadMaterialDocument(uuid, file, documentType, onUploadProgress)
       : await uploadMaterialPhoto(uuid, file, photoName, onUploadProgress);
@@ -228,10 +233,12 @@ export default function MaterialDetailPage() {
   const queuePhotos = (event) => {
     const files = [...event.target.files];
     const invalid = files.find(
-      (file) => !imageTypes.includes(file.type) || file.size > 10 * 1024 * 1024,
+      (file) => !imageTypes.includes(file.type) || file.size > uploadLimits.image.maxSizeBytes,
     );
     if (invalid) {
-      setError('Les photos doivent être au format JPEG, PNG ou WebP et ne pas dépasser 10 Mo.');
+      setError(
+        `Les photos doivent être au format JPEG, PNG ou WebP et ne pas dépasser ${uploadLimits.image.maxSizeMb} Mo.`,
+      );
       event.target.value = '';
       return;
     }
@@ -455,11 +462,15 @@ export default function MaterialDetailPage() {
                 <input
                   className="form-control"
                   aria-label="Ajouter des photos"
+                  aria-describedby="material-photo-upload-help"
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   multiple
                   onChange={queuePhotos}
                 />
+                <small id="material-photo-upload-help" className="text-body-secondary">
+                  Images JPEG, PNG ou WebP — {uploadLimits.image.maxSizeMb} Mo maximum par photo.
+                </small>
                 {selectedPhotos.length > 0 && (
                   <div className="material-photo-queue">
                     {selectedPhotos.map((item) => (
@@ -582,14 +593,21 @@ export default function MaterialDetailPage() {
                 <input
                   ref={documentInputRef}
                   aria-label="Ajouter un document"
+                  aria-describedby="material-document-upload-help"
                   className="form-control"
                   type="file"
                   accept="application/pdf"
                   onChange={(event) => {
                     const file = event.target.files?.[0] ?? null;
-                    if (file && (file.type !== 'application/pdf' || file.size > 10 * 1024 * 1024)) {
+                    if (
+                      file &&
+                      (file.type !== 'application/pdf' ||
+                        file.size > uploadLimits.document.maxSizeBytes)
+                    ) {
                       setDocumentFile(null);
-                      setError('Le document doit être un fichier PDF de 10 Mo maximum.');
+                      setError(
+                        `Le document doit être un fichier PDF de ${uploadLimits.document.maxSizeMb} Mo maximum.`,
+                      );
                       event.target.value = '';
                       return;
                     }
@@ -597,6 +615,9 @@ export default function MaterialDetailPage() {
                     setError('');
                   }}
                 />
+                <small id="material-document-upload-help" className="text-body-secondary">
+                  Document PDF — {uploadLimits.document.maxSizeMb} Mo maximum.
+                </small>
                 <select
                   className="form-select"
                   aria-label="Type de document"

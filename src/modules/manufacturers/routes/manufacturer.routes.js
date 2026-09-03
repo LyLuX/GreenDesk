@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import multer from 'multer';
 import { Router } from 'express';
+import env from '../../../config/env.js';
 import { authenticate } from '../../../core/middlewares/auth.middleware.js';
 import { resolveCompanyContext } from '../../../core/middlewares/company-context.middleware.js';
 import fleetPermissions from '../../../core/constants/fleet-permissions.js';
@@ -18,7 +19,6 @@ import { asyncHandler } from '../../../core/utils/async-handler.js';
 import ManufacturerController from '../controller/manufacturer.controller.js';
 import {
   MANUFACTURER_LOGO_EXTENSION_BY_MIME,
-  MANUFACTURER_LOGO_MAX_SIZE,
   MANUFACTURER_LOGO_MIME_TYPES,
 } from '../manufacturer-logo.constants.js';
 import maintenancePermissions from '../../maintenance/maintenance.permissions.js';
@@ -33,7 +33,7 @@ const logoUpload = multer({
     filename: (_request, file, callback) =>
       callback(null, `${crypto.randomUUID()}${MANUFACTURER_LOGO_EXTENSION_BY_MIME[file.mimetype]}`),
   }),
-  limits: { fileSize: MANUFACTURER_LOGO_MAX_SIZE },
+  limits: { fileSize: env.uploads.image.maxSizeBytes },
   fileFilter: (_request, file, callback) => {
     const allowed = MANUFACTURER_LOGO_MIME_TYPES.includes(file.mimetype);
     callback(allowed ? null : new Error('Unsupported logo type'), allowed);
@@ -47,7 +47,12 @@ const uploadLogo = (request, response, next) =>
   logoUpload.single('file')(request, response, (error) => {
     if (!error) return next();
     if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE') {
-      return next(new AppError('Le logo ne doit pas dépasser 2 Mo.', HTTP_STATUS.BAD_REQUEST));
+      return next(
+        new AppError(
+          `Le logo ne doit pas dépasser ${env.uploads.image.maxSizeMb} Mo.`,
+          HTTP_STATUS.BAD_REQUEST,
+        ),
+      );
     }
     return next(
       new AppError('Le logo doit être une image JPEG, PNG ou WebP.', HTTP_STATUS.BAD_REQUEST),

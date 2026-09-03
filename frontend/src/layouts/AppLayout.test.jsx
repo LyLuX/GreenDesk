@@ -72,6 +72,16 @@ describe('AppLayout navigation drawer', () => {
     expect(screen.getByRole('img', { name: 'Logo Société actuellement consultée' })).toHaveClass(
       'brand-logo',
     );
+    expect(container.querySelector('.brand-name')).toBeNull();
+  });
+
+  it('keeps the product name when an actual company logo replaces the GreenDesk logo', () => {
+    mocks.activeCompany = { ...mocks.activeCompany, hasLogo: true };
+    mocks.companies = [mocks.activeCompany];
+
+    const { container } = renderLayout();
+
+    expect(container.querySelector('.brand-name')).toHaveTextContent('GreenDesk');
   });
 
   it('opens from the header and closes with Escape', async () => {

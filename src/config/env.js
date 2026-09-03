@@ -63,6 +63,15 @@ const parseOptionalPositiveInteger = (source, key, errors) => {
   return value;
 };
 
+const parseUploadSizeMb = (source, key, fallback, errors) => {
+  const rawValue = normalizedValue(source, key);
+  const value = rawValue ? Number(rawValue) : fallback;
+  if (!Number.isSafeInteger(value) || value < 1 || !Number.isSafeInteger(value * 1024 * 1024)) {
+    errors.push(`${key} doit être un entier strictement positif exprimé en Mo.`);
+  }
+  return value;
+};
+
 const parseOptionalHttpUrl = (source, key, isProduction, errors) => {
   const rawValue = normalizedValue(source, key);
   if (!rawValue) return '';
@@ -328,6 +337,13 @@ export function createEnvironment(source = process.env) {
   const smtpMaxConnections = parsePositiveInteger(source, 'SMTP_MAX_CONNECTIONS', 5, errors);
   const smtpMaxMessages = parsePositiveInteger(source, 'SMTP_MAX_MESSAGES', 100, errors);
   const rateLimitEnabled = parseBoolean(source, 'RATE_LIMIT_ENABLED', true, errors);
+  const imageUploadMaxSizeMb = parseUploadSizeMb(source, 'UPLOAD_IMAGE_MAX_SIZE_MB', 10, errors);
+  const documentUploadMaxSizeMb = parseUploadSizeMb(
+    source,
+    'UPLOAD_DOCUMENT_MAX_SIZE_MB',
+    10,
+    errors,
+  );
   const trustedProxies = parseTrustedProxies(source, errors);
   const rateLimit = {
     enabled: rateLimitEnabled,
@@ -410,6 +426,16 @@ export function createEnvironment(source = process.env) {
       ttlHours: emailVerificationTtlHours,
       ttlMs: emailVerificationTtlHours * 60 * 60 * 1000,
       cooldownMs: emailVerificationCooldownSeconds * 1000,
+    },
+    uploads: {
+      image: {
+        maxSizeMb: imageUploadMaxSizeMb,
+        maxSizeBytes: imageUploadMaxSizeMb * 1024 * 1024,
+      },
+      document: {
+        maxSizeMb: documentUploadMaxSizeMb,
+        maxSizeBytes: documentUploadMaxSizeMb * 1024 * 1024,
+      },
     },
     rateLimit,
     jwt: {

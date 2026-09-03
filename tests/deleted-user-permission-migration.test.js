@@ -13,12 +13,12 @@ describe('deleted-user read permission migration', () => {
     await migration.up(queryInterface);
 
     expect(query.mock.calls[0][0]).toContain('INSERT INTO permissions');
-    expect(query.mock.calls[0][1].replacements).toMatchObject({
+    expect(query.mock.calls[0][1].bind).toMatchObject({
       name: 'users.deleted.read',
       description: 'Consulter les comptes utilisateur supprimés.',
     });
     expect(query.mock.calls[1][0]).toContain("roles.name = 'ADMIN'");
-    expect(query.mock.calls[1][1].replacements.permissionName).toBe('users.deleted.read');
+    expect(query.mock.calls[1][1].bind.permissionName).toBe('users.deleted.read');
     expect(query.mock.calls[2][0]).toContain('authorization_version');
   });
 

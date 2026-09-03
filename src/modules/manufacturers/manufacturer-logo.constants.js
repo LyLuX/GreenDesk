@@ -9,5 +9,3 @@ export const MANUFACTURER_LOGO_EXTENSION_BY_MIME = Object.freeze({
   'image/png': '.png',
   'image/webp': '.webp',
 });
-
-export const MANUFACTURER_LOGO_MAX_SIZE = 2 * 1024 * 1024;

@@ -76,15 +76,15 @@ module.exports = {
         },
       ]);
       const [created] = await queryInterface.sequelize.query(
-        'SELECT id FROM maintenance_part_manufacturers WHERE uuid = :uuid',
-        { replacements: { uuid } },
+        'SELECT id FROM maintenance_part_manufacturers WHERE uuid = $uuid',
+        { bind: { uuid } },
       );
       await queryInterface.sequelize.query(
         `UPDATE maintenance_parts
-         SET manufacturer_id = :manufacturerId
-         WHERE TRIM(manufacturer) = :name`,
+         SET manufacturer_id = $manufacturerId
+         WHERE TRIM(manufacturer) = $name`,
         {
-          replacements: {
+          bind: {
             manufacturerId: created[0].id,
             name: manufacturer.name,
           },

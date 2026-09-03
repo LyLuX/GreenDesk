@@ -29,7 +29,8 @@ export default function CompaniesPage() {
         name: 'logo',
         label: 'Logo',
         accept: 'image/jpeg,image/png,image/webp',
-        help: 'Image JPEG, PNG ou WebP de 2 Mo maximum.',
+        uploadType: 'image',
+        help: 'Image JPEG, PNG ou WebP',
         removeLabel: 'Retirer le logo actuel',
         hasFile: (company) => company.hasLogo,
         renderPreview: (company) => (

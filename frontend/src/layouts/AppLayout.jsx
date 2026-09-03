@@ -84,13 +84,9 @@ export default function AppLayout() {
               to="/dashboard"
               onClick={() => setSidebarOpen(false)}
             >
-              <CompanyLogo
-                company={activeCompany}
-                className="brand-logo"
-                fallbackSrc="/brand-logo.jpg"
-              />
+              <CompanyLogo company={activeCompany} className="brand-logo" />
               <span>
-                <span className="brand-name d-block">GreenDesk</span>
+                {activeCompany?.hasLogo && <span className="brand-name d-block">GreenDesk</span>}
                 <span className="brand-company d-block">
                   {activeCompany?.name ?? 'Aucune société'}
                 </span>

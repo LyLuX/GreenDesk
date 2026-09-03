@@ -38,9 +38,7 @@ describe('maintenance catalogue permission migration', () => {
       sql.includes('INSERT IGNORE INTO role_permissions'),
     );
     expect(grantQueries).toHaveLength(expectedNames.length);
-    expect(grantQueries.map(([, options]) => options.replacements.targetName)).toEqual(
-      expectedNames,
-    );
+    expect(grantQueries.map(([, options]) => options.bind.targetName)).toEqual(expectedNames);
   });
 
   it('removes only the dedicated catalogue permissions on rollback', async () => {
@@ -139,7 +137,7 @@ describe('maintenance skip-parts permission rename migration', () => {
     await renameSkipPartsPermissionMigration.up(queryInterface);
 
     expect(query).toHaveBeenCalledWith(expect.stringContaining('UPDATE permissions'), {
-      replacements: expect.objectContaining({
+      bind: expect.objectContaining({
         previousName: 'maintenance.execute_without_part_replacement',
         currentName: 'maintenance.execute.skip_parts',
       }),
@@ -153,7 +151,7 @@ describe('maintenance skip-parts permission rename migration', () => {
     await renameSkipPartsPermissionMigration.down(queryInterface);
 
     expect(query).toHaveBeenCalledWith(expect.stringContaining('UPDATE permissions'), {
-      replacements: expect.objectContaining({
+      bind: expect.objectContaining({
         previousName: 'maintenance.execute_without_part_replacement',
         currentName: 'maintenance.execute.skip_parts',
       }),

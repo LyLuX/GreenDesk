@@ -40,8 +40,7 @@ describe('maintenance part minimum stock migration', () => {
       expect.objectContaining({ name: permissionName }),
     ]);
     expect(
-      query.mock.calls.find(([sql]) => sql.includes('INSERT IGNORE INTO role_permissions'))[1]
-        .replacements,
+      query.mock.calls.find(([sql]) => sql.includes('INSERT IGNORE INTO role_permissions'))[1].bind,
     ).toEqual(
       expect.objectContaining({
         sourceName: 'maintenance.parts.update',

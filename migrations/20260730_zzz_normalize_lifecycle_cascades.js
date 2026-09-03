@@ -5,10 +5,10 @@ const foreignKeysForColumn = async (queryInterface, table, column) => {
     `SELECT CONSTRAINT_NAME AS name
      FROM information_schema.KEY_COLUMN_USAGE
      WHERE CONSTRAINT_SCHEMA = DATABASE()
-       AND TABLE_NAME = :table
-       AND COLUMN_NAME = :column
+       AND TABLE_NAME = $table
+       AND COLUMN_NAME = $column
        AND REFERENCED_TABLE_NAME IS NOT NULL`,
-    { replacements: { table, column } },
+    { bind: { table, column } },
   );
   return constraints;
 };

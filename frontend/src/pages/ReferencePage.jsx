@@ -13,6 +13,7 @@ import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
+import useRuntimeConfig from '../config/useRuntimeConfig.js';
 import useNotification from '../notifications/useNotification.js';
 import normalizeFormValues from '../utils/normalize-form-values.js';
 import { paginateItems } from '../utils/pagination.js';
@@ -36,6 +37,7 @@ export default function ReferencePage({
   onChanged,
 }) {
   const { hasPermission } = useAuth();
+  const { uploadLimits } = useRuntimeConfig();
   const { notify } = useNotification();
   const navigate = useNavigate();
   const api = useMemo(() => createReferenceApi(resource), [resource]);
@@ -74,6 +76,7 @@ export default function ReferencePage({
     fileField && (!fileField.deletePermission || hasPermission(fileField.deletePermission)),
   );
   const canManageFile = canUploadFile || canRemoveFile;
+  const fileUploadLimit = fileField?.uploadType ? uploadLimits[fileField.uploadType] : null;
 
   const load = useCallback(
     async (signal) => {
@@ -191,6 +194,9 @@ export default function ReferencePage({
         removeFile = formValues[`${fileField.name}Remove`] === 'on';
         delete formValues[fileField.name];
         delete formValues[`${fileField.name}Remove`];
+      }
+      if (selectedFile?.size > fileUploadLimit?.maxSizeBytes) {
+        throw new Error(`Le fichier ne doit pas dépasser ${fileUploadLimit.maxSizeMb} Mo.`);
       }
       values = normalizeFormValues(formValues, fields);
     } catch (error) {
@@ -343,8 +349,12 @@ export default function ReferencePage({
               {fileField.removeLabel}
             </label>
           )}
-          {canUploadFile && fileField.help && (
-            <small className="text-body-secondary">{fileField.help}</small>
+          {canUploadFile && (fileField.help || fileUploadLimit) && (
+            <small className="text-body-secondary">
+              {fileField.help}
+              {fileField.help && fileUploadLimit ? ' — ' : ''}
+              {fileUploadLimit ? `${fileUploadLimit.maxSizeMb} Mo maximum.` : ''}
+            </small>
           )}
         </>
       )}

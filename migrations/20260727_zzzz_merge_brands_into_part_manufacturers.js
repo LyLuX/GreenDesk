@@ -43,9 +43,16 @@ const copyDirectoryFiles = async (source, target) => {
 
 const ensurePermissions = async (queryInterface, prefix, descriptions) => {
   const timestamp = new Date();
+  const permissionNames = names(prefix);
+  const permissionNameBinds = Object.fromEntries(
+    permissionNames.map((value, index) => [`permissionName${index}`, value]),
+  );
+  const permissionNamePlaceholders = Object.keys(permissionNameBinds)
+    .map((key) => `$${key}`)
+    .join(', ');
   const [existing] = await queryInterface.sequelize.query(
-    'SELECT name FROM permissions WHERE name IN (:names) AND deleted_at IS NULL',
-    { replacements: { names: names(prefix) } },
+    `SELECT name FROM permissions WHERE name IN (${permissionNamePlaceholders}) AND deleted_at IS NULL`,
+    { bind: permissionNameBinds },
   );
   const existingNames = new Set(existing.map(({ name }) => name));
   const rows = actions
@@ -63,20 +70,27 @@ const ensurePermissions = async (queryInterface, prefix, descriptions) => {
 const copyPermissionGrants = async (queryInterface, sourcePrefixes, targetPrefix) => {
   const timestamp = new Date();
   for (const action of actions) {
+    const sourceNames = sourcePrefixes.map((prefix) => `${prefix}.${action}`);
+    const sourceNameBinds = Object.fromEntries(
+      sourceNames.map((value, index) => [`sourceName${index}`, value]),
+    );
+    const sourceNamePlaceholders = Object.keys(sourceNameBinds)
+      .map((key) => `$${key}`)
+      .join(', ');
     await queryInterface.sequelize.query(
       `INSERT IGNORE INTO role_permissions (created_at, updated_at, role_id, permission_id)
-       SELECT :timestamp, :timestamp, grants.role_id, target.id
+       SELECT $timestamp, $timestamp, grants.role_id, target.id
        FROM role_permissions AS grants
        INNER JOIN permissions AS source ON source.id = grants.permission_id
-       INNER JOIN permissions AS target ON target.name = :targetName
-       WHERE source.name IN (:sourceNames)
+       INNER JOIN permissions AS target ON target.name = $targetName
+       WHERE source.name IN (${sourceNamePlaceholders})
          AND source.deleted_at IS NULL
          AND target.deleted_at IS NULL`,
       {
-        replacements: {
+        bind: {
           timestamp,
           targetName: `${targetPrefix}.${action}`,
-          sourceNames: sourcePrefixes.map((prefix) => `${prefix}.${action}`),
+          ...sourceNameBinds,
         },
       },
     );
@@ -85,12 +99,18 @@ const copyPermissionGrants = async (queryInterface, sourcePrefixes, targetPrefix
 
 const removePermissions = async (queryInterface, prefixes) => {
   const permissionNames = prefixes.flatMap(names);
+  const permissionNameBinds = Object.fromEntries(
+    permissionNames.map((value, index) => [`permissionName${index}`, value]),
+  );
+  const permissionNamePlaceholders = Object.keys(permissionNameBinds)
+    .map((key) => `$${key}`)
+    .join(', ');
   await queryInterface.sequelize.query(
     `DELETE grants
      FROM role_permissions AS grants
      INNER JOIN permissions ON permissions.id = grants.permission_id
-     WHERE permissions.name IN (:names)`,
-    { replacements: { names: permissionNames } },
+     WHERE permissions.name IN (${permissionNamePlaceholders})`,
+    { bind: permissionNameBinds },
   );
   await queryInterface.bulkDelete('permissions', { name: permissionNames });
 };
@@ -100,10 +120,10 @@ const dropForeignKeysForColumn = async (queryInterface, table, column) => {
     `SELECT CONSTRAINT_NAME AS name
      FROM information_schema.KEY_COLUMN_USAGE
      WHERE TABLE_SCHEMA = DATABASE()
-       AND TABLE_NAME = :table
-       AND COLUMN_NAME = :column
+       AND TABLE_NAME = $table
+       AND COLUMN_NAME = $column
        AND REFERENCED_TABLE_NAME IS NOT NULL`,
-    { replacements: { table, column } },
+    { bind: { table, column } },
   );
   for (const constraint of constraints) {
     await queryInterface.removeConstraint(table, constraint.name);
@@ -150,22 +170,22 @@ module.exports = {
     const [brands] = await queryInterface.sequelize.query('SELECT * FROM brands ORDER BY id');
     for (const brand of brands) {
       const [matches] = await queryInterface.sequelize.query(
-        'SELECT * FROM part_manufacturers WHERE name = :name LIMIT 1',
-        { replacements: { name: brand.name } },
+        'SELECT * FROM part_manufacturers WHERE name = $name LIMIT 1',
+        { bind: { name: brand.name } },
       );
       let manufacturer = matches[0];
       if (manufacturer) {
         await queryInterface.sequelize.query(
           `UPDATE part_manufacturers
-           SET logo_file_name = COALESCE(logo_file_name, :logoFileName),
-               logo_original_name = COALESCE(logo_original_name, :logoOriginalName),
-               logo_mime_type = COALESCE(logo_mime_type, :logoMimeType),
-               active = GREATEST(active, :active),
-               deleted_at = CASE WHEN :brandDeletedAt IS NULL THEN NULL ELSE deleted_at END,
-               updated_at = :updatedAt
-           WHERE id = :id`,
+           SET logo_file_name = COALESCE(logo_file_name, $logoFileName),
+               logo_original_name = COALESCE(logo_original_name, $logoOriginalName),
+               logo_mime_type = COALESCE(logo_mime_type, $logoMimeType),
+               active = GREATEST(active, $active),
+               deleted_at = CASE WHEN $brandDeletedAt IS NULL THEN NULL ELSE deleted_at END,
+               updated_at = $updatedAt
+           WHERE id = $id`,
           {
-            replacements: {
+            bind: {
               id: manufacturer.id,
               logoFileName: brand.logo_file_name,
               logoOriginalName: brand.logo_original_name,
@@ -195,16 +215,16 @@ module.exports = {
           },
         ]);
         const [created] = await queryInterface.sequelize.query(
-          'SELECT * FROM part_manufacturers WHERE uuid = :uuid LIMIT 1',
-          { replacements: { uuid: brand.uuid } },
+          'SELECT * FROM part_manufacturers WHERE uuid = $uuid LIMIT 1',
+          { bind: { uuid: brand.uuid } },
         );
         manufacturer = created[0];
       }
       await queryInterface.sequelize.query(
         `UPDATE materials
-         SET manufacturer_id = :manufacturerId
-         WHERE manufacturer_id = :brandId`,
-        { replacements: { manufacturerId: manufacturer.id, brandId: brand.id } },
+         SET manufacturer_id = $manufacturerId
+         WHERE manufacturer_id = $brandId`,
+        { bind: { manufacturerId: manufacturer.id, brandId: brand.id } },
       );
     }
     await queryInterface.dropTable('brands');
@@ -253,15 +273,15 @@ module.exports = {
         },
       ]);
       const [brands] = await queryInterface.sequelize.query(
-        'SELECT id FROM brands WHERE uuid = :uuid LIMIT 1',
-        { replacements: { uuid: manufacturer.uuid } },
+        'SELECT id FROM brands WHERE uuid = $uuid LIMIT 1',
+        { bind: { uuid: manufacturer.uuid } },
       );
       await queryInterface.sequelize.query(
         `UPDATE materials
-         SET manufacturer_id = :brandId
-         WHERE manufacturer_id = :manufacturerId`,
+         SET manufacturer_id = $brandId
+         WHERE manufacturer_id = $manufacturerId`,
         {
-          replacements: {
+          bind: {
             brandId: brands[0].id,
             manufacturerId: manufacturer.id,
           },

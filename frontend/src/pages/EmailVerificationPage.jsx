@@ -77,9 +77,8 @@ export default function EmailVerificationPage() {
     <main className="auth-page d-flex align-items-center justify-content-center">
       <section className="auth-card card d-grid gap-3 p-4 p-sm-5" aria-live="polite">
         <div className="mb-2 text-center">
-          <img className="auth-logo mb-3" src="/auth-logo.jpg" alt="EI BOURNAZEL Paul" />
-          <h1 className="auth-heading mb-1">Vérification de l’email</h1>
-          <p className="mb-0 text-body-secondary">GreenDesk</p>
+          <img className="auth-logo mb-3" src="/logo-greendesk.jpg" alt="Logo GreenDesk" />
+          <h1 className="auth-heading mb-0">Vérification de l’email</h1>
         </div>
         {status === 'verifying' ? (
           <Loader label="Vérification de votre adresse email" />

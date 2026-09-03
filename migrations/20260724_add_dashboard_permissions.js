@@ -8,6 +8,13 @@ const dashboardPermissions = [
     description: 'Consulter les indicateurs du tableau de bord.',
   },
 ];
+const dashboardPermissionNames = dashboardPermissions.map(({ name }) => name);
+const dashboardPermissionBinds = Object.fromEntries(
+  dashboardPermissionNames.map((value, index) => [`dashboardPermission${index}`, value]),
+);
+const dashboardPermissionPlaceholders = Object.keys(dashboardPermissionBinds)
+  .map((key) => `$${key}`)
+  .join(', ');
 
 /**
  * Adds the permissions required by the current read-only dashboard.
@@ -18,8 +25,8 @@ const dashboardPermissions = [
 module.exports = {
   async up(queryInterface) {
     const [rows] = await queryInterface.sequelize.query(
-      'SELECT name FROM permissions WHERE name IN (:names) AND deleted_at IS NULL',
-      { replacements: { names: dashboardPermissions.map(({ name }) => name) } },
+      `SELECT name FROM permissions WHERE name IN (${dashboardPermissionPlaceholders}) AND deleted_at IS NULL`,
+      { bind: dashboardPermissionBinds },
     );
     const existingNames = new Set(rows.map(({ name }) => name));
     const timestamp = new Date();
@@ -38,7 +45,7 @@ module.exports = {
 
   async down(queryInterface) {
     await queryInterface.bulkDelete('permissions', {
-      name: dashboardPermissions.map(({ name }) => name),
+      name: dashboardPermissionNames,
     });
   },
 };

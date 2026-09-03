@@ -25,6 +25,13 @@ describe('EmailVerificationPage', () => {
   beforeEach(() => vi.clearAllMocks());
   afterEach(cleanup);
 
+  it('keeps the functional heading without repeating the product name', () => {
+    renderPage('/verify-email');
+
+    expect(screen.getByRole('heading', { name: 'Vérification de l’email' })).toBeVisible();
+    expect(screen.queryByText('GreenDesk')).not.toBeInTheDocument();
+  });
+
   it('confirms the token supplied by the email link', async () => {
     verifyEmail.mockResolvedValue({ data: { success: true } });
     renderPage('/verify-email?token=opaque-token');

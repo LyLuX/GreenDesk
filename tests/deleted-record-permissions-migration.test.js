@@ -12,15 +12,15 @@ describe('deleted record permissions migration', () => {
 
     await migration.up(queryInterface);
 
-    expect(query.mock.calls[0][1].replacements).toMatchObject({
+    expect(query.mock.calls[0][1].bind).toMatchObject({
       oldName: 'users.restore',
       newName: 'users.deleted.update',
     });
-    expect(query.mock.calls[4][1].replacements.permissionNames).toEqual([
-      'users.deleted.update',
-      'companies.deleted.read',
-      'companies.deleted.update',
-    ]);
+    expect(query.mock.calls[4][1].bind).toMatchObject({
+      permissionName0: 'users.deleted.update',
+      permissionName1: 'companies.deleted.read',
+      permissionName2: 'companies.deleted.update',
+    });
     expect(query.mock.calls[4][0]).toContain("roles.name = 'ADMIN'");
     expect(query.mock.calls[5][0]).toContain('authorization_version');
   });
@@ -39,7 +39,7 @@ describe('deleted record permissions migration', () => {
     expect(queryInterface.bulkDelete).toHaveBeenCalledWith('permissions', {
       name: ['companies.deleted.read', 'companies.deleted.update'],
     });
-    expect(query.mock.calls[2][1].replacements).toMatchObject({
+    expect(query.mock.calls[2][1].bind).toMatchObject({
       oldName: 'users.restore',
       newName: 'users.deleted.update',
     });

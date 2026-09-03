@@ -26,9 +26,9 @@ describe('frontend cache policy', () => {
         url: '/assets/index-Np56UyNI.css',
       }),
     ).toBe(frontendCacheControlPolicies.immutableAsset);
-    expect(resolveFrontendCacheControl({ environment: 'production', url: '/brand-logo.jpg' })).toBe(
-      frontendCacheControlPolicies.staticAsset,
-    );
+    expect(
+      resolveFrontendCacheControl({ environment: 'production', url: '/logo-greendesk.jpg' }),
+    ).toBe(frontendCacheControlPolicies.staticAsset);
   });
 
   it('installs complete no-cache headers in the development server', () => {

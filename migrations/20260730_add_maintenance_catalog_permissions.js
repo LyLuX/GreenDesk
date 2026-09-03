@@ -46,6 +46,12 @@ const permissionMappings = [
 ];
 
 const permissionNames = permissionMappings.map(({ name }) => name);
+const permissionNameBinds = Object.fromEntries(
+  permissionNames.map((value, index) => [`permissionName${index}`, value]),
+);
+const permissionNamePlaceholders = Object.keys(permissionNameBinds)
+  .map((key) => `$${key}`)
+  .join(', ');
 
 /**
  * Splits operation and part catalogue management from maintenance-plan permissions.
@@ -57,13 +63,13 @@ module.exports = {
   async up(queryInterface) {
     const timestamp = new Date();
     await queryInterface.sequelize.query(
-      'UPDATE permissions SET deleted_at = NULL, updated_at = :timestamp WHERE name IN (:names) AND deleted_at IS NOT NULL',
-      { replacements: { names: permissionNames, timestamp } },
+      `UPDATE permissions SET deleted_at = NULL, updated_at = $timestamp WHERE name IN (${permissionNamePlaceholders}) AND deleted_at IS NOT NULL`,
+      { bind: { ...permissionNameBinds, timestamp } },
     );
 
     const [rows] = await queryInterface.sequelize.query(
-      'SELECT name FROM permissions WHERE name IN (:names) AND deleted_at IS NULL',
-      { replacements: { names: permissionNames } },
+      `SELECT name FROM permissions WHERE name IN (${permissionNamePlaceholders}) AND deleted_at IS NULL`,
+      { bind: permissionNameBinds },
     );
     const existingNames = new Set(rows.map(({ name }) => name));
     const missingPermissions = permissionMappings
@@ -83,16 +89,16 @@ module.exports = {
     for (const { source, name } of permissionMappings) {
       await queryInterface.sequelize.query(
         `INSERT IGNORE INTO role_permissions (created_at, updated_at, role_id, permission_id)
-         SELECT :timestamp, :timestamp, grants.role_id, targetPermission.id
+         SELECT $timestamp, $timestamp, grants.role_id, targetPermission.id
          FROM role_permissions AS grants
          INNER JOIN permissions AS sourcePermission
            ON sourcePermission.id = grants.permission_id
          INNER JOIN permissions AS targetPermission
-           ON targetPermission.name = :targetName
-         WHERE sourcePermission.name = :sourceName
+           ON targetPermission.name = $targetName
+         WHERE sourcePermission.name = $sourceName
            AND sourcePermission.deleted_at IS NULL
            AND targetPermission.deleted_at IS NULL`,
-        { replacements: { sourceName: source, targetName: name, timestamp } },
+        { bind: { sourceName: source, targetName: name, timestamp } },
       );
     }
   },
@@ -102,8 +108,8 @@ module.exports = {
       `DELETE grants
        FROM role_permissions AS grants
        INNER JOIN permissions AS permissions ON permissions.id = grants.permission_id
-       WHERE permissions.name IN (:names)`,
-      { replacements: { names: permissionNames } },
+       WHERE permissions.name IN (${permissionNamePlaceholders})`,
+      { bind: permissionNameBinds },
     );
     await queryInterface.bulkDelete('permissions', { name: permissionNames });
   },

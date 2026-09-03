@@ -60,6 +60,36 @@ describe('HistoryPage', () => {
     );
   });
 
+  it('offers company events in administration history', async () => {
+    listHistory.mockResolvedValueOnce({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'company-logo-update',
+              occurredAt: '2026-09-02T21:25:02.000Z',
+              recordedAt: '2026-09-02T21:25:02.000Z',
+              type: 'company',
+              action: 'UPDATE',
+              subject: { label: 'GreenDesk' },
+              details: {
+                oldValues: { logoOriginalName: null },
+                newValues: { logoOriginalName: 'logo.webp' },
+              },
+            },
+          ],
+          pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
+        },
+      },
+    });
+    render(<HistoryPage section="administration" />);
+
+    expect(await screen.findByRole('option', { name: 'Société' })).toHaveValue('company');
+    expect(screen.getByText('Sociétés, utilisateurs, rôles et permissions')).toBeVisible();
+    expect(screen.getByText('GreenDesk')).toBeVisible();
+    expect(screen.getByText('Logo : non renseigné → logo.webp')).toBeVisible();
+  });
+
   it('uses a semantic badge variant for every kind of history action', async () => {
     const actions = [
       ['UPDATE', 'Modification', 'info'],

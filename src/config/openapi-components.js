@@ -616,6 +616,7 @@ export const openApiSchemas = {
           'maintenance_part',
           'stock_movement',
           'price_change',
+          'company',
           'user',
           'role',
           'permission',
@@ -1482,9 +1483,28 @@ export const openApiSchemas = {
   },
   ApiEntryResponse: success({
     type: 'object',
-    required: ['name', 'version'],
-    properties: { name: { type: 'string' }, version: { type: 'string' } },
+    required: ['name', 'version', 'uploadLimits'],
+    properties: {
+      name: { type: 'string' },
+      version: { type: 'string' },
+      uploadLimits: {
+        type: 'object',
+        required: ['image', 'document'],
+        properties: {
+          image: reference('UploadLimit'),
+          document: reference('UploadLimit'),
+        },
+      },
+    },
   }),
+  UploadLimit: {
+    type: 'object',
+    required: ['maxSizeMb', 'maxSizeBytes'],
+    properties: {
+      maxSizeMb: { type: 'integer', minimum: 1 },
+      maxSizeBytes: { type: 'integer', minimum: 1048576 },
+    },
+  },
   AuthSessionResponse: success(reference('AuthSession')),
   RegistrationResponse: success({
     type: 'object',

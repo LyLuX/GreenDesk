@@ -16,9 +16,9 @@ const rolePermissionDescription = (roleName) =>
 const ensurePermission = async (queryInterface, permission, timestamp) => {
   await queryInterface.sequelize.query(
     `INSERT INTO permissions (uuid, name, description, created_at, updated_at)
-     VALUES (:uuid, :name, :description, :timestamp, :timestamp)
-     ON DUPLICATE KEY UPDATE description = :description, deleted_at = NULL, updated_at = :timestamp`,
-    { replacements: { uuid: randomUUID(), ...permission, timestamp } },
+     VALUES ($uuid, $name, $description, $timestamp, $timestamp)
+     ON DUPLICATE KEY UPDATE description = $description, deleted_at = NULL, updated_at = $timestamp`,
+    { bind: { uuid: randomUUID(), ...permission, timestamp } },
   );
 };
 
@@ -42,11 +42,11 @@ module.exports = {
       await ensurePermission(queryInterface, permission, timestamp);
       await queryInterface.sequelize.query(
         `INSERT IGNORE INTO role_permissions (created_at, updated_at, role_id, permission_id)
-         SELECT :timestamp, :timestamp, :roleId, permissions.id
+         SELECT $timestamp, $timestamp, $roleId, permissions.id
          FROM permissions
-         WHERE permissions.name = :permissionName AND permissions.deleted_at IS NULL`,
+         WHERE permissions.name = $permissionName AND permissions.deleted_at IS NULL`,
         {
-          replacements: {
+          bind: {
             timestamp,
             roleId: role.id,
             permissionName: permission.name,
@@ -56,12 +56,12 @@ module.exports = {
     }
     await queryInterface.sequelize.query(
       `INSERT IGNORE INTO role_permissions (created_at, updated_at, role_id, permission_id)
-       SELECT :timestamp, :timestamp, roles.id, permissions.id
+       SELECT $timestamp, $timestamp, roles.id, permissions.id
        FROM roles
-       INNER JOIN permissions ON permissions.name = :permissionName
+       INNER JOIN permissions ON permissions.name = $permissionName
        WHERE roles.name = 'ADMIN' AND roles.deleted_at IS NULL AND permissions.deleted_at IS NULL`,
       {
-        replacements: {
+        bind: {
           timestamp,
           permissionName: ALL_USERS_READ_PERMISSION.name,
         },
@@ -79,18 +79,18 @@ module.exports = {
     await queryInterface.sequelize.query(
       `DELETE grants FROM role_permissions AS grants
        INNER JOIN permissions ON permissions.id = grants.permission_id
-       WHERE permissions.name = :allUsersPermission OR permissions.name LIKE :rolePermissionPattern`,
+       WHERE permissions.name = $allUsersPermission OR permissions.name LIKE $rolePermissionPattern`,
       {
-        replacements: {
+        bind: {
           allUsersPermission: ALL_USERS_READ_PERMISSION.name,
           rolePermissionPattern: `${ROLE_PERMISSION_PREFIX}%${ROLE_PERMISSION_SUFFIX}`,
         },
       },
     );
     await queryInterface.sequelize.query(
-      'DELETE FROM permissions WHERE name = :allUsersPermission OR name LIKE :rolePermissionPattern',
+      'DELETE FROM permissions WHERE name = $allUsersPermission OR name LIKE $rolePermissionPattern',
       {
-        replacements: {
+        bind: {
           allUsersPermission: ALL_USERS_READ_PERMISSION.name,
           rolePermissionPattern: `${ROLE_PERMISSION_PREFIX}%${ROLE_PERMISSION_SUFFIX}`,
         },

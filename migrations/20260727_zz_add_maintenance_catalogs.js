@@ -118,16 +118,16 @@ module.exports = {
         },
       ]);
       const [operations] = await queryInterface.sequelize.query(
-        'SELECT id FROM maintenance_operations WHERE uuid = :uuid',
-        { replacements: { uuid: operationUuid } },
+        'SELECT id FROM maintenance_operations WHERE uuid = $uuid',
+        { bind: { uuid: operationUuid } },
       );
       await queryInterface.sequelize.query(
         `UPDATE maintenance_tasks
-         SET operation_id = :operationId
-         WHERE title = :title
+         SET operation_id = $operationId
+         WHERE title = $title
            AND deleted_at IS NULL`,
         {
-          replacements: {
+          bind: {
             operationId: operations[0].id,
             title: plan.title,
           },

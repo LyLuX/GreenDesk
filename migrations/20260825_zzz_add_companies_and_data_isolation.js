@@ -14,6 +14,13 @@ const companyPermissions = [
   ],
   ['users.companies.update', 'Modifier les sociétés attribuées à un utilisateur.'],
 ];
+const companyPermissionNames = companyPermissions.map(([name]) => name);
+const companyPermissionNameBinds = Object.fromEntries(
+  companyPermissionNames.map((value, index) => [`companyPermissionName${index}`, value]),
+);
+const companyPermissionNamePlaceholders = Object.keys(companyPermissionNameBinds)
+  .map((key) => `$${key}`)
+  .join(', ');
 
 const tenantTables = [
   'categories',
@@ -54,9 +61,9 @@ const scopedUniqueIndexes = [
 const ensurePermission = (queryInterface, name, description, timestamp) =>
   queryInterface.sequelize.query(
     `INSERT INTO permissions (uuid, name, description, created_at, updated_at)
-     VALUES (:uuid, :name, :description, :timestamp, :timestamp)
-     ON DUPLICATE KEY UPDATE description = :description, deleted_at = NULL, updated_at = :timestamp`,
-    { replacements: { uuid: randomUUID(), name, description, timestamp } },
+     VALUES ($uuid, $name, $description, $timestamp, $timestamp)
+     ON DUPLICATE KEY UPDATE description = $description, deleted_at = NULL, updated_at = $timestamp`,
+    { bind: { uuid: randomUUID(), name, description, timestamp } },
   );
 
 module.exports = {
@@ -113,8 +120,8 @@ module.exports = {
         allowNull: true,
       });
       await queryInterface.sequelize.query(
-        `UPDATE ${table} SET company_id = :companyId WHERE company_id IS NULL`,
-        { replacements: { companyId: defaultCompany.id } },
+        `UPDATE ${table} SET company_id = $companyId WHERE company_id IS NULL`,
+        { bind: { companyId: defaultCompany.id } },
       );
       await queryInterface.changeColumn(table, 'company_id', {
         type: Sequelize.BIGINT.UNSIGNED,
@@ -137,9 +144,9 @@ module.exports = {
     });
     await queryInterface.sequelize.query(
       `UPDATE audit_logs
-       SET company_id = :companyId
+       SET company_id = $companyId
        WHERE entity NOT IN ('ROLE', 'PERMISSION', 'COMPANY')`,
-      { replacements: { companyId: defaultCompany.id } },
+      { bind: { companyId: defaultCompany.id } },
     );
     await queryInterface.addIndex('audit_logs', ['company_id', 'created_at'], {
       name: 'idx_audit_logs_company_created_at',
@@ -164,23 +171,23 @@ module.exports = {
     }
     await queryInterface.sequelize.query(
       `INSERT IGNORE INTO role_permissions (created_at, updated_at, role_id, permission_id)
-       SELECT :timestamp, :timestamp, roles.id, permissions.id
+       SELECT $timestamp, $timestamp, roles.id, permissions.id
        FROM roles
        CROSS JOIN permissions
        WHERE roles.name = 'ADMIN'
          AND roles.deleted_at IS NULL
-         AND permissions.name IN (:permissionNames)
+         AND permissions.name IN (${companyPermissionNamePlaceholders})
          AND permissions.deleted_at IS NULL`,
       {
-        replacements: {
+        bind: {
           timestamp,
-          permissionNames: companyPermissions.map(([name]) => name),
+          ...companyPermissionNameBinds,
         },
       },
     );
     await queryInterface.sequelize.query(
       `INSERT IGNORE INTO user_companies (user_id, company_id, created_at, updated_at)
-       SELECT users.id, :companyId, :timestamp, :timestamp
+       SELECT users.id, $companyId, $timestamp, $timestamp
        FROM users
        WHERE NOT EXISTS (
            SELECT 1
@@ -190,7 +197,7 @@ module.exports = {
              AND roles.name = 'ADMIN'
              AND roles.deleted_at IS NULL
          )`,
-      { replacements: { companyId: defaultCompany.id, timestamp } },
+      { bind: { companyId: defaultCompany.id, timestamp } },
     );
     await queryInterface.sequelize.query(
       'UPDATE users SET authorization_version = authorization_version + 1',
@@ -204,12 +211,12 @@ module.exports = {
     await queryInterface.sequelize.query(
       `DELETE grants FROM role_permissions AS grants
        INNER JOIN permissions ON permissions.id = grants.permission_id
-       WHERE permissions.name IN (:permissionNames)`,
-      { replacements: { permissionNames: companyPermissions.map(([name]) => name) } },
+       WHERE permissions.name IN (${companyPermissionNamePlaceholders})`,
+      { bind: companyPermissionNameBinds },
     );
     await queryInterface.sequelize.query(
-      'DELETE FROM permissions WHERE name IN (:permissionNames)',
-      { replacements: { permissionNames: companyPermissions.map(([name]) => name) } },
+      `DELETE FROM permissions WHERE name IN (${companyPermissionNamePlaceholders})`,
+      { bind: companyPermissionNameBinds },
     );
 
     await queryInterface.removeIndex(

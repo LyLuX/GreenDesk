@@ -13,17 +13,17 @@ module.exports = {
     const timestamp = new Date();
     await queryInterface.sequelize.query(
       `INSERT INTO permissions (uuid, name, description, created_at, updated_at)
-       VALUES (:uuid, :name, :description, :timestamp, :timestamp)
-       ON DUPLICATE KEY UPDATE description = :description, deleted_at = NULL, updated_at = :timestamp`,
-      { replacements: { uuid: randomUUID(), ...permission, timestamp } },
+       VALUES ($uuid, $name, $description, $timestamp, $timestamp)
+       ON DUPLICATE KEY UPDATE description = $description, deleted_at = NULL, updated_at = $timestamp`,
+      { bind: { uuid: randomUUID(), ...permission, timestamp } },
     );
     await queryInterface.sequelize.query(
       `INSERT IGNORE INTO role_permissions (created_at, updated_at, role_id, permission_id)
-       SELECT :timestamp, :timestamp, roles.id, permissions.id
+       SELECT $timestamp, $timestamp, roles.id, permissions.id
        FROM roles
-       INNER JOIN permissions ON permissions.name = :name
+       INNER JOIN permissions ON permissions.name = $name
        WHERE roles.name = 'ADMIN' AND roles.deleted_at IS NULL AND permissions.deleted_at IS NULL`,
-      { replacements: { name: permission.name, timestamp } },
+      { bind: { name: permission.name, timestamp } },
     );
     await queryInterface.sequelize.query(
       'UPDATE users SET authorization_version = authorization_version + 1',
@@ -37,8 +37,8 @@ module.exports = {
     await queryInterface.sequelize.query(
       `DELETE grants FROM role_permissions AS grants
        INNER JOIN permissions ON permissions.id = grants.permission_id
-       WHERE permissions.name = :name`,
-      { replacements: { name: permission.name } },
+       WHERE permissions.name = $name`,
+      { bind: { name: permission.name } },
     );
     await queryInterface.bulkDelete('permissions', { name: permission.name });
   },

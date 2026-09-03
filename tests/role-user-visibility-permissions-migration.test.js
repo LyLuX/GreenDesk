@@ -33,8 +33,8 @@ describe('role-scoped user visibility permission migration', () => {
       'name',
       expect.objectContaining({ type: 'STRING(150)', allowNull: false }),
     );
-    const replacements = query.mock.calls.map((call) => call[1]?.replacements).filter(Boolean);
-    expect(replacements).toEqual(
+    const bind = query.mock.calls.map((call) => call[1]?.bind).filter(Boolean);
+    expect(bind).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ name: 'users.all.read' }),
         expect.objectContaining({ name: 'users.roles.ADMIN.read' }),
@@ -44,7 +44,7 @@ describe('role-scoped user visibility permission migration', () => {
         expect.objectContaining({ permissionName: 'users.all.read' }),
       ]),
     );
-    expect(JSON.stringify(replacements)).not.toMatch(
+    expect(JSON.stringify(bind)).not.toMatch(
       /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.read/i,
     );
     expect(query.mock.calls.at(-1)[0]).toContain('authorization_version');
@@ -59,7 +59,7 @@ describe('role-scoped user visibility permission migration', () => {
 
     await migration.down(queryInterface, Sequelize);
 
-    expect(query.mock.calls[1][1].replacements).toEqual({
+    expect(query.mock.calls[1][1].bind).toEqual({
       allUsersPermission: 'users.all.read',
       rolePermissionPattern: 'users.roles.%.read',
     });

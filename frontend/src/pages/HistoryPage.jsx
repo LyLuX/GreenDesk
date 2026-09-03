@@ -31,6 +31,8 @@ const fieldLabels = Object.freeze({
   unitPrice: 'Prix unitaire',
   permissions: 'Permissions',
   roles: 'Rôles',
+  logoOriginalName: 'Logo',
+  logoMimeType: 'Format du logo',
 });
 
 const displayValue = (value) => {

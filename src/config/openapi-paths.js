@@ -77,7 +77,7 @@ export const openApiPaths = {
     get: {
       operationId: 'getApiEntry',
       tags: ['System'],
-      summary: 'Retourne l’identité et la version de l’API.',
+      summary: 'Retourne l’identité, la version et la configuration publique de l’API.',
       responses: {
         200: jsonResponse('ApiEntryResponse', 'Point d’entrée retourné.'),
         500: responseRef('InternalError'),
@@ -290,9 +290,9 @@ export const openApiPaths = {
     post: {
       operationId: 'uploadCompanyLogo',
       tags: ['Companies'],
-      summary: 'Ajoute ou remplace le logo d’une société accessible (2 Mo maximum).',
+      summary: 'Ajoute ou remplace le logo d’une société accessible.',
       description:
-        'Nécessite `companies.logo.update` et l’accès à la société demandée. Le MIME déclaré et la signature binaire doivent correspondre à une image JPEG, PNG ou WebP.',
+        'Nécessite `companies.logo.update` et l’accès à la société demandée. Le MIME déclaré et la signature binaire doivent correspondre à une image JPEG, PNG ou WebP. La taille maximale est fournie par la configuration publique de l’API.',
       security: secure,
       requestBody: {
         required: true,
@@ -705,9 +705,9 @@ export const openApiPaths = {
     post: {
       operationId: 'uploadManufacturerLogo',
       tags: ['Manufacturers'],
-      summary: 'Ajoute ou remplace le logo d’un fabricant (2 Mo maximum).',
+      summary: 'Ajoute ou remplace le logo d’un fabricant.',
       description:
-        'Nécessite `manufacturers.logo.upload`. Le MIME déclaré et la signature binaire doivent correspondre à une image JPEG, PNG ou WebP.',
+        'Nécessite `manufacturers.logo.upload`. Le MIME déclaré et la signature binaire doivent correspondre à une image JPEG, PNG ou WebP. La taille maximale est fournie par la configuration publique de l’API.',
       security: secure,
       requestBody: {
         required: true,
@@ -880,9 +880,9 @@ export const openApiPaths = {
     post: {
       operationId: 'uploadMaterialPhoto',
       tags: ['Material files'],
-      summary: 'Ajoute une photo au matériel (10 Mo, 10 photos maximum).',
+      summary: 'Ajoute une photo au matériel (10 photos maximum).',
       description:
-        'Nécessite `materials.photos.create`. Un nom facultatif de 150 caractères maximum peut identifier la photo. Formats acceptés : JPEG, PNG et WebP, avec correspondance obligatoire entre le MIME déclaré et la signature binaire.',
+        'Nécessite `materials.photos.create`. Un nom facultatif de 150 caractères maximum peut identifier la photo. Formats acceptés : JPEG, PNG et WebP, avec correspondance obligatoire entre le MIME déclaré et la signature binaire. La taille maximale est fournie par la configuration publique de l’API.',
       security: secure,
       requestBody: {
         required: true,
@@ -910,9 +910,9 @@ export const openApiPaths = {
     post: {
       operationId: 'uploadMaterialDocument',
       tags: ['Material files'],
-      summary: 'Ajoute un document PDF au matériel (10 Mo maximum).',
+      summary: 'Ajoute un document PDF au matériel.',
       description:
-        'Nécessite `materials.documents.create`. Le MIME déclaré et la signature binaire doivent correspondre à un document PDF.',
+        'Nécessite `materials.documents.create`. Le MIME déclaré et la signature binaire doivent correspondre à un document PDF. La taille maximale est fournie par la configuration publique de l’API.',
       security: secure,
       requestBody: {
         required: true,
@@ -1615,6 +1615,7 @@ export const openApiPaths = {
               'maintenance_part',
               'stock_movement',
               'price_change',
+              'company',
               'user',
               'role',
               'permission',

@@ -67,9 +67,9 @@ export default class CompanyRepository extends TransactionalRepository {
     const [rows] = await Company.sequelize.query(
       `SELECT 1
        FROM user_companies
-       WHERE company_id = :companyId AND user_id = :userId
+       WHERE company_id = $companyId AND user_id = $userId
        LIMIT 1`,
-      { replacements: { companyId, userId }, transaction },
+      { bind: { companyId, userId }, transaction },
     );
     return rows.length > 0;
   }
@@ -85,23 +85,23 @@ export default class CompanyRepository extends TransactionalRepository {
   async hasDependencies(companyId, { transaction } = {}) {
     const [rows] = await Company.sequelize.query(
       `SELECT
-         (SELECT COUNT(*) FROM user_companies WHERE company_id = :companyId) +
-         (SELECT COUNT(*) FROM materials WHERE company_id = :companyId) +
-         (SELECT COUNT(*) FROM categories WHERE company_id = :companyId) +
-         (SELECT COUNT(*) FROM part_manufacturers WHERE company_id = :companyId) +
-         (SELECT COUNT(*) FROM suppliers WHERE company_id = :companyId) +
-         (SELECT COUNT(*) FROM maintenance_operations WHERE company_id = :companyId) +
-         (SELECT COUNT(*) FROM maintenance_parts WHERE company_id = :companyId) +
-         (SELECT COUNT(*) FROM maintenance_tasks WHERE company_id = :companyId) +
-         (SELECT COUNT(*) FROM maintenance_task_parts WHERE company_id = :companyId) +
-         (SELECT COUNT(*) FROM maintenance_history WHERE company_id = :companyId) +
-         (SELECT COUNT(*) FROM maintenance_interventions WHERE company_id = :companyId) +
-         (SELECT COUNT(*) FROM maintenance_part_usages WHERE company_id = :companyId) +
-         (SELECT COUNT(*) FROM maintenance_part_price_history WHERE company_id = :companyId) +
-         (SELECT COUNT(*) FROM inventory_stock_movements WHERE company_id = :companyId) +
-         (SELECT COUNT(*) FROM audit_logs WHERE company_id = :companyId)
+         (SELECT COUNT(*) FROM user_companies WHERE company_id = $companyId) +
+         (SELECT COUNT(*) FROM materials WHERE company_id = $companyId) +
+         (SELECT COUNT(*) FROM categories WHERE company_id = $companyId) +
+         (SELECT COUNT(*) FROM part_manufacturers WHERE company_id = $companyId) +
+         (SELECT COUNT(*) FROM suppliers WHERE company_id = $companyId) +
+         (SELECT COUNT(*) FROM maintenance_operations WHERE company_id = $companyId) +
+         (SELECT COUNT(*) FROM maintenance_parts WHERE company_id = $companyId) +
+         (SELECT COUNT(*) FROM maintenance_tasks WHERE company_id = $companyId) +
+         (SELECT COUNT(*) FROM maintenance_task_parts WHERE company_id = $companyId) +
+         (SELECT COUNT(*) FROM maintenance_history WHERE company_id = $companyId) +
+         (SELECT COUNT(*) FROM maintenance_interventions WHERE company_id = $companyId) +
+         (SELECT COUNT(*) FROM maintenance_part_usages WHERE company_id = $companyId) +
+         (SELECT COUNT(*) FROM maintenance_part_price_history WHERE company_id = $companyId) +
+         (SELECT COUNT(*) FROM inventory_stock_movements WHERE company_id = $companyId) +
+         (SELECT COUNT(*) FROM audit_logs WHERE company_id = $companyId)
        AS dependencyCount`,
-      { replacements: { companyId }, transaction },
+      { bind: { companyId }, transaction },
     );
     return Number(rows[0]?.dependencyCount ?? 0) > 0;
   }
@@ -109,8 +109,8 @@ export default class CompanyRepository extends TransactionalRepository {
   assignUser(companyId, userId, { transaction } = {}) {
     return Company.sequelize.query(
       `INSERT IGNORE INTO user_companies (user_id, company_id, created_at, updated_at)
-       VALUES (:userId, :companyId, NOW(), NOW())`,
-      { replacements: { companyId, userId }, transaction },
+       VALUES ($userId, $companyId, NOW(), NOW())`,
+      { bind: { companyId, userId }, transaction },
     );
   }
 
@@ -119,9 +119,9 @@ export default class CompanyRepository extends TransactionalRepository {
       `UPDATE users AS u
        INNER JOIN user_companies AS membership ON membership.user_id = u.id
        SET u.authorization_version = u.authorization_version + 1
-       WHERE membership.company_id = :companyId
-         ${excludeUserId ? 'AND u.id <> :excludeUserId' : ''}`,
-      { replacements: { companyId, excludeUserId }, transaction },
+       WHERE membership.company_id = $companyId
+         ${excludeUserId ? 'AND u.id <> $excludeUserId' : ''}`,
+      { bind: { companyId, excludeUserId }, transaction },
     );
   }
 }

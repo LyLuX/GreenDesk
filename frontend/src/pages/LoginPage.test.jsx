@@ -24,6 +24,19 @@ describe('LoginPage', () => {
     vi.clearAllMocks();
   });
 
+  it('does not repeat the product name already displayed in the logo', () => {
+    render(
+      <AuthContext.Provider value={{ isAuthenticated: false, login: vi.fn() }}>
+        <MemoryRouter>
+          <LoginPage />
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+
+    expect(screen.getByRole('img', { name: 'Logo GreenDesk' })).toHaveClass('mb-2');
+    expect(screen.queryByRole('heading', { name: 'GreenDesk' })).not.toBeInTheDocument();
+  });
+
   it('temporarily reveals the password from an accessible icon button', async () => {
     const user = userEvent.setup();
     render(

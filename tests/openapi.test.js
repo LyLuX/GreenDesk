@@ -287,6 +287,11 @@ describe('OpenAPI contract', () => {
     expect(swaggerSpec.components.schemas.HistoryEvent.properties.type.enum).toContain(
       'maintenance_sheet_print',
     );
+    expect(swaggerSpec.components.schemas.HistoryEvent.properties.type.enum).toContain('company');
+    expect(
+      swaggerSpec.paths['/history/{section}'].get.parameters.find(({ name }) => name === 'type')
+        .schema.enum,
+    ).toContain('company');
     expect(
       swaggerSpec.paths['/maintenance/order-list'].get.parameters.find(
         ({ name }) => name === 'includeLowStock',

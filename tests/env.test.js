@@ -66,8 +66,35 @@ describe('runtime environment configuration', () => {
       },
       mail: { enabled: false, applicationUrl: 'http://localhost:5173/' },
       emailVerification: { ttlHours: 24, cooldownMs: 60000 },
+      uploads: {
+        image: { maxSizeMb: 10, maxSizeBytes: 10 * 1024 * 1024 },
+        document: { maxSizeMb: 10, maxSizeBytes: 10 * 1024 * 1024 },
+      },
       jwt: { secret: 'test-only-greendesk-secret-never-used-outside-tests' },
     });
+  });
+
+  it('configures independent upload limits in megabytes', () => {
+    expect(
+      createEnvironment({
+        NODE_ENV: 'test',
+        UPLOAD_IMAGE_MAX_SIZE_MB: '4',
+        UPLOAD_DOCUMENT_MAX_SIZE_MB: '25',
+      }).uploads,
+    ).toEqual({
+      image: { maxSizeMb: 4, maxSizeBytes: 4 * 1024 * 1024 },
+      document: { maxSizeMb: 25, maxSizeBytes: 25 * 1024 * 1024 },
+    });
+  });
+
+  it.each([
+    ['UPLOAD_IMAGE_MAX_SIZE_MB', '0'],
+    ['UPLOAD_IMAGE_MAX_SIZE_MB', '1.5'],
+    ['UPLOAD_DOCUMENT_MAX_SIZE_MB', 'invalid'],
+  ])('rejects an invalid upload limit for %s', (key, value) => {
+    expect(() => createEnvironment({ NODE_ENV: 'test', [key]: value })).toThrow(
+      new RegExp(`${key} doit être un entier strictement positif exprimé en Mo`),
+    );
   });
 
   it('rejects missing production database credentials and public origin', () => {

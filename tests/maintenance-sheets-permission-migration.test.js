@@ -18,9 +18,7 @@ describe('maintenance.sheets.read migration', () => {
     expect(query.mock.calls.some(([sql]) => sql.includes("roles.name = 'ADMIN'"))).toBe(true);
     expect(query.mock.calls.some(([sql]) => sql.includes('authorization_version'))).toBe(true);
     expect(
-      query.mock.calls.some(
-        ([, options]) => options?.replacements?.name === 'maintenance.sheets.read',
-      ),
+      query.mock.calls.some(([, options]) => options?.bind?.name === 'maintenance.sheets.read'),
     ).toBe(true);
   });
 

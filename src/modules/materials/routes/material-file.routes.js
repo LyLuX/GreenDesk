@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import multer from 'multer';
 import { Router } from 'express';
+import env from '../../../config/env.js';
 import { authenticate } from '../../../core/middlewares/auth.middleware.js';
 import { resolveCompanyContext } from '../../../core/middlewares/company-context.middleware.js';
 import { authorize } from '../../../core/middlewares/authorization.middleware.js';
@@ -24,18 +25,18 @@ const storage = multer.diskStorage({
   filename: (_request, file, callback) =>
     callback(null, `${crypto.randomUUID()}${MIME_EXTENSION_MAP[file.mimetype]}`),
 });
-const makeUpload = (types) =>
+const makeUpload = (types, maxSizeBytes) =>
   multer({
     storage,
-    limits: { fileSize: 10 * 1024 * 1024 },
+    limits: { fileSize: maxSizeBytes },
     fileFilter: (_request, file, callback) =>
       callback(
         types.includes(file.mimetype) ? null : new Error('Unsupported file type'),
         types.includes(file.mimetype),
       ),
   });
-const photoUpload = makeUpload(PHOTO_MIME_TYPES);
-const documentUpload = makeUpload(DOCUMENT_MIME_TYPES);
+const photoUpload = makeUpload(PHOTO_MIME_TYPES, env.uploads.image.maxSizeBytes);
+const documentUpload = makeUpload(DOCUMENT_MIME_TYPES, env.uploads.document.maxSizeBytes);
 const validatePhotoSignature = createFileSignatureValidator(
   PHOTO_MIME_TYPES,
   'Le contenu du fichier ne correspond pas à une signature JPEG, PNG ou WebP autorisée.',
@@ -47,17 +48,19 @@ const validateDocumentSignature = createFileSignatureValidator(
 const router = Router();
 const service = new MaterialFileService();
 router.use(authenticate, resolveCompanyContext);
-const upload = (middleware) => (request, response, next) =>
+const upload = (middleware, maxSizeMb) => (request, response, next) =>
   middleware(request, response, (error) => {
     if (!error) return next();
     if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE')
-      return next(new AppError('File size must not exceed 10 MB', HTTP_STATUS.BAD_REQUEST));
+      return next(
+        new AppError(`Le fichier ne doit pas dépasser ${maxSizeMb} Mo.`, HTTP_STATUS.BAD_REQUEST),
+      );
     return next(new AppError('The selected file type is not allowed', HTTP_STATUS.BAD_REQUEST));
   });
 router.post(
   '/:uuid/photos',
   authorize(fleetPermissions.materials.photos.create),
-  upload(photoUpload.single('file')),
+  upload(photoUpload.single('file'), env.uploads.image.maxSizeMb),
   validatePhotoSignature,
   asyncHandler(async (request, response) =>
     response.status(201).json({
@@ -71,7 +74,7 @@ router.post(
 router.post(
   '/:uuid/documents',
   authorize(fleetPermissions.materials.documents.create),
-  upload(documentUpload.single('file')),
+  upload(documentUpload.single('file'), env.uploads.document.maxSizeMb),
   validateDocumentSignature,
   asyncHandler(async (request, response) =>
     response.status(201).json({

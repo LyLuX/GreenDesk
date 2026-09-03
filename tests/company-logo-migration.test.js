@@ -17,17 +17,18 @@ describe('company logo migration', () => {
       'logo_original_name',
       'logo_mime_type',
     ]);
-    expect(queryInterface.sequelize.query.mock.calls[0][1].replacements).toEqual(
+    expect(queryInterface.sequelize.query.mock.calls[0][1].bind).toEqual(
       expect.objectContaining({
         name: 'companies.logo.update',
         description: 'Ajouter, remplacer ou supprimer le logo d’une société.',
       }),
     );
     expect(queryInterface.sequelize.query).toHaveBeenCalledWith(
-      expect.stringContaining('source.name IN (:sourceNames)'),
+      expect.stringContaining('source.name IN ($sourcePermissionName0, $sourcePermissionName1)'),
       expect.objectContaining({
-        replacements: expect.objectContaining({
-          sourceNames: ['companies.create', 'companies.update'],
+        bind: expect.objectContaining({
+          sourcePermissionName0: 'companies.create',
+          sourcePermissionName1: 'companies.update',
         }),
       }),
     );

@@ -25,6 +25,7 @@ const AUDIT_TYPES = Object.freeze({
   MAINTENANCE_SHEET_PRINT: 'maintenance_sheet_print',
   MAINTENANCE_OPERATION: 'maintenance_operation',
   MAINTENANCE_PART: 'maintenance_part',
+  COMPANY: 'company',
   USER: 'user',
   ROLE: 'role',
   PERMISSION: 'permission',
@@ -38,7 +39,7 @@ const SECTION_ENTITIES = Object.freeze({
     'MAINTENANCE_OPERATION',
     'MAINTENANCE_PART',
   ],
-  [HISTORY_SECTIONS.ADMINISTRATION]: ['USER', 'ROLE', 'PERMISSION'],
+  [HISTORY_SECTIONS.ADMINISTRATION]: ['COMPANY', 'USER', 'ROLE', 'PERMISSION'],
 });
 
 const userAttributes = ['uuid', 'firstName', 'lastName', 'email'];
@@ -49,7 +50,7 @@ const auditExcludedActions = [
   'STOCK_UPDATE',
   'PRICE_UPDATE',
 ];
-const auditSubjectJoinQuery = `
+const auditSubjectJoinQuery = (auditUuidPlaceholders) => `
   SELECT
     auditLogs.uuid AS auditUuid,
     CASE auditLogs.entity
@@ -60,6 +61,7 @@ const auditSubjectJoinQuery = `
       WHEN 'MAINTENANCE_TASK' THEN maintenanceTasks.title
       WHEN 'MAINTENANCE_OPERATION' THEN maintenanceOperations.name
       WHEN 'MAINTENANCE_PART' THEN CONCAT(maintenanceParts.name, ' (', maintenanceParts.reference, ')')
+      WHEN 'COMPANY' THEN companies.name
       WHEN 'USER' THEN COALESCE(
         NULLIF(TRIM(CONCAT_WS(' ', auditUsers.first_name, auditUsers.last_name)), ''),
         auditUsers.email
@@ -84,13 +86,15 @@ const auditSubjectJoinQuery = `
     AND maintenanceOperations.uuid = auditLogs.entity_uuid
   LEFT JOIN maintenance_parts AS maintenanceParts
     ON auditLogs.entity = 'MAINTENANCE_PART' AND maintenanceParts.uuid = auditLogs.entity_uuid
+  LEFT JOIN companies AS companies
+    ON auditLogs.entity = 'COMPANY' AND companies.uuid = auditLogs.entity_uuid
   LEFT JOIN users AS auditUsers
     ON auditLogs.entity = 'USER' AND auditUsers.uuid = auditLogs.entity_uuid
   LEFT JOIN roles AS roles
     ON auditLogs.entity = 'ROLE' AND roles.uuid = auditLogs.entity_uuid
   LEFT JOIN permissions AS permissions
     ON auditLogs.entity = 'PERMISSION' AND permissions.uuid = auditLogs.entity_uuid
-  WHERE auditLogs.uuid IN (:auditUuids)
+  WHERE auditLogs.uuid IN (${auditUuidPlaceholders})
 `;
 
 const dateOnlyWhere = ({ from, through }) => ({
@@ -180,8 +184,14 @@ export default class HistoryRepository {
     if (!result.rows.length) return result;
 
     const auditUuids = result.rows.map((item) => item.uuid);
-    const [subjects] = await sequelize.query(auditSubjectJoinQuery, {
-      replacements: { auditUuids },
+    const auditUuidBinds = Object.fromEntries(
+      auditUuids.map((value, index) => [`auditUuid${index}`, value]),
+    );
+    const auditUuidPlaceholders = Object.keys(auditUuidBinds)
+      .map((key) => `$${key}`)
+      .join(', ');
+    const [subjects] = await sequelize.query(auditSubjectJoinQuery(auditUuidPlaceholders), {
+      bind: auditUuidBinds,
     });
     const subjectByAuditUuid = new Map(
       subjects.map(({ auditUuid, subjectLabel }) => [auditUuid, subjectLabel]),

@@ -10,6 +10,8 @@ export default function AuthenticatedImage({
   className,
   loadImage = getMaterialFileContent,
   cacheKey = fileUuid,
+  fallbackSrc,
+  fallbackAlt = 'Image de remplacement',
 }) {
   const [url, setUrl] = useState('');
   const [error, setError] = useState(false);
@@ -34,6 +36,9 @@ export default function AuthenticatedImage({
     };
   }, [cacheKey, fileUuid, loadImage]);
 
+  if (error && fallbackSrc) {
+    return <img className={className} src={fallbackSrc} alt={fallbackAlt} />;
+  }
   if (error)
     return <div className={className} role="img" aria-label={`Image indisponible : ${alt}`} />;
   if (!url) return <Loader className={className} label="Chargement de l’image" size="sm" />;

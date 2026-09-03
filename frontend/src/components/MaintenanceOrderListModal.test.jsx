@@ -597,7 +597,7 @@ describe('MaintenanceOrderListModal', () => {
     ).not.toBeNull();
     expect(within(dialog).getByRole('table').closest('.table-shell')).not.toBeNull();
     const printHeader = document.querySelector('.maintenance-order-print-header');
-    expect(printHeader).toHaveTextContent('GreenDesk');
+    expect(printHeader).not.toHaveTextContent('GreenDesk');
     expect(printHeader).toHaveTextContent('Société actuellement consultée');
     expect(printHeader).not.toHaveTextContent('Échéance');
     const printPage = document.querySelector('.maintenance-order-print-page');

@@ -7,15 +7,15 @@ const currentName = 'maintenance.execute.skip_parts';
 module.exports = {
   async up(queryInterface) {
     await queryInterface.sequelize.query(
-      'UPDATE permissions SET name = :currentName, updated_at = :timestamp WHERE name = :previousName',
-      { replacements: { previousName, currentName, timestamp: new Date() } },
+      'UPDATE permissions SET name = $currentName, updated_at = $timestamp WHERE name = $previousName',
+      { bind: { previousName, currentName, timestamp: new Date() } },
     );
   },
 
   async down(queryInterface) {
     await queryInterface.sequelize.query(
-      'UPDATE permissions SET name = :previousName, updated_at = :timestamp WHERE name = :currentName',
-      { replacements: { previousName, currentName, timestamp: new Date() } },
+      'UPDATE permissions SET name = $previousName, updated_at = $timestamp WHERE name = $currentName',
+      { bind: { previousName, currentName, timestamp: new Date() } },
     );
   },
 };

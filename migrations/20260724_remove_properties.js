@@ -7,6 +7,12 @@ const permissionNames = [
   'properties.delete',
   'properties.disable',
 ];
+const permissionNameBinds = Object.fromEntries(
+  permissionNames.map((value, index) => [`permissionName${index}`, value]),
+);
+const permissionNamePlaceholders = Object.keys(permissionNameBinds)
+  .map((key) => `$${key}`)
+  .join(', ');
 
 const tableName = (table) => (typeof table === 'string' ? table : table.tableName);
 
@@ -30,9 +36,9 @@ module.exports = {
 
     if (tables.includes('permissions')) {
       const permissions = await queryInterface.sequelize.query(
-        'SELECT id FROM permissions WHERE name IN (:names)',
+        `SELECT id FROM permissions WHERE name IN (${permissionNamePlaceholders})`,
         {
-          replacements: { names: permissionNames },
+          bind: permissionNameBinds,
           type: Sequelize.QueryTypes.SELECT,
         },
       );

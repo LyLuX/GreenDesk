@@ -74,4 +74,11 @@ describe('consolidated history routes', () => {
       .set('Authorization', `Bearer ${tokenFor(['history.maintenance.read'])}`)
       .expect(200);
   });
+
+  it('accepts companies as an administration history type', async () => {
+    await request(app)
+      .get('/api/v1/history/administration?type=company')
+      .set('Authorization', `Bearer ${tokenFor(['history.administration.read'])}`)
+      .expect(200);
+  });
 });

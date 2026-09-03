@@ -9,7 +9,7 @@ describe('partial maintenance permission description migration', () => {
     await migration.up({ sequelize: { query } });
 
     expect(query).toHaveBeenCalledWith(expect.stringContaining('UPDATE permissions'), {
-      replacements: expect.objectContaining({
+      bind: expect.objectContaining({
         name: 'maintenance.execute.skip_parts',
         description: expect.stringContaining('tout ou partie'),
       }),
@@ -21,7 +21,7 @@ describe('partial maintenance permission description migration', () => {
 
     await migration.down({ sequelize: { query } });
 
-    expect(query.mock.calls[0][1].replacements.description).toBe(
+    expect(query.mock.calls[0][1].bind.description).toBe(
       'Enregistrer exceptionnellement un entretien sans remplacer les pièces prévues.',
     );
   });

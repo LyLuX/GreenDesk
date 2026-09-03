@@ -34,6 +34,23 @@ describe('AuthenticatedImage', () => {
     );
   });
 
+  it('shows the provided image fallback when the protected image request fails', async () => {
+    getMaterialFileContent.mockRejectedValue(new Error('offline'));
+    render(
+      <AuthenticatedImage
+        fileUuid="company-uuid"
+        alt="Logo société"
+        fallbackSrc="/logo-greendesk.jpg"
+        fallbackAlt="Logo GreenDesk"
+      />,
+    );
+
+    expect(await screen.findByRole('img', { name: 'Logo GreenDesk' })).toHaveAttribute(
+      'src',
+      '/logo-greendesk.jpg',
+    );
+  });
+
   it('deduplicates identical authenticated image requests', async () => {
     getMaterialFileContent.mockResolvedValue({ data: new Blob(['image']) });
 

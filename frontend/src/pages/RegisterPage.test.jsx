@@ -27,6 +27,13 @@ describe('RegisterPage', () => {
     cleanup();
   });
 
+  it('keeps the functional heading without repeating the product name', () => {
+    renderPage();
+
+    expect(screen.getByRole('heading', { name: 'Créer un compte' })).toBeVisible();
+    expect(screen.queryByText('GreenDesk')).not.toBeInTheDocument();
+  });
+
   it('submits the expected registration payload', async () => {
     const user = userEvent.setup();
     client.post.mockResolvedValue({

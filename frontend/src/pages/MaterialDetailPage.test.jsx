@@ -102,6 +102,9 @@ describe('MaterialDetailPage', () => {
 
     const input = await screen.findByLabelText('Ajouter des photos');
     const submit = screen.getByRole('button', { name: 'Envoyer les photos' });
+    expect(input).toHaveAccessibleDescription(
+      'Images JPEG, PNG ou WebP — 10 Mo maximum par photo.',
+    );
     expect(submit).toBeDisabled();
 
     await user.upload(input, new File(['photo'], 'photo.jpg', { type: 'image/jpeg' }));
@@ -122,6 +125,7 @@ describe('MaterialDetailPage', () => {
 
     const documentInput = screen.getByLabelText('Ajouter un document');
     const documentSubmit = screen.getByRole('button', { name: 'Envoyer le document' });
+    expect(documentInput).toHaveAccessibleDescription('Document PDF — 10 Mo maximum.');
     const documentType = screen.getByRole('combobox', { name: 'Type de document' });
     expect(documentSubmit).toBeDisabled();
     expect(within(documentType).getByRole('option', { name: 'Vue éclatée' })).toHaveValue(

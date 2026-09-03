@@ -12,6 +12,7 @@ const PRIVATE_FIELDS = new Set([
   'createdAt',
   'updatedAt',
   'deletedAt',
+  'logoFileName',
 ]);
 
 const plain = (item) => (typeof item?.toJSON === 'function' ? item.toJSON() : item);
@@ -37,6 +38,7 @@ const auditSubjectFallbacks = Object.freeze({
   MAINTENANCE_SHEET_PRINT: 'Fiches de maintenance',
   MAINTENANCE_OPERATION: 'Opération supprimée',
   MAINTENANCE_PART: 'Pièce supprimée',
+  COMPANY: 'Société supprimée',
   USER: 'Utilisateur supprimé',
   ROLE: 'Rôle supprimé',
   PERMISSION: 'Permission supprimée',
@@ -63,6 +65,7 @@ const auditTypes = Object.freeze({
   MAINTENANCE_SHEET_PRINT: 'maintenance_sheet_print',
   MAINTENANCE_OPERATION: 'maintenance_operation',
   MAINTENANCE_PART: 'maintenance_part',
+  COMPANY: 'company',
   USER: 'user',
   ROLE: 'role',
   PERMISSION: 'permission',

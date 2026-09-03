@@ -2,8 +2,15 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('./AuthenticatedImage.jsx', () => ({
-  default: ({ alt, cacheKey, className, fileUuid }) => (
-    <img alt={alt} className={className} data-cache-key={cacheKey} data-file-uuid={fileUuid} />
+  default: ({ alt, cacheKey, className, fallbackAlt, fallbackSrc, fileUuid }) => (
+    <img
+      alt={alt}
+      className={className}
+      data-cache-key={cacheKey}
+      data-fallback-alt={fallbackAlt}
+      data-fallback-src={fallbackSrc}
+      data-file-uuid={fileUuid}
+    />
   ),
 }));
 
@@ -30,20 +37,23 @@ describe('CompanyLogo', () => {
       'data-cache-key',
       'company-uuid:2026-09-02T21:00:00.000Z',
     );
+    expect(screen.getByRole('img', { name: 'Logo Jardin Alpha' })).toHaveAttribute(
+      'data-fallback-src',
+      '/logo-greendesk.jpg',
+    );
   });
 
-  it('uses the GreenDesk fallback in branded headers when no logo exists', () => {
+  it('uses the GreenDesk fallback by default when no company logo exists', () => {
     render(
       <CompanyLogo
         company={{ uuid: 'company-uuid', name: 'Jardin Alpha', hasLogo: false }}
         className="brand-logo"
-        fallbackSrc="/brand-logo.jpg"
       />,
     );
 
     expect(screen.getByRole('img', { name: 'Logo GreenDesk' })).toHaveAttribute(
       'src',
-      '/brand-logo.jpg',
+      '/logo-greendesk.jpg',
     );
   });
 });

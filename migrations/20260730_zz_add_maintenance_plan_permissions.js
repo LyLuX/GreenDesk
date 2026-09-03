@@ -26,6 +26,12 @@ const maintenancePlanPermissions = [
 ];
 
 const permissionNames = maintenancePlanPermissions.map(({ name }) => name);
+const permissionNameBinds = Object.fromEntries(
+  permissionNames.map((value, index) => [`permissionName${index}`, value]),
+);
+const permissionNamePlaceholders = Object.keys(permissionNameBinds)
+  .map((key) => `$${key}`)
+  .join(', ');
 
 /**
  * Adds maintenance-plan permissions to databases that were created without
@@ -35,13 +41,13 @@ module.exports = {
   async up(queryInterface) {
     const timestamp = new Date();
     await queryInterface.sequelize.query(
-      'UPDATE permissions SET deleted_at = NULL, updated_at = :timestamp WHERE name IN (:names) AND deleted_at IS NOT NULL',
-      { replacements: { names: permissionNames, timestamp } },
+      `UPDATE permissions SET deleted_at = NULL, updated_at = $timestamp WHERE name IN (${permissionNamePlaceholders}) AND deleted_at IS NOT NULL`,
+      { bind: { ...permissionNameBinds, timestamp } },
     );
 
     const [rows] = await queryInterface.sequelize.query(
-      'SELECT name FROM permissions WHERE name IN (:names) AND deleted_at IS NULL',
-      { replacements: { names: permissionNames } },
+      `SELECT name FROM permissions WHERE name IN (${permissionNamePlaceholders}) AND deleted_at IS NULL`,
+      { bind: permissionNameBinds },
     );
     const existingNames = new Set(rows.map(({ name }) => name));
     const missingPermissions = maintenancePlanPermissions
@@ -63,8 +69,8 @@ module.exports = {
       `DELETE grants
        FROM role_permissions AS grants
        INNER JOIN permissions AS permissions ON permissions.id = grants.permission_id
-       WHERE permissions.name IN (:names)`,
-      { replacements: { names: permissionNames } },
+       WHERE permissions.name IN (${permissionNamePlaceholders})`,
+      { bind: permissionNameBinds },
     );
     await queryInterface.bulkDelete('permissions', { name: permissionNames });
   },

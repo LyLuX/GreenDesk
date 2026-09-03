@@ -26,12 +26,12 @@ module.exports = {
 
     const timestamp = new Date();
     await queryInterface.sequelize.query(
-      'UPDATE permissions SET deleted_at = NULL, updated_at = :timestamp WHERE name = :name AND deleted_at IS NOT NULL',
-      { replacements: { name: permission.name, timestamp } },
+      'UPDATE permissions SET deleted_at = NULL, updated_at = $timestamp WHERE name = $name AND deleted_at IS NOT NULL',
+      { bind: { name: permission.name, timestamp } },
     );
     const [rows] = await queryInterface.sequelize.query(
-      'SELECT name FROM permissions WHERE name = :name AND deleted_at IS NULL',
-      { replacements: { name: permission.name } },
+      'SELECT name FROM permissions WHERE name = $name AND deleted_at IS NULL',
+      { bind: { name: permission.name } },
     );
     if (!rows.length) {
       await queryInterface.bulkInsert('permissions', [
@@ -45,17 +45,17 @@ module.exports = {
     }
     await queryInterface.sequelize.query(
       `INSERT IGNORE INTO role_permissions (created_at, updated_at, role_id, permission_id)
-       SELECT :timestamp, :timestamp, grants.role_id, targetPermission.id
+       SELECT $timestamp, $timestamp, grants.role_id, targetPermission.id
        FROM role_permissions AS grants
        INNER JOIN permissions AS sourcePermission
          ON sourcePermission.id = grants.permission_id
        INNER JOIN permissions AS targetPermission
-         ON targetPermission.name = :targetName
-       WHERE sourcePermission.name = :sourceName
+         ON targetPermission.name = $targetName
+       WHERE sourcePermission.name = $sourceName
          AND sourcePermission.deleted_at IS NULL
          AND targetPermission.deleted_at IS NULL`,
       {
-        replacements: {
+        bind: {
           sourceName: sourcePermission,
           targetName: permission.name,
           timestamp,
@@ -68,9 +68,9 @@ module.exports = {
        INNER JOIN role_permissions AS grants ON grants.role_id = userRoles.role_id
        INNER JOIN permissions AS sourcePermission ON sourcePermission.id = grants.permission_id
        SET users.authorization_version = users.authorization_version + 1
-       WHERE sourcePermission.name = :sourceName
+       WHERE sourcePermission.name = $sourceName
          AND sourcePermission.deleted_at IS NULL`,
-      { replacements: { sourceName: sourcePermission } },
+      { bind: { sourceName: sourcePermission } },
     );
   },
 
@@ -81,15 +81,15 @@ module.exports = {
        INNER JOIN role_permissions AS grants ON grants.role_id = userRoles.role_id
        INNER JOIN permissions AS permissions ON permissions.id = grants.permission_id
        SET users.authorization_version = users.authorization_version + 1
-       WHERE permissions.name = :name`,
-      { replacements: { name: permission.name } },
+       WHERE permissions.name = $name`,
+      { bind: { name: permission.name } },
     );
     await queryInterface.sequelize.query(
       `DELETE grants
        FROM role_permissions AS grants
        INNER JOIN permissions AS permissions ON permissions.id = grants.permission_id
-       WHERE permissions.name = :name`,
-      { replacements: { name: permission.name } },
+       WHERE permissions.name = $name`,
+      { bind: { name: permission.name } },
     );
     await queryInterface.bulkDelete('permissions', { name: permission.name });
     await queryInterface.removeConstraint('maintenance_parts', constraintName);
