@@ -18,6 +18,7 @@ import MaintenanceTaskPart from '../../modules/maintenance/model/maintenance-tas
 import EmailVerificationToken from '../../modules/auth/model/email-verification-token.model.js';
 import StockMovement from '../inventory/stock-movement.model.js';
 import Company from '../../modules/companies/model/company.model.js';
+import IdempotencyKey from '../idempotency/idempotency-key.model.js';
 
 let initialized = false;
 
@@ -212,6 +213,7 @@ export function initializeModels() {
     as: 'changedByUser',
   });
   StockMovement.belongsTo(User, { foreignKey: 'performedBy', as: 'performedByUser' });
+  IdempotencyKey.belongsTo(User, { foreignKey: 'userId', as: 'user', onDelete: 'CASCADE' });
 
   for (const [model, alias] of [
     [Category, 'categories'],
@@ -228,6 +230,7 @@ export function initializeModels() {
     [MaintenancePartUsage, 'maintenancePartUsages'],
     [MaintenancePartPriceHistory, 'maintenancePartPriceHistory'],
     [StockMovement, 'stockMovements'],
+    [IdempotencyKey, 'idempotencyKeys'],
     [AuditLog, 'auditLogs'],
   ]) {
     Company.hasMany(model, { foreignKey: 'companyId', as: alias });

@@ -166,7 +166,7 @@ describe('UserService', () => {
     });
   });
 
-  it('keeps the acting administrator session when changing their own roles', async () => {
+  it('invalidates the acting administrator session when changing their own roles', async () => {
     const { service, userRepository } = createService();
 
     await service.update(
@@ -176,7 +176,9 @@ describe('UserService', () => {
     );
 
     expect(userRepository.setRoles).toHaveBeenCalled();
-    expect(userRepository.incrementAuthorizationVersion).not.toHaveBeenCalled();
+    expect(userRepository.incrementAuthorizationVersion).toHaveBeenCalledWith(user.id, {
+      transaction,
+    });
   });
 
   it('allows an email normalization when the lookup returns the user being edited', async () => {

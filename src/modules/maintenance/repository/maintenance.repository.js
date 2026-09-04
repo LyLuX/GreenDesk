@@ -270,15 +270,20 @@ export default class MaintenanceRepository extends TransactionalRepository {
       order: [['next_maintenance_date', 'ASC']],
     });
   }
-  async findForMaintenanceSheets({ status } = {}) {
-    const statusFilter = getStatusFilter(status);
+  async findForMaintenanceSheets({ statuses = [] } = {}) {
+    const statusFilters = statuses.map((status) => getStatusFilter(status)).filter(Boolean);
     return MaintenanceTask.findAll({
       where: companyWhere({
         active: true,
-        ...(statusFilter ? { [Op.and]: [statusFilter] } : {}),
+        ...(statusFilters.length ? { [Op.and]: [{ [Op.or]: statusFilters }] } : {}),
       }),
       include: [materialInclude, operationInclude, partsInclude],
-      order: [['next_maintenance_date', 'ASC']],
+      order: [
+        ['priority', 'DESC'],
+        ['next_maintenance_date', 'ASC'],
+        ['title', 'ASC'],
+        ['id', 'ASC'],
+      ],
     });
   }
   async findHistory(taskId, query = {}) {

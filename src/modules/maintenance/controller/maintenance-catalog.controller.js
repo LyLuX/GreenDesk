@@ -1,11 +1,16 @@
 import HTTP_STATUS from '../../../core/constants/http-status.js';
+import IdempotencyService from '../../../core/idempotency/idempotency.service.js';
 import { successResponse } from '../../../core/responses/api-response.js';
 import MaintenanceCatalogService from '../service/maintenance-catalog.service.js';
 
 /** HTTP adapter for reusable maintenance operations and exact parts. */
 export default class MaintenanceCatalogController {
-  constructor(service = new MaintenanceCatalogService()) {
+  constructor(
+    service = new MaintenanceCatalogService(),
+    idempotencyService = new IdempotencyService(),
+  ) {
     this.service = service;
+    this.idempotencyService = idempotencyService;
   }
 
   async operations(request, response) {
@@ -50,11 +55,24 @@ export default class MaintenanceCatalogController {
   }
 
   async updatePartStock(request, response) {
-    response.json(
-      successResponse(
-        await this.service.updatePartStock(request.params.uuid, request.body, request.user.userId),
-      ),
+    const result = await this.idempotencyService.execute(
+      {
+        key: request.idempotencyKey,
+        userId: request.user.userId,
+        operation: 'maintenance.part.stock.update',
+        request: { resourceUuid: request.params.uuid, body: request.body },
+        statusCode: HTTP_STATUS.OK,
+      },
+      async () =>
+        successResponse(
+          await this.service.updatePartStock(
+            request.params.uuid,
+            request.body,
+            request.user.userId,
+          ),
+        ),
     );
+    response.status(result.statusCode).json(result.body);
   }
 
   async updatePartPrice(request, response) {

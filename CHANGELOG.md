@@ -2,6 +2,15 @@
 
 ## Non publié
 
+## 8.0.0 - 2026-09-04
+
+- [PATCH] Les changements de rôles, de permissions et d’accès aux sociétés invalident immédiatement toutes les sessions concernées, y compris celle de l’administrateur à l’origine de l’opération.
+- [MAJOR] Les exécutions de maintenance, interventions ponctuelles et mouvements de stock exigent désormais une clé d’idempotence afin qu’une nouvelle tentative ne duplique jamais leurs effets.
+- [PATCH] La cartographie des relations organise Maintenance en branches Plans, Opérations et Pièces et affiche désormais un niveau de détail unique.
+- [PATCH] La cartographie des relations regroupe les matériels sous une carte dédiée et les présente au bout de leurs branches Catégorie et Fabricant.
+- [PATCH] Les fiches de maintenance sont triées de la priorité la plus élevée à la plus faible, avec un ordre secondaire stable.
+- [PATCH] Les états critiques partagent une couleur de thème centralisée, également utilisée par le bouton de déconnexion.
+
 ## 7.37.0 - 2026-09-03
 
 - [MINOR] Les tailles maximales des images et documents envoyés sont configurables par environnement, affichées dans chaque formulaire et contrôlées avant l’envoi.

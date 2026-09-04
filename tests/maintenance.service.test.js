@@ -299,10 +299,7 @@ describe('MaintenanceService', () => {
       nextMaintenanceDate: null,
     };
     const repository = {
-      findForMaintenanceSheets: jest
-        .fn()
-        .mockResolvedValueOnce([calendarTask])
-        .mockResolvedValueOnce([wearTask]),
+      findForMaintenanceSheets: jest.fn().mockResolvedValue([calendarTask, wearTask]),
     };
     const service = new MaintenanceService(repository, {}, {}, {});
 
@@ -312,11 +309,9 @@ describe('MaintenanceService', () => {
       includeWearBased: 'true',
     });
 
-    expect(repository.findForMaintenanceSheets).toHaveBeenNthCalledWith(1, {
-      status: 'upcoming',
-    });
-    expect(repository.findForMaintenanceSheets).toHaveBeenNthCalledWith(2, {
-      status: 'wearBased',
+    expect(repository.findForMaintenanceSheets).toHaveBeenCalledTimes(1);
+    expect(repository.findForMaintenanceSheets).toHaveBeenCalledWith({
+      statuses: ['upcoming', 'wearBased'],
     });
     expect(result).toEqual(
       expect.objectContaining({

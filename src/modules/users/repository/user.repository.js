@@ -188,11 +188,9 @@ export default class UserRepository extends TransactionalRepository {
   async incrementAuthorizationVersion(id, { transaction } = {}) {
     return User.increment('authorizationVersion', { where: { id }, transaction });
   }
-  async incrementAuthorizationVersionsForRole(roleId, { excludeUserId = null, transaction } = {}) {
-    const where = excludeUserId === null ? {} : { id: { [Op.ne]: excludeUserId } };
+  async incrementAuthorizationVersionsForRole(roleId, { transaction } = {}) {
     const users = await User.findAll({
       attributes: ['id'],
-      where,
       include: [
         {
           model: Role,
@@ -206,6 +204,38 @@ export default class UserRepository extends TransactionalRepository {
       transaction,
     });
     const userIds = users.map(({ id }) => id);
+    if (!userIds.length) return 0;
+    await User.increment('authorizationVersion', {
+      where: { id: { [Op.in]: userIds } },
+      transaction,
+    });
+    return userIds.length;
+  }
+  async incrementAuthorizationVersionsForPermission(permissionId, { transaction } = {}) {
+    const users = await User.findAll({
+      attributes: ['id'],
+      include: [
+        {
+          model: Role,
+          as: 'roles',
+          attributes: [],
+          through: { attributes: [] },
+          required: true,
+          include: [
+            {
+              model: Permission,
+              as: 'permissions',
+              attributes: [],
+              where: { id: permissionId },
+              through: { attributes: [] },
+              required: true,
+            },
+          ],
+        },
+      ],
+      transaction,
+    });
+    const userIds = [...new Set(users.map(({ id }) => id))];
     if (!userIds.length) return 0;
     await User.increment('authorizationVersion', {
       where: { id: { [Op.in]: userIds } },

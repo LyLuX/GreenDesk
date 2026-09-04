@@ -84,17 +84,24 @@ describe('MaintenanceRepository order list', () => {
     expect(paginatedSelect).not.toContain('MaintenanceTask.next_maintenance_date IS NULL');
   });
 
-  it('loads all active plans or the exact status for maintenance sheets', async () => {
+  it('loads requested sheet statuses and sorts priorities from highest to lowest', async () => {
     const findAll = jest.spyOn(MaintenanceTask, 'findAll').mockResolvedValue([]);
     const repository = new MaintenanceRepository();
 
     await repository.findForMaintenanceSheets();
     expect(findAll.mock.calls[0][0].where.active).toBe(true);
     expect(findAll.mock.calls[0][0].where[Op.and]).toBeUndefined();
+    expect(findAll.mock.calls[0][0].order).toEqual([
+      ['priority', 'DESC'],
+      ['next_maintenance_date', 'ASC'],
+      ['title', 'ASC'],
+      ['id', 'ASC'],
+    ]);
 
-    await repository.findForMaintenanceSheets({ status: 'dueToday' });
-    expect(findAll.mock.calls[1][0].where[Op.and][0].val).toContain(
-      'MaintenanceTask.next_maintenance_date',
-    );
+    await repository.findForMaintenanceSheets({ statuses: ['dueToday', 'wearBased'] });
+    const statusFilters = findAll.mock.calls[1][0].where[Op.and][0][Op.or];
+    expect(statusFilters).toHaveLength(2);
+    expect(statusFilters[0].val).toContain('MaintenanceTask.next_maintenance_date');
+    expect(statusFilters[1].val).toContain('MaintenanceTask.interval_days = 0');
   });
 });

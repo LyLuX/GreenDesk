@@ -45,6 +45,12 @@ const resolveLocalReference = (reference) =>
     .slice(2)
     .split('/')
     .reduce((value, key) => value?.[key], swaggerSpec);
+const operationParameters = (path, method) => {
+  const pathItem = swaggerSpec.paths[path];
+  return [...(pathItem.parameters ?? []), ...(pathItem[method].parameters ?? [])].map(
+    (parameter) => (parameter.$ref ? resolveLocalReference(parameter.$ref) : parameter),
+  );
+};
 
 describe('OpenAPI contract', () => {
   it('is a valid OpenAPI 3 document', async () => {
@@ -278,6 +284,9 @@ describe('OpenAPI contract', () => {
     expect(swaggerSpec.paths['/maintenance/sheets'].get.description).toContain(
       'tous les plans actifs',
     );
+    expect(swaggerSpec.paths['/maintenance/sheets'].get.description).toContain(
+      'priorité décroissante',
+    );
     expect(
       swaggerSpec.components.schemas.MaintenanceSheetList.properties.items.items.allOf,
     ).toHaveLength(2);
@@ -342,6 +351,13 @@ describe('OpenAPI contract', () => {
 
     expect(operation.description).toContain('`relations.read`');
     expect(operation.description).toContain('permissions de consultation');
+    expect(operation.description).toContain(
+      'les groupes Matériels, Catégories, Fabricants et Fournisseurs',
+    );
+    expect(operation.description).toContain('branches Catégorie et Fabricant');
+    expect(operation.description).toContain(
+      'les groupes Plans de maintenance, Opérations et Pièces',
+    );
     expect(mode.schema).toEqual({
       type: 'string',
       enum: ['simplified', 'complete'],
@@ -489,6 +505,27 @@ describe('OpenAPI contract', () => {
     expect(stockStatus.schema.enum).toEqual(['inStock', 'toOrder', 'ordered']);
   });
 
+  it('requires Idempotency-Key on every critical maintenance write', () => {
+    for (const [path, method] of [
+      ['/maintenance/{uuid}/execute', 'post'],
+      ['/maintenance/interventions', 'post'],
+      ['/maintenance/parts/{uuid}/stock', 'patch'],
+    ]) {
+      const parameter = operationParameters(path, method).find(
+        ({ name }) => name === 'Idempotency-Key',
+      );
+      expect(parameter).toEqual(
+        expect.objectContaining({
+          in: 'header',
+          required: true,
+          schema: expect.objectContaining({ minLength: 1, maxLength: 128 }),
+        }),
+      );
+      expect(swaggerSpec.paths[path][method].responses).toHaveProperty('400');
+      expect(swaggerSpec.paths[path][method].responses).toHaveProperty('409');
+    }
+  });
+
   it('documents maintenance execution without replacing parts', () => {
     const executeRequest = swaggerSpec.components.schemas.MaintenanceExecuteRequest;
     const history = swaggerSpec.components.schemas.MaintenanceHistory;
@@ -550,13 +587,22 @@ describe('OpenAPI contract', () => {
 
   it('documents session invalidation after authorization changes', () => {
     expect(swaggerSpec.paths['/users/{uuid}'].put.description).toContain(
-      'invalide les sessions actives',
+      'invalide immédiatement toutes les sessions',
     );
     expect(swaggerSpec.paths['/roles/{uuid}'].put.description).toContain(
-      'exception de la session de l’administrateur',
+      'y compris celle de l’administrateur',
     );
     expect(swaggerSpec.paths['/roles/{uuid}'].delete.description).toContain(
-      'invalide les sessions actives',
+      'invalide immédiatement toutes les sessions',
+    );
+    expect(swaggerSpec.paths['/permissions/{uuid}'].put.description).toContain(
+      'renommage invalide immédiatement',
+    );
+    expect(swaggerSpec.paths['/permissions/{uuid}'].delete.description).toContain(
+      'suppression invalide immédiatement',
+    );
+    expect(swaggerSpec.paths['/companies/{uuid}'].put.description).toContain(
+      'y compris celle de l’administrateur',
     );
   });
 

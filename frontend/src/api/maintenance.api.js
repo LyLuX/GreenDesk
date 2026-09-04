@@ -1,4 +1,5 @@
 import client from './client.js';
+import { idempotencyRequestConfig } from './idempotency.js';
 import compactQueryParams from './query-params.js';
 
 export const listMaintenance = (params, signal) =>
@@ -8,8 +9,8 @@ export const updateMaintenance = (uuid, payload) => client.put(`/v1/maintenance/
 export const setMaintenanceStatus = (uuid, active) =>
   client.patch(`/v1/maintenance/${uuid}/status`, { active });
 export const deleteMaintenance = (uuid) => client.delete(`/v1/maintenance/${uuid}`);
-export const executeMaintenance = (uuid, payload) =>
-  client.post(`/v1/maintenance/${uuid}/execute`, payload);
+export const executeMaintenance = (uuid, payload, idempotencyKey) =>
+  client.post(`/v1/maintenance/${uuid}/execute`, payload, idempotencyRequestConfig(idempotencyKey));
 export const maintenanceHistory = (uuid, params, signal) =>
   client.get(`/v1/maintenance/${uuid}/history`, {
     params: compactQueryParams(params),
@@ -20,8 +21,8 @@ export const listMaintenanceInterventions = (params, signal) =>
     params: compactQueryParams(params),
     signal,
   });
-export const createMaintenanceIntervention = (payload) =>
-  client.post('/v1/maintenance/interventions', payload);
+export const createMaintenanceIntervention = (payload, idempotencyKey) =>
+  client.post('/v1/maintenance/interventions', payload, idempotencyRequestConfig(idempotencyKey));
 export const listMaintenanceOperations = (params, signal) =>
   client.get('/v1/maintenance/operations', { params: compactQueryParams(params), signal });
 export const createMaintenanceOperation = (payload) =>
@@ -35,8 +36,12 @@ export const listMaintenanceParts = (params, signal) =>
 export const createMaintenancePart = (payload) => client.post('/v1/maintenance/parts', payload);
 export const updateMaintenancePart = (uuid, payload) =>
   client.put(`/v1/maintenance/parts/${uuid}`, payload);
-export const updateMaintenancePartStock = (uuid, payload) =>
-  client.patch(`/v1/maintenance/parts/${uuid}/stock`, payload);
+export const updateMaintenancePartStock = (uuid, payload, idempotencyKey) =>
+  client.patch(
+    `/v1/maintenance/parts/${uuid}/stock`,
+    payload,
+    idempotencyRequestConfig(idempotencyKey),
+  );
 export const updateMaintenancePartPrice = (uuid, payload) =>
   client.patch(`/v1/maintenance/parts/${uuid}/price`, payload);
 export const updateMaintenancePartMinimumStock = (uuid, payload) =>

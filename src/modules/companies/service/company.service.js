@@ -87,7 +87,6 @@ export default class CompanyService {
       await this.repository.update(companyToUpdate, values, { transaction });
       if (Object.hasOwn(values, 'active') && Boolean(values.active) !== Boolean(oldValues.active)) {
         await this.repository.invalidateUserSessions(companyToUpdate.id, {
-          excludeUserId: userId,
           transaction,
         });
       }

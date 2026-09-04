@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import getApiErrorMessage from '../api/get-api-error-message.js';
+import { resolveIdempotencyAttempt } from '../api/idempotency.js';
 import { getMaintenanceOrderList, updateMaintenancePartStock } from '../api/maintenance.api.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
@@ -274,6 +275,7 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
   const [lowStockPageNumber, setLowStockPageNumber] = useState(1);
   const [lowStockLimit, setLowStockLimit] = useState(5);
   const latestRequestId = useRef(0);
+  const orderAttemptRef = useRef(null);
 
   const load = useCallback(
     async (signal) => {
@@ -338,6 +340,11 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
       return;
     }
     setError('');
+    orderAttemptRef.current = resolveIdempotencyAttempt(orderAttemptRef.current, {
+      operation: 'maintenance.part.stock.update',
+      resourceUuid: part.uuid,
+      body: { operation: STOCK_OPERATIONS.ORDER, quantity },
+    });
     setConfirmation({ part, quantity });
   };
 
@@ -346,10 +353,15 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
     setActionLoadingId(confirmation.part.uuid);
     setError('');
     try {
-      await updateMaintenancePartStock(confirmation.part.uuid, {
-        operation: STOCK_OPERATIONS.ORDER,
-        quantity: confirmation.quantity,
-      });
+      await updateMaintenancePartStock(
+        confirmation.part.uuid,
+        {
+          operation: STOCK_OPERATIONS.ORDER,
+          quantity: confirmation.quantity,
+        },
+        orderAttemptRef.current.key,
+      );
+      orderAttemptRef.current = null;
       notify(
         'success',
         `${confirmation.part.name} marquée commandée (${confirmation.quantity} ${confirmation.part.unit}).`,

@@ -8,10 +8,17 @@ const recordId = (type, record) => `${type}:${record.uuid ?? record.id}`;
 const byDatabaseId = (records = []) =>
   new Map(records.map((record) => [String(record.id), record]));
 const fleetDirectoryGroups = Object.freeze([
+  { id: 'materials', recordType: 'material', label: 'Matériels' },
   { id: 'categories', recordType: 'category', label: 'Catégories' },
   { id: 'manufacturers', recordType: 'manufacturer', label: 'Fabricants' },
   { id: 'suppliers', recordType: 'supplier', label: 'Fournisseurs' },
 ]);
+const maintenanceGroups = Object.freeze([
+  { id: 'plans', recordType: 'plan', label: 'Plans de maintenance' },
+  { id: 'operations', recordType: 'operation', label: 'Opérations' },
+  { id: 'parts', recordType: 'part', label: 'Pièces' },
+]);
+const recordGroups = Object.freeze([...fleetDirectoryGroups, ...maintenanceGroups]);
 
 /** Builds the fleet and maintenance graph from records belonging to the selected company. */
 export default class RecordRelationsService {
@@ -151,6 +158,16 @@ export default class RecordRelationsService {
         count: records[group.id].length,
       });
     }
+    for (const group of maintenanceGroups) {
+      if (!Object.hasOwn(records, group.id)) continue;
+      domains.add('maintenance');
+      addNode({
+        id: group.id,
+        label: group.label,
+        kind: 'domain',
+        count: records[group.id].length,
+      });
+    }
 
     const domainDefinitions = {
       fleet: ['Gestion du parc', 'Matériels et référentiels'],
@@ -164,15 +181,13 @@ export default class RecordRelationsService {
     for (const group of fleetDirectoryGroups) {
       if (nodeIds.has(group.id)) addEdge('fleet', group.id, 'group', { hierarchy: true });
     }
+    for (const group of maintenanceGroups) {
+      if (nodeIds.has(group.id)) addEdge('maintenance', group.id, 'group', { hierarchy: true });
+    }
     for (const item of nodes.filter(({ recordType }) => recordType)) {
-      const directoryGroup = fleetDirectoryGroups.find(
-        ({ recordType }) => recordType === item.recordType,
-      );
-      const parent = directoryGroup
-        ? directoryGroup.id
-        : ['operation', 'plan', 'part'].includes(item.recordType)
-          ? 'maintenance'
-          : 'fleet';
+      if (item.recordType === 'materialFile') continue;
+      const recordGroup = recordGroups.find(({ recordType }) => recordType === item.recordType);
+      const parent = recordGroup?.id ?? 'fleet';
       addEdge(parent, item.id, 'group', { hierarchy: true });
     }
 
@@ -189,11 +204,13 @@ export default class RecordRelationsService {
       const manufacturer = manufacturers.get(String(material.manufacturerId));
       if (category) {
         addEdge(recordId('category', category), recordId('material', material), 'direct', {
+          hierarchy: true,
           layout: true,
         });
       }
       if (manufacturer) {
         addEdge(recordId('manufacturer', manufacturer), recordId('material', material), 'direct', {
+          hierarchy: true,
           layout: true,
         });
       }
@@ -222,6 +239,7 @@ export default class RecordRelationsService {
       }
       if (operation) {
         addEdge(recordId('operation', operation), recordId('plan', plan), 'direct', {
+          hierarchy: true,
           layout: true,
         });
       }
@@ -231,6 +249,7 @@ export default class RecordRelationsService {
       const part = parts.get(String(taskPart.maintenancePartId));
       if (plan && part) {
         addEdge(recordId('plan', plan), recordId('part', part), 'association', {
+          hierarchy: true,
           layout: true,
         });
       }
@@ -239,6 +258,7 @@ export default class RecordRelationsService {
       const material = materials.get(String(file.materialId));
       if (material) {
         addEdge(recordId('material', material), recordId('materialFile', file), 'direct', {
+          hierarchy: true,
           layout: true,
         });
       }

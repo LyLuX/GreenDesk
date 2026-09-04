@@ -760,11 +760,15 @@ describe('MaintenancePage', () => {
     await user.click(screen.getByRole('button', { name: 'Effectuer en remplaçant la pièce' }));
 
     await waitFor(() =>
-      expect(mocks.executeMaintenance).toHaveBeenCalledWith('maintenance-uuid', {
-        performedAt: new Date().toISOString().slice(0, 10),
-        comment: '',
-        partsAction: 'consume',
-      }),
+      expect(mocks.executeMaintenance).toHaveBeenCalledWith(
+        'maintenance-uuid',
+        {
+          performedAt: new Date().toISOString().slice(0, 10),
+          comment: '',
+          partsAction: 'consume',
+        },
+        expect.any(String),
+      ),
     );
   });
 
@@ -788,9 +792,7 @@ describe('MaintenancePage', () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(
-      await screen.findByRole('button', { name: 'Effectuer Vidange annuelle' }),
-    );
+    await user.click(await screen.findByRole('button', { name: 'Effectuer Vidange annuelle' }));
 
     expect(
       screen.getByRole('button', { name: 'Effectuer en remplaçant les pièces' }),
@@ -804,9 +806,14 @@ describe('MaintenancePage', () => {
     const partialDialog = screen.getByRole('dialog', {
       name: 'Effectuer un remplacement partiel',
     });
-    expect(within(partialDialog).getByText(/quantités du plan seront retirées du stock/)).toBeVisible();
+    expect(
+      within(partialDialog).getByText(/quantités du plan seront retirées du stock/),
+    ).toBeVisible();
     await user.click(within(partialDialog).getByRole('checkbox', { name: /Filtre à huile/ }));
-    await user.type(within(partialDialog).getByLabelText('Commentaire'), 'Bougie encore utilisable');
+    await user.type(
+      within(partialDialog).getByLabelText('Commentaire'),
+      'Bougie encore utilisable',
+    );
     await user.click(
       within(partialDialog).getByRole('button', {
         name: 'Effectuer avec les pièces sélectionnées',
@@ -814,12 +821,16 @@ describe('MaintenancePage', () => {
     );
 
     await waitFor(() =>
-      expect(mocks.executeMaintenance).toHaveBeenCalledWith('maintenance-uuid', {
-        performedAt: new Date().toISOString().slice(0, 10),
-        comment: 'Bougie encore utilisable',
-        partsAction: 'partial',
-        partUuids: ['filter-uuid'],
-      }),
+      expect(mocks.executeMaintenance).toHaveBeenCalledWith(
+        'maintenance-uuid',
+        {
+          performedAt: new Date().toISOString().slice(0, 10),
+          comment: 'Bougie encore utilisable',
+          partsAction: 'partial',
+          partUuids: ['filter-uuid'],
+        },
+        expect.any(String),
+      ),
     );
   });
 
@@ -834,9 +845,7 @@ describe('MaintenancePage', () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(
-      await screen.findByRole('button', { name: 'Effectuer Vidange annuelle' }),
-    );
+    await user.click(await screen.findByRole('button', { name: 'Effectuer Vidange annuelle' }));
 
     expect(
       screen.getByRole('button', { name: 'Effectuer en remplaçant les pièces' }),
@@ -873,11 +882,15 @@ describe('MaintenancePage', () => {
     );
 
     await waitFor(() =>
-      expect(mocks.executeMaintenance).toHaveBeenCalledWith('maintenance-uuid', {
-        performedAt: new Date().toISOString().slice(0, 10),
-        comment: 'Bougie encore en bon état',
-        partsAction: 'skip',
-      }),
+      expect(mocks.executeMaintenance).toHaveBeenCalledWith(
+        'maintenance-uuid',
+        {
+          performedAt: new Date().toISOString().slice(0, 10),
+          comment: 'Bougie encore en bon état',
+          partsAction: 'skip',
+        },
+        expect.any(String),
+      ),
     );
   });
 

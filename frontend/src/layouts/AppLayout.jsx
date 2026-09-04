@@ -120,7 +120,7 @@ export default function AppLayout() {
               type="button"
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className="btn btn-sm btn-outline-light"
+              className="btn btn-sm btn-outline-critical"
             >
               {isLoggingOut ? 'Déconnexion…' : 'Déconnexion'}
             </button>

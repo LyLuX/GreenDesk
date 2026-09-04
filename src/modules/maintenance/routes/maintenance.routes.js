@@ -8,6 +8,7 @@ import {
 } from '../../../core/middlewares/authorization.middleware.js';
 import { STOCK_OPERATIONS } from '../../../core/inventory/stock-operation.js';
 import { validateRequest } from '../../../core/middlewares/validate-request.js';
+import { requireIdempotencyKey } from '../../../core/middlewares/idempotency-key.middleware.js';
 import { asyncHandler } from '../../../core/utils/async-handler.js';
 import MaintenanceCatalogController from '../controller/maintenance-catalog.controller.js';
 import MaintenanceController from '../controller/maintenance.controller.js';
@@ -127,6 +128,7 @@ router.patch(
   validator.updatePartStockValidator,
   validateRequest,
   requirePartStockActionPermission,
+  requireIdempotencyKey,
   asyncHandler(catalogController.updatePartStock.bind(catalogController)),
 );
 router.patch(
@@ -195,6 +197,7 @@ router.post(
   authorize(maintenancePermissions.parts.stock.consume),
   validator.createInterventionValidator,
   validateRequest,
+  requireIdempotencyKey,
   asyncHandler(controller.createIntervention.bind(controller)),
 );
 router.get(
@@ -217,6 +220,7 @@ router.post(
   requireWithoutPartReplacementPermission,
   validator.executeValidator,
   validateRequest,
+  requireIdempotencyKey,
   asyncHandler(controller.execute.bind(controller)),
 );
 router.get(

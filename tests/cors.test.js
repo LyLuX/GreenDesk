@@ -41,11 +41,11 @@ describe('CORS origin allowlist', () => {
       .options('/resource')
       .set('Origin', 'https://app.greendesk.example')
       .set('Access-Control-Request-Method', 'GET')
-      .set('Access-Control-Request-Headers', 'Authorization');
+      .set('Access-Control-Request-Headers', 'Authorization, Idempotency-Key');
 
     expect(response.status).toBe(204);
     expect(response.headers['access-control-allow-origin']).toBe('https://app.greendesk.example');
-    expect(response.headers['access-control-allow-headers']).toBe('Authorization');
+    expect(response.headers['access-control-allow-headers']).toBe('Authorization, Idempotency-Key');
     expect(response.headers).not.toHaveProperty('access-control-allow-credentials');
   });
 });

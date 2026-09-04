@@ -112,10 +112,19 @@ describe('RelationsService', () => {
 });
 
 describe('RecordRelationsService', () => {
-  it('groups fleet directories between the fleet branch and their records', async () => {
+  it('groups fleet resources between the fleet branch and their records', async () => {
     const dataSource = {
       getCompany: jest.fn().mockResolvedValue({ uuid: 'company-uuid', name: 'Alpha' }),
       getRecords: jest.fn().mockResolvedValue({
+        materials: [
+          {
+            id: 4,
+            uuid: 'material-uuid',
+            name: 'Tondeuse',
+            categoryId: 1,
+            manufacturerId: 2,
+          },
+        ],
         categories: [{ id: 1, uuid: 'category-uuid', name: 'Espaces verts' }],
         manufacturers: [{ id: 2, uuid: 'manufacturer-uuid', name: 'Husqvarna' }],
         suppliers: [{ id: 3, uuid: 'supplier-uuid', name: 'Pièces Pro' }],
@@ -123,11 +132,12 @@ describe('RecordRelationsService', () => {
     };
 
     const result = await new RecordRelationsService(dataSource).getGraph({
-      permissions: ['categories.read', 'manufacturers.read', 'suppliers.read'],
+      permissions: ['materials.read', 'categories.read', 'manufacturers.read', 'suppliers.read'],
     });
 
     expect(result.nodes).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({ id: 'materials', label: 'Matériels', kind: 'domain', count: 1 }),
         expect.objectContaining({
           id: 'categories',
           label: 'Catégories',
@@ -150,10 +160,21 @@ describe('RecordRelationsService', () => {
     );
     expect(result.edges).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({ source: 'fleet', target: 'materials', hierarchy: true }),
+        expect.objectContaining({
+          source: 'materials',
+          target: 'material:material-uuid',
+          hierarchy: true,
+        }),
         expect.objectContaining({ source: 'fleet', target: 'categories', hierarchy: true }),
         expect.objectContaining({
           source: 'categories',
           target: 'category:category-uuid',
+          hierarchy: true,
+        }),
+        expect.objectContaining({
+          source: 'category:category-uuid',
+          target: 'material:material-uuid',
           hierarchy: true,
         }),
         expect.objectContaining({ source: 'fleet', target: 'manufacturers', hierarchy: true }),
@@ -162,12 +183,67 @@ describe('RecordRelationsService', () => {
           target: 'manufacturer:manufacturer-uuid',
           hierarchy: true,
         }),
+        expect.objectContaining({
+          source: 'manufacturer:manufacturer-uuid',
+          target: 'material:material-uuid',
+          hierarchy: true,
+        }),
         expect.objectContaining({ source: 'fleet', target: 'suppliers', hierarchy: true }),
         expect.objectContaining({
           source: 'suppliers',
           target: 'supplier:supplier-uuid',
           hierarchy: true,
         }),
+      ]),
+    );
+    expect(result.edges).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ source: 'fleet', target: 'material:material-uuid' }),
+      ]),
+    );
+  });
+
+  it('keeps material files below their material in complete mode', async () => {
+    const dataSource = {
+      getCompany: jest.fn().mockResolvedValue({ uuid: 'company-uuid', name: 'Alpha' }),
+      getRecords: jest.fn().mockResolvedValue({
+        materials: [{ id: 10, uuid: 'material-uuid', name: 'Compresseur A' }],
+        materialFiles: [
+          {
+            id: 40,
+            uuid: 'file-uuid',
+            originalName: 'notice.pdf',
+            kind: 'document',
+            materialId: 10,
+          },
+        ],
+      }),
+    };
+
+    const result = await new RecordRelationsService(dataSource).getGraph({
+      mode: 'complete',
+      permissions: ['materials.read'],
+    });
+
+    expect(result.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ source: 'fleet', target: 'materials', hierarchy: true }),
+        expect.objectContaining({
+          source: 'materials',
+          target: 'material:material-uuid',
+          hierarchy: true,
+        }),
+        expect.objectContaining({
+          source: 'material:material-uuid',
+          target: 'materialFile:file-uuid',
+          hierarchy: true,
+        }),
+      ]),
+    );
+    expect(result.edges).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ source: 'fleet', target: 'material:material-uuid' }),
+        expect.objectContaining({ source: 'fleet', target: 'materialFile:file-uuid' }),
       ]),
     );
   });
@@ -186,6 +262,14 @@ describe('RecordRelationsService', () => {
             manufacturerId: null,
           },
         ],
+        operations: [
+          {
+            id: 15,
+            uuid: 'operation-uuid',
+            name: 'Vidange',
+            maintenanceType: 'preventive',
+          },
+        ],
         plans: [
           {
             id: 20,
@@ -193,7 +277,7 @@ describe('RecordRelationsService', () => {
             title: 'Vidange annuelle',
             maintenanceType: 'preventive',
             materialId: 10,
-            operationId: null,
+            operationId: 15,
           },
         ],
         parts: [
@@ -213,19 +297,51 @@ describe('RecordRelationsService', () => {
 
     const result = await new RecordRelationsService(dataSource).getGraph({
       mode: 'simplified',
-      permissions: ['materials.read', 'maintenance.read', 'maintenance.parts.read'],
+      permissions: [
+        'materials.read',
+        'maintenance.read',
+        'maintenance.operations.read',
+        'maintenance.parts.read',
+      ],
     });
 
     expect(result).toEqual(expect.objectContaining({ scope: 'records', mode: 'simplified' }));
     expect(result.nodes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: 'material:material-uuid', label: 'Compresseur A' }),
+        expect.objectContaining({ id: 'plans', label: 'Plans de maintenance', kind: 'domain' }),
+        expect.objectContaining({ id: 'operations', label: 'Opérations', kind: 'domain' }),
+        expect.objectContaining({ id: 'parts', label: 'Pièces', kind: 'domain' }),
+        expect.objectContaining({ id: 'operation:operation-uuid', label: 'Vidange' }),
         expect.objectContaining({ id: 'plan:plan-uuid', label: 'Vidange annuelle' }),
         expect.objectContaining({ id: 'part:part-uuid', label: 'Filtre à huile' }),
       ]),
     );
     expect(result.edges).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({ source: 'maintenance', target: 'plans', hierarchy: true }),
+        expect.objectContaining({ source: 'maintenance', target: 'operations', hierarchy: true }),
+        expect.objectContaining({ source: 'maintenance', target: 'parts', hierarchy: true }),
+        expect.objectContaining({
+          source: 'plans',
+          target: 'plan:plan-uuid',
+          hierarchy: true,
+        }),
+        expect.objectContaining({
+          source: 'operations',
+          target: 'operation:operation-uuid',
+          hierarchy: true,
+        }),
+        expect.objectContaining({
+          source: 'parts',
+          target: 'part:part-uuid',
+          hierarchy: true,
+        }),
+        expect.objectContaining({
+          source: 'operation:operation-uuid',
+          target: 'plan:plan-uuid',
+          hierarchy: true,
+        }),
         expect.objectContaining({
           source: 'material:material-uuid',
           target: 'plan:plan-uuid',
@@ -235,11 +351,19 @@ describe('RecordRelationsService', () => {
           source: 'plan:plan-uuid',
           target: 'part:part-uuid',
           label: '',
+          hierarchy: true,
         }),
       ]),
     );
+    expect(result.edges).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ source: 'maintenance', target: 'plan:plan-uuid' }),
+        expect.objectContaining({ source: 'maintenance', target: 'operation:operation-uuid' }),
+        expect.objectContaining({ source: 'maintenance', target: 'part:part-uuid' }),
+      ]),
+    );
     expect(dataSource.getRecords).toHaveBeenCalledWith(
-      expect.arrayContaining(['materials', 'plans', 'parts', 'taskParts']),
+      expect.arrayContaining(['materials', 'plans', 'operations', 'parts', 'taskParts']),
     );
     expect(dataSource.getRecords.mock.calls[0][0]).toEqual(
       expect.not.arrayContaining([

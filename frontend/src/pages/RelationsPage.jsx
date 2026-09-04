@@ -137,7 +137,6 @@ function RelationsGraphPage() {
   const navigate = useNavigate();
   const { fitView } = useReactFlow();
   const { activeCompany } = useAuth();
-  const [mode, setMode] = useState('simplified');
   const [graph, setGraph] = useState(null);
   const [collapsedIds, setCollapsedIds] = useState(new Set());
   const [selectedId, setSelectedId] = useState(null);
@@ -148,7 +147,7 @@ function RelationsGraphPage() {
     setLoading(true);
     setError('');
     try {
-      const response = await getRelationsGraph(mode, 'records');
+      const response = await getRelationsGraph('complete', 'records');
       const next = response.data?.data;
       if (!next || !Array.isArray(next.nodes) || !Array.isArray(next.edges)) {
         throw new Error('Réponse de cartographie invalide.');
@@ -161,7 +160,7 @@ function RelationsGraphPage() {
     } finally {
       setLoading(false);
     }
-  }, [mode, activeCompany?.uuid]);
+  }, [activeCompany?.uuid]);
 
   useEffect(() => {
     load();
@@ -237,7 +236,7 @@ function RelationsGraphPage() {
       fitView({ padding: 0.18, duration: 240 });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [collapsedIds, fitView, flow.nodes.length, loading, mode]);
+  }, [collapsedIds, fitView, flow.nodes.length, loading]);
 
   return (
     <main className="app-page relations-page">
@@ -248,24 +247,6 @@ function RelationsGraphPage() {
             Explorez les enregistrements et leurs relations pour{' '}
             {graph?.company?.name ?? 'la société active'}.
           </p>
-        </div>
-        <div className="relation-mode-switch" role="group" aria-label="Niveau de détail">
-          <button
-            type="button"
-            className={`btn ${mode === 'simplified' ? 'btn-brand' : 'btn-outline-brand'}`}
-            aria-pressed={mode === 'simplified'}
-            onClick={() => setMode('simplified')}
-          >
-            Vue simplifiée
-          </button>
-          <button
-            type="button"
-            className={`btn ${mode === 'complete' ? 'btn-brand' : 'btn-outline-brand'}`}
-            aria-pressed={mode === 'complete'}
-            onClick={() => setMode('complete')}
-          >
-            Vue complète
-          </button>
         </div>
       </div>
 

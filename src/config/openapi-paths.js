@@ -52,6 +52,7 @@ const writeErrors = {
 const uuidParameter = parameterRef('Uuid');
 const fileUuidParameter = parameterRef('FileUuid');
 const companyUuidHeader = parameterRef('CompanyUuidHeader');
+const idempotencyKeyHeader = parameterRef('IdempotencyKeyHeader');
 const searchParameter = {
   name: 'search',
   in: 'query',
@@ -255,7 +256,7 @@ export const openApiPaths = {
       tags: ['Companies'],
       summary: 'Modifie une société accessible.',
       description:
-        '`companies.update` protège le nom et la description ; `companies.status.update` protège le statut.',
+        '`companies.update` protège le nom et la description ; `companies.status.update` protège le statut. Un changement de statut invalide immédiatement toutes les sessions des utilisateurs rattachés à la société, y compris celle de l’administrateur réalisant l’opération.',
       security: secure,
       requestBody: jsonBody('CompanyUpdateRequest'),
       responses: {
@@ -411,7 +412,7 @@ export const openApiPaths = {
       tags: ['Users'],
       summary: 'Met à jour un utilisateur et ses rôles.',
       description:
-        '`users.update` protège les informations générales, `users.status.update` le statut, `users.password.update` le mot de passe, `users.roles.update` les rôles et `users.companies.update` les sociétés. Toutes les permissions correspondant aux champs fournis sont exigées. Le nom de famille est stocké en majuscules. Une modification des sociétés invalide les sessions actives de l’utilisateur concerné.',
+        '`users.update` protège les informations générales, `users.status.update` le statut, `users.password.update` le mot de passe, `users.roles.update` les rôles et `users.companies.update` les sociétés. Toutes les permissions correspondant aux champs fournis sont exigées. Le nom de famille est stocké en majuscules. Une modification effective des rôles ou des sociétés invalide immédiatement toutes les sessions de l’utilisateur concerné, y compris lorsqu’il réalise lui-même l’opération.',
       security: secure,
       requestBody: jsonBody('UserUpdateRequest'),
       responses: {
@@ -504,7 +505,7 @@ export const openApiPaths = {
       tags: ['Roles'],
       summary: 'Met à jour la description et les permissions d’un rôle.',
       description:
-        '`roles.update` protège la description. Le nom du rôle est immuable après sa création. Modifier `permissionUuids` nécessite `roles.permissions.update`. Toutes les permissions correspondant aux champs fournis sont exigées. Une modification des permissions invalide les sessions actives des utilisateurs concernés, à l’exception de la session de l’administrateur réalisant l’opération.',
+        '`roles.update` protège la description. Le nom du rôle est immuable après sa création. Modifier `permissionUuids` nécessite `roles.permissions.update`. Toutes les permissions correspondant aux champs fournis sont exigées. Une modification effective des permissions invalide immédiatement toutes les sessions des utilisateurs concernés, y compris celle de l’administrateur réalisant l’opération.',
       security: secure,
       requestBody: jsonBody('RoleUpdateRequest'),
       responses: {
@@ -517,7 +518,7 @@ export const openApiPaths = {
       tags: ['Roles'],
       summary: 'Supprime logiquement un rôle.',
       description:
-        'Nécessite `roles.delete`. La permission dynamique de consultation des utilisateurs associée au rôle est supprimée dans la même transaction. La suppression invalide les sessions actives des utilisateurs concernés, à l’exception de la session de l’administrateur réalisant l’opération.',
+        'Nécessite `roles.delete`. La permission dynamique de consultation des utilisateurs associée au rôle est supprimée dans la même transaction. La suppression invalide immédiatement toutes les sessions des utilisateurs concernés, y compris celle de l’administrateur réalisant l’opération.',
       security: secure,
       responses: { 204: noContent, ...resourceErrors },
     },
@@ -542,7 +543,7 @@ export const openApiPaths = {
       tags: ['Permissions'],
       summary: 'Crée une permission.',
       description:
-        'Nécessite `permissions.create`. L’espace de noms dynamique `users.roles.<nom-du-rôle>.read` est réservé à la gestion automatique des rôles.',
+        'Nécessite `permissions.create`. L’espace de noms dynamique `users.roles.<nom-du-rôle>.read` est réservé à la gestion automatique des rôles. La restauration implicite d’une permission supprimée portant le même nom invalide immédiatement toutes les sessions des utilisateurs auxquels ses attributions sont restaurées.',
       security: secure,
       requestBody: jsonBody('PermissionCreateRequest'),
       responses: {
@@ -558,7 +559,7 @@ export const openApiPaths = {
       tags: ['Permissions'],
       summary: 'Met à jour une permission.',
       description:
-        'Nécessite `permissions.update`. Les permissions dynamiques `users.roles.<nom-du-rôle>.read` sont gérées automatiquement et ne peuvent pas être modifiées ici.',
+        'Nécessite `permissions.update`. Les permissions dynamiques `users.roles.<nom-du-rôle>.read` sont gérées automatiquement et ne peuvent pas être modifiées ici. Un renommage invalide immédiatement toutes les sessions des utilisateurs qui reçoivent cette permission par un rôle ; une modification de description ne les invalide pas.',
       security: secure,
       requestBody: jsonBody('PermissionUpdateRequest'),
       responses: {
@@ -571,7 +572,7 @@ export const openApiPaths = {
       tags: ['Permissions'],
       summary: 'Supprime logiquement une permission.',
       description:
-        'Nécessite `permissions.delete`. Les permissions dynamiques `users.roles.<nom-du-rôle>.read` ne peuvent être supprimées qu’avec leur rôle.',
+        'Nécessite `permissions.delete`. Les permissions dynamiques `users.roles.<nom-du-rôle>.read` ne peuvent être supprimées qu’avec leur rôle. La suppression invalide immédiatement toutes les sessions des utilisateurs qui recevaient cette permission.',
       security: secure,
       responses: { 204: noContent, ...resourceErrors },
     },
@@ -1164,7 +1165,7 @@ export const openApiPaths = {
     },
   },
   '/maintenance/parts/{uuid}/stock': {
-    parameters: [uuidParameter],
+    parameters: [uuidParameter, idempotencyKeyHeader],
     patch: {
       operationId: 'updateMaintenancePartStock',
       tags: ['Maintenance'],
@@ -1302,7 +1303,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Liste les fiches de maintenance à consulter ou à imprimer.',
       description:
-        'Nécessite la permission dédiée `maintenance.sheets.read`. Le filtre `status` reprend exactement les échéances de la liste des plans. Sans statut, tous les plans actifs sont retournés. `includeOverdue` et `includeWearBased` permettent d’ajouter respectivement les plans en retard et ceux suivis selon l’usure à une échéance sélectionnée.',
+        'Nécessite la permission dédiée `maintenance.sheets.read`. Le filtre `status` reprend exactement les échéances de la liste des plans. Sans statut, tous les plans actifs sont retournés. `includeOverdue` et `includeWearBased` permettent d’ajouter respectivement les plans en retard et ceux suivis selon l’usure à une échéance sélectionnée. Les fiches sont triées par priorité décroissante, puis par échéance, titre et identifiant.',
       security: secure,
       parameters: [
         {
@@ -1377,6 +1378,7 @@ export const openApiPaths = {
       description:
         'Nécessite `maintenance.parts.stock.consume`. L’intervention, les coûts et les mouvements de stock sont enregistrés dans une transaction unique. La date du jour est utilisée par défaut et une date future est refusée.',
       security: secure,
+      parameters: [idempotencyKeyHeader],
       requestBody: jsonBody('MaintenanceInterventionCreateRequest'),
       responses: {
         201: jsonResponse('MaintenanceInterventionResponse', 'Intervention ponctuelle créée.'),
@@ -1499,7 +1501,7 @@ export const openApiPaths = {
     },
   },
   '/maintenance/{uuid}/execute': {
-    parameters: [uuidParameter],
+    parameters: [uuidParameter, idempotencyKeyHeader],
     post: {
       operationId: 'executeMaintenanceTask',
       tags: ['Maintenance'],
@@ -1551,7 +1553,7 @@ export const openApiPaths = {
       tags: ['Relations'],
       summary: 'Retourne la cartographie des relations de la société active.',
       description:
-        'Nécessite `relations.read`. Les nœuds sont filtrés avec les permissions de consultation propres à chaque ressource. Le scope `records` expose uniquement les enregistrements réels des branches Gestion du parc et Maintenance de la société active, avec leurs associations persistées sans libellé ; son mode `complete` ajoute les fichiers des matériels autorisés. Le scope `models` conserve la cartographie structurelle et ses compteurs, avec ses deux niveaux de détail.',
+        'Nécessite `relations.read`. Les nœuds sont filtrés avec les permissions de consultation propres à chaque ressource. Le scope `records` expose uniquement les enregistrements réels des branches Gestion du parc et Maintenance de la société active, avec leurs associations persistées sans libellé. Gestion du parc présente directement les groupes Matériels, Catégories, Fabricants et Fournisseurs ; les fiches de matériel sont placées sous le groupe Matériels ainsi qu’au bout de leurs branches Catégorie et Fabricant. Maintenance présente directement les groupes Plans de maintenance, Opérations et Pièces ; les opérations mènent à leurs plans et les plans à leurs pièces prévues. Le mode `complete` ajoute les fichiers sous leur matériel autorisé. Le scope `models` conserve la cartographie structurelle et ses compteurs, avec ses deux niveaux de détail.',
       security: secure,
       parameters: [
         {

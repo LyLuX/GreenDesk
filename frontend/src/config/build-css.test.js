@@ -154,6 +154,43 @@ describe('production CSS build', () => {
     );
   });
 
+  it('uses one shared critical color for alerts and the logout action', () => {
+    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+
+    expect(styles.match(/#b64141/g)).toHaveLength(1);
+    expect(styles).toMatch(/--critical-color:\s*#b64141;/);
+    expect(styles).toMatch(
+      /\.metric-card\.maintenance-overdue\s*\{[^}]*--metric-card-accent:\s*var\(--critical-color\);/,
+    );
+    expect(styles).toMatch(
+      /\.metric-card\.maintenance-low-stock\s*\{[^}]*--metric-card-accent:\s*var\(--critical-color\);/,
+    );
+    expect(styles).toMatch(
+      /\.maintenance-history-list > li\.maintenance-history-without-parts\s*\{[^}]*border-left:\s*4px solid var\(--critical-color\);/,
+    );
+    expect(styles).toMatch(
+      /\.btn-outline-critical\s*\{[^}]*--bs-btn-color:\s*var\(--critical-color\);[^}]*--bs-btn-bg:\s*transparent;[^}]*--bs-btn-hover-bg:\s*var\(--critical-color\);/,
+    );
+  });
+
+  it('centralizes theme colors shared by several interface roles', () => {
+    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+    const sharedColors = [
+      ['--surface-highlight-color', '#edf3e9'],
+      ['--control-border-color', '#cbd7ce'],
+      ['--brand-focus-color', 'rgba(79, 125, 33, 0.16)'],
+      ['--relation-company-color', '#236941'],
+      ['--sidebar-text-color', '#435149'],
+      ['--brand-company-color', '#dbe8d7'],
+    ];
+
+    for (const [variable, color] of sharedColors) {
+      expect(styles).toContain(`${variable}: ${color};`);
+      expect(styles.split(color)).toHaveLength(2);
+    }
+    expect(styles).toMatch(/--bs-pagination-disabled-border-color:\s*var\(--border\);/);
+  });
+
   it('forces the themed low-stock color over Bootstrap table states', () => {
     const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
 

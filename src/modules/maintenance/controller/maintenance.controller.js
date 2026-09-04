@@ -1,10 +1,12 @@
 import HTTP_STATUS from '../../../core/constants/http-status.js';
+import IdempotencyService from '../../../core/idempotency/idempotency.service.js';
 import { successResponse } from '../../../core/responses/api-response.js';
 import MaintenanceService from '../service/maintenance.service.js';
 
 export default class MaintenanceController {
-  constructor(service = new MaintenanceService()) {
+  constructor(service = new MaintenanceService(), idempotencyService = new IdempotencyService()) {
     this.service = service;
+    this.idempotencyService = idempotencyService;
   }
   async getAll(request, response) {
     response.json(successResponse(await this.service.getAll(request.query)));
@@ -27,11 +29,18 @@ export default class MaintenanceController {
     response.json(successResponse(await this.service.getInterventions(request.query)));
   }
   async createIntervention(request, response) {
-    response
-      .status(HTTP_STATUS.CREATED)
-      .json(
+    const result = await this.idempotencyService.execute(
+      {
+        key: request.idempotencyKey,
+        userId: request.user.userId,
+        operation: 'maintenance.intervention.create',
+        request: { body: request.body },
+        statusCode: HTTP_STATUS.CREATED,
+      },
+      async () =>
         successResponse(await this.service.createIntervention(request.body, request.user.userId)),
-      );
+    );
+    response.status(result.statusCode).json(result.body);
   }
   async create(request, response) {
     response
@@ -61,11 +70,20 @@ export default class MaintenanceController {
     response.status(HTTP_STATUS.NO_CONTENT).send();
   }
   async execute(request, response) {
-    response.json(
-      successResponse(
-        await this.service.execute(request.params.uuid, request.body, request.user.userId),
-      ),
+    const result = await this.idempotencyService.execute(
+      {
+        key: request.idempotencyKey,
+        userId: request.user.userId,
+        operation: 'maintenance.execute',
+        request: { resourceUuid: request.params.uuid, body: request.body },
+        statusCode: HTTP_STATUS.OK,
+      },
+      async () =>
+        successResponse(
+          await this.service.execute(request.params.uuid, request.body, request.user.userId),
+        ),
     );
+    response.status(result.statusCode).json(result.body);
   }
   async history(request, response) {
     response.json(

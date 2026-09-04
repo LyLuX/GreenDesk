@@ -1655,6 +1655,20 @@ export const openApiHeaders = {
 };
 
 export const openApiParameters = {
+  IdempotencyKeyHeader: {
+    name: 'Idempotency-Key',
+    in: 'header',
+    required: true,
+    description:
+      'Clé opaque unique à cette intention d’écriture. Une répétition strictement identique retourne la réponse initiale sans rejouer les effets métier ; une réutilisation pour une autre requête retourne 409.',
+    schema: {
+      type: 'string',
+      minLength: 1,
+      maxLength: 128,
+      pattern: '^[A-Za-z0-9._:-]+$',
+      example: '2b47e291-2d2d-4b16-9e1f-052a5a8de642',
+    },
+  },
   CompanyUuidHeader: {
     name: 'X-Company-Uuid',
     in: 'header',

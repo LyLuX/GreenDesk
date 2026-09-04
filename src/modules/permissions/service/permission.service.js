@@ -3,6 +3,7 @@ import { isRoleUserReadPermission } from '../../../core/constants/user-visibilit
 import AppError from '../../../core/errors/app-error.js';
 import PermissionRepository from '../repository/permission.repository.js';
 import AuditService from '../../audit/service/audit.service.js';
+import UserRepository from '../../users/repository/user.repository.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 
 /** Business operations for permissions. */
@@ -10,9 +11,11 @@ export default class PermissionService {
   constructor(
     permissionRepository = new PermissionRepository(),
     auditService = new AuditService(),
+    userRepository = new UserRepository(),
   ) {
     this.permissionRepository = permissionRepository;
     this.auditService = auditService;
+    this.userRepository = userRepository;
   }
   async getAll(query = {}) {
     const result = await this.permissionRepository.findAll(query);
@@ -43,6 +46,10 @@ export default class PermissionService {
         const restored = await this.permissionRepository.update(existingPermission, values, {
           transaction,
         });
+        await this.userRepository.incrementAuthorizationVersionsForPermission(
+          existingPermission.id,
+          { transaction },
+        );
         await this.auditService.record(
           {
             userId: actorUserId,
@@ -82,8 +89,14 @@ export default class PermissionService {
       );
     }
     const oldValues = permission.toJSON?.() ?? { ...permission };
+    const nameChanged = Object.hasOwn(values, 'name') && values.name !== oldValues.name;
     return this.permissionRepository.withTransaction(async (transaction) => {
       await this.permissionRepository.update(permission, values, { transaction });
+      if (nameChanged) {
+        await this.userRepository.incrementAuthorizationVersionsForPermission(permission.id, {
+          transaction,
+        });
+      }
       await this.auditService.record(
         {
           userId: actorUserId,
@@ -107,6 +120,9 @@ export default class PermissionService {
       );
     }
     await this.permissionRepository.withTransaction(async (transaction) => {
+      await this.userRepository.incrementAuthorizationVersionsForPermission(permission.id, {
+        transaction,
+      });
       await this.permissionRepository.delete(permission, { transaction });
       await this.auditService.record(
         {

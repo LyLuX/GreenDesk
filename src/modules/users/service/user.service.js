@@ -193,10 +193,7 @@ export default class UserService {
       if (assignedCompanies) {
         await this.userRepository.setCompanies(user, assignedCompanies, { transaction });
       }
-      if (
-        companiesChanged ||
-        (rolesChanged && (actorUserId === null || String(user.id) !== String(actorUserId)))
-      ) {
+      if (companiesChanged || rolesChanged) {
         await this.userRepository.incrementAuthorizationVersion(user.id, { transaction });
       }
       await this.auditService.record(

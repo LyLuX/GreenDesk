@@ -114,14 +114,13 @@ export default class CompanyRepository extends TransactionalRepository {
     );
   }
 
-  invalidateUserSessions(companyId, { excludeUserId, transaction } = {}) {
+  invalidateUserSessions(companyId, { transaction } = {}) {
     return Company.sequelize.query(
       `UPDATE users AS u
        INNER JOIN user_companies AS membership ON membership.user_id = u.id
        SET u.authorization_version = u.authorization_version + 1
-       WHERE membership.company_id = $companyId
-         ${excludeUserId ? 'AND u.id <> $excludeUserId' : ''}`,
-      { bind: { companyId, excludeUserId }, transaction },
+       WHERE membership.company_id = $companyId`,
+      { bind: { companyId }, transaction },
     );
   }
 }

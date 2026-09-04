@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import getApiErrorMessage from '../api/get-api-error-message.js';
+import { resolveIdempotencyAttempt } from '../api/idempotency.js';
 import useAuth from '../auth/useAuth.js';
 import {
   createMaintenanceIntervention,
@@ -95,6 +96,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const idempotencyAttemptRef = useRef(null);
   const debouncedMaterialSearch = useDebouncedValue(materialSearch, 300);
 
   const loadHistory = useCallback(async (uuid, signal) => {
@@ -125,6 +127,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
     setMaterialUuid('');
     setMaterialSearch('');
     setDescription('');
+    idempotencyAttemptRef.current = null;
     setOperation(initialOperation);
     setError('');
     const controller = new AbortController();
@@ -168,12 +171,19 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
     setError('');
     try {
       if (operation === STOCK_OPERATIONS.CONSUME) {
-        await createMaintenanceIntervention({
+        const payload = {
           materialUuid,
           description,
           performedAt,
           parts: [{ partUuid: part.uuid, quantity: Number(quantity) }],
+        };
+        const attempt = resolveIdempotencyAttempt(idempotencyAttemptRef.current, {
+          operation: 'maintenance.intervention.create',
+          body: payload,
         });
+        idempotencyAttemptRef.current = attempt;
+        await createMaintenanceIntervention(payload, attempt.key);
+        idempotencyAttemptRef.current = null;
         const updatedPart = {
           ...currentPart,
           quantityOnHand: Number(currentPart.quantityOnHand) - Number(quantity),
@@ -197,17 +207,26 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
       } else {
         stockPayload.quantity = Number(quantity);
       }
-      const response =
-        operation === PRICE_OPERATION
-          ? await updateMaintenancePartPrice(part.uuid, {
-              unitPrice: Number(unitPrice),
-              performedAt,
-            })
-          : operation === MINIMUM_STOCK_OPERATION
-            ? await updateMaintenancePartMinimumStock(part.uuid, {
-                minimumStockQuantity: Number(minimumStockQuantity),
-              })
-            : await updateMaintenancePartStock(part.uuid, stockPayload);
+      let response;
+      if (operation === PRICE_OPERATION) {
+        response = await updateMaintenancePartPrice(part.uuid, {
+          unitPrice: Number(unitPrice),
+          performedAt,
+        });
+      } else if (operation === MINIMUM_STOCK_OPERATION) {
+        response = await updateMaintenancePartMinimumStock(part.uuid, {
+          minimumStockQuantity: Number(minimumStockQuantity),
+        });
+      } else {
+        const attempt = resolveIdempotencyAttempt(idempotencyAttemptRef.current, {
+          operation: 'maintenance.part.stock.update',
+          resourceUuid: part.uuid,
+          body: stockPayload,
+        });
+        idempotencyAttemptRef.current = attempt;
+        response = await updateMaintenancePartStock(part.uuid, stockPayload, attempt.key);
+        idempotencyAttemptRef.current = null;
+      }
       const updatedPart = {
         ...currentPart,
         ...response.data.data,

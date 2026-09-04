@@ -527,14 +527,9 @@ export default class MaintenanceService {
           ...(includeWearBasedPlans && normalizedStatus !== 'wearBased' ? ['wearBased'] : []),
         ]
       : [];
-    const groups = statuses.length
-      ? await Promise.all(
-          statuses.map((deadlineStatus) =>
-            this.repository.findForMaintenanceSheets({ status: deadlineStatus }),
-          ),
-        )
-      : [await this.repository.findForMaintenanceSheets()];
-    const tasks = [...new Map(groups.flat().map((task) => [task.uuid, task])).values()];
+    const tasks = statuses.length
+      ? await this.repository.findForMaintenanceSheets({ statuses })
+      : await this.repository.findForMaintenanceSheets();
     return {
       status: normalizedStatus ?? null,
       includeOverdue: normalizedIncludeOverdue,

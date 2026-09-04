@@ -73,6 +73,10 @@ describe('AppLayout navigation drawer', () => {
       'brand-logo',
     );
     expect(container.querySelector('.brand-name')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Déconnexion' })).toHaveClass('btn-outline-critical');
+    expect(screen.getByRole('button', { name: 'Déconnexion' })).not.toHaveClass(
+      'btn-outline-light',
+    );
   });
 
   it('keeps the product name when an actual company logo replaces the GreenDesk logo', () => {

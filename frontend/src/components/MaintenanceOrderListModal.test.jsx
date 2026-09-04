@@ -656,10 +656,14 @@ describe('MaintenanceOrderListModal', () => {
     await user.click(screen.getByRole('button', { name: 'Marquer commandée' }));
 
     await waitFor(() =>
-      expect(mocks.updateStock).toHaveBeenCalledWith('part-uuid', {
-        operation: 'order',
-        quantity: 3,
-      }),
+      expect(mocks.updateStock).toHaveBeenCalledWith(
+        'part-uuid',
+        {
+          operation: 'order',
+          quantity: 3,
+        },
+        expect.any(String),
+      ),
     );
     expect(await screen.findByText('Aucune pièce à commander sur cette période.')).toBeVisible();
     expect(mocks.notify).toHaveBeenCalledWith('success', 'Bougie marquée commandée (3 pièce).');

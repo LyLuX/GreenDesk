@@ -127,6 +127,7 @@ const { default: env } = await import('../src/config/env.js');
 const { default: sequelize } = await import('../src/config/database.js');
 const { default: Company } = await import('../src/modules/companies/model/company.model.js');
 const { default: User } = await import('../src/modules/users/model/user.model.js');
+const idempotencyKey = 'maintenance-route-test-key';
 
 const tokenFor = (permissions) =>
   jwt.sign(
@@ -389,6 +390,7 @@ describe('maintenance catalogue route permissions', () => {
     await request(app)
       .patch(path)
       .set('Authorization', authorization([permissions.order]))
+      .set('Idempotency-Key', idempotencyKey)
       .send({ operation: 'order', quantity: 0.6, performedAt: '2026-08-20' })
       .expect(200);
     await request(app)
@@ -399,16 +401,19 @@ describe('maintenance catalogue route permissions', () => {
     await request(app)
       .patch(path)
       .set('Authorization', authorization([permissions.receive]))
+      .set('Idempotency-Key', idempotencyKey)
       .send({ operation: 'receive', quantity: 1 })
       .expect(200);
     await request(app)
       .patch(path)
       .set('Authorization', authorization([permissions.adjustOnHand]))
+      .set('Idempotency-Key', idempotencyKey)
       .send({ operation: 'adjust', quantityOnHand: 4 })
       .expect(200);
     await request(app)
       .patch(path)
       .set('Authorization', authorization([permissions.adjustOnOrder]))
+      .set('Idempotency-Key', idempotencyKey)
       .send({ operation: 'adjust', quantityOnOrder: 2 })
       .expect(200);
     await request(app)
@@ -419,11 +424,13 @@ describe('maintenance catalogue route permissions', () => {
     await request(app)
       .patch(path)
       .set('Authorization', authorization([permissions.adjustOnHand, permissions.adjustOnOrder]))
+      .set('Idempotency-Key', idempotencyKey)
       .send({ operation: 'adjust', quantityOnHand: 4, quantityOnOrder: 2 })
       .expect(200);
     await request(app)
       .patch(path)
       .set('Authorization', authorization([permissions.adjustOnHand, permissions.adjustOnOrder]))
+      .set('Idempotency-Key', idempotencyKey)
       .send({ stockStatus: 'inStock', stockQuantity: 4 })
       .expect(200);
     expect(catalogController.updatePartStock).toHaveBeenCalled();
@@ -535,16 +542,19 @@ describe('maintenance catalogue route permissions', () => {
     await request(app)
       .post(path)
       .set('Authorization', authorization(['maintenance.execute']))
+      .set('Idempotency-Key', idempotencyKey)
       .send({ partsAction: 'consume' })
       .expect(200);
     await request(app)
       .post(path)
       .set('Authorization', authorization(['maintenance.execute', exceptionalPermission]))
+      .set('Idempotency-Key', idempotencyKey)
       .send({ partsAction: 'skip', comment: 'Pièce encore en bon état.' })
       .expect(200);
     await request(app)
       .post(path)
       .set('Authorization', authorization(['maintenance.execute', exceptionalPermission]))
+      .set('Idempotency-Key', idempotencyKey)
       .send({
         partsAction: 'partial',
         partUuids: [uuid],
@@ -576,6 +586,7 @@ describe('maintenance catalogue route permissions', () => {
     await request(app)
       .post(path)
       .set('Authorization', authorization(['maintenance.parts.stock.consume']))
+      .set('Idempotency-Key', idempotencyKey)
       .send(payload)
       .expect(201);
     await request(app)
@@ -584,4 +595,40 @@ describe('maintenance catalogue route permissions', () => {
       .send({ ...payload, description: '' })
       .expect(400);
   });
+
+  it.each([
+    [
+      'post',
+      `/api/v1/maintenance/${uuid}/execute`,
+      ['maintenance.execute'],
+      { partsAction: 'consume' },
+    ],
+    [
+      'post',
+      '/api/v1/maintenance/interventions',
+      ['maintenance.parts.stock.consume'],
+      {
+        materialUuid: uuid,
+        description: 'Remplacement d’une pièce.',
+        parts: [{ partUuid: uuid, quantity: 1 }],
+      },
+    ],
+    [
+      'patch',
+      `/api/v1/maintenance/parts/${uuid}/stock`,
+      ['maintenance.parts.stock.order'],
+      { operation: 'order', quantity: 1 },
+    ],
+  ])(
+    'requires Idempotency-Key for the critical %s %s write',
+    async (method, path, permissions, body) => {
+      const response = await request(app)
+        [method](path)
+        .set('Authorization', authorization(permissions))
+        .send(body)
+        .expect(400);
+
+      expect(response.body.error.message).toContain('Idempotency-Key');
+    },
+  );
 });

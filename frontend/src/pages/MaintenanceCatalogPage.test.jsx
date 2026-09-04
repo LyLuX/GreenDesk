@@ -403,12 +403,16 @@ describe('dedicated maintenance catalogue pages', () => {
     await user.click(screen.getByRole('button', { name: 'Enregistrer le mouvement' }));
 
     await waitFor(() =>
-      expect(mocks.updatePartStock).toHaveBeenCalledWith('part-uuid', {
-        operation: 'adjust',
-        performedAt: '2026-08-20',
-        quantityOnHand: 2,
-        quantityOnOrder: 3,
-      }),
+      expect(mocks.updatePartStock).toHaveBeenCalledWith(
+        'part-uuid',
+        {
+          operation: 'adjust',
+          performedAt: '2026-08-20',
+          quantityOnHand: 2,
+          quantityOnOrder: 3,
+        },
+        expect.any(String),
+      ),
     );
     expect(mocks.notify).toHaveBeenCalledWith(
       'success',
@@ -436,11 +440,15 @@ describe('dedicated maintenance catalogue pages', () => {
     await user.click(screen.getByRole('button', { name: 'Enregistrer le mouvement' }));
 
     await waitFor(() =>
-      expect(mocks.updatePartStock).toHaveBeenCalledWith('part-uuid', {
-        operation: 'adjust',
-        performedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
-        quantityOnHand: 4,
-      }),
+      expect(mocks.updatePartStock).toHaveBeenCalledWith(
+        'part-uuid',
+        {
+          operation: 'adjust',
+          performedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+          quantityOnHand: 4,
+        },
+        expect.any(String),
+      ),
     );
   });
 
@@ -483,12 +491,15 @@ describe('dedicated maintenance catalogue pages', () => {
     await user.click(screen.getByRole('button', { name: 'Enregistrer l’intervention' }));
 
     await waitFor(() =>
-      expect(mocks.createIntervention).toHaveBeenCalledWith({
-        materialUuid: 'material-uuid',
-        description: 'Grille cassée',
-        performedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
-        parts: [{ partUuid: 'part-uuid', quantity: 0.6 }],
-      }),
+      expect(mocks.createIntervention).toHaveBeenCalledWith(
+        {
+          materialUuid: 'material-uuid',
+          description: 'Grille cassée',
+          performedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+          parts: [{ partUuid: 'part-uuid', quantity: 0.6 }],
+        },
+        expect.any(String),
+      ),
     );
     expect(mocks.notify).toHaveBeenCalledWith('success', 'Intervention ponctuelle enregistrée.');
   });

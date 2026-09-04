@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import listAllPages from '../api/list-all-pages.js';
+import { resolveIdempotencyAttempt } from '../api/idempotency.js';
 import {
   createMaintenance,
   deleteMaintenance,
@@ -84,8 +85,7 @@ function MaintenanceExecutionParts({ entry }) {
   }
   const consumed = entry.partsSnapshot.filter((part) => part.consumed);
   const retained = entry.partsSnapshot.filter((part) => !part.consumed);
-  const formatParts = (parts) =>
-    parts.map((part) => `${part.name} × ${part.quantity}`).join(', ');
+  const formatParts = (parts) => parts.map((part) => `${part.name} × ${part.quantity}`).join(', ');
   return (
     <>
       {consumed.length > 0 && (
@@ -151,6 +151,7 @@ export default function MaintenancePage() {
   const debouncedSearch = useDebouncedValue(search, 300);
   const [pagination, setPagination] = useState(null);
   const [dialog, setDialog] = useState(null);
+  const executionAttemptRef = useRef(null);
   const [history, setHistory] = useState([]);
   const [historyPage, setHistoryPage] = useState(1);
   const [historyLimit, setHistoryLimit] = useState(5);
@@ -267,6 +268,7 @@ export default function MaintenancePage() {
   };
   const close = () => {
     if (!busy) {
+      executionAttemptRef.current = null;
       setDialog(null);
       setFormError('');
     }
@@ -348,12 +350,20 @@ export default function MaintenancePage() {
     setBusy(true);
     setFormError('');
     try {
-      await executeMaintenance(dialog.item.uuid, {
+      const payload = {
         performedAt: values.performedAt,
         comment: values.comment,
         partsAction,
         ...(partsAction === 'partial' ? { partUuids } : {}),
+      };
+      const attempt = resolveIdempotencyAttempt(executionAttemptRef.current, {
+        operation: 'maintenance.execute',
+        resourceUuid: dialog.item.uuid,
+        body: payload,
       });
+      executionAttemptRef.current = attempt;
+      await executeMaintenance(dialog.item.uuid, payload, attempt.key);
+      executionAttemptRef.current = null;
       notify(
         'success',
         partsAction === 'skip'
@@ -711,7 +721,10 @@ export default function MaintenancePage() {
                           className="btn btn-sm btn-outline-brand flex-fill"
                           type="button"
                           disabled={busy}
-                          onClick={() => setDialog({ type: 'execute', item })}
+                          onClick={() => {
+                            executionAttemptRef.current = null;
+                            setDialog({ type: 'execute', item });
+                          }}
                         >
                           Effectuer
                         </button>
@@ -971,14 +984,11 @@ export default function MaintenancePage() {
             <fieldset className="surface d-grid gap-2 p-3">
               <legend className="h6 mb-0">Pièces réellement remplacées</legend>
               <p className="small text-body-secondary mb-1">
-                Cochez uniquement les pièces utilisées pendant cet entretien. Les quantités du
-                plan seront retirées du stock.
+                Cochez uniquement les pièces utilisées pendant cet entretien. Les quantités du plan
+                seront retirées du stock.
               </p>
               {activeItem.parts.map((part) => (
-                <label
-                  className="maintenance-execution-part form-check mb-0"
-                  key={part.uuid}
-                >
+                <label className="maintenance-execution-part form-check mb-0" key={part.uuid}>
                   <input
                     className="form-check-input"
                     type="checkbox"

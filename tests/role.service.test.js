@@ -93,12 +93,11 @@ describe('RoleService', () => {
       transaction,
     });
     expect(userRepository.incrementAuthorizationVersionsForRole).toHaveBeenCalledWith(7, {
-      excludeUserId: 42,
       transaction,
     });
   });
 
-  it('invalidates affected users except the administrator when permissions change', async () => {
+  it('invalidates every affected user including the administrator when permissions change', async () => {
     const oldPermission = { uuid: permissionUuid, name: 'materials.read' };
     const newPermission = {
       uuid: '9b1245ac-5d5a-4933-99b8-b86c4a026de4',
@@ -131,7 +130,6 @@ describe('RoleService', () => {
     await service.update(roleUuid, { permissionUuids: [newPermission.uuid] }, 42);
 
     expect(userRepository.incrementAuthorizationVersionsForRole).toHaveBeenCalledWith(7, {
-      excludeUserId: 42,
       transaction,
     });
   });
@@ -245,6 +243,12 @@ describe('RoleService', () => {
     await service.remove(roleUuid, 42);
 
     expect(userRepository.incrementAuthorizationVersionsForRole).toHaveBeenCalledTimes(2);
+    expect(userRepository.incrementAuthorizationVersionsForRole).toHaveBeenNthCalledWith(1, 7, {
+      transaction,
+    });
+    expect(userRepository.incrementAuthorizationVersionsForRole).toHaveBeenNthCalledWith(2, 9, {
+      transaction,
+    });
     expect(permissionRepository.delete).toHaveBeenCalledWith(visibilityPermission, {
       transaction,
     });

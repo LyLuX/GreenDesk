@@ -14,12 +14,6 @@
   gap: 1rem;
 }
 
-.relation-mode-switch {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
 .relations-card {
   overflow: hidden;
   border: 1px solid #dce5df;
@@ -62,7 +56,7 @@
 }
 
 .relation-node-company {
-  border-color: #236941;
+  border-color: var(--relation-company-color);
   background: #eaf5ee;
 }
 
@@ -115,7 +109,7 @@
 
 .relation-node-toggle:hover,
 .relation-node-toggle:focus-visible {
-  border-color: #236941;
+  border-color: var(--relation-company-color);
   box-shadow: 0 0 0 0.18rem rgb(35 105 65 / 18%);
 }
 
@@ -140,7 +134,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: #236941;
+  color: var(--relation-company-color);
   font-size: 0.75rem;
   font-weight: 700;
   text-decoration: underline;
@@ -178,10 +172,6 @@
     flex-direction: column;
   }
 
-  .relation-mode-switch .btn {
-    flex: 1 1 10rem;
-  }
-
   .relations-canvas {
     height: clamp(22rem, calc(100dvh - 25rem), 34rem);
     min-height: 22rem;
@@ -195,6 +185,13 @@
   --brand-sun: #d8b72a;
   --brand-blue: #2c7189;
   --brand-blue-dark: #20566b;
+  --critical-color: #b64141;
+  --surface-highlight-color: #edf3e9;
+  --control-border-color: #cbd7ce;
+  --brand-focus-color: rgba(79, 125, 33, 0.16);
+  --relation-company-color: #236941;
+  --sidebar-text-color: #435149;
+  --brand-company-color: #dbe8d7;
   --brand-mist: #f3f6f1;
   --ink: #1f2a25;
   --muted: #64716a;
@@ -294,6 +291,25 @@ a:hover {
   --bs-btn-active-border-color: var(--brand-forest-dark);
 }
 
+.btn-outline-critical {
+  --bs-btn-color: var(--critical-color);
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: var(--critical-color);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: var(--critical-color);
+  --bs-btn-hover-border-color: var(--critical-color);
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: var(--critical-color);
+  --bs-btn-active-border-color: var(--critical-color);
+  --bs-btn-disabled-color: var(--critical-color);
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: var(--critical-color);
+}
+
+.btn-outline-critical:focus-visible {
+  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--critical-color) 42%, transparent);
+}
+
 .timed-progress-button {
   --timed-progress-color: color-mix(in srgb, var(--brand-leaf) 72%, #fff);
   position: relative;
@@ -385,14 +401,14 @@ a:hover {
 
 .form-control,
 .form-select {
-  border-color: #cbd7ce;
+  border-color: var(--control-border-color);
   color: var(--ink);
 }
 
 .form-control:focus,
 .form-select:focus {
   border-color: var(--brand-leaf);
-  box-shadow: 0 0 0 0.2rem rgba(79, 125, 33, 0.16);
+  box-shadow: 0 0 0 0.2rem var(--brand-focus-color);
 }
 
 .app-shell {
@@ -442,7 +458,7 @@ a:hover {
 
 .brand-company {
   font-size: 0.72rem;
-  color: #dbe8d7;
+  color: var(--brand-company-color);
 }
 
 .brand-thumbnail,
@@ -556,14 +572,14 @@ a:hover {
   display: block;
   padding: 0.65rem 0.8rem;
   border-radius: 0.35rem;
-  color: #435149;
+  color: var(--sidebar-text-color);
   font-size: 0.93rem;
   font-weight: 500;
   text-decoration: none;
 }
 
 .sidebar-link:hover {
-  background: #edf3e9;
+  background: var(--surface-highlight-color);
   color: var(--brand-forest);
 }
 
@@ -582,7 +598,7 @@ a:hover {
   padding: 0.65rem 0.8rem;
   border: 0;
   border-radius: 0.35rem;
-  color: #435149;
+  color: var(--sidebar-text-color);
   font-size: 0.93rem;
   font-weight: 600;
   text-align: left;
@@ -592,7 +608,7 @@ a:hover {
 .sidebar-group-button:hover,
 .sidebar-group-button:focus-visible {
   color: var(--brand-forest);
-  background: #edf3e9;
+  background: var(--surface-highlight-color);
 }
 
 .sidebar-group.active > .sidebar-group-button {
@@ -789,7 +805,7 @@ a:hover {
 }
 
 .permission-option.selected {
-  background: #edf3e9;
+  background: var(--surface-highlight-color);
 }
 
 .permission-picker.has-permission-highlight .permission-option-muted {
@@ -806,7 +822,7 @@ a:hover {
 }
 
 .permission-option.permission-option-highlighted {
-  background: #edf3e9;
+  background: var(--surface-highlight-color);
   box-shadow: inset 0.25rem 0 var(--brand-leaf);
 }
 
@@ -874,7 +890,7 @@ a:hover {
   align-items: center;
   justify-content: center;
   padding: 0.375rem 0.65rem;
-  border-color: #cbd7ce;
+  border-color: var(--control-border-color);
   color: var(--muted);
 }
 
@@ -886,7 +902,7 @@ a:hover {
 
 .password-visibility-toggle:focus-visible {
   border-color: var(--brand-leaf);
-  box-shadow: 0 0 0 0.2rem rgba(79, 125, 33, 0.16);
+  box-shadow: 0 0 0 0.2rem var(--brand-focus-color);
 }
 
 .password-visibility-toggle svg {
@@ -1086,19 +1102,19 @@ a:hover {
   flex-wrap: nowrap;
   --bs-pagination-color: var(--brand-forest);
   --bs-pagination-bg: #fff;
-  --bs-pagination-border-color: #cbd7ce;
+  --bs-pagination-border-color: var(--control-border-color);
   --bs-pagination-hover-color: #fff;
   --bs-pagination-hover-bg: var(--brand-forest);
   --bs-pagination-hover-border-color: var(--brand-forest);
   --bs-pagination-focus-color: var(--brand-forest-dark);
-  --bs-pagination-focus-bg: #edf3e9;
-  --bs-pagination-focus-box-shadow: 0 0 0 0.2rem rgba(79, 125, 33, 0.16);
+  --bs-pagination-focus-bg: var(--surface-highlight-color);
+  --bs-pagination-focus-box-shadow: 0 0 0 0.2rem var(--brand-focus-color);
   --bs-pagination-active-color: #fff;
   --bs-pagination-active-bg: var(--brand-forest);
   --bs-pagination-active-border-color: var(--brand-forest);
   --bs-pagination-disabled-color: var(--muted);
   --bs-pagination-disabled-bg: #f3f5f3;
-  --bs-pagination-disabled-border-color: #dbe3dc;
+  --bs-pagination-disabled-border-color: var(--border);
 }
 
 .greendesk-pagination .page-link {
@@ -1142,7 +1158,7 @@ a:hover {
 
 .table-shell thead th {
   border-bottom: 1px solid var(--border);
-  background: #edf3e9;
+  background: var(--surface-highlight-color);
   color: #3a5142;
   font-size: 0.76rem;
   font-weight: 700;
@@ -1287,7 +1303,7 @@ a:hover {
 }
 
 .metric-card.maintenance-overdue {
-  --metric-card-accent: #b64141;
+  --metric-card-accent: var(--critical-color);
 }
 
 .metric-card.maintenance-wear-based {
@@ -1295,7 +1311,7 @@ a:hover {
 }
 
 .metric-card.maintenance-low-stock {
-  --metric-card-accent: #b64141;
+  --metric-card-accent: var(--critical-color);
 }
 
 .modal-backdrop-custom {
@@ -1633,7 +1649,7 @@ body.app-scroll-locked {
   width: 15rem;
   padding: 1rem 1.25rem;
   border-right: 1px solid var(--border);
-  background: #edf3e9;
+  background: var(--surface-highlight-color);
   color: var(--muted);
   font-size: 0.76rem;
   font-weight: 700;
@@ -1859,7 +1875,7 @@ body.app-scroll-locked {
 .maintenance-history-list > li.maintenance-history-without-parts {
   padding-inline: 0.75rem;
   background: #fff5f5;
-  border-left: 4px solid #b64141;
+  border-left: 4px solid var(--critical-color);
 }
 
 .maintenance-history-list > li.maintenance-history-partial-parts {
@@ -2217,7 +2233,7 @@ body.app-scroll-locked {
   }
 
   .maintenance-order-print-brand .brand-company {
-    color: #dbe8d7;
+    color: var(--brand-company-color);
     font-size: 8pt;
   }
 
@@ -2295,7 +2311,7 @@ body.app-scroll-locked {
 
   .maintenance-order-list-printable .table thead th {
     color: #3a5142;
-    background: #edf3e9;
+    background: var(--surface-highlight-color);
   }
 
   .maintenance-order-print-manufacturer {

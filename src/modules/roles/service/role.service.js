@@ -82,7 +82,6 @@ export default class RoleService {
           });
         }
         await this.userRepository.incrementAuthorizationVersionsForRole(existingRole.id, {
-          excludeUserId: actorUserId,
           transaction,
         });
         const restored = await this.roleRepository.findByUuid(existingRole.uuid, { transaction });
@@ -150,7 +149,6 @@ export default class RoleService {
       }
       if (permissionsChanged) {
         await this.userRepository.incrementAuthorizationVersionsForRole(role.id, {
-          excludeUserId: actorUserId,
           transaction,
         });
       }
@@ -186,7 +184,6 @@ export default class RoleService {
       ];
       for (const affectedRole of affectedRoles) {
         await this.userRepository.incrementAuthorizationVersionsForRole(affectedRole.id, {
-          excludeUserId: actorUserId,
           transaction,
         });
       }
