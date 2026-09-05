@@ -145,7 +145,7 @@ export default function ReferencePage({
       resources.map(async (resourceName) => {
         const items = await listAllPages(
           createReferenceApi(resourceName).list,
-          {},
+          ['roles', 'permissions'].includes(resourceName) ? {} : { active: 'all' },
           controller.signal,
         );
         return [resourceName, items];

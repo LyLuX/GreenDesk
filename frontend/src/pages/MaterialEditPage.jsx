@@ -58,8 +58,8 @@ export default function MaterialEditPage() {
     try {
       const [item, manufacturers, categories] = await Promise.all([
         createReferenceApi('materials').get(uuid),
-        createReferenceApi('manufacturers').list({ limit: 25 }),
-        createReferenceApi('categories').list({ limit: 25 }),
+        createReferenceApi('manufacturers').list({ page: 1, limit: 25, active: 'all' }),
+        createReferenceApi('categories').list({ page: 1, limit: 25, active: 'all' }),
       ]);
       const materialData = item.data.data;
       setMaterial(materialData);

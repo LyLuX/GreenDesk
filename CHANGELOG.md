@@ -2,6 +2,10 @@
 
 ## Non publié
 
+## 9.0.0 - 2026-09-05
+
+- [MAJOR] Les URL de liste sont harmonisées avec la pagination en premier et sans statut ni tri par défaut ; l’API sélectionne les éléments actifs côté SQL et accepte `active=all` pour consulter tous les statuts.
+
 ## 8.0.0 - 2026-09-04
 
 - [PATCH] Les changements de rôles, de permissions et d’accès aux sociétés invalident immédiatement toutes les sessions concernées, y compris celle de l’administrateur à l’origine de l’opération.

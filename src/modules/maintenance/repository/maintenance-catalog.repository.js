@@ -43,7 +43,7 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
   findOperations({ search, active, page, limit } = {}) {
     const pagination = normalizePagination({ page, limit });
     const where = search ? { name: { [Op.like]: `%${search}%` } } : {};
-    const normalizedActive = normalizeBooleanFilter(active);
+    const normalizedActive = normalizeBooleanFilter(active, true);
     if (normalizedActive !== undefined) where.active = normalizedActive;
     return MaintenanceOperation.findAndCountAll({
       where: companyWhere(where),
@@ -107,7 +107,7 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
           ],
         }
       : {};
-    const normalizedActive = normalizeBooleanFilter(active);
+    const normalizedActive = normalizeBooleanFilter(active, true);
     if (normalizedActive !== undefined) where.active = normalizedActive;
     if (stockStatus === STOCK_STATUSES.IN_STOCK) {
       where[Op.and] = [

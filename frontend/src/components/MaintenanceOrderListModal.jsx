@@ -287,7 +287,7 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
         const [response, manufacturerResponse] = await Promise.all([
           getMaintenanceOrderList(filters, signal),
           createReferenceApi('manufacturers')
-            .list({ limit: 25 }, signal)
+            .list({ page: 1, limit: 25, active: 'all' }, signal)
             .catch(() => null),
         ]);
         if (requestId !== latestRequestId.current || signal?.aborted) return;

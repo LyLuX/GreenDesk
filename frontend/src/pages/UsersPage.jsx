@@ -98,7 +98,7 @@ export default function UsersPage() {
             page,
             limit,
             ...(debouncedSearch ? { search: debouncedSearch } : {}),
-            ...(active === 'deleted' ? { deleted: true } : active !== '' ? { active } : {}),
+            ...(active === 'deleted' ? { deleted: true } : { active: active || 'all' }),
             ...(active === '' && canReadDeletedUsers ? { includeDeleted: true } : {}),
             ...(roleUuid ? { roleUuid } : {}),
           },
@@ -162,7 +162,7 @@ export default function UsersPage() {
   useEffect(() => {
     if (!canReadCompanies) return undefined;
     const controller = new AbortController();
-    listAllPages(companiesApi.list, {}, controller.signal)
+    listAllPages(companiesApi.list, { active: 'all' }, controller.signal)
       .then(setCompanies)
       .catch((requestError) => {
         if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));

@@ -78,6 +78,6 @@ describe('CompaniesPage', () => {
     expect(referencePage.mock.calls[0][0].filters[0].options).not.toContainEqual(
       expect.objectContaining({ value: 'deleted' }),
     );
-    expect(referencePage.mock.calls[0][0].filters[0].toQuery('')).toEqual({});
+    expect(referencePage.mock.calls[0][0].filters[0].toQuery('')).toEqual({ active: 'all' });
   });
 });

@@ -1,9 +1,10 @@
 import { body, param, query } from 'express-validator';
+import { activeFilterValidator } from '../../../core/validators/active-filter.validator.js';
 import { paginationValidator } from '../../../core/validators/pagination.validator.js';
 
 export const listCompanyValidator = [
   query('search').optional({ values: 'falsy' }).trim().isLength({ max: 150 }),
-  query('active').optional({ values: 'falsy' }).isBoolean(),
+  activeFilterValidator(),
   query('deleted').optional({ values: 'falsy' }).isBoolean().toBoolean(),
   query('includeDeleted').optional({ values: 'falsy' }).isBoolean().toBoolean(),
   ...paginationValidator,

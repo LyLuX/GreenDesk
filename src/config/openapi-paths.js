@@ -59,6 +59,7 @@ const searchParameter = {
   required: false,
   schema: { type: 'string', maxLength: 150 },
 };
+const activeParameter = parameterRef('ActiveFilter');
 const pageParameter = {
   name: 'page',
   in: 'query',
@@ -203,7 +204,7 @@ export const openApiPaths = {
       security: secure,
       parameters: [
         searchParameter,
-        { name: 'active', in: 'query', schema: { type: 'boolean' } },
+        activeParameter,
         {
           name: 'deleted',
           in: 'query',
@@ -355,7 +356,7 @@ export const openApiPaths = {
       security: secure,
       parameters: [
         searchParameter,
-        { name: 'active', in: 'query', schema: { type: 'boolean' } },
+        activeParameter,
         {
           name: 'deleted',
           in: 'query',
@@ -584,7 +585,7 @@ export const openApiPaths = {
       summary: 'Liste les catégories.',
       description: 'Nécessite `categories.read`. Alias historique déprécié : `/api/categories`.',
       security: secure,
-      parameters: [searchParameter, pageParameter, limitParameter],
+      parameters: [pageParameter, limitParameter, activeParameter, searchParameter],
       responses: {
         200: jsonResponse('CategoryListResponse', 'Catégories retournées.'),
         ...standardErrors,
@@ -646,7 +647,7 @@ export const openApiPaths = {
       description:
         'Nécessite `manufacturers.read` ou `maintenance.parts.read`. Les anciennes routes `/brands` et `/maintenance/manufacturers` sont dépréciées.',
       security: secure,
-      parameters: [searchParameter, pageParameter, limitParameter],
+      parameters: [pageParameter, limitParameter, activeParameter, searchParameter],
       responses: {
         200: jsonResponse('ManufacturerListResponse', 'Fabricants retournés.'),
         ...standardErrors,
@@ -756,11 +757,7 @@ export const openApiPaths = {
         searchParameter,
         pageParameter,
         limitParameter,
-        {
-          name: 'active',
-          in: 'query',
-          schema: { type: 'boolean' },
-        },
+        activeParameter,
         {
           name: 'manufacturerUuid',
           in: 'query',
@@ -812,12 +809,7 @@ export const openApiPaths = {
       description:
         'Nécessite `materials.read`, `maintenance.read` ou `maintenance.parts.stock.consume`. La réponse légère ne contient que l’identifiant, le nom et le statut.',
       security: secure,
-      parameters: [
-        searchParameter,
-        { name: 'active', in: 'query', schema: { type: 'boolean' } },
-        pageParameter,
-        limitParameter,
-      ],
+      parameters: [searchParameter, activeParameter, pageParameter, limitParameter],
       responses: {
         200: jsonResponse('MaterialOptionListResponse', 'Options de matériels retournées.'),
         ...standardErrors,
@@ -999,12 +991,7 @@ export const openApiPaths = {
       summary: 'Liste les opérations réutilisables.',
       description: 'Nécessite `maintenance.operations.read` ou `maintenance.read`.',
       security: secure,
-      parameters: [
-        searchParameter,
-        { name: 'active', in: 'query', schema: { type: 'boolean' } },
-        pageParameter,
-        limitParameter,
-      ],
+      parameters: [searchParameter, activeParameter, pageParameter, limitParameter],
       responses: {
         200: jsonResponse(
           'MaintenanceOperationListResponse',
@@ -1059,7 +1046,7 @@ export const openApiPaths = {
       description:
         'Nécessite `suppliers.read` ou `maintenance.parts.read`. L’ancienne route `/maintenance/suppliers` est dépréciée.',
       security: secure,
-      parameters: [searchParameter, pageParameter, limitParameter],
+      parameters: [pageParameter, limitParameter, activeParameter, searchParameter],
       responses: {
         200: jsonResponse('SupplierListResponse', 'Fournisseurs retournés.'),
         ...standardErrors,
@@ -1112,7 +1099,7 @@ export const openApiPaths = {
       security: secure,
       parameters: [
         searchParameter,
-        { name: 'active', in: 'query', schema: { type: 'boolean' } },
+        activeParameter,
         {
           name: 'stockStatus',
           in: 'query',
@@ -1426,7 +1413,7 @@ export const openApiPaths = {
             enum: MAINTENANCE_DEADLINE_STATUSES,
           },
         },
-        { name: 'active', in: 'query', schema: { type: 'boolean' } },
+        activeParameter,
         pageParameter,
         limitParameter,
       ],

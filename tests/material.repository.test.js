@@ -11,13 +11,15 @@ describe('MaterialRepository maintenance cascades', () => {
   });
 
   it('loads lightweight material options without catalogue associations', async () => {
-    const findAll = jest.spyOn(Material, 'findAll').mockResolvedValue([]);
+    const findAll = jest
+      .spyOn(Material, 'findAndCountAll')
+      .mockResolvedValue({ count: 0, rows: [] });
 
     await new MaterialRepository().findOptions();
 
     expect(findAll).toHaveBeenCalledWith({
       attributes: ['uuid', 'name', 'active'],
-      where: {},
+      where: { active: true },
       order: [['name', 'ASC']],
       limit: 5,
       offset: 0,

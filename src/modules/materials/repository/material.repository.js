@@ -23,7 +23,7 @@ export default class MaterialRepository extends TransactionalRepository {
   async findOptions({ search, active, page, limit } = {}) {
     const pagination = normalizePagination({ page, limit });
     const where = search ? { name: { [Op.like]: `%${search}%` } } : {};
-    const normalizedActive = normalizeBooleanFilter(active);
+    const normalizedActive = normalizeBooleanFilter(active, true);
     if (normalizedActive !== undefined) where.active = normalizedActive;
     return Material.findAndCountAll({
       attributes: ['uuid', 'name', 'active'],
@@ -50,7 +50,7 @@ export default class MaterialRepository extends TransactionalRepository {
         { name: { [Op.like]: `%${search}%` } },
         { serialNumber: { [Op.like]: `%${search}%` } },
       ];
-    const normalizedActive = normalizeBooleanFilter(active);
+    const normalizedActive = normalizeBooleanFilter(active, true);
     if (normalizedActive !== undefined) where.active = normalizedActive;
     const filteredInclude = [
       {

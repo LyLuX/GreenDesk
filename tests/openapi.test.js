@@ -53,6 +53,24 @@ const operationParameters = (path, method) => {
 };
 
 describe('OpenAPI contract', () => {
+  it.each([
+    '/companies',
+    '/users',
+    '/categories',
+    '/manufacturers',
+    '/suppliers',
+    '/materials',
+    '/materials/options',
+    '/maintenance',
+    '/maintenance/operations',
+    '/maintenance/parts',
+  ])('documents the active default and explicit all filter on %s', (path) => {
+    const parameter = operationParameters(path, 'get').find(({ name }) => name === 'active');
+    expect(parameter.schema.default).toBe(true);
+    expect(parameter.schema.oneOf).toContainEqual({ type: 'string', enum: ['all'] });
+    expect(parameter.description).toContain('SQL');
+  });
+
   it('is a valid OpenAPI 3 document', async () => {
     await expect(SwaggerParser.validate(swaggerSpec)).resolves.toBeDefined();
   });

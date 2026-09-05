@@ -22,7 +22,10 @@ export default class CompanyRepository extends TransactionalRepository {
       const pattern = `%${search}%`;
       where.name = { [Op.like]: pattern };
     }
-    const normalizedActive = normalizeBooleanFilter(active);
+    const normalizedActive = normalizeBooleanFilter(
+      active,
+      deleted || includeDeleted ? undefined : true,
+    );
     if (normalizedActive !== undefined) where.active = normalizedActive;
     if (deleted) where.deletedAt = { [Op.ne]: null };
     if (Array.isArray(accessibleUuids)) where.uuid = { [Op.in]: accessibleUuids };

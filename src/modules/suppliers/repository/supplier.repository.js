@@ -1,4 +1,5 @@
 import { Op } from 'sequelize';
+import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 
 import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
 import MaintenancePart from '../../maintenance/model/maintenance-part.model.js';
@@ -7,10 +8,13 @@ import { normalizePagination } from '../../../core/utils/pagination.js';
 import { companyValues, companyWhere } from '../../../core/company/company-context.js';
 
 export default class SupplierRepository extends TransactionalRepository {
-  findAll({ search, page, limit } = {}) {
+  findAll({ search, active, page, limit } = {}) {
     const pagination = normalizePagination({ page, limit });
+    const where = search ? { name: { [Op.like]: `%${search}%` } } : {};
+    const normalizedActive = normalizeBooleanFilter(active, true);
+    if (normalizedActive !== undefined) where.active = normalizedActive;
     return Supplier.findAndCountAll({
-      where: companyWhere(search ? { name: { [Op.like]: `%${search}%` } } : {}),
+      where: companyWhere(where),
       order: [['name', 'ASC']],
       limit: pagination.limit,
       offset: pagination.offset,

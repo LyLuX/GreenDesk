@@ -1,4 +1,5 @@
 import { body, param, query } from 'express-validator';
+import { activeFilterValidator } from '../../../core/validators/active-filter.validator.js';
 import { paginationValidator } from '../../../core/validators/pagination.validator.js';
 import { MAX_UNIT_PRICE } from '../../../core/utils/money.js';
 import { STOCK_STATUS_VALUES } from '../../../core/inventory/stock-status.js';
@@ -47,7 +48,7 @@ export const listValidator = [
   query('priority').optional({ values: 'falsy' }).isIn(MAINTENANCE_PRIORITIES),
   query('maintenanceType').optional({ values: 'falsy' }).isIn(MAINTENANCE_TYPES),
   query('status').optional({ values: 'falsy' }).isIn(MAINTENANCE_DEADLINE_STATUSES),
-  query('active').optional({ values: 'falsy' }).isBoolean().toBoolean(),
+  activeFilterValidator(),
   query('overdue').optional({ values: 'falsy' }).isBoolean().toBoolean(),
   query('upcoming').optional({ values: 'falsy' }).isBoolean().toBoolean(),
   ...paginationValidator,
@@ -117,7 +118,7 @@ export const orderListValidator = [
 ];
 export const catalogListValidator = [
   query('search').optional({ values: 'falsy' }).trim().isLength({ max: 150 }),
-  query('active').optional({ values: 'falsy' }).isBoolean().toBoolean(),
+  activeFilterValidator(),
   ...paginationValidator,
 ];
 export const partCatalogListValidator = [

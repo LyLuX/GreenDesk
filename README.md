@@ -8,7 +8,7 @@ Sa finalité est de réunir dans un même outil les informations souvent dispers
 papier, tableaux et documents : matériels en service, caractéristiques, photos, entretiens à
 prévoir, pièces nécessaires, état des stocks, coûts et historique des actions réalisées.
 
-La version actuelle de GreenDesk est **8.0.0**.
+La version actuelle de GreenDesk est **9.0.0**.
 
 ## Ce que permet GreenDesk
 
@@ -166,6 +166,18 @@ Vite transmet par défaut les appels `/api` au backend local. Les éventuelles a
 frontend peuvent être placées dans `frontend/.env`.
 
 ## Documentation de l’API
+
+Les URL de liste construites par le frontend placent `page`, puis `limit`, puis les autres
+paramètres par ordre alphabétique. Par exemple : `/api/v1/companies?page=1&limit=5`.
+Le statut actif et le tri par défaut sont appliqués par les requêtes SQL du backend et sont
+omis des URL. Les tris existants restent propres à chaque liste (par exemple nom croissant
+pour les sociétés et date d’achat décroissante pour les matériels).
+
+Depuis la version 9.0.0, les listes disposant d’un statut retournent les éléments actifs
+par défaut. Les clients API qui souhaitent tous les statuts doivent transmettre `active=all` ;
+`active=false` sélectionne les éléments inactifs. Les filtres `deleted=true` et
+`includeDeleted=true` conservent leurs permissions et désactivent le filtre actif implicite.
+Un statut actif explicitement fourni peut toujours être combiné à ces filtres.
 
 Lorsque le backend fonctionne en développement ou en test :
 

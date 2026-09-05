@@ -56,7 +56,10 @@ export default class UserRepository extends TransactionalRepository {
         { email: { [Op.like]: pattern } },
       ];
     }
-    const normalizedActive = normalizeBooleanFilter(active);
+    const normalizedActive = normalizeBooleanFilter(
+      active,
+      deleted || includeDeleted ? undefined : true,
+    );
     if (normalizedActive !== undefined) where.isActive = normalizedActive;
     if (deleted) where.deletedAt = { [Op.ne]: null };
     const pageResult = await User.findAndCountAll({

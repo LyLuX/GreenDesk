@@ -98,7 +98,10 @@ describe('MaintenanceOrderListModal', () => {
 
     const dialog = screen.getByRole('dialog');
     const logo = await within(dialog).findByRole('img', { name: 'Logo NGK' });
-    expect(mocks.listManufacturers).toHaveBeenCalledWith({ limit: 25 }, expect.any(AbortSignal));
+    expect(mocks.listManufacturers).toHaveBeenCalledWith(
+      { page: 1, limit: 25, active: 'all' },
+      expect.any(AbortSignal),
+    );
     expect(logo).toBeVisible();
     expect(
       document.querySelector('.maintenance-order-print-brand .brand-company'),

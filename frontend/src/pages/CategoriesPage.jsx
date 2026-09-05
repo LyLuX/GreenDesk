@@ -30,7 +30,7 @@ export default function CategoriesPage() {
           ),
         },
       ]}
-      filters={[{ name: 'active', ...activityStatusFilter, clientSide: true }]}
+      filters={[{ name: 'active', ...activityStatusFilter }]}
     />
   );
 }

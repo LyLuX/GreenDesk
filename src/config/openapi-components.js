@@ -1655,6 +1655,17 @@ export const openApiHeaders = {
 };
 
 export const openApiParameters = {
+  ActiveFilter: {
+    name: 'active',
+    in: 'query',
+    required: false,
+    description:
+      'Sans ce paramètre, la requête SQL sélectionne les éléments actifs. Utiliser false pour les inactifs ou all pour tous les statuts. Avec deleted=true ou includeDeleted=true, aucun filtre actif implicite n’est appliqué. Les permissions existantes sur les éléments supprimés restent requises.',
+    schema: {
+      oneOf: [{ type: 'boolean' }, { type: 'string', enum: ['all'] }],
+      default: true,
+    },
+  },
   IdempotencyKeyHeader: {
     name: 'Idempotency-Key',
     in: 'header',

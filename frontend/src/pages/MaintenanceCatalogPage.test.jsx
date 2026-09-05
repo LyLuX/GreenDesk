@@ -246,8 +246,14 @@ describe('dedicated maintenance catalogue pages', () => {
     render(<MaintenancePartsPage />);
 
     expect(await screen.findByRole('heading', { name: 'Pièces de maintenance' })).toBeVisible();
-    expect(mocks.listManufacturers).toHaveBeenCalledWith({ limit: 25 }, expect.any(AbortSignal));
-    expect(mocks.listSuppliers).toHaveBeenCalledWith({ limit: 25 }, expect.any(AbortSignal));
+    expect(mocks.listManufacturers).toHaveBeenCalledWith(
+      { page: 1, limit: 25, active: 'all' },
+      expect.any(AbortSignal),
+    );
+    expect(mocks.listSuppliers).toHaveBeenCalledWith(
+      { page: 1, limit: 25, active: 'all' },
+      expect.any(AbortSignal),
+    );
     expect(await screen.findByText('BPMR8Y')).toBeVisible();
     expect(screen.getByRole('img', { name: 'Logo NGK' })).toBeVisible();
     expect(screen.queryByText('NGK')).not.toBeInTheDocument();

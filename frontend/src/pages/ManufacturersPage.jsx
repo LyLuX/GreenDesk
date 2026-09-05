@@ -46,7 +46,7 @@ export default function ManufacturersPage() {
           ),
         },
       ]}
-      filters={[{ name: 'active', ...activityStatusFilter, clientSide: true }]}
+      filters={[{ name: 'active', ...activityStatusFilter }]}
     />
   );
 }

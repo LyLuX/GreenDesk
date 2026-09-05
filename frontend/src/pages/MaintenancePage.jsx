@@ -207,8 +207,8 @@ export default function MaintenancePage() {
   const loadCatalogs = useCallback(async (signal) => {
     try {
       const [materialList, operationList] = await Promise.all([
-        listAllPages(listMaterialOptions, {}, signal),
-        listAllPages(listMaintenanceOperations, {}, signal),
+        listAllPages(listMaterialOptions, { active: 'all' }, signal),
+        listAllPages(listMaintenanceOperations, { active: 'all' }, signal),
       ]);
       setMaterials(materialList);
       setOperations(operationList);
@@ -228,7 +228,10 @@ export default function MaintenancePage() {
     async (signal) => {
       setPartsLoading(true);
       try {
-        const response = await listMaintenanceParts({ page: partsPage, limit: partsLimit }, signal);
+        const response = await listMaintenanceParts(
+          { page: partsPage, limit: partsLimit, active: 'all' },
+          signal,
+        );
         const payload = response.data.data ?? {};
         setParts(Array.isArray(payload) ? payload : (payload.items ?? []));
         setPartsPagination(Array.isArray(payload) ? null : (payload.pagination ?? null));

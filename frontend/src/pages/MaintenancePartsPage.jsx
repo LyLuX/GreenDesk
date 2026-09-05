@@ -53,8 +53,8 @@ export default function MaintenancePartsPage() {
     setIsLoading(true);
     try {
       const [manufacturerResponse, supplierResponse] = await Promise.all([
-        createReferenceApi('manufacturers').list({ limit: 25 }, signal),
-        createReferenceApi('suppliers').list({ limit: 25 }, signal),
+        createReferenceApi('manufacturers').list({ page: 1, limit: 25, active: 'all' }, signal),
+        createReferenceApi('suppliers').list({ page: 1, limit: 25, active: 'all' }, signal),
       ]);
       setManufacturers(extractPageItems(manufacturerResponse.data.data));
       setSuppliers(extractPageItems(supplierResponse.data.data));

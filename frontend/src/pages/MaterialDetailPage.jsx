@@ -178,7 +178,7 @@ export default function MaterialDetailPage() {
     if (!hasPermission(maintenancePermissions.plans.read)) return undefined;
     const controller = new AbortController();
     listMaintenance(
-      { materialUuid: uuid, page: maintenancePage, limit: maintenanceLimit },
+      { page: maintenancePage, limit: maintenanceLimit, materialUuid: uuid, active: 'all' },
       controller.signal,
     )
       .then((response) => {

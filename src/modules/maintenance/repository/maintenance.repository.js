@@ -125,7 +125,7 @@ export default class MaintenanceRepository extends TransactionalRepository {
     }
     if (priority) where.priority = priority;
     if (maintenanceType) where.maintenanceType = maintenanceType;
-    const normalizedActive = normalizeBooleanFilter(active);
+    const normalizedActive = normalizeBooleanFilter(active, true);
     if (normalizedActive !== undefined) where.active = normalizedActive;
     const statusFilter = getStatusFilter(status);
     if (statusFilter) where[Op.and] = [statusFilter];

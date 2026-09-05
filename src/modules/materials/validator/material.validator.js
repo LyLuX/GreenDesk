@@ -1,10 +1,11 @@
 import { body, param, query } from 'express-validator';
+import { activeFilterValidator } from '../../../core/validators/active-filter.validator.js';
 import { paginationValidator } from '../../../core/validators/pagination.validator.js';
 const uuid = param('uuid').isUUID();
 export const listValidator = [
   query('search').optional({ values: 'falsy' }).trim().isLength({ max: 150 }),
   ...paginationValidator,
-  query('active').optional({ values: 'falsy' }).isBoolean().toBoolean(),
+  activeFilterValidator(),
   query('manufacturerUuid').optional({ values: 'falsy' }).isUUID(),
   query('brandUuid').optional({ values: 'falsy' }).isUUID(),
   query('categoryUuid').optional({ values: 'falsy' }).isUUID(),
@@ -15,7 +16,7 @@ export const uuidValidator = [uuid];
 export const historyValidator = [uuid, ...paginationValidator];
 export const optionsValidator = [
   query('search').optional({ values: 'falsy' }).trim().isLength({ max: 150 }),
-  query('active').optional({ values: 'falsy' }).isBoolean().toBoolean(),
+  activeFilterValidator(),
   ...paginationValidator,
 ];
 export const createValidator = [

@@ -34,7 +34,7 @@ export default function SuppliersPage() {
           ),
         },
       ]}
-      filters={[{ name: 'active', ...activityStatusFilter, clientSide: true }]}
+      filters={[{ name: 'active', ...activityStatusFilter }]}
     />
   );
 }

@@ -3,7 +3,7 @@ import { idempotencyRequestConfig } from './idempotency.js';
 import compactQueryParams from './query-params.js';
 
 export const listMaintenance = (params, signal) =>
-  client.get('/v1/maintenance', { params: compactQueryParams(params), signal });
+  client.get('/v1/maintenance', { params: compactQueryParams(params, { active: true }), signal });
 export const createMaintenance = (payload) => client.post('/v1/maintenance', payload);
 export const updateMaintenance = (uuid, payload) => client.put(`/v1/maintenance/${uuid}`, payload);
 export const setMaintenanceStatus = (uuid, active) =>
@@ -24,7 +24,10 @@ export const listMaintenanceInterventions = (params, signal) =>
 export const createMaintenanceIntervention = (payload, idempotencyKey) =>
   client.post('/v1/maintenance/interventions', payload, idempotencyRequestConfig(idempotencyKey));
 export const listMaintenanceOperations = (params, signal) =>
-  client.get('/v1/maintenance/operations', { params: compactQueryParams(params), signal });
+  client.get('/v1/maintenance/operations', {
+    params: compactQueryParams(params, { active: true }),
+    signal,
+  });
 export const createMaintenanceOperation = (payload) =>
   client.post('/v1/maintenance/operations', payload);
 export const updateMaintenanceOperation = (uuid, payload) =>
@@ -32,7 +35,10 @@ export const updateMaintenanceOperation = (uuid, payload) =>
 export const deleteMaintenanceOperation = (uuid) =>
   client.delete(`/v1/maintenance/operations/${uuid}`);
 export const listMaintenanceParts = (params, signal) =>
-  client.get('/v1/maintenance/parts', { params: compactQueryParams(params), signal });
+  client.get('/v1/maintenance/parts', {
+    params: compactQueryParams(params, { active: true }),
+    signal,
+  });
 export const createMaintenancePart = (payload) => client.post('/v1/maintenance/parts', payload);
 export const updateMaintenancePart = (uuid, payload) =>
   client.put(`/v1/maintenance/parts/${uuid}`, payload);
@@ -59,12 +65,18 @@ export const listMaintenancePartPriceHistory = (uuid, params, signal) =>
 export const deleteMaintenancePart = (uuid) => client.delete(`/v1/maintenance/parts/${uuid}`);
 export const getMaintenanceOrderList = (params, signal) =>
   client.get('/v1/maintenance/order-list', {
-    params: compactQueryParams(params),
+    params: compactQueryParams(params, {
+      horizonDays: 30,
+      includeOverdue: true,
+      includeWearBased: false,
+      includeLowStock: false,
+      lowStockOnly: false,
+    }),
     signal,
   });
 export const getMaintenanceSheets = (params, signal) =>
   client.get('/v1/maintenance/sheets', {
-    params: compactQueryParams(params),
+    params: compactQueryParams(params, { includeOverdue: false, includeWearBased: false }),
     signal,
   });
 export const recordMaintenanceSheetPrint = () => client.post('/v1/maintenance/sheets/print-events');

@@ -185,7 +185,7 @@ describe('MaintenancePage', () => {
       expect.any(AbortSignal),
     );
     expect(mocks.listMaterials).toHaveBeenCalledWith(
-      { page: 1, limit: 25 },
+      { page: 1, limit: 25, active: 'all' },
       expect.any(AbortSignal),
     );
     expect(screen.getByText('05/08/2026')).toBeInTheDocument();
@@ -533,7 +533,10 @@ describe('MaintenancePage', () => {
     const firstPart = await within(dialog).findByRole('checkbox', {
       name: 'Pièce 1 — REF-1',
     });
-    expect(mocks.listParts).toHaveBeenCalledWith({ page: 1, limit: 5 }, expect.any(AbortSignal));
+    expect(mocks.listParts).toHaveBeenCalledWith(
+      { page: 1, limit: 5, active: 'all' },
+      expect.any(AbortSignal),
+    );
     expect(within(dialog).queryByRole('button', { name: 'Charger plus de pièces' })).toBeNull();
 
     await user.click(firstPart);
@@ -545,7 +548,7 @@ describe('MaintenancePage', () => {
       await within(dialog).findByRole('checkbox', { name: 'Pièce 2 — REF-2' }),
     ).toBeInTheDocument();
     expect(mocks.listParts).toHaveBeenLastCalledWith(
-      { page: 2, limit: 5 },
+      { page: 2, limit: 5, active: 'all' },
       expect.any(AbortSignal),
     );
 

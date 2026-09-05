@@ -85,7 +85,7 @@ export default function CompaniesPage() {
                 ? { active: value }
                 : canReadDeletedCompanies
                   ? { includeDeleted: true }
-                  : {},
+                  : { active: 'all' },
         },
       ]}
     />

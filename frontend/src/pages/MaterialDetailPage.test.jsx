@@ -346,7 +346,7 @@ describe('MaterialDetailPage', () => {
 
     expect(await screen.findByText('Entretien page 2')).toBeVisible();
     expect(mocks.listMaintenance).toHaveBeenLastCalledWith(
-      { materialUuid: 'material-uuid', page: 2, limit: 5 },
+      { materialUuid: 'material-uuid', page: 2, limit: 5, active: 'all' },
       expect.any(AbortSignal),
     );
   });

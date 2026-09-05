@@ -74,7 +74,7 @@ export default function MaintenanceCatalogPage({
             page,
             limit,
             ...(debouncedSearch ? { search: debouncedSearch } : {}),
-            ...(active !== '' ? { active } : {}),
+            active: active || 'all',
             ...Object.fromEntries(
               Object.entries(additionalFilterValues).filter(([, value]) => value !== ''),
             ),
