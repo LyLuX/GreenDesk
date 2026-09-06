@@ -8,6 +8,73 @@ import {
 describe('MaintenanceService', () => {
   const createService = () => new MaintenanceService({ findAll: jest.fn() }, {}, {});
 
+  it.each([false, true])(
+    'includes logo metadata directly in order items (lowStockOnly=%s)',
+    async (lowStockOnly) => {
+      const parts = [
+        {
+          uuid: 'with-logo',
+          manufacturerDirectory: {
+            uuid: 'manufacturer-30',
+            name: 'Fabricant 30',
+            logoFileName: 'internal-logo.webp',
+          },
+        },
+        {
+          uuid: 'without-logo',
+          manufacturerDirectory: {
+            uuid: 'manufacturer-31',
+            name: 'Fabricant 31',
+            logoFileName: null,
+          },
+        },
+        { uuid: 'without-directory', manufacturerDirectory: null },
+      ].map((part) => ({
+        name: part.uuid,
+        reference: part.uuid,
+        unit: 'pièce',
+        active: true,
+        quantityOnHand: 0,
+        quantityOnOrder: 0,
+        minimumStockQuantity: 1,
+        MaintenanceTaskPart: { quantity: 1 },
+        ...part,
+      }));
+      const task = {
+        uuid: 'task',
+        title: 'Entretien',
+        intervalDays: 30,
+        lastMaintenanceDate: '2026-08-01',
+        parts,
+      };
+      const repository = {
+        findForOrderList: jest.fn().mockResolvedValue([{ toJSON: () => task }]),
+      };
+      const catalog = { findLowStockParts: jest.fn().mockResolvedValue(parts) };
+      const service = new MaintenanceService(repository, {}, {}, catalog);
+
+      const result = await service.getOrderList({ lowStockOnly });
+      expect(result.items).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            uuid: 'with-logo',
+            manufacturerUuid: 'manufacturer-30',
+            manufacturer: 'Fabricant 30',
+            manufacturerHasLogo: true,
+          }),
+          expect.objectContaining({ uuid: 'without-logo', manufacturerHasLogo: false }),
+          expect.objectContaining({
+            uuid: 'without-directory',
+            manufacturerUuid: null,
+            manufacturerHasLogo: false,
+          }),
+        ]),
+      );
+      expect(JSON.stringify(result)).not.toContain('internal-logo.webp');
+      expect(JSON.stringify(result)).not.toContain('logoFileName');
+    },
+  );
+
   it('caps maintenance plan pages at an allowed size', async () => {
     const service = new MaintenanceService(
       { findAll: jest.fn().mockResolvedValue({ count: 120, rows: [] }) },

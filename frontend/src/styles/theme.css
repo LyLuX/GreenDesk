@@ -1,0 +1,127 @@
+:root {
+  --brand-forest: #0d4a32;
+  --brand-forest-dark: #083726;
+  --brand-leaf: #4f7d21;
+  --brand-sun: #d8b72a;
+  --brand-blue: #2c7189;
+  --brand-blue-dark: #20566b;
+  --critical-color: #b64141;
+  --surface-highlight-color: #edf3e9;
+  --control-border-color: #cbd7ce;
+  --brand-focus-color: color-mix(in srgb, var(--brand-leaf) 16%, transparent);
+  --relation-company-color: #236941;
+  --sidebar-text-color: #435149;
+  --brand-company-color: #dbe8d7;
+  --brand-mist: #f3f6f1;
+  --ink: #1f2a25;
+  --muted: #64716a;
+  --border: #dbe3dc;
+  --dashboard-background: color-mix(in srgb, var(--brand-mist) 92%, var(--brand-forest) 8%);
+  --status-badge-success-color: var(--brand-forest-dark);
+  --status-badge-success-background: color-mix(in srgb, var(--brand-leaf) 15%, var(--bs-body-bg));
+  --status-badge-info-color: var(--brand-blue-dark);
+  --status-badge-info-background: color-mix(in srgb, var(--brand-blue) 14%, var(--bs-body-bg));
+  --status-badge-warning-color: var(--bs-warning-text-emphasis);
+  --status-badge-warning-background: color-mix(in srgb, var(--brand-sun) 25%, var(--bs-body-bg));
+  --status-badge-danger-color: var(--bs-danger-text-emphasis);
+  --status-badge-danger-background: color-mix(in srgb, var(--bs-danger) 16%, var(--bs-body-bg));
+  --status-badge-maintenance-color: var(--bs-purple);
+  --status-badge-maintenance-background: color-mix(
+    in srgb,
+    var(--bs-purple) 14%,
+    var(--bs-body-bg)
+  );
+  --status-badge-access-color: color-mix(in srgb, var(--bs-teal) 50%, var(--brand-forest-dark));
+  --status-badge-access-background: color-mix(in srgb, var(--bs-teal) 13%, var(--bs-body-bg));
+  --status-badge-neutral-color: var(--muted);
+  --status-badge-neutral-background: color-mix(in srgb, var(--bs-secondary) 12%, var(--bs-body-bg));
+  --status-badge-minimum-color: color-mix(in srgb, var(--bs-orange) 55%, var(--brand-forest-dark));
+  --status-badge-minimum-background: color-mix(in srgb, var(--bs-orange) 15%, var(--bs-body-bg));
+  --maintenance-wear-based-color: var(--status-badge-maintenance-color);
+  --maintenance-wear-based-background: var(--status-badge-maintenance-background);
+  --relation-border-color: #dce5df;
+  --surface-color: #fff;
+  --relation-toolbar-border-color: #e2e9e5;
+  --relation-toolbar-background: #f8faf9;
+  --relation-canvas-background: #f7faf8;
+  --relation-node-border-color: #8fa69a;
+  --relation-node-text-color: #213b2d;
+  --relation-company-background: #eaf5ee;
+  --relation-domain-border-color: #7aa88c;
+  --relation-domain-background: #f0f7f2;
+  --relation-entity-border-color: #7b69ad;
+  --relation-technical-border-color: #d6aa5c;
+  --relation-technical-background: #fffaf0;
+  --relation-handle-color: #52705f;
+  --relation-toggle-border-color: #8ca095;
+  --relation-toggle-color: #28563e;
+  --relation-muted-color: #617168;
+  --relation-controls-border-color: #cfdad4;
+  --brand-outline-border-color: #9db7a7;
+  --sidebar-active-background: #e3eddc;
+  --sidebar-group-active-background: #f3f7f0;
+  --permission-muted-background: #fafbfa;
+  --permission-muted-selected-background: #f5f8f4;
+  --permission-muted-color: #68736d;
+  --permission-highlight-selected-background: #e4efde;
+  --auth-background: #eff4ec;
+  --pagination-disabled-background: #f3f5f3;
+  --table-heading-color: #3a5142;
+  --file-error-color: #a42121;
+  --maintenance-exception-background: #fff5f5;
+  --loader-track-color: #d6e2d7;
+  --print-ink-color: #000;
+  --print-heading-color: #24362b;
+  --relation-edge-group-color: #82918a;
+  --relation-edge-direct-color: #287a50;
+  --relation-edge-association-color: #6b57a4;
+  --relation-edge-derived-color: #b37816;
+  --relation-grid-color: #d8e2dc;
+  --relation-card-shadow-color: color-mix(
+    in srgb,
+    var(--relation-shadow-base-color) 8%,
+    transparent
+  );
+  --relation-node-shadow-color: color-mix(
+    in srgb,
+    var(--relation-shadow-base-color) 12%,
+    transparent
+  );
+  --relation-focus-color: color-mix(in srgb, var(--relation-company-color) 18%, transparent);
+  --relation-selected-color: color-mix(in srgb, var(--relation-company-color) 24%, transparent);
+  --relation-selected-shadow-color: color-mix(
+    in srgb,
+    var(--relation-shadow-base-color) 18%,
+    transparent
+  );
+  --relation-related-color: color-mix(in srgb, var(--relation-edge-derived-color) 20%, transparent);
+  --relation-related-shadow-color: color-mix(
+    in srgb,
+    var(--relation-shadow-base-color) 14%,
+    transparent
+  );
+  --relation-controls-shadow-color: color-mix(
+    in srgb,
+    var(--relation-shadow-base-color) 10%,
+    transparent
+  );
+  --brand-logo-border-color: color-mix(in srgb, var(--surface-color) 80%, transparent);
+  --autocomplete-shadow-color: color-mix(in srgb, var(--brand-forest-dark) 24%, transparent);
+  --autocomplete-focus-color: color-mix(in srgb, var(--brand-leaf) 20%, transparent);
+  --sidebar-backdrop-color: color-mix(in srgb, var(--brand-forest-dark) 42%, transparent);
+  --surface-shadow-color: color-mix(in srgb, var(--surface-shadow-base-color) 5%, transparent);
+  --permission-focus-color: color-mix(in srgb, var(--permission-focus-base-color) 25%, transparent);
+  --auth-shadow-color: color-mix(in srgb, var(--brand-forest) 12%, transparent);
+  --metric-shadow-color: color-mix(in srgb, var(--surface-shadow-base-color) 12%, transparent);
+  --metric-focus-color: color-mix(in srgb, var(--metric-focus-base-color) 45%, transparent);
+  --table-shadow-color: color-mix(in srgb, var(--surface-shadow-base-color) 4%, transparent);
+  --modal-backdrop-color: color-mix(in srgb, var(--brand-forest-dark) 55%, transparent);
+  --modal-shadow-color: color-mix(in srgb, var(--brand-forest-dark) 22%, transparent);
+  --toast-shadow-color: color-mix(in srgb, var(--surface-shadow-base-color) 16%, transparent);
+  --sidebar-shadow-color: color-mix(in srgb, var(--brand-forest-dark) 18%, transparent);
+  --relation-shadow-base-color: #1e442e;
+  --surface-shadow-base-color: #153625;
+  --permission-focus-base-color: #4f7a2d;
+  --metric-focus-base-color: #f2be22;
+  --relation-marker-color: #b1b1b7;
+}

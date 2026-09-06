@@ -966,7 +966,7 @@ export const openApiSchemas = {
         enum: Object.values(MAINTENANCE_PART_ACTIONS),
         default: MAINTENANCE_PART_ACTIONS.CONSUME,
         description:
-          '`consume` retire toutes les pièces prévues du stock. `partial` retire uniquement les pièces de `partUuids`. `partial` et `skip` nécessitent `maintenance.execute.skip_parts` et enregistrent explicitement les pièces non remplacées.',
+          '`consume` retire toutes les pièces prévues du stock avec `maintenance.execute`, sans exiger `maintenance.parts.stock.consume`, réservée aux interventions ponctuelles. `partial` retire uniquement les pièces de `partUuids`. `partial` et `skip` nécessitent `maintenance.execute.skip_parts` et enregistrent explicitement les pièces non remplacées.',
       },
       partUuids: {
         type: 'array',
@@ -1270,8 +1270,13 @@ export const openApiSchemas = {
             reference('MaintenancePart'),
             {
               type: 'object',
-              required: ['quantity', 'lowStock', 'plans'],
+              required: ['quantity', 'lowStock', 'plans', 'manufacturerHasLogo'],
               properties: {
+                manufacturerHasLogo: {
+                  type: 'boolean',
+                  description:
+                    'Indique si le fabricant associé possède un logo. Avec manufacturerUuid et manufacturer, permet d’afficher le logo sans charger le catalogue des fabricants. Aucun nom de fichier interne n’est exposé.',
+                },
                 quantity: {
                   ...decimalQuantity(1000000, { allowZero: true }),
                   description:

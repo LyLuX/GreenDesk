@@ -1,11 +1,81 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
+import postcss from 'postcss';
 
 import { createPostCssPlugins, purgeCssOptions } from '../../build/css.js';
 
+const readStyles = () =>
+  readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8').replace(
+    /@import '\.\/styles\/([^']+)';/g,
+    (_statement, file) => readFileSync(join(process.cwd(), 'src', 'styles', file), 'utf8'),
+  );
+
 describe('production CSS build', () => {
+  it('keeps graph states, theme variables and printable documents after production purging', async () => {
+    const result = await postcss(createPostCssPlugins('build')).process(readStyles(), {
+      from: undefined,
+    });
+    for (const selector of [
+      '.relation-node-selected',
+      '.relation-node-related',
+      '.relation-node-dimmed',
+      '.react-flow__controls',
+      '.maintenance-order-list-printable',
+      '.maintenance-sheets-printable',
+      '.btn-outline-critical',
+    ]) {
+      expect(result.css).toContain(selector);
+    }
+    expect(result.css).toContain('--relation-edge-direct-color:');
+    expect(result.css).toContain('--relation-marker-color:');
+    expect(result.css).toContain('@media print');
+    expect(result.css).toContain('@media (max-width: 575.98px)');
+  });
+
+  it('loads theme and domain styles once, with responsive and print overrides last', () => {
+    const entry = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+    const imports = [...entry.matchAll(/@import '\.\/styles\/([^']+)';/g)].map((match) => match[1]);
+    expect(imports[0]).toBe('theme.css');
+    expect(imports.slice(-2)).toEqual(['responsive.css', 'print.css']);
+    expect(new Set(imports).size).toBe(imports.length);
+    expect([...imports].sort()).toEqual(readdirSync(join(process.cwd(), 'src', 'styles')).sort());
+    for (const file of imports.filter((name) => name !== 'theme.css')) {
+      const css = readFileSync(join(process.cwd(), 'src', 'styles', file), 'utf8');
+      expect(css).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(/i);
+    }
+  });
+
+  it('shares relation colors with edges, markers and the graph background', () => {
+    const component = readFileSync(
+      join(process.cwd(), 'src', 'pages', 'RelationsPage.jsx'),
+      'utf8',
+    );
+    const styles = readStyles();
+    expect(component).not.toMatch(/#[\da-f]{3,8}\b|rgba?\(/i);
+    for (const role of ['group', 'direct', 'association', 'derived']) {
+      expect(component).toContain(`var(--relation-edge-${role}-color)`);
+      expect(styles).toContain(`--relation-edge-${role}-color:`);
+    }
+    expect(component).toContain('defaultMarkerColor="var(--relation-marker-color)"');
+    expect(component).toContain('color="var(--relation-grid-color)"');
+    expect(styles).toContain('--relation-marker-color: #b1b1b7;');
+  });
+
+  it('preserves A4 printing and responsive maintenance layouts', () => {
+    const styles = readStyles();
+    expect(styles).toMatch(/@media print\s*\{\s*@page\s*\{\s*size: A4 portrait;/);
+    expect(styles).toMatch(
+      /\.maintenance-sheet-print-page\s*\{[^}]*width: 210mm;[^}]*min-height: 297mm;/,
+    );
+    expect(styles).toMatch(
+      /\.maintenance-order-print-page\s*\{[^}]*width: 210mm;[^}]*height: 297mm;/,
+    );
+    expect(styles).toContain('@media (max-width: 575.98px)');
+    expect(styles).toContain('@media (max-width: 767.98px)');
+  });
+
   it('enables PurgeCSS only for production builds', () => {
     expect(createPostCssPlugins('serve')).toEqual([]);
     expect(createPostCssPlugins('build')).toEqual([
@@ -26,7 +96,7 @@ describe('production CSS build', () => {
   });
 
   it('centers consistently sized table shells and prevents horizontal overflow', () => {
-    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+    const styles = readStyles();
 
     expect(styles).toMatch(
       /\.table-shell\s*\{[^}]*width:\s*fit-content;[^}]*min-width:\s*min\(100%,\s*48rem\);[^}]*max-width:\s*100%;[^}]*margin-inline:\s*auto;[^}]*overflow:\s*visible;/,
@@ -47,13 +117,13 @@ describe('production CSS build', () => {
   });
 
   it('preserves user-entered line breaks in multiline content', () => {
-    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+    const styles = readStyles();
 
     expect(styles).toMatch(/\.multiline-text\s*\{[^}]*white-space:\s*pre-wrap;/);
   });
 
   it('lays out stock summary cards with the responsive flex alignment', () => {
-    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+    const styles = readStyles();
 
     expect(styles).toMatch(
       /\.stock-summary-grid\s*\{[^}]*display:\s*flex;[^}]*flex-wrap:\s*wrap;[^}]*justify-content:\s*space-evenly;[^}]*align-items:\s*center;[^}]*align-content:\s*space-between;/,
@@ -64,7 +134,7 @@ describe('production CSS build', () => {
   });
 
   it('derives every status badge color from theme variables', () => {
-    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+    const styles = readStyles();
     const badgeRuleBodies = [...styles.matchAll(/\.status-badge[^{]*\{([^}]*)\}/g)].map(
       (match) => match[1],
     );
@@ -85,7 +155,7 @@ describe('production CSS build', () => {
   });
 
   it('can display autocomplete suggestions above fields near a modal footer', () => {
-    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+    const styles = readStyles();
 
     expect(styles).toMatch(
       /\.autocomplete-options-top\s*\{[^}]*top:\s*auto;[^}]*bottom:\s*calc\(100% \+ 0\.35rem\);/,
@@ -93,7 +163,7 @@ describe('production CSS build', () => {
   });
 
   it('keeps quick role permission actions compact, centered and vertically scrollable', () => {
-    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+    const styles = readStyles();
 
     expect(styles).toMatch(
       /\.permission-action-panel\s*\{[^}]*height:\s*clamp\(8rem,\s*22vh,\s*11\.25rem\);[^}]*overflow-y:\s*auto;[^}]*scrollbar-gutter:\s*stable;/,
@@ -106,7 +176,7 @@ describe('production CSS build', () => {
   });
 
   it('visually separates dashboard cards from their dedicated background', () => {
-    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+    const styles = readStyles();
 
     expect(styles).toMatch(
       /--dashboard-background:\s*color-mix\(\s*in srgb,\s*var\(--brand-mist\) 92%,\s*var\(--brand-forest\) 8%\s*\);/,
@@ -115,18 +185,18 @@ describe('production CSS build', () => {
       /\.app-content:has\(> \.dashboard-page\)[^{]*\{[^}]*background:\s*var\(--dashboard-background\);/,
     );
     expect(styles).toMatch(
-      /\.metric-card\s*\{[^}]*box-shadow:\s*0 0\.35rem 1rem rgba\(21,\s*54,\s*37,\s*0\.12\);/,
+      /\.metric-card\s*\{[^}]*box-shadow:\s*0 0\.35rem 1rem var\(--metric-shadow-color\);/,
     );
     expect(styles).toMatch(
-      /\.metric-card\s*\{[^}]*--metric-card-accent:\s*var\(--brand-leaf\);[^}]*border-left:\s*4px solid var\(--metric-card-accent\);[^}]*background:\s*color-mix\(\s*in srgb,\s*var\(--metric-card-accent\) 10%,\s*#fff\s*\);/,
+      /\.metric-card\s*\{[^}]*--metric-card-accent:\s*var\(--brand-leaf\);[^}]*border-left:\s*4px solid var\(--metric-card-accent\);[^}]*background:\s*color-mix\(\s*in srgb,\s*var\(--metric-card-accent\) 10%,\s*var\(--surface-color\)\s*\);/,
     );
   });
 
   it('uses a horizontal GreenDesk progress treatment for timed action buttons', () => {
-    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+    const styles = readStyles();
 
     expect(styles).toMatch(
-      /\.timed-progress-button\s*\{[^}]*--timed-progress-color:\s*color-mix\(in srgb,\s*var\(--brand-leaf\) 72%,\s*#fff\);/,
+      /\.timed-progress-button\s*\{[^}]*--timed-progress-color:\s*color-mix\(in srgb,\s*var\(--brand-leaf\) 72%,\s*var\(--surface-color\)\);/,
     );
     expect(styles).toMatch(
       /@keyframes timed-progress-button-busy\s*\{[\s\S]*transform:\s*translateX\(0\);[\s\S]*transform:\s*translateX\(138%\);/,
@@ -135,7 +205,7 @@ describe('production CSS build', () => {
   });
 
   it('uses one shared color for every wear-based maintenance indicator', () => {
-    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+    const styles = readStyles();
 
     expect(styles).toMatch(
       /--maintenance-wear-based-color:\s*var\(--status-badge-maintenance-color\);/,
@@ -155,7 +225,7 @@ describe('production CSS build', () => {
   });
 
   it('uses one shared critical color for alerts and the logout action', () => {
-    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+    const styles = readStyles();
 
     expect(styles.match(/#b64141/g)).toHaveLength(1);
     expect(styles).toMatch(/--critical-color:\s*#b64141;/);
@@ -174,11 +244,11 @@ describe('production CSS build', () => {
   });
 
   it('centralizes theme colors shared by several interface roles', () => {
-    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+    const styles = readStyles();
     const sharedColors = [
       ['--surface-highlight-color', '#edf3e9'],
       ['--control-border-color', '#cbd7ce'],
-      ['--brand-focus-color', 'rgba(79, 125, 33, 0.16)'],
+      ['--brand-focus-color', 'color-mix(in srgb, var(--brand-leaf) 16%, transparent)'],
       ['--relation-company-color', '#236941'],
       ['--sidebar-text-color', '#435149'],
       ['--brand-company-color', '#dbe8d7'],
@@ -192,7 +262,7 @@ describe('production CSS build', () => {
   });
 
   it('forces the themed low-stock color over Bootstrap table states', () => {
-    const styles = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8');
+    const styles = readStyles();
 
     expect(styles).toMatch(
       /\.maintenance-order-list-table \.maintenance-order-plans\s*>\s*ul\s*>\s*li\.maintenance-order-low-stock\s*\{[^}]*color:\s*var\(--status-badge-minimum-color\)\s*!important;/,

@@ -1,6 +1,18 @@
 import permissionDefinitions from '../src/core/constants/permission-definitions.js';
 
 describe('permission definitions', () => {
+  it('describes planned consumption separately from unplanned interventions', () => {
+    const definitions = Object.fromEntries(
+      permissionDefinitions.map(({ name, description }) => [name, description]),
+    );
+    expect(definitions['maintenance.execute']).toContain(
+      'consommer les pièces prévues par ce plan',
+    );
+    expect(definitions['maintenance.parts.stock.consume']).toContain(
+      'intervention de maintenance ponctuelle',
+    );
+  });
+
   it('provides a unique and meaningful description for every application permission', () => {
     const names = permissionDefinitions.map(({ name }) => name);
 

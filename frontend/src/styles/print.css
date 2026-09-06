@@ -1,0 +1,210 @@
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body {
+    height: auto;
+    margin: 0 !important;
+    overflow: visible !important;
+    background: var(--surface-color);
+  }
+
+  body > #root {
+    display: none !important;
+  }
+
+  .maintenance-order-list-printable,
+  .maintenance-sheets-printable {
+    display: block;
+    width: 100%;
+    color: var(--print-ink-color);
+    background: var(--surface-color);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .maintenance-sheet-print-page {
+    position: relative;
+    display: flex;
+    width: 210mm;
+    max-width: 100%;
+    min-height: 297mm;
+    padding: 10mm 8mm;
+    flex-direction: column;
+    box-sizing: border-box;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .maintenance-sheet-print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .maintenance-order-print-page {
+    position: relative;
+    display: flex;
+    width: 210mm;
+    max-width: 100%;
+    height: 297mm;
+    padding: 10mm 5mm;
+    overflow: hidden;
+    flex-direction: column;
+    box-sizing: border-box;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .maintenance-order-print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .maintenance-order-print-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2cm;
+    margin-bottom: 0.5cm;
+    padding: 0.2cm 0.5cm;
+    background: var(--brand-forest);
+    border-bottom: 0.08cm solid var(--brand-sun);
+  }
+
+  .maintenance-order-print-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3cm;
+    color: var(--surface-color);
+    text-align: left;
+  }
+
+  .maintenance-order-print-brand .brand-logo {
+    width: 1.35cm;
+    height: 1.35cm;
+  }
+
+  .maintenance-order-print-brand .brand-name {
+    font-size: 12pt;
+  }
+
+  .maintenance-order-print-brand .brand-company {
+    color: var(--brand-company-color);
+    font-size: 8pt;
+  }
+
+  .maintenance-order-print-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding-top: 1mm;
+    padding-bottom: 12mm;
+    overflow: hidden;
+  }
+
+  .maintenance-sheet-print-content {
+    flex: 1 1 auto;
+    padding-bottom: 13mm;
+  }
+
+  .maintenance-sheet-print-content .maintenance-sheet {
+    gap: 4mm;
+    color: var(--bs-body-color);
+    font-size: 9.5pt;
+  }
+
+  .maintenance-sheet-print-content .maintenance-sheet-details > div {
+    padding: 2mm 2.5mm;
+  }
+
+  .maintenance-sheet-print-content .maintenance-sheet-section h3,
+  .maintenance-sheet-print-content .maintenance-sheet-completion h3,
+  .maintenance-sheet-print-content .maintenance-sheet-details dt {
+    font-size: 7.5pt;
+  }
+
+  .maintenance-sheet-print-content .table {
+    margin-bottom: 0;
+    font-size: 8.5pt;
+  }
+
+  .maintenance-sheet-print-content .table th,
+  .maintenance-sheet-print-content .table td {
+    color: var(--bs-body-color);
+    border-color: var(--border);
+  }
+
+  .maintenance-sheet-print-content .table-shell {
+    border-color: var(--border);
+    box-shadow: none;
+  }
+
+  .maintenance-order-print-content h1 {
+    margin: 0 0 0.15cm;
+    color: var(--brand-forest-dark);
+    font-size: 15pt;
+    font-weight: 700;
+  }
+
+  .maintenance-order-print-supplier {
+    margin: 0 0 0.4cm;
+    color: var(--table-heading-color);
+    font-size: 10pt;
+  }
+
+  .maintenance-order-list-printable .table {
+    width: 100%;
+    margin-bottom: 0;
+    font-size: 10pt;
+  }
+
+  .maintenance-order-list-printable .table th,
+  .maintenance-order-list-printable .table td {
+    color: var(--print-heading-color);
+    border-color: var(--border);
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .maintenance-order-list-printable .table thead th {
+    color: var(--table-heading-color);
+    background: var(--surface-highlight-color);
+  }
+
+  .maintenance-order-print-manufacturer {
+    color: var(--muted);
+    font-size: 8.5pt;
+    font-weight: 400;
+  }
+
+  .maintenance-order-list-printable .table-shell {
+    border-color: var(--border);
+    box-shadow: none;
+  }
+
+  .maintenance-order-print-footer {
+    position: absolute;
+    right: 5mm;
+    bottom: 10mm;
+    left: 5mm;
+    display: block;
+  }
+
+  .maintenance-sheet-print-footer {
+    position: absolute;
+    right: 8mm;
+    bottom: 10mm;
+    left: 8mm;
+  }
+
+  .maintenance-order-print-footer .app-footer,
+  .maintenance-sheet-print-footer .app-footer {
+    padding: 0.2cm 0.4cm;
+    color: var(--muted);
+    background: var(--surface-color);
+    border-top-color: var(--border);
+  }
+}

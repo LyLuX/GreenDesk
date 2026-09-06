@@ -1,0 +1,420 @@
+.btn-brand {
+  --bs-btn-color: var(--surface-color);
+  --bs-btn-bg: var(--brand-forest);
+  --bs-btn-border-color: var(--brand-forest);
+  --bs-btn-hover-color: var(--surface-color);
+  --bs-btn-hover-bg: var(--brand-forest-dark);
+  --bs-btn-hover-border-color: var(--brand-forest-dark);
+  --bs-btn-active-bg: var(--brand-forest-dark);
+  --bs-btn-active-border-color: var(--brand-forest-dark);
+  --bs-btn-disabled-bg: var(--brand-forest);
+  --bs-btn-disabled-border-color: var(--brand-forest);
+}
+
+.btn-outline-brand {
+  --bs-btn-color: var(--brand-forest);
+  --bs-btn-border-color: var(--brand-outline-border-color);
+  --bs-btn-hover-color: var(--surface-color);
+  --bs-btn-hover-bg: var(--brand-forest);
+  --bs-btn-hover-border-color: var(--brand-forest);
+  --bs-btn-active-bg: var(--brand-forest-dark);
+  --bs-btn-active-border-color: var(--brand-forest-dark);
+}
+
+.btn-outline-critical {
+  --bs-btn-color: var(--critical-color);
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: var(--critical-color);
+  --bs-btn-hover-color: var(--surface-color);
+  --bs-btn-hover-bg: var(--critical-color);
+  --bs-btn-hover-border-color: var(--critical-color);
+  --bs-btn-active-color: var(--surface-color);
+  --bs-btn-active-bg: var(--critical-color);
+  --bs-btn-active-border-color: var(--critical-color);
+  --bs-btn-disabled-color: var(--critical-color);
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: var(--critical-color);
+}
+
+.btn-outline-critical:focus-visible {
+  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--critical-color) 42%, transparent);
+}
+
+.timed-progress-button {
+  --timed-progress-color: color-mix(in srgb, var(--brand-leaf) 72%, var(--surface-color));
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.timed-progress-button__fill {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 42%;
+  height: 100%;
+  background: var(--timed-progress-color);
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.timed-progress-button__progress {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  appearance: none;
+  overflow: hidden;
+  border: 0;
+  color: var(--timed-progress-color);
+  background: transparent;
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.timed-progress-button__progress::-webkit-progress-bar {
+  background: transparent;
+}
+
+.timed-progress-button__progress::-webkit-progress-value {
+  background: var(--timed-progress-color);
+}
+
+.timed-progress-button__progress::-moz-progress-bar {
+  background: var(--timed-progress-color);
+}
+
+.timed-progress-button__label {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  min-width: 0;
+}
+
+.timed-progress-button.is-busy .timed-progress-button__fill {
+  animation: timed-progress-button-busy 1100ms ease-in-out infinite alternate;
+}
+
+@keyframes timed-progress-button-busy {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(138%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timed-progress-button.is-busy .timed-progress-button__fill {
+    animation: none;
+    width: 100%;
+    transform: none;
+  }
+}
+
+.btn-outline-brand-blue {
+  --bs-btn-color: var(--brand-blue-dark);
+  --bs-btn-border-color: var(--brand-blue);
+  --bs-btn-hover-color: var(--surface-color);
+  --bs-btn-hover-bg: var(--brand-blue);
+  --bs-btn-hover-border-color: var(--brand-blue);
+  --bs-btn-focus-shadow-rgb: 44, 113, 137;
+  --bs-btn-active-color: var(--surface-color);
+  --bs-btn-active-bg: var(--brand-blue-dark);
+  --bs-btn-active-border-color: var(--brand-blue-dark);
+  --bs-btn-disabled-color: var(--brand-blue);
+  --bs-btn-disabled-border-color: var(--brand-blue);
+}
+
+.form-control,
+.form-select {
+  border-color: var(--control-border-color);
+  color: var(--ink);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--brand-leaf);
+  box-shadow: 0 0 0 0.2rem var(--brand-focus-color);
+}
+
+.autocomplete-options {
+  z-index: 1080;
+  top: calc(100% + 0.35rem);
+  max-height: 14rem;
+  overflow-y: auto;
+  background: var(--surface-color);
+  border: 2px solid var(--brand-leaf);
+  border-radius: 0.55rem;
+  box-shadow: 0 0.85rem 2rem var(--autocomplete-shadow-color);
+}
+
+.autocomplete-options-top {
+  top: auto;
+  bottom: calc(100% + 0.35rem);
+}
+
+.autocomplete-input[aria-expanded='true'] {
+  border-color: var(--brand-leaf);
+  box-shadow: 0 0 0 0.2rem var(--autocomplete-focus-color);
+}
+
+.autocomplete-options .autocomplete-option {
+  padding: 0.75rem 1rem;
+  color: var(--ink);
+  font-weight: 600;
+  background: var(--surface-color);
+  border-right: 0;
+  border-left: 0;
+}
+
+.autocomplete-options .autocomplete-option:first-child {
+  border-top: 0;
+}
+
+.autocomplete-options .autocomplete-option:last-child {
+  border-bottom: 0;
+}
+
+.autocomplete-options .autocomplete-option:hover,
+.autocomplete-options .autocomplete-option:focus,
+.autocomplete-options .autocomplete-option.active,
+.autocomplete-options .autocomplete-option[aria-selected='true'] {
+  color: var(--surface-color);
+  background: var(--brand-forest);
+  border-color: var(--brand-forest);
+}
+
+.autocomplete-empty {
+  padding: 0.85rem 1rem;
+  color: var(--brand-forest);
+  font-weight: 600;
+  font-style: italic;
+  background: var(--brand-mist);
+  border: 0;
+}
+
+.filter-panel {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  gap: 1.25rem 2rem;
+}
+
+.filter-panel .form-label {
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
+.status-badge {
+  --status-badge-color: var(--status-badge-success-color);
+  --status-badge-background: var(--status-badge-success-background);
+
+  display: inline-block;
+  white-space: nowrap;
+  padding: 0.25rem 0.55rem;
+  border-radius: 99px;
+  background: var(--status-badge-background);
+  color: var(--status-badge-color);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.status-badge.inactive,
+.status-badge.history-action-neutral,
+.status-badge.priority-low {
+  --status-badge-color: var(--status-badge-neutral-color);
+  --status-badge-background: var(--status-badge-neutral-background);
+}
+
+.status-badge.deleted,
+.status-badge.history-action-danger,
+.status-badge.audit-delete,
+.status-badge.priority-critical,
+.status-badge.maintenance-overdue,
+.status-badge.maintenance-history-exception {
+  --status-badge-color: var(--status-badge-danger-color);
+  --status-badge-background: var(--status-badge-danger-background);
+}
+
+.status-badge.history-action-info,
+.status-badge.stock-ordered,
+.status-badge.audit-update {
+  --status-badge-color: var(--status-badge-info-color);
+  --status-badge-background: var(--status-badge-info-background);
+}
+
+.status-badge.history-action-warning,
+.status-badge.maintenance-history-partial,
+.status-badge.stock-to-order,
+.status-badge.audit-restore,
+.status-badge.priority-high,
+.status-badge.maintenance-due-today {
+  --status-badge-color: var(--status-badge-warning-color);
+  --status-badge-background: var(--status-badge-warning-background);
+}
+
+.status-badge.history-action-maintenance,
+.status-badge.maintenance-wear-based {
+  --status-badge-color: var(--status-badge-maintenance-color);
+  --status-badge-background: var(--status-badge-maintenance-background);
+}
+
+.status-badge.history-action-access {
+  --status-badge-color: var(--status-badge-access-color);
+  --status-badge-background: var(--status-badge-access-background);
+}
+
+.status-badge.stock-minimum {
+  --status-badge-color: var(--status-badge-minimum-color);
+  --status-badge-background: var(--status-badge-minimum-background);
+}
+
+.modal-backdrop-custom {
+  position: fixed;
+  inset: 0;
+  z-index: 1055;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: var(--modal-backdrop-color);
+}
+
+body.app-scroll-locked {
+  overflow: hidden;
+}
+
+.modal-surface {
+  width: min(100%, 50rem);
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  padding: 1.5rem;
+  background: var(--surface-color);
+  border: 0;
+  border-top: 4px solid var(--brand-sun);
+  border-radius: 0.55rem;
+  box-shadow: 0 1rem 3rem var(--modal-shadow-color);
+}
+
+.maintenance-order-list-modal > :first-child,
+.maintenance-sheets-modal > :first-child,
+.material-form-modal > :first-child {
+  flex: 0 0 auto;
+}
+
+.confirm-dialog-message {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+.detail-tabs {
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-tabs button {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.detail-tabs button[aria-pressed='true'] {
+  border-bottom-color: var(--brand-sun);
+  color: var(--brand-forest-dark);
+}
+
+.detail-table {
+  margin-bottom: 0;
+}
+
+.detail-table th {
+  width: 15rem;
+  padding: 1rem 1.25rem;
+  border-right: 1px solid var(--border);
+  background: var(--surface-highlight-color);
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.detail-table td {
+  padding: 1rem 1.25rem;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.status-page,
+.loading-page {
+  min-height: 0;
+  padding: 2rem;
+  overflow-y: auto;
+  scrollbar-width: none;
+  background: var(--brand-mist);
+}
+
+.status-page::-webkit-scrollbar,
+.loading-page::-webkit-scrollbar {
+  display: none;
+}
+
+.app-loader {
+  display: grid;
+  min-height: 4rem;
+  place-items: center;
+}
+
+.app-loader-indicator {
+  width: 2.5rem;
+  aspect-ratio: 1;
+  border: 0.25rem solid var(--loader-track-color);
+  border-right-color: var(--brand-sun);
+  border-top-color: var(--brand-forest);
+  border-radius: 50%;
+  animation: greendesk-loader-spin 0.8s linear infinite;
+}
+
+.app-loader-sm .app-loader-indicator {
+  width: 1.65rem;
+  border-width: 0.2rem;
+}
+
+@keyframes greendesk-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.status-panel {
+  width: min(100%, 520px);
+  height: min(100%, 360px);
+  border-top: 4px solid var(--brand-sun);
+}
+
+.toast-stack {
+  max-width: min(28rem, calc(100vw - 3rem));
+  justify-items: end;
+}
+
+.toast-stack .alert {
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.875rem;
+  box-shadow: 0 0.6rem 1.4rem var(--toast-shadow-color);
+}

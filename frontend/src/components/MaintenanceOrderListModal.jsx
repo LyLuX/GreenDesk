@@ -4,7 +4,6 @@ import { createPortal } from 'react-dom';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import { resolveIdempotencyAttempt } from '../api/idempotency.js';
 import { getMaintenanceOrderList, updateMaintenancePartStock } from '../api/maintenance.api.js';
-import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
 import { formatStockQuantity, STOCK_OPERATIONS } from '../inventory/stock-status.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
@@ -14,7 +13,7 @@ import {
   maintenanceHorizonOptions,
 } from '../maintenance/maintenance-deadline-filters.js';
 import useNotification from '../notifications/useNotification.js';
-import { extractPageItems, paginateItems } from '../utils/pagination.js';
+import { paginateItems } from '../utils/pagination.js';
 import AppFooter from './AppFooter.jsx';
 import Button from './Button.jsx';
 import ConfirmDialog from './ConfirmDialog.jsx';
@@ -69,7 +68,6 @@ export const paginateSupplierGroups = (groups = [], partsPerPage = 13) =>
 
 function OrderPartsTable({
   parts,
-  manufacturerByUuid,
   showSupplier = true,
   showPlans = true,
   printPlans = false,
@@ -97,8 +95,12 @@ function OrderPartsTable({
           </thead>
           <tbody>
             {parts.map((part) => {
-              const manufacturer = manufacturerByUuid.get(part.manufacturerUuid);
-              const manufacturerName = part.manufacturer || manufacturer?.name;
+              const manufacturer = {
+                uuid: part.manufacturerUuid,
+                name: part.manufacturer,
+                hasLogo: Boolean(part.manufacturerUuid && part.manufacturerHasLogo),
+              };
+              const manufacturerName = part.manufacturer;
 
               return (
                 <tr key={part.uuid}>
@@ -216,12 +218,7 @@ function OrderPartsTable({
   );
 }
 
-function MaintenanceOrderPrintPages({
-  supplierPages,
-  manufacturerByUuid,
-  company,
-  lowStockMode = false,
-}) {
+function MaintenanceOrderPrintPages({ supplierPages, company, lowStockMode = false }) {
   return (
     <div className="maintenance-order-list-printable" aria-hidden="true">
       {supplierPages.map((page) => (
@@ -240,7 +237,6 @@ function MaintenanceOrderPrintPages({
             </p>
             <OrderPartsTable
               parts={page.parts}
-              manufacturerByUuid={manufacturerByUuid}
               showSupplier={false}
               printPlans={!lowStockMode}
               showPlans={!lowStockMode}
@@ -266,7 +262,6 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
     ...initialFilters,
   }));
   const [data, setData] = useState(null);
-  const [manufacturers, setManufacturers] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [orderQuantities, setOrderQuantities] = useState({});
@@ -284,12 +279,7 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
       setLoading(true);
       setError('');
       try {
-        const [response, manufacturerResponse] = await Promise.all([
-          getMaintenanceOrderList(filters, signal),
-          createReferenceApi('manufacturers')
-            .list({ page: 1, limit: 25, active: 'all' }, signal)
-            .catch(() => null),
-        ]);
+        const response = await getMaintenanceOrderList(filters, signal);
         if (requestId !== latestRequestId.current || signal?.aborted) return;
         const orderList = response.data.data;
         setData(orderList);
@@ -298,9 +288,6 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
             (orderList.items ?? []).map((part) => [part.uuid, String(part.quantity)]),
           ),
         );
-        if (manufacturerResponse) {
-          setManufacturers(extractPageItems(manufacturerResponse.data.data));
-        }
       } catch (requestError) {
         if (requestId === latestRequestId.current && requestError.code !== 'ERR_CANCELED') {
           setError(getApiErrorMessage(requestError));
@@ -322,9 +309,6 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
     };
   }, [load, open]);
 
-  const manufacturerByUuid = new Map(
-    manufacturers.map((manufacturer) => [manufacturer.uuid, manufacturer]),
-  );
   const lowStockMode = Boolean(filters.lowStockOnly);
   const lowStockPage = paginateItems(data?.items ?? [], lowStockPageNumber, lowStockLimit);
   const visibleParts = lowStockMode ? lowStockPage.items : data?.items;
@@ -478,7 +462,6 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
             ) : visibleParts?.length ? (
               <OrderPartsTable
                 parts={visibleParts}
-                manufacturerByUuid={manufacturerByUuid}
                 orderQuantities={orderQuantities}
                 onOrderQuantityChange={
                   canOrderParts
@@ -524,7 +507,6 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
         ? createPortal(
             <MaintenanceOrderPrintPages
               supplierPages={supplierPages}
-              manufacturerByUuid={manufacturerByUuid}
               company={activeCompany}
               lowStockMode={lowStockMode}
             />,

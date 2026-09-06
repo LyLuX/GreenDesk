@@ -579,13 +579,20 @@ export default class MaintenanceService {
       ...new Map([...deadlineTasks, ...wearBasedTasks].map((task) => [task.uuid, task])).values(),
     ];
     const grouped = new Map();
-    for (const task of tasks.map((item) => this.toPublic(item))) {
+    for (const item of tasks) {
+      const value = typeof item.toJSON === 'function' ? item.toJSON() : item;
+      const task = this.toPublic(value);
+      const manufacturers = new Map(
+        (value.parts ?? []).map((part) => [part.uuid, part.manufacturerDirectory]),
+      );
       for (const part of task.parts ?? []) {
+        const manufacturer = manufacturers.get(part.uuid);
         const current = grouped.get(part.uuid) ?? {
           uuid: part.uuid,
           name: part.name,
-          manufacturer: part.manufacturer,
+          manufacturer: part.manufacturer || manufacturer?.name || null,
           manufacturerUuid: part.manufacturerUuid,
+          manufacturerHasLogo: Boolean(manufacturer?.logoFileName),
           supplier: part.supplier,
           supplierUuid: part.supplierUuid,
           reference: part.reference,
@@ -616,8 +623,9 @@ export default class MaintenanceService {
       const current = grouped.get(part.uuid) ?? {
         uuid: part.uuid,
         name: part.name,
-        manufacturer: part.manufacturer,
+        manufacturer: part.manufacturer || part.manufacturerDirectory?.name || null,
         manufacturerUuid: part.manufacturerDirectory?.uuid ?? null,
+        manufacturerHasLogo: Boolean(part.manufacturerDirectory?.logoFileName),
         supplier: part.supplier,
         supplierUuid: part.supplierDirectory?.uuid ?? null,
         reference: part.reference,

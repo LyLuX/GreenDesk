@@ -18,7 +18,12 @@ vi.mock('../api/reference.api.js', () => ({
   createReferenceApi: () => ({ list: mocks.listManufacturers }),
 }));
 vi.mock('./ManufacturerLogo.jsx', () => ({
-  default: ({ manufacturer }) => <img alt={`Logo ${manufacturer?.name ?? 'indisponible'}`} />,
+  default: ({ manufacturer }) =>
+    manufacturer?.hasLogo ? (
+      <img alt={`Logo ${manufacturer.name}`} />
+    ) : (
+      <span aria-label="Aucun logo">—</span>
+    ),
 }));
 vi.mock('../auth/useAuth.js', () => ({
   default: () => ({
@@ -42,7 +47,10 @@ const lowStockFiltersOff = {
 };
 
 describe('MaintenanceOrderListModal', () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    expect(mocks.listManufacturers).not.toHaveBeenCalled();
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -58,6 +66,7 @@ describe('MaintenanceOrderListModal', () => {
               name: 'Bougie',
               manufacturer: 'NGK',
               manufacturerUuid: 'manufacturer-uuid',
+              manufacturerHasLogo: true,
               supplier: 'Pièces Pro',
               supplierReference: 'FOU-42',
               reference: 'BPMR8Y',
@@ -77,31 +86,57 @@ describe('MaintenanceOrderListModal', () => {
         },
       },
     });
-    mocks.listManufacturers.mockResolvedValue({
-      data: {
-        data: {
-          items: [
-            {
-              uuid: 'manufacturer-uuid',
-              name: 'NGK',
-              hasLogo: true,
-            },
-          ],
-          pagination: { page: 1, limit: 25, total: 1, totalPages: 1 },
-        },
-      },
-    });
   });
+
+  it.each([false, true])(
+    'renders embedded logos and missing-logo placeholders (lowStockOnly=%s)',
+    async (lowStockOnly) => {
+      mocks.getOrderList.mockResolvedValue({
+        data: {
+          data: {
+            items: [
+              {
+                uuid: 'part-30',
+                name: 'Bougie 30',
+                manufacturer: 'Fabricant 30',
+                manufacturerUuid: 'manufacturer-30',
+                manufacturerHasLogo: true,
+                quantity: 1,
+                unit: 'pièce',
+                plans: [],
+              },
+              {
+                uuid: 'part-31',
+                name: 'Bougie 31',
+                manufacturer: 'Fabricant 31',
+                manufacturerUuid: 'manufacturer-31',
+                manufacturerHasLogo: false,
+                quantity: 1,
+                unit: 'pièce',
+                plans: [],
+              },
+            ],
+          },
+        },
+      });
+      render(
+        <MaintenanceOrderListModal open onClose={vi.fn()} initialFilters={{ lowStockOnly }} />,
+      );
+      const dialog = screen.getByRole('dialog');
+      expect(await within(dialog).findByRole('img', { name: 'Logo Fabricant 30' })).toBeVisible();
+      expect(within(dialog).getByLabelText('Aucun logo')).toBeVisible();
+      expect(document.querySelector('.maintenance-order-list-printable')).toHaveTextContent(
+        'Fabricant 30',
+      );
+    },
+  );
 
   it('shows the manufacturer logo on screen and its name as secondary print information', async () => {
     render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
 
     const dialog = screen.getByRole('dialog');
     const logo = await within(dialog).findByRole('img', { name: 'Logo NGK' });
-    expect(mocks.listManufacturers).toHaveBeenCalledWith(
-      { page: 1, limit: 25, active: 'all' },
-      expect.any(AbortSignal),
-    );
+    expect(mocks.listManufacturers).not.toHaveBeenCalled();
     expect(logo).toBeVisible();
     expect(
       document.querySelector('.maintenance-order-print-brand .brand-company'),

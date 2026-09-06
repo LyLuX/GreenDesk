@@ -1279,7 +1279,10 @@ export const openApiPaths = {
         },
       ],
       responses: {
-        200: jsonResponse('MaintenanceOrderListResponse', 'Liste de commande calculée.'),
+        200: jsonResponse(
+          'MaintenanceOrderListResponse',
+          'Liste de commande calculée, incluant manufacturerUuid, manufacturer et manufacturerHasLogo pour afficher les logos sans requête supplémentaire au catalogue des fabricants, également en mode stock faible.',
+        ),
         ...standardErrors,
       },
     },
@@ -1494,7 +1497,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Enregistre un entretien réalisé et recalcule l’échéance.',
       description:
-        'Nécessite `maintenance.execute`. Le plan et son matériel doivent être actifs. La date du jour est utilisée par défaut et un plan selon l’usure reste sans échéance. `partsAction=consume` retire transactionnellement toutes les pièces du stock et fige leur prix pour le calcul des coûts historiques. `partsAction=partial` retire uniquement les pièces sélectionnées dans `partUuids`. `partial` et `skip` nécessitent également `maintenance.execute.skip_parts`, exigent un commentaire et tracent les pièces non remplacées ainsi que les pièces remplacées dans l’historique.',
+        'Nécessite `maintenance.execute`, qui autorise aussi la consommation des pièces prévues par ce plan, sans exiger `maintenance.parts.stock.consume`, réservée aux interventions ponctuelles. Le plan et son matériel doivent être actifs. La date du jour est utilisée par défaut et un plan selon l’usure reste sans échéance. `partsAction=consume` retire transactionnellement toutes les pièces du stock et fige leur prix pour le calcul des coûts historiques. `partsAction=partial` retire uniquement les pièces sélectionnées dans `partUuids`. `partial` et `skip` nécessitent également `maintenance.execute.skip_parts`, exigent un commentaire et tracent les pièces non remplacées ainsi que les pièces remplacées dans l’historique.',
       security: secure,
       requestBody: jsonBody('MaintenanceExecuteRequest', false),
       responses: {

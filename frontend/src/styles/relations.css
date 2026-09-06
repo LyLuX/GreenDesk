@@ -1,0 +1,178 @@
+/* Relationship map */
+
+.relation-page-header,
+.relations-toolbar,
+.relation-node-heading {
+  display: flex;
+  align-items: center;
+}
+
+.relation-page-header,
+.relations-toolbar {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.relations-card {
+  overflow: hidden;
+  border: 1px solid var(--relation-border-color);
+  border-radius: 1rem;
+  background: var(--surface-color);
+  box-shadow: 0 0.5rem 1.5rem var(--relation-card-shadow-color);
+}
+
+.relations-toolbar {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--relation-toolbar-border-color);
+  background: var(--relation-toolbar-background);
+}
+
+.relations-canvas {
+  position: relative;
+  height: clamp(24rem, calc(100dvh - 22rem), 42rem);
+  min-height: 24rem;
+  background: var(--relation-canvas-background);
+}
+
+.relations-canvas > .app-loader {
+  position: absolute;
+  inset: 0;
+}
+
+.relation-node {
+  width: 230px;
+  height: 124px;
+  padding: 0.8rem 0.85rem;
+  border: 2px solid var(--relation-node-border-color);
+  border-radius: 0.8rem;
+  background: var(--surface-color);
+  box-shadow: 0 0.35rem 0.9rem var(--relation-node-shadow-color);
+  color: var(--relation-node-text-color);
+  transition:
+    opacity 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.relation-node-company {
+  border-color: var(--relation-company-color);
+  background: var(--relation-company-background);
+}
+
+.relation-node-domain {
+  border-color: var(--relation-domain-border-color);
+  background: var(--relation-domain-background);
+}
+
+.relation-node-entity {
+  border-color: var(--relation-entity-border-color);
+}
+
+.relation-node-technical {
+  border-color: var(--relation-technical-border-color);
+  background: var(--relation-technical-background);
+}
+
+.relation-node-heading {
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.relation-node-heading strong {
+  overflow-wrap: anywhere;
+  font-size: 0.94rem;
+  line-height: 1.2;
+}
+
+.relation-node .relation-node-handle {
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 2px solid var(--surface-color);
+  background: var(--relation-handle-color);
+}
+
+.relation-node-toggle {
+  display: grid;
+  flex: 0 0 1.65rem;
+  width: 1.65rem;
+  height: 1.65rem;
+  padding: 0;
+  place-content: center;
+  border: 1px solid var(--relation-toggle-border-color);
+  border-radius: 50%;
+  background: var(--surface-color);
+  color: var(--relation-toggle-color);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.relation-node-toggle:hover,
+.relation-node-toggle:focus-visible {
+  border-color: var(--relation-company-color);
+  box-shadow: 0 0 0 0.18rem var(--relation-focus-color);
+}
+
+.relation-node-count,
+.relation-node-description {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--relation-muted-color);
+  font-size: 0.76rem;
+}
+
+.relation-node-description {
+  display: -webkit-box;
+  overflow: hidden;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.relation-node-link {
+  margin-top: 0.55rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--relation-company-color);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.16rem;
+}
+
+.relation-node-selected {
+  box-shadow:
+    0 0 0 0.24rem var(--relation-selected-color),
+    0 0.45rem 1rem var(--relation-selected-shadow-color);
+  transform: translateY(-2px);
+}
+
+.relation-node-related {
+  box-shadow:
+    0 0 0 0.16rem var(--relation-related-color),
+    0 0.4rem 0.9rem var(--relation-related-shadow-color);
+}
+
+.relation-node-dimmed {
+  opacity: 0.34;
+}
+
+.relations-canvas .react-flow__controls {
+  overflow: hidden;
+  border: 1px solid var(--relation-controls-border-color);
+  border-radius: 0.5rem;
+  box-shadow: 0 0.25rem 0.75rem var(--relation-controls-shadow-color);
+}
+
+@media (max-width: 767.98px) {
+  .relation-page-header,
+  .relations-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .relations-canvas {
+    height: clamp(22rem, calc(100dvh - 25rem), 34rem);
+    min-height: 22rem;
+  }
+}

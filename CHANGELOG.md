@@ -2,6 +2,18 @@
 
 ## Non publié
 
+## 9.0.1 - 2026-09-06
+
+- [PATCH] Les styles sont organisés par domaine et les couleurs, y compris celles de la cartographie, sont centralisées pour faciliter les évolutions du thème en conservant le rendu actuel.
+
+- [PATCH] Les refus de permissions répétés sont signalés dans les journaux de sécurité avec des seuils configurables et un regroupement limitant les doublons, sans exposer le contenu des requêtes.
+
+- [PATCH] Des tests sur MySQL réel vérifient l’absence de doublons et de fuites entre sociétés lors des opérations de maintenance et de stock, ainsi que l’annulation intégrale en cas d’erreur.
+
+- [PATCH] La description du droit d’exécuter un plan de maintenance précise qu’il autorise aussi la consommation des pièces prévues, sans modifier les permissions existantes.
+
+- [PATCH] Les listes de pièces à commander et de stock faible affichent les logos sans recharger le catalogue des fabricants à chaque actualisation, y compris au-delà des 25 premiers fabricants.
+
 ## 9.0.0 - 2026-09-05
 
 - [MAJOR] Les URL de liste sont harmonisées avec la pagination en premier et sans statut ni tri par défaut ; l’API sélectionne les éléments actifs côté SQL et accepte `active=all` pour consulter tous les statuts.

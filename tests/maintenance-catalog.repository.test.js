@@ -6,6 +6,16 @@ import MaintenanceCatalogRepository from '../src/modules/maintenance/repository/
 describe('MaintenanceCatalogRepository stock filters', () => {
   afterEach(() => jest.restoreAllMocks());
 
+  it('loads manufacturer logo metadata with low-stock parts without catalogue pagination', async () => {
+    const findAll = jest.spyOn(MaintenancePart, 'findAll').mockResolvedValue([]);
+    await new MaintenanceCatalogRepository().findLowStockParts();
+    const query = findAll.mock.calls[0][0];
+    expect(query.include.find((item) => item.as === 'manufacturerDirectory').attributes).toEqual(
+      expect.arrayContaining(['uuid', 'name', 'logoFileName']),
+    );
+    expect(query.limit).toBeUndefined();
+  });
+
   it.each([
     [
       'inStock',

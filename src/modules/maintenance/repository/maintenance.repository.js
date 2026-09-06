@@ -47,7 +47,7 @@ const partsInclude = {
     {
       model: PartManufacturer,
       as: 'manufacturerDirectory',
-      attributes: ['uuid'],
+      attributes: ['uuid', 'name', 'logoFileName'],
     },
     {
       model: Supplier,

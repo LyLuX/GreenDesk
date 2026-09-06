@@ -1,0 +1,276 @@
+.maintenance-order-print-header,
+.maintenance-order-print-footer {
+  display: none;
+}
+
+.modal-surface.maintenance-plan-modal {
+  width: fit-content;
+  min-width: min(34rem, calc(100vw - 3rem));
+  max-width: min(64rem, calc(100vw - 3rem));
+}
+
+.modal-surface.maintenance-order-list-modal {
+  display: flex;
+  width: fit-content;
+  min-width: min(51rem, calc(100vw - 3rem));
+  max-width: min(76rem, calc(100vw - 3rem));
+  flex-direction: column;
+  height: calc(90vh - 3rem);
+  overflow: hidden;
+}
+
+.modal-surface.maintenance-sheets-modal {
+  display: flex;
+  width: min(72rem, calc(100vw - 3rem));
+  height: calc(90vh - 3rem);
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.maintenance-order-list-screen {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.maintenance-order-list-printable {
+  display: none;
+}
+
+.maintenance-sheets-screen {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.maintenance-sheets-printable {
+  display: none;
+}
+
+.maintenance-sheets-scroll {
+  display: grid;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 1rem;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+  scrollbar-gutter: stable;
+}
+
+.maintenance-sheet {
+  display: grid;
+  gap: 1rem;
+}
+
+.maintenance-sheet-preview {
+  padding: 1.25rem;
+  background: var(--bs-body-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.maintenance-sheet-kicker {
+  color: var(--brand-forest);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.maintenance-sheet-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}
+
+.maintenance-sheet-details > div {
+  padding: 0.65rem 0.75rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.maintenance-sheet-details dt,
+.maintenance-sheet-section h3,
+.maintenance-sheet-completion h3 {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.maintenance-sheet-details dd {
+  margin: 0.15rem 0 0;
+}
+
+.maintenance-sheet-section h3,
+.maintenance-sheet-completion h3 {
+  margin-bottom: 0.5rem;
+}
+
+.maintenance-sheet-completion {
+  display: grid;
+  gap: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.maintenance-sheet-completion p {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.maintenance-sheet-completion p > span {
+  flex: 1 1 auto;
+  min-width: 4rem;
+  border-bottom: 1px solid var(--muted);
+}
+
+.maintenance-sheet-completion-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.maintenance-sheet-signature {
+  width: min(50%, 22rem);
+  margin-left: auto !important;
+}
+
+.maintenance-sheets-actions {
+  flex: 0 0 auto;
+}
+
+.maintenance-order-list-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.maintenance-order-list-screen .maintenance-order-part-summary {
+  flex-wrap: wrap;
+}
+
+.maintenance-order-list-table .maintenance-order-plans > ul > li.maintenance-order-plan-wear-based {
+  color: var(--maintenance-wear-based-color) !important;
+}
+
+.maintenance-order-list-table .maintenance-order-plans > ul > li.maintenance-order-low-stock {
+  color: var(--status-badge-minimum-color) !important;
+}
+
+.maintenance-order-list-actions {
+  flex: 0 0 auto;
+}
+
+.maintenance-order-command-controls {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.maintenance-order-quantity {
+  width: 4.75rem;
+  min-width: 4.75rem;
+}
+
+.maintenance-plan-parts {
+  max-height: min(11.25rem, 10vh);
+  overflow: auto;
+  padding: 0.15rem 0.35rem 0.15rem 0.15rem;
+  scrollbar-gutter: stable;
+}
+
+.maintenance-plan-parts:focus-visible {
+  outline: 2px solid var(--brand-leaf);
+  outline-offset: 0.2rem;
+}
+
+.maintenance-plan-part-row {
+  min-width: max-content;
+}
+
+.maintenance-plan-quantity {
+  width: 6rem;
+}
+
+.maintenance-summary-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.maintenance-summary-item {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  background: var(--brand-mist);
+}
+
+.maintenance-summary-material {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.maintenance-summary-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+}
+
+.maintenance-summary-details dt {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.maintenance-summary-details dd {
+  margin: 0.15rem 0 0;
+  color: var(--ink);
+  font-size: 0.88rem;
+}
+
+.maintenance-history-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.maintenance-history-list > li + li {
+  border-top: 1px solid var(--border);
+}
+
+.maintenance-history-list > li.maintenance-history-without-parts {
+  padding-inline: 0.75rem;
+  background: var(--maintenance-exception-background);
+  border-left: 4px solid var(--critical-color);
+}
+
+.maintenance-history-list > li.maintenance-history-partial-parts {
+  padding-inline: 0.75rem;
+  border-left: 4px solid var(--brand-sun);
+  background: color-mix(in srgb, var(--brand-sun) 10%, var(--bs-body-bg));
+}
+
+.maintenance-execution-part {
+  padding: 0.75rem 0.75rem 0.75rem 2.25rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.maintenance-execution-part:has(.form-check-input:checked) {
+  border-color: var(--brand-leaf);
+  background: color-mix(in srgb, var(--brand-leaf) 9%, var(--bs-body-bg));
+}

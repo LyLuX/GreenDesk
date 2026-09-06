@@ -19,6 +19,9 @@ describe('MaintenanceRepository order list', () => {
 
     const query = findAll.mock.calls[0][0];
     const parts = query.include.find((item) => item.as === 'parts');
+    expect(parts.include.find((item) => item.as === 'manufacturerDirectory').attributes).toEqual(
+      expect.arrayContaining(['uuid', 'name', 'logoFileName']),
+    );
     expect(parts.attributes).toEqual(
       expect.arrayContaining(['quantityOnHand', 'quantityOnOrder', 'unitPrice']),
     );

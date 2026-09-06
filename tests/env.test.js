@@ -205,6 +205,32 @@ describe('runtime environment configuration', () => {
     );
   });
 
+  it('configures repeated authorization denial logging independently of rate limiting', () => {
+    expect(createEnvironment({ NODE_ENV: 'test' }).securityLogging.authorizationDenials).toEqual({
+      threshold: 5,
+      windowMs: 60000,
+    });
+    expect(
+      createEnvironment({
+        NODE_ENV: 'test',
+        RATE_LIMIT_ENABLED: 'false',
+        SECURITY_AUTHORIZATION_DENIAL_THRESHOLD: '8',
+        SECURITY_AUTHORIZATION_DENIAL_WINDOW_SECONDS: '120',
+      }).securityLogging.authorizationDenials,
+    ).toEqual({ threshold: 8, windowMs: 120000 });
+  });
+
+  it.each([
+    ['SECURITY_AUTHORIZATION_DENIAL_THRESHOLD', '0'],
+    ['SECURITY_AUTHORIZATION_DENIAL_THRESHOLD', '1.5'],
+    ['SECURITY_AUTHORIZATION_DENIAL_THRESHOLD', '1000001'],
+    ['SECURITY_AUTHORIZATION_DENIAL_WINDOW_SECONDS', '-1'],
+    ['SECURITY_AUTHORIZATION_DENIAL_WINDOW_SECONDS', 'invalid'],
+    ['SECURITY_AUTHORIZATION_DENIAL_WINDOW_SECONDS', '86401'],
+  ])('rejects invalid security logging setting %s=%s', (key, value) => {
+    expect(() => createEnvironment({ NODE_ENV: 'test', [key]: value })).toThrow(key);
+  });
+
   it('builds a reusable SMTP configuration without exposing credentials', () => {
     const configuration = createEnvironment({
       NODE_ENV: 'test',

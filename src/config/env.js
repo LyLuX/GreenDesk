@@ -337,6 +337,24 @@ export function createEnvironment(source = process.env) {
   const smtpMaxConnections = parsePositiveInteger(source, 'SMTP_MAX_CONNECTIONS', 5, errors);
   const smtpMaxMessages = parsePositiveInteger(source, 'SMTP_MAX_MESSAGES', 100, errors);
   const rateLimitEnabled = parseBoolean(source, 'RATE_LIMIT_ENABLED', true, errors);
+  const authorizationDenialThreshold = parsePositiveInteger(
+    source,
+    'SECURITY_AUTHORIZATION_DENIAL_THRESHOLD',
+    5,
+    errors,
+  );
+  const authorizationDenialWindowSeconds = parsePositiveInteger(
+    source,
+    'SECURITY_AUTHORIZATION_DENIAL_WINDOW_SECONDS',
+    60,
+    errors,
+  );
+  if (authorizationDenialThreshold > 1000000) {
+    errors.push('SECURITY_AUTHORIZATION_DENIAL_THRESHOLD ne peut pas dépasser 1000000.');
+  }
+  if (authorizationDenialWindowSeconds > 86400) {
+    errors.push('SECURITY_AUTHORIZATION_DENIAL_WINDOW_SECONDS ne peut pas dépasser 86400.');
+  }
   const imageUploadMaxSizeMb = parseUploadSizeMb(source, 'UPLOAD_IMAGE_MAX_SIZE_MB', 10, errors);
   const documentUploadMaxSizeMb = parseUploadSizeMb(
     source,
@@ -438,6 +456,12 @@ export function createEnvironment(source = process.env) {
       },
     },
     rateLimit,
+    securityLogging: {
+      authorizationDenials: {
+        threshold: authorizationDenialThreshold,
+        windowMs: authorizationDenialWindowSeconds * 1000,
+      },
+    },
     jwt: {
       secret: jwtSecret,
       accessTokenTtl: normalizedValue(source, 'JWT_ACCESS_TOKEN_TTL') || '15m',

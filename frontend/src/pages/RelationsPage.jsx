@@ -22,10 +22,14 @@ import StatusPanel from '../components/StatusPanel.jsx';
 const NODE_WIDTH = 230;
 const NODE_HEIGHT = 124;
 const edgeStyles = Object.freeze({
-  group: { stroke: '#82918a', strokeWidth: 1.5 },
-  direct: { stroke: '#287a50', strokeWidth: 2 },
-  association: { stroke: '#6b57a4', strokeWidth: 2 },
-  derived: { stroke: '#b37816', strokeWidth: 2, strokeDasharray: '7 5' },
+  group: { stroke: 'var(--relation-edge-group-color)', strokeWidth: 1.5 },
+  direct: { stroke: 'var(--relation-edge-direct-color)', strokeWidth: 2 },
+  association: { stroke: 'var(--relation-edge-association-color)', strokeWidth: 2 },
+  derived: {
+    stroke: 'var(--relation-edge-derived-color)',
+    strokeWidth: 2,
+    strokeDasharray: '7 5',
+  },
 });
 export const INACTIVE_EDGE_OPACITY = 0.1;
 
@@ -297,6 +301,7 @@ function RelationsGraphPage() {
                 edges={flow.edges}
                 nodeTypes={nodeTypes}
                 nodesConnectable={false}
+                defaultMarkerColor="var(--relation-marker-color)"
                 nodesDraggable={false}
                 minZoom={0.2}
                 maxZoom={1.6}
@@ -306,7 +311,7 @@ function RelationsGraphPage() {
                 onPaneClick={() => setSelectedId(null)}
                 aria-label="Graphe interactif des relations entre les entités"
               >
-                <Background gap={22} size={1} color="#d8e2dc" />
+                <Background gap={22} size={1} color="var(--relation-grid-color)" />
                 <Controls showInteractive={false} />
               </ReactFlow>
             )}

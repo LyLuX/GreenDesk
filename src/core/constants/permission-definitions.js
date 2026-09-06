@@ -255,7 +255,8 @@ const permissionDefinitions = [
   },
   {
     name: maintenancePermissions.plans.execute,
-    description: 'Enregistrer un entretien réalisé et recalculer ses prochaines échéances.',
+    description:
+      'Exécuter un plan de maintenance, y compris consommer les pièces prévues par ce plan, et recalculer ses prochaines échéances.',
   },
   {
     name: maintenancePermissions.plans.executeWithoutPartReplacement,

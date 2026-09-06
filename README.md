@@ -8,7 +8,7 @@ Sa finalité est de réunir dans un même outil les informations souvent dispers
 papier, tableaux et documents : matériels en service, caractéristiques, photos, entretiens à
 prévoir, pièces nécessaires, état des stocks, coûts et historique des actions réalisées.
 
-La version actuelle de GreenDesk est **9.0.0**.
+La version actuelle de GreenDesk est **9.0.1**.
 
 ## Ce que permet GreenDesk
 
@@ -187,6 +187,42 @@ Lorsque le backend fonctionne en développement ou en test :
 
 La documentation interactive n’est volontairement pas exposée en production.
 
+## Organisation des styles
+
+`frontend/src/styles.css` reste le point d’entrée unique des styles GreenDesk. Il charge Bootstrap,
+puis les fichiers de `frontend/src/styles/` : thème, relations, structure, composants partagés,
+accès/connexion, tableau de bord, tableaux, stock, maintenance et matériels. Les adaptations
+responsive et les règles d’impression sont chargées en dernier pour préserver leurs priorités.
+
+Les couleurs sont définies dans `theme.css`, y compris celles des liens, flèches et points du fond
+React Flow. Réutiliser une variable existante avant d’en créer une ; les transparences dérivent
+des couleurs de base avec `color-mix()`. Conserver des variables distinctes lorsque les nuances
+diffèrent intentionnellement. Les tests CSS suivent les imports et vérifient aussi que la purge
+de production conserve les états du graphe et les documents imprimables.
+
+## Journalisation des refus de permissions
+
+Les refus de permissions répétés produisent un avertissement technique
+`security.authorization_denied_repeated`, dans les mêmes journaux applicatifs que les dépassements
+de quota. Par défaut, le cinquième refus déclenche un événement dans une fenêtre fixe de 60 secondes
+ouverte au premier refus, pour un même utilisateur, une même société résolue, une même méthode HTTP
+et un même modèle de route. Les UUID des ressources ne divisent pas le compteur. Un seul événement
+est émis par groupe et par fenêtre ; `denialCount` indique le nombre atteint au déclenchement,
+pas le total final de la fenêtre. Les requêtes autorisées ne sont pas comptées.
+
+`SECURITY_AUTHORIZATION_DENIAL_THRESHOLD` (1 à 1000000, défaut 5) et
+`SECURITY_AUTHORIZATION_DENIAL_WINDOW_SECONDS` (1 à 86400, défaut 60) sont modifiables dans le `.env`,
+puis prises en compte au redémarrage de l’API. Le compteur est indépendant du rate limiting,
+conservé en mémoire par processus et remis à zéro au redémarrage. Il est limité à 10000 groupes :
+les groupes expirés sont purgés à la requête suivante et, à saturation, le plus ancien est évincé.
+Un déploiement multi-instance nécessite une agrégation externe pour une détection globale.
+
+Ces événements ne sont pas ajoutés à l’historique métier en base : ils sont consultables dans la
+sortie de l’API ou son collecteur de logs. Ils incluent l’acteur, la société, la route, les permissions
+requises et l’identifiant de corrélation, sans corps de requête, query string, cookie ou jeton.
+Les réponses 403, les logs HTTP/erreurs existants et les permissions restent inchangés, même si
+l’écriture du nouvel événement échoue. Aucun seuil de stock « inhabituel » n’est introduit.
+
 ## Vérification du projet
 
 Depuis la racine :
@@ -197,6 +233,27 @@ npm run docs:check
 npm run lint
 npm run format:check
 ```
+
+Les tests adverses sur MySQL réel se lancent séparément :
+
+```powershell
+npm run test:integration
+```
+
+Ils utilisent la connexion `DATABASE_*` du `.env` et nécessitent une base GreenDesk à jour
+ainsi que les droits de créer et supprimer une base temporaire sur ce serveur MySQL.
+Seule la structure des tables (index et contraintes compris) est copiée dans une base
+`greendesk_adversarial_<identifiant aléatoire>` ; aucune donnée métier n’est copiée ou modifiée.
+Les données de test sont créées dans cette base isolée, supprimée à la fin même en cas d’échec
+des tests. En cas d’arrêt forcé du processus, son nom affiché permet de repérer un éventuel
+résidu à supprimer. Un défaut de connexion ou de droits fait échouer la commande, sans ignorer
+silencieusement les tests.
+
+Les tests passent par les routes HTTP, l’authentification, les permissions, les services et les
+requêtes réels. Ils couvrent le double-clic, la perte de réponse après commit, les appels
+concurrents avec clés identiques ou distinctes, la réutilisation d’une clé avec un autre contenu,
+le rollback après une panne injectée et l’isolation entre sociétés pour les plans, interventions
+et mouvements de stock. La suite habituelle `npm test` reste indépendante de MySQL.
 
 Depuis `frontend` :
 

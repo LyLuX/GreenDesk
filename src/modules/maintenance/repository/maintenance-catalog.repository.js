@@ -17,7 +17,7 @@ import { companyValues, companyWhere } from '../../../core/company/company-conte
 const manufacturerInclude = {
   model: PartManufacturer,
   as: 'manufacturerDirectory',
-  attributes: ['uuid', 'name'],
+  attributes: ['uuid', 'name', 'logoFileName'],
 };
 const supplierInclude = {
   model: Supplier,

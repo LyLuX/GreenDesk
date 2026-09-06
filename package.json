@@ -1,6 +1,6 @@
 {
   "name": "greendesk-backend",
-  "version": "9.0.0",
+  "version": "9.0.1",
   "private": true,
   "description": "Backend API foundation for GreenDesk.",
   "type": "module",
@@ -11,6 +11,7 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
+    "test:integration": "node scripts/test-integration.js",
     "docs:check": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/openapi.test.js --runInBand",
     "benchmark:compression": "node scripts/benchmark-compression.js",
     "lint": "eslint .",

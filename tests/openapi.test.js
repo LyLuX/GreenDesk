@@ -53,6 +53,26 @@ const operationParameters = (path, method) => {
 };
 
 describe('OpenAPI contract', () => {
+  it('clarifies that planned consumption does not require the unplanned-intervention permission', () => {
+    const descriptions = [
+      swaggerSpec.paths['/maintenance/{uuid}/execute'].post.description,
+      swaggerSpec.components.schemas.MaintenanceExecuteRequest.properties.partsAction.description,
+    ];
+    for (const description of descriptions) {
+      expect(description).toContain('maintenance.execute');
+      expect(description).toContain('sans exiger `maintenance.parts.stock.consume`');
+    }
+  });
+
+  it('documents embedded manufacturer logo availability on order-list items', () => {
+    const details =
+      swaggerSpec.components.schemas.MaintenanceOrderList.properties.items.items.allOf[1];
+    expect(details.required).toContain('manufacturerHasLogo');
+    expect(details.properties.manufacturerHasLogo.type).toBe('boolean');
+    expect(swaggerSpec.paths['/maintenance/order-list'].get.responses[200].description).toContain(
+      'manufacturerHasLogo',
+    );
+  });
   it.each([
     '/companies',
     '/users',
