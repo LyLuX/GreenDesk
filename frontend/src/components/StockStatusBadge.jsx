@@ -1,9 +1,8 @@
-import { STOCK_STATUSES, stockStatusPresentation } from '../inventory/stock-status.js';
-
-const minimumStockPresentation = {
-  label: 'Stock minimum',
-  badgeClass: 'stock-minimum',
-};
+import {
+  STOCK_STATUSES,
+  stockStatusPresentation,
+  minimumStockPresentation,
+} from '../inventory/stock-status.js';
 
 /** Shared visual representation for inventory states. */
 export default function StockStatusBadge({ status, quantityOnHand, minimumStockQuantity }) {

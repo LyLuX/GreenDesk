@@ -64,9 +64,12 @@ describe('list filter validation', () => {
     await expect(validate(maintenanceListValidator, { limit: 'all' })).resolves.not.toEqual([]);
   });
 
-  it.each(['inStock', 'toOrder', 'ordered'])('accepts the stock status %s', async (stockStatus) => {
-    await expect(validate(partCatalogListValidator, { stockStatus })).resolves.toEqual([]);
-  });
+  it.each(['inStock', 'toOrder', 'ordered', 'minimum'])(
+    'accepts the stock status %s',
+    async (stockStatus) => {
+      await expect(validate(partCatalogListValidator, { stockStatus })).resolves.toEqual([]);
+    },
+  );
 
   it('rejects an unknown stock status', async () => {
     await expect(

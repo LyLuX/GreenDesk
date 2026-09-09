@@ -11,7 +11,7 @@ import MaintenancePartPriceHistory from '../model/maintenance-part-price-history
 import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
 import Supplier from '../../suppliers/model/supplier.model.js';
 import User from '../../users/model/user.model.js';
-import { STOCK_STATUSES } from '../../../core/inventory/stock-status.js';
+import { STOCK_FILTERS, STOCK_STATUSES } from '../../../core/inventory/stock-status.js';
 import { companyValues, companyWhere } from '../../../core/company/company-context.js';
 
 const manufacturerInclude = {
@@ -113,7 +113,15 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
       where[Op.and] = [
         sequelize.where(
           sequelize.col('quantity_on_hand'),
-          Op.gte,
+          Op.gt,
+          sequelize.col('minimum_stock_quantity'),
+        ),
+      ];
+    } else if (stockStatus === STOCK_FILTERS.MINIMUM) {
+      where[Op.and] = [
+        sequelize.where(
+          sequelize.col('quantity_on_hand'),
+          Op.eq,
           sequelize.col('minimum_stock_quantity'),
         ),
         sequelize.literal(

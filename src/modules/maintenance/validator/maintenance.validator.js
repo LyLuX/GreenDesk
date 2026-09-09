@@ -2,7 +2,7 @@ import { body, param, query } from 'express-validator';
 import { activeFilterValidator } from '../../../core/validators/active-filter.validator.js';
 import { paginationValidator } from '../../../core/validators/pagination.validator.js';
 import { MAX_UNIT_PRICE } from '../../../core/utils/money.js';
-import { STOCK_STATUS_VALUES } from '../../../core/inventory/stock-status.js';
+import { STOCK_FILTER_VALUES, STOCK_STATUS_VALUES } from '../../../core/inventory/stock-status.js';
 import {
   MAX_STOCK_QUANTITY,
   PUBLIC_STOCK_OPERATION_VALUES,
@@ -123,7 +123,7 @@ export const catalogListValidator = [
 ];
 export const partCatalogListValidator = [
   ...catalogListValidator,
-  query('stockStatus').optional({ values: 'falsy' }).isIn(STOCK_STATUS_VALUES),
+  query('stockStatus').optional({ values: 'falsy' }).isIn(STOCK_FILTER_VALUES),
 ];
 const optionalText = (name, maxLength) =>
   body(name)

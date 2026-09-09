@@ -623,35 +623,38 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(screen.getByRole('button', { name: 'Réactiver' })).toHaveClass('btn-outline-brand-blue');
   });
 
-  it('filters maintenance parts by stock status while keeping the existing filters', async () => {
-    const user = userEvent.setup();
-    render(<MaintenancePartsPage />);
+  it.each(['ordered', 'inStock', 'minimum'])(
+    'filters maintenance parts by %s while keeping the existing filters',
+    async (filter) => {
+      const user = userEvent.setup();
+      render(<MaintenancePartsPage />);
 
-    const search = await screen.findByLabelText('Rechercher dans pièces de maintenance');
-    const active = screen.getByLabelText('Filtrer par statut');
-    const stockStatus = screen.getByLabelText('Filtrer par état du stock');
+      const search = await screen.findByLabelText('Rechercher dans pièces de maintenance');
+      const active = screen.getByLabelText('Filtrer par statut');
+      const stockStatus = screen.getByLabelText('Filtrer par état du stock');
 
-    expect(active).toHaveValue('true');
-    expect(stockStatus).toHaveValue('');
-    await user.type(search, 'Bou');
-    await user.selectOptions(stockStatus, 'ordered');
+      expect(active).toHaveValue('true');
+      expect(stockStatus).toHaveValue('');
+      await user.type(search, 'Bou');
+      await user.selectOptions(stockStatus, filter);
 
-    await waitFor(() =>
-      expect(mocks.listParts).toHaveBeenCalledWith(
-        expect.objectContaining({
-          search: 'Bou',
-          active: 'true',
-          stockStatus: 'ordered',
-          page: 1,
-          limit: 5,
-        }),
-        expect.any(AbortSignal),
-      ),
-    );
-    expect(search).toHaveValue('Bou');
-    expect(active).toHaveValue('true');
-    expect(stockStatus).toHaveValue('ordered');
-  });
+      await waitFor(() =>
+        expect(mocks.listParts).toHaveBeenCalledWith(
+          expect.objectContaining({
+            search: 'Bou',
+            active: 'true',
+            stockStatus: filter,
+            page: 1,
+            limit: 5,
+          }),
+          expect.any(AbortSignal),
+        ),
+      );
+      expect(search).toHaveValue('Bou');
+      expect(active).toHaveValue('true');
+      expect(stockStatus).toHaveValue(filter);
+    },
+  );
 
   it('uses the shared pagination controls for maintenance catalogues', async () => {
     const user = userEvent.setup();

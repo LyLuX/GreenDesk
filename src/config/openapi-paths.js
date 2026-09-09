@@ -1,4 +1,4 @@
-import { STOCK_STATUS_VALUES } from '../core/inventory/stock-status.js';
+import { STOCK_FILTER_VALUES } from '../core/inventory/stock-status.js';
 import { MAINTENANCE_DEADLINE_STATUSES } from '../modules/maintenance/maintenance.constants.js';
 import { DOCUMENT_TYPES } from '../modules/materials/material-file.constants.js';
 
@@ -1103,8 +1103,9 @@ export const openApiPaths = {
         {
           name: 'stockStatus',
           in: 'query',
-          description: 'Filtre selon l’état calculé par rapport au stock minimum de chaque pièce.',
-          schema: { type: 'string', enum: STOCK_STATUS_VALUES },
+          description:
+            'Filtre selon le badge de stock : `inStock` pour un stock atelier strictement supérieur au minimum, `minimum` pour un stock égal au minimum. Un seuil nul sans stock atelier avec une commande reste `ordered`.',
+          schema: { type: 'string', enum: STOCK_FILTER_VALUES },
         },
         pageParameter,
         limitParameter,
@@ -1293,7 +1294,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Liste les fiches de maintenance à consulter ou à imprimer.',
       description:
-        'Nécessite la permission dédiée `maintenance.sheets.read`. Le filtre `status` reprend exactement les échéances de la liste des plans. Sans statut, tous les plans actifs sont retournés. `includeOverdue` et `includeWearBased` permettent d’ajouter respectivement les plans en retard et ceux suivis selon l’usure à une échéance sélectionnée. Les fiches sont triées par priorité décroissante, puis par échéance, titre et identifiant.',
+        'Nécessite la permission dédiée `maintenance.sheets.read`. Le filtre `status` reprend exactement les échéances de la liste des plans. Sans statut, tous les plans actifs sont retournés. `includeOverdue` et `includeWearBased` permettent d’ajouter respectivement les plans en retard et ceux suivis selon l’usure à une échéance sélectionnée. Les fiches sont triées côté serveur par échéance croissante (plans sans échéance en dernier), puis par priorité décroissante, titre et identifiant.',
       security: secure,
       parameters: [
         {
@@ -1543,7 +1544,7 @@ export const openApiPaths = {
       tags: ['Relations'],
       summary: 'Retourne la cartographie des relations de la société active.',
       description:
-        'Nécessite `relations.read`. Les nœuds sont filtrés avec les permissions de consultation propres à chaque ressource. Le scope `records` expose uniquement les enregistrements réels des branches Gestion du parc et Maintenance de la société active, avec leurs associations persistées sans libellé. Gestion du parc présente directement les groupes Matériels, Catégories, Fabricants et Fournisseurs ; les fiches de matériel sont placées sous le groupe Matériels ainsi qu’au bout de leurs branches Catégorie et Fabricant. Maintenance présente directement les groupes Plans de maintenance, Opérations et Pièces ; les opérations mènent à leurs plans et les plans à leurs pièces prévues. Le mode `complete` ajoute les fichiers sous leur matériel autorisé. Le scope `models` conserve la cartographie structurelle et ses compteurs, avec ses deux niveaux de détail.',
+        'Nécessite `relations.read`. Les nœuds sont filtrés avec les permissions de consultation propres à chaque ressource. Le scope `records` expose uniquement les enregistrements réels des branches Gestion du parc et Maintenance de la société active, avec leurs associations persistées sans libellé. Gestion du parc présente directement les groupes Matériels, Catégories, Fabricants et Fournisseurs ; les fiches de matériel sont placées sous le groupe Matériels ainsi qu’au bout de leurs branches Catégorie et Fabricant. Maintenance présente directement les groupes Plans de maintenance, Opérations et Pièces ; les opérations mènent à leurs plans et les plans à leurs pièces prévues. Le mode `complete` ajoute les fichiers sous leur matériel autorisé. Le scope `models` conserve la cartographie structurelle et ses compteurs, avec ses deux niveaux de détail. Le scope `materialParts` présente directement société, matériels et pièces, sans distinction entre les modes : les matériels nécessitent `materials.read`, leurs relations nécessitent aussi `maintenance.read` et `maintenance.parts.read`. Une relation distingue la présence dans un plan actif et la consommation réelle (exécutions et interventions ponctuelles), avec les cumuls par unité et la dernière utilisation calculés côté serveur sur tout l’historique enregistré. Les consommations restent visibles après suppression du plan ou de la pièce ; aucun coût n’est exposé.',
       security: secure,
       parameters: [
         {
@@ -1560,7 +1561,7 @@ export const openApiPaths = {
           in: 'query',
           schema: {
             type: 'string',
-            enum: ['models', 'records'],
+            enum: ['models', 'records', 'materialParts'],
             default: 'models',
           },
         },

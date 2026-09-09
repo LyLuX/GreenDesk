@@ -34,9 +34,15 @@ export const stockStatusPresentation = Object.freeze({
   }),
 });
 
-export const stockStatusOptions = Object.entries(stockStatusPresentation).map(
-  ([value, { label }]) => ({ value, label }),
-);
+export const minimumStockPresentation = Object.freeze({
+  label: 'Stock minimum',
+  badgeClass: 'stock-minimum',
+});
+
+export const stockStatusOptions = Object.entries({
+  ...stockStatusPresentation,
+  minimum: minimumStockPresentation,
+}).map(([value, { label }]) => ({ value, label }));
 
 /** Formats a stock quantity with the part unit and its common French plural. */
 export const formatStockQuantity = (quantity, unit) => {

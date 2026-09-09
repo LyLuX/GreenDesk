@@ -2,6 +2,14 @@
 
 ## Non publié
 
+## 9.1.0 - 2026-09-09
+
+- [MINOR] La vue des relations relie directement les matériels aux pièces prévues et consommées, avec les quantités et la dernière utilisation consultables dans un graphe simple.
+
+- [PATCH] Les fiches de maintenance à imprimer sont triées par échéance, avec les plans en retard avant les échéances à venir et les plans selon l’usure en dernier.
+
+- [PATCH] Le filtre « En stock » des pièces de maintenance exclut les pièces au seuil minimum, désormais accessibles avec le filtre distinct « Stock minimum ».
+
 ## 9.0.1 - 2026-09-06
 
 - [PATCH] Les styles sont organisés par domaine et les couleurs, y compris celles de la cartographie, sont centralisées pour faciliter les évolutions du thème en conservant le rendu actuel.

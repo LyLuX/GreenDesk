@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -41,7 +41,9 @@ vi.mock('@xyflow/react', () => ({
         </div>
       ))}
       {edges.map((edge) => (
-        <span data-testid={`edge-${edge.id}`} data-opacity={edge.style.opacity} key={edge.id} />
+        <span data-testid={`edge-${edge.id}`} data-opacity={edge.style.opacity} key={edge.id}>
+          {edge.label}
+        </span>
       ))}
     </div>
   ),
@@ -253,6 +255,125 @@ describe('RelationsPage', () => {
     mocks.getRelationsGraph.mockResolvedValue({ data: { data: completeGraph } });
   });
 
+  it('explores shared parts and real consumption without filters or search', async () => {
+    const user = userEvent.setup();
+    mocks.getRelationsGraph.mockResolvedValue({
+      data: {
+        data: {
+          scope: 'materialParts',
+          mode: 'simplified',
+          company: { uuid: 'company-uuid', name: 'Alpha' },
+          nodes: [
+            { id: 'company', label: 'Alpha', kind: 'company' },
+            {
+              id: 'material:mower',
+              label: 'Tondeuse',
+              kind: 'entity',
+              recordType: 'material',
+              path: '/materials/mower',
+              plansPath: '/maintenance?materialUuid=mower',
+            },
+            {
+              id: 'material:tractor',
+              label: 'Tracteur',
+              kind: 'entity',
+              recordType: 'material',
+              path: '/materials/tractor',
+            },
+            {
+              id: 'part:oil',
+              label: 'Huile',
+              description: 'Réf. H1',
+              kind: 'entity',
+              recordType: 'part',
+            },
+          ],
+          edges: [
+            {
+              id: 'root-mower',
+              source: 'company',
+              target: 'material:mower',
+              kind: 'group',
+              label: '',
+              hierarchy: true,
+            },
+            {
+              id: 'root-tractor',
+              source: 'company',
+              target: 'material:tractor',
+              kind: 'group',
+              label: '',
+              hierarchy: true,
+            },
+            {
+              id: 'mower-oil',
+              source: 'material:mower',
+              target: 'part:oil',
+              kind: 'association',
+              label: 'Prévue et consommée',
+              hierarchy: true,
+              planned: true,
+              consumptions: [{ quantity: 1.75, unit: 'litre', lastUsedAt: '2026-09-09' }],
+            },
+            {
+              id: 'tractor-oil',
+              source: 'material:tractor',
+              target: 'part:oil',
+              kind: 'derived',
+              label: 'Prévue',
+              hierarchy: true,
+              planned: true,
+              consumptions: [],
+            },
+          ],
+        },
+      },
+    });
+    render(
+      <MemoryRouter>
+        <RelationsPage />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByRole('button', { name: 'Tondeuse', exact: true })).toBeVisible();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Huile', exact: true })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Tondeuse', exact: true }));
+    const details = screen.getByRole('region', { name: 'Détails des relations' });
+    expect(within(details).getByText('Prévue et consommée')).toBeVisible();
+    expect(within(details).getByText(/1,75 litre/)).toHaveTextContent('09/09/2026');
+    expect(
+      within(details).getByRole('link', { name: 'Voir les plans du matériel' }),
+    ).toHaveAttribute('href', '/maintenance?materialUuid=mower');
+    await user.click(within(details).getByRole('button', { name: 'Huile' }));
+    expect(within(details).getByRole('button', { name: 'Tondeuse' })).toBeVisible();
+    expect(within(details).getByRole('button', { name: 'Tracteur' })).toBeVisible();
+    expect(screen.getByTestId('edge-tractor-oil')).toHaveAttribute('data-opacity', '1');
+    expect(
+      within(screen.getByLabelText('Graphe simulé')).getAllByRole('button', {
+        name: 'Huile',
+        exact: true,
+      }),
+    ).toHaveLength(1);
+    await user.click(screen.getByRole('button', { name: 'Replier les branches' }));
+    expect(screen.queryByRole('region', { name: 'Détails des relations' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Huile', exact: true })).not.toBeInTheDocument();
+  });
+
+  it('explains when there are no readable materials', async () => {
+    mocks.getRelationsGraph.mockResolvedValue({
+      data: { data: { nodes: [{ id: 'company', label: 'Alpha', kind: 'company' }], edges: [] } },
+    });
+    render(
+      <MemoryRouter>
+        <RelationsPage />
+      </MemoryRouter>,
+    );
+    expect(
+      await screen.findByText('Aucun matériel consultable dans cette société.'),
+    ).toHaveAttribute('role', 'status');
+  });
+
   it('loads one complete graph without a mode selector', async () => {
     const user = userEvent.setup();
     render(
@@ -262,7 +383,7 @@ describe('RelationsPage', () => {
     );
 
     expect(await screen.findByRole('button', { name: 'Gestion du parc' })).toBeVisible();
-    expect(mocks.getRelationsGraph).toHaveBeenCalledWith('complete', 'records');
+    expect(mocks.getRelationsGraph).toHaveBeenCalledWith('simplified', 'materialParts');
     expect(screen.queryByRole('button', { name: 'Vue simplifiée' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Vue complète' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Matériels' })).toBeNull();

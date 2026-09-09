@@ -317,7 +317,7 @@ const maintenancePart = {
       type: 'string',
       enum: STOCK_STATUS_VALUES,
       description:
-        'État calculé par rapport au stock minimum de la pièce : disponible lorsque le stock atelier atteint le seuil, commandé lorsque les commandes couvrent le manque ou qu’une commande existe pour un seuil nul sans stock atelier, sinon à commander.',
+        'État calculé par rapport au stock minimum de la pièce : disponible lorsque le stock atelier atteint le seuil, commandé lorsque les commandes couvrent le manque ou qu’une commande existe pour un seuil nul sans stock atelier, sinon à commander. À égalité au seuil, le badge affiche Stock minimum et le filtre de liste correspondant est `minimum`, même si cet état reste `inStock`.',
     },
     stockQuantity: {
       ...decimalQuantity(2000000, { allowZero: true }),
@@ -1330,7 +1330,11 @@ export const openApiSchemas = {
       },
       includeOverdue: { type: 'boolean' },
       includeWearBased: { type: 'boolean' },
-      items: arrayOf(reference('MaintenanceSheet')),
+      items: {
+        ...arrayOf(reference('MaintenanceSheet')),
+        description:
+          'Fiches triées côté serveur par échéance croissante, sans échéance en dernier, puis priorité décroissante, titre et identifiant.',
+      },
     },
   },
   MaintenanceSheetPrintAcknowledgement: {
@@ -1436,18 +1440,24 @@ export const openApiSchemas = {
       id: { type: 'string' },
       label: {
         type: 'string',
-        description: 'Libellé structurel, vide pour les relations entre enregistrements réels.',
+        description: 'Nom de l’entité ou du groupe affiché dans le graphe.',
       },
       description: { type: 'string' },
       kind: { type: 'string', enum: ['company', 'domain', 'entity', 'technical'] },
       count: { type: 'integer', minimum: 0 },
       recordType: {
         type: 'string',
-        description: 'Type métier de l’enregistrement lorsque le scope vaut `records`.',
+        description:
+          'Type métier de l’enregistrement lorsque le scope vaut `records` ou `materialParts`.',
       },
       path: {
         type: 'string',
         description: 'Route frontend autorisée ouverte depuis le nœud.',
+      },
+      plansPath: {
+        type: 'string',
+        description:
+          'Route des plans du matériel, présente dans materialParts avec les droits de lecture des relations.',
       },
     },
   },
@@ -1468,13 +1478,36 @@ export const openApiSchemas = {
         type: 'boolean',
         description: 'Indique que la relation influence la disposition des nœuds.',
       },
+      planned: {
+        type: 'boolean',
+        description:
+          'Présent sur les liens matériel–pièce de materialParts : pièce prévue dans au moins un plan actif.',
+      },
+      consumptions: {
+        type: 'array',
+        description:
+          'Présent sur les liens matériel–pièce de materialParts. Cumuls réels par unité sur tout l’historique enregistré ; tableau vide si jamais consommée.',
+        items: {
+          type: 'object',
+          required: ['quantity', 'unit', 'lastUsedAt'],
+          properties: {
+            quantity: {
+              type: 'number',
+              minimum: 0,
+              description: 'Quantité totale consommée dans cette unité.',
+            },
+            unit: { type: 'string' },
+            lastUsedAt: date,
+          },
+        },
+      },
     },
   },
   RelationGraph: {
     type: 'object',
     required: ['scope', 'mode', 'company', 'nodes', 'edges'],
     properties: {
-      scope: { type: 'string', enum: ['models', 'records'] },
+      scope: { type: 'string', enum: ['models', 'records', 'materialParts'] },
       mode: { type: 'string', enum: ['simplified', 'complete'] },
       company: {
         type: 'object',

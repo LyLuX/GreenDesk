@@ -87,16 +87,19 @@ describe('MaintenanceRepository order list', () => {
     expect(paginatedSelect).not.toContain('MaintenanceTask.next_maintenance_date IS NULL');
   });
 
-  it('loads requested sheet statuses and sorts priorities from highest to lowest', async () => {
+  it('loads requested sheet statuses and sorts dated sheets before undated sheets', async () => {
     const findAll = jest.spyOn(MaintenanceTask, 'findAll').mockResolvedValue([]);
     const repository = new MaintenanceRepository();
 
     await repository.findForMaintenanceSheets();
     expect(findAll.mock.calls[0][0].where.active).toBe(true);
     expect(findAll.mock.calls[0][0].where[Op.and]).toBeUndefined();
-    expect(findAll.mock.calls[0][0].order).toEqual([
-      ['priority', 'DESC'],
+    const order = findAll.mock.calls[0][0].order;
+    expect(order[0][0].val).toBe('MaintenanceTask.next_maintenance_date IS NULL');
+    expect(order[0][1]).toBe('ASC');
+    expect(order.slice(1)).toEqual([
       ['next_maintenance_date', 'ASC'],
+      ['priority', 'DESC'],
       ['title', 'ASC'],
       ['id', 'ASC'],
     ]);
@@ -106,5 +109,25 @@ describe('MaintenanceRepository order list', () => {
     expect(statusFilters).toHaveLength(2);
     expect(statusFilters[0].val).toContain('MaintenanceTask.next_maintenance_date');
     expect(statusFilters[1].val).toContain('MaintenanceTask.interval_days = 0');
+  });
+
+  it('orders combined upcoming, overdue and wear-based sheets directly in SQL', async () => {
+    const statements = [];
+    jest.spyOn(sequelize, 'query').mockImplementation(async (sql) => {
+      statements.push(sql);
+      return [];
+    });
+
+    await new MaintenanceRepository().findForMaintenanceSheets({
+      statuses: ['upcoming', 'overdue', 'wearBased'],
+    });
+
+    expect(statements).toHaveLength(1);
+    expect(statements[0]).toContain('MaintenanceTask.interval_days = 0');
+    expect(statements[0]).toContain(
+      'ORDER BY MaintenanceTask.next_maintenance_date IS NULL ASC, ' +
+        '`nextMaintenanceDate` ASC, `MaintenanceTask`.`priority` DESC, ' +
+        '`MaintenanceTask`.`title` ASC, `MaintenanceTask`.`id` ASC',
+    );
   });
 });

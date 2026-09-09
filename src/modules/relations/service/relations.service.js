@@ -5,6 +5,7 @@ import historyPermissions from '../../audit/history.permissions.js';
 import maintenancePermissions from '../../maintenance/maintenance.permissions.js';
 import RelationsRepository from '../repository/relations.repository.js';
 import RecordRelationsService from './record-relations.service.js';
+import MaterialPartRelationsService from './material-part-relations.service.js';
 
 const node = (id, label, options = {}) => ({ id, label, ...options });
 const nodes = [
@@ -236,13 +237,16 @@ export default class RelationsService {
   constructor(
     repository = new RelationsRepository(),
     recordService = new RecordRelationsService(),
+    materialPartService = new MaterialPartRelationsService(),
   ) {
     this.repository = repository;
     this.recordService = recordService;
+    this.materialPartService = materialPartService;
   }
 
   async getGraph({ mode = 'simplified', scope = 'models', permissions = [] } = {}) {
     if (scope === 'records') return this.recordService.getGraph({ mode, permissions });
+    if (scope === 'materialParts') return this.materialPartService.getGraph({ mode, permissions });
 
     const permissionNames = new Set(permissions);
     const complete = mode === 'complete';

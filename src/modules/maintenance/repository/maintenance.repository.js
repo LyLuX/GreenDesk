@@ -279,8 +279,9 @@ export default class MaintenanceRepository extends TransactionalRepository {
       }),
       include: [materialInclude, operationInclude, partsInclude],
       order: [
-        ['priority', 'DESC'],
+        [Sequelize.literal('MaintenanceTask.next_maintenance_date IS NULL'), 'ASC'],
         ['next_maintenance_date', 'ASC'],
+        ['priority', 'DESC'],
         ['title', 'ASC'],
         ['id', 'ASC'],
       ],

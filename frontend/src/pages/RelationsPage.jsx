@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import dagre from '@dagrejs/dagre';
 import {
   Background,
@@ -18,6 +18,8 @@ import getApiErrorMessage from '../api/get-api-error-message.js';
 import useAuth from '../auth/useAuth.js';
 import Loader from '../components/Loader.jsx';
 import StatusPanel from '../components/StatusPanel.jsx';
+import { formatStockQuantity } from '../inventory/stock-status.js';
+import { formatDate } from '../utils/formatters.js';
 
 const NODE_WIDTH = 230;
 const NODE_HEIGHT = 124;
@@ -69,7 +71,7 @@ export const filterCollapsedGraph = (graph, collapsedIds) => {
 export const layoutRelationGraph = (nodes, edges) => {
   const layout = new dagre.graphlib.Graph();
   layout.setDefaultEdgeLabel(() => ({}));
-  layout.setGraph({ rankdir: 'LR', ranksep: 105, nodesep: 46, marginx: 28, marginy: 28 });
+  layout.setGraph({ rankdir: 'LR', ranksep: 190, nodesep: 46, marginx: 28, marginy: 28 });
   nodes.forEach(({ id }) => layout.setNode(id, { width: NODE_WIDTH, height: NODE_HEIGHT }));
   edges
     .filter(({ hierarchy, layout: affectsLayout }) => hierarchy || affectsLayout)
@@ -95,7 +97,7 @@ function RelationNode({ data }) {
     >
       <Handle type="target" position={Position.Left} className="relation-node-handle" />
       <div className="relation-node-heading">
-        <strong>{data.label}</strong>
+        <strong title={data.label}>{data.label}</strong>
         {data.collapsible ? (
           <button
             type="button"
@@ -116,7 +118,9 @@ function RelationNode({ data }) {
           {data.count.toLocaleString('fr-FR')} enregistrement{data.count === 1 ? '' : 's'}
         </span>
       ) : (
-        <span className="relation-node-description">{data.description}</span>
+        <span className="relation-node-description" title={data.description}>
+          {data.description}
+        </span>
       )}
       {data.path ? (
         <button
@@ -137,6 +141,69 @@ function RelationNode({ data }) {
 
 const nodeTypes = { relation: RelationNode };
 
+function RelationDetails({ graph, selectedId, onSelect }) {
+  const selected = graph?.nodes.find(({ id }) => id === selectedId);
+  if (!selected?.recordType) return null;
+  const nodesById = new Map(graph.nodes.map((node) => [node.id, node]));
+  const relations = graph.edges.filter(
+    (edge) =>
+      Array.isArray(edge.consumptions) &&
+      (edge.source === selectedId || edge.target === selectedId),
+  );
+  return (
+    <section className="relations-details" aria-label="Détails des relations">
+      <h2 className="h5">{selected.label}</h2>
+      <p className="text-muted mb-2">{selected.description}</p>
+      {!relations.length ? (
+        <p className="mb-0">Aucune pièce prévue ou consommée consultable pour ce matériel.</p>
+      ) : (
+        <ul className="list-group list-group-flush relations-details-list">
+          {relations.map((relation) => {
+            const other = nodesById.get(
+              relation.source === selectedId ? relation.target : relation.source,
+            );
+            const material = nodesById.get(relation.source);
+            return (
+              <li className="list-group-item px-0" key={relation.id}>
+                <div className="d-flex align-items-center flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-link p-0 text-start"
+                    onClick={() => onSelect(other.id)}
+                  >
+                    {other.label}
+                  </button>
+                  <span
+                    className={`badge ${relation.consumptions.length ? 'text-bg-primary' : 'text-bg-secondary'}`}
+                  >
+                    {relation.label}
+                  </span>
+                </div>
+                <p className="small text-muted mb-1">{other.description}</p>
+                {relation.consumptions.map((consumption) => (
+                  <p className="small mb-1" key={consumption.unit}>
+                    Consommation totale :{' '}
+                    {formatStockQuantity(consumption.quantity, consumption.unit)} · Dernière
+                    utilisation : {formatDate(consumption.lastUsedAt)}
+                  </p>
+                ))}
+                <div className="d-flex flex-wrap gap-3 small">
+                  {relation.planned && material.plansPath ? (
+                    <Link to={material.plansPath}>Voir les plans du matériel</Link>
+                  ) : null}
+                  {relation.consumptions.length > 0 && material.path ? (
+                    <Link to={material.path}>Ouvrir la fiche du matériel</Link>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function RelationsGraphPage() {
   const navigate = useNavigate();
   const { fitView } = useReactFlow();
@@ -151,7 +218,7 @@ function RelationsGraphPage() {
     setLoading(true);
     setError('');
     try {
-      const response = await getRelationsGraph('complete', 'records');
+      const response = await getRelationsGraph('simplified', 'materialParts');
       const next = response.data?.data;
       if (!next || !Array.isArray(next.nodes) || !Array.isArray(next.edges)) {
         throw new Error('Réponse de cartographie invalide.');
@@ -178,6 +245,21 @@ function RelationsGraphPage() {
       return next;
     });
   }, []);
+
+  const selectNode = useCallback(
+    (id) => {
+      setSelectedId(id);
+      setCollapsedIds((current) => {
+        const next = new Set(current);
+        next.delete(id);
+        for (const edge of graph?.edges ?? []) {
+          if (edge.target === id && Array.isArray(edge.consumptions)) next.delete(edge.source);
+        }
+        return next;
+      });
+    },
+    [graph],
+  );
 
   const flow = useMemo(() => {
     if (!graph) return { nodes: [], edges: [] };
@@ -219,6 +301,9 @@ function RelationsGraphPage() {
         source: item.source,
         target: item.target,
         type: 'smoothstep',
+        label: item.label,
+        labelStyle: { fill: 'var(--relation-node-text-color)', fontSize: 11 },
+        labelBgStyle: { fill: 'var(--surface-color)', fillOpacity: 0.95 },
         markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
         style: {
           ...edgeStyles[item.kind],
@@ -248,8 +333,8 @@ function RelationsGraphPage() {
         <div>
           <h1 className="page-title">Relations des entités</h1>
           <p className="page-subtitle">
-            Explorez les enregistrements et leurs relations pour{' '}
-            {graph?.company?.name ?? 'la société active'}.
+            Retrouvez les pièces prévues dans les plans actifs et celles réellement consommées par
+            les matériels de {graph?.company?.name ?? 'la société active'}.
           </p>
         </div>
       </div>
@@ -266,6 +351,9 @@ function RelationsGraphPage() {
       ) : (
         <section className="relations-card" aria-label="Cartographie des relations">
           <div className="relations-toolbar">
+            <p className="small text-muted mb-0">
+              Dépliez un matériel ou sélectionnez une pièce pour voir ses liens et consommations.
+            </p>
             <div className="d-flex flex-wrap gap-2 ms-auto">
               <button
                 type="button"
@@ -307,7 +395,7 @@ function RelationsGraphPage() {
                 maxZoom={1.6}
                 fitView
                 fitViewOptions={{ padding: 0.18 }}
-                onNodeClick={(_event, selectedNode) => setSelectedId(selectedNode.id)}
+                onNodeClick={(_event, selectedNode) => selectNode(selectedNode.id)}
                 onPaneClick={() => setSelectedId(null)}
                 aria-label="Graphe interactif des relations entre les entités"
               >
@@ -316,6 +404,12 @@ function RelationsGraphPage() {
               </ReactFlow>
             )}
           </div>
+          {!loading && graph?.nodes.length === 1 ? (
+            <p className="p-3 mb-0" role="status">
+              Aucun matériel consultable dans cette société.
+            </p>
+          ) : null}
+          <RelationDetails graph={graph} selectedId={selectedId} onSelect={selectNode} />
         </section>
       )}
     </main>

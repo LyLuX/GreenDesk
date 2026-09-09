@@ -403,7 +403,7 @@ describe('OpenAPI contract', () => {
     });
     expect(scope.schema).toEqual({
       type: 'string',
-      enum: ['models', 'records'],
+      enum: ['models', 'records', 'materialParts'],
       default: 'models',
     });
     expect(swaggerSpec.components.schemas.RelationGraph.properties).toEqual(
@@ -412,6 +412,10 @@ describe('OpenAPI contract', () => {
         nodes: expect.any(Object),
         edges: expect.any(Object),
       }),
+    );
+    expect(operation.description).toContain('`materialParts`');
+    expect(swaggerSpec.components.schemas.RelationGraphEdge.properties).toEqual(
+      expect.objectContaining({ planned: expect.any(Object), consumptions: expect.any(Object) }),
     );
   });
 
@@ -540,7 +544,7 @@ describe('OpenAPI contract', () => {
     const parameters = swaggerSpec.paths['/maintenance/parts'].get.parameters;
     const stockStatus = parameters.find((parameter) => parameter.name === 'stockStatus');
 
-    expect(stockStatus.schema.enum).toEqual(['inStock', 'toOrder', 'ordered']);
+    expect(stockStatus.schema.enum).toEqual(['inStock', 'toOrder', 'ordered', 'minimum']);
   });
 
   it('requires Idempotency-Key on every critical maintenance write', () => {

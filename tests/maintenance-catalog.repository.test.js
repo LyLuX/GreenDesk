@@ -17,10 +17,11 @@ describe('MaintenanceCatalogRepository stock filters', () => {
   });
 
   it.each([
+    ['inStock', ['`quantity_on_hand` > `minimum_stock_quantity`']],
     [
-      'inStock',
+      'minimum',
       [
-        '`quantity_on_hand` >= `minimum_stock_quantity`',
+        '`quantity_on_hand` = `minimum_stock_quantity`',
         'NOT (minimum_stock_quantity = 0 AND quantity_on_hand = 0 AND quantity_on_order > 0)',
       ],
     ],

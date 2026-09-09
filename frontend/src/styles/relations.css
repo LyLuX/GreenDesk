@@ -79,9 +79,25 @@
 }
 
 .relation-node-heading strong {
+  display: -webkit-box;
+  overflow: hidden;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow-wrap: anywhere;
   font-size: 0.94rem;
   line-height: 1.2;
+}
+
+.relations-details {
+  padding: 1rem;
+  border-top: 1px solid var(--relation-border-color);
+  overflow-wrap: anywhere;
+}
+
+.relations-details-list {
+  max-height: 20rem;
+  overflow-y: auto;
 }
 
 .relation-node .relation-node-handle {

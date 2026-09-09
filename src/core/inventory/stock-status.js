@@ -8,6 +8,9 @@ export const STOCK_STATUSES = Object.freeze({
 
 export const STOCK_STATUS_VALUES = Object.freeze(Object.values(STOCK_STATUSES));
 
+export const STOCK_FILTERS = Object.freeze({ ...STOCK_STATUSES, MINIMUM: 'minimum' });
+export const STOCK_FILTER_VALUES = Object.freeze(Object.values(STOCK_FILTERS));
+
 /** Calculates the user-facing state and shortage for a concrete requirement. */
 export const getStockAvailability = (
   { quantityOnHand = 0, quantityOnOrder = 0 } = {},

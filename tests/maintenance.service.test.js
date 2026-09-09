@@ -413,6 +413,29 @@ describe('MaintenanceService', () => {
     );
   });
 
+  it('preserves backend sheet ordering when including overdue and wear-based plans', async () => {
+    const repository = {
+      findForMaintenanceSheets: jest.fn().mockResolvedValue([
+        { uuid: 'overdue', nextMaintenanceDate: '2026-08-01', priority: 'low' },
+        { uuid: 'upcoming', nextMaintenanceDate: '2026-09-20', priority: 'high' },
+        { uuid: 'wearBased', nextMaintenanceDate: null, priority: 'high' },
+      ]),
+    };
+    const service = new MaintenanceService(repository, {}, {}, {});
+    jest.spyOn(service, 'toMaintenanceSheet').mockImplementation((task) => task);
+
+    const result = await service.getMaintenanceSheets({
+      status: 'upcoming',
+      includeOverdue: 'true',
+      includeWearBased: 'true',
+    });
+
+    expect(repository.findForMaintenanceSheets).toHaveBeenCalledWith({
+      statuses: ['upcoming', 'overdue', 'wearBased'],
+    });
+    expect(result.items.map(({ uuid }) => uuid)).toEqual(['overdue', 'upcoming', 'wearBased']);
+  });
+
   it('records the launch of maintenance sheet printing for the current user', async () => {
     const auditService = { record: jest.fn().mockResolvedValue({}) };
     const service = new MaintenanceService({}, {}, auditService, {});
