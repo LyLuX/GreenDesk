@@ -51,7 +51,7 @@ function MaintenanceSheet({ sheet, printable = false }) {
           <dd>{sheetValue(sheet.material?.model)}</dd>
         </div>
         <div>
-          <dt>N° de série</dt>
+          <dt>Numéro de série</dt>
           <dd>{sheetValue(sheet.material?.serialNumber)}</dd>
         </div>
         <div>

@@ -10,13 +10,16 @@ export default class MaterialPartRelationsService {
 
   async getGraph({ mode = 'simplified', permissions = [] } = {}) {
     const canReadMaterials = permissions.includes(fleetPermissions.materials.read);
+    const canReadCategories = permissions.includes(fleetPermissions.categories.read);
     const canReadRelations =
       canReadMaterials &&
       permissions.includes(maintenancePermissions.plans.read) &&
       permissions.includes(maintenancePermissions.parts.read);
     const [company, materials, relationships] = await Promise.all([
       this.repository.getCompany(),
-      canReadMaterials ? this.repository.getMaterials() : [],
+      canReadRelations
+        ? this.repository.getMaterials({ includeCategories: canReadCategories })
+        : [],
       canReadRelations ? this.repository.getRelationships() : [],
     ]);
     const nodes = [
@@ -24,7 +27,36 @@ export default class MaterialPartRelationsService {
     ];
     const edges = [];
     const materialIds = new Set();
+    const linkedMaterialUuids = new Set(
+      relationships
+        .filter((row) => Number(row.planned) || Number(row.consumedQuantity) > 0)
+        .map((row) => row.materialUuid),
+    );
+    const categories = new Map();
     for (const material of materials) {
+      if (!linkedMaterialUuids.has(material.uuid)) continue;
+      const categoryId = canReadCategories
+        ? `category:${material.categoryUuid ?? 'none'}`
+        : 'materials';
+      if (!categories.has(categoryId)) {
+        const category = {
+          id: categoryId,
+          label: canReadCategories ? (material.categoryName ?? 'Sans catégorie') : 'Matériels',
+          kind: 'domain',
+          count: 0,
+        };
+        categories.set(categoryId, category);
+        nodes.push(category);
+        edges.push({
+          id: `company-${categoryId}`,
+          source: 'company',
+          target: categoryId,
+          label: '',
+          kind: 'group',
+          hierarchy: true,
+        });
+      }
+      categories.get(categoryId).count += 1;
       const id = `material:${material.uuid}`;
       materialIds.add(id);
       nodes.push({
@@ -33,17 +65,15 @@ export default class MaterialPartRelationsService {
         kind: 'entity',
         recordType: 'material',
         description:
-          [material.model, material.serialNumber && `N° ${material.serialNumber}`]
-            .filter(Boolean)
-            .join(' · ') || 'Matériel',
+          [material.model, material.serialNumber].filter(Boolean).join(' · ') || 'Matériel',
         path: `/materials/${material.uuid}`,
         ...(canReadRelations
           ? { plansPath: `/maintenance?materialUuid=${encodeURIComponent(material.uuid)}` }
           : {}),
       });
       edges.push({
-        id: `company-${id}`,
-        source: 'company',
+        id: `${categoryId}-${id}`,
+        source: categoryId,
         target: id,
         label: '',
         kind: 'group',
@@ -53,6 +83,7 @@ export default class MaterialPartRelationsService {
     const parts = new Map();
     const links = new Map();
     for (const row of relationships) {
+      if (!Number(row.planned) && !(Number(row.consumedQuantity) > 0)) continue;
       const source = `material:${row.materialUuid}`;
       if (!materialIds.has(source)) continue;
       const target = `part:${row.partUuid}`;
@@ -94,6 +125,8 @@ export default class MaterialPartRelationsService {
         kind: consumed ? 'association' : 'derived',
       });
     }
+    nodes[0].materialCount = materialIds.size;
+    nodes[0].partCount = parts.size;
     return {
       scope: 'materialParts',
       mode,

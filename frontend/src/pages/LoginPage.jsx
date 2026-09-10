@@ -10,8 +10,9 @@ import getApiErrorMessage from '../api/get-api-error-message.js';
 import PasswordInput from '../components/PasswordInput.jsx';
 import { publicRegistrationEnabled } from '../config/features.js';
 import useNotification from '../notifications/useNotification.js';
+import { consumeSecurityLogout, SECURITY_LOGOUT_MESSAGE } from '../auth/security-logout.js';
 export default function LoginPage() {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isInitializing } = useAuth();
   const { notify } = useNotification();
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,6 +31,11 @@ export default function LoginPage() {
   useEffect(() => {
     rememberReturnLocation(location.state?.from);
   }, [location.state?.from]);
+
+  useEffect(() => {
+    if (!isInitializing && !isAuthenticated && consumeSecurityLogout())
+      notify('info', SECURITY_LOGOUT_MESSAGE);
+  }, [isInitializing, isAuthenticated, notify]);
 
   useEffect(() => {
     const notification = location.state?.notification;
@@ -57,7 +63,7 @@ export default function LoginPage() {
     setVerificationRequired(false);
     try {
       const session = await login(email, password);
-      notify('success', `Bienvenue ${session.user.firstName}, tu es maintenant connecté.`);
+      notify('success', `Bienvenue ${session.user.firstName}, vous êtes maintenant connecté.`);
       clearReturnLocation();
       navigate(postLoginDestination, { replace: true });
     } catch (err) {

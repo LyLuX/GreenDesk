@@ -2,6 +2,18 @@
 
 ## Non publié
 
+## 9.1.1 - 2026-09-10
+
+- [PATCH] Les numéros de série sont affichés sans préfixe dans les relations et leur libellé est harmonisé dans les fiches imprimées.
+
+- [PATCH] Le tableau de maintenance d’un matériel précise la priorité, le type, la périodicité et le dernier entretien dans une présentation compacte.
+
+- [PATCH] Une notification explique les déconnexions de sécurité, y compris après expiration ou modification des droits, et les notifications utilisent le vouvoiement.
+
+- [PATCH] Le logo de la société apparaît aussi dans la vue des relations ; GreenDesk sert de repli lorsqu’un logo est absent, inaccessible ou illisible.
+
+- [PATCH] La vue des relations regroupe par catégorie les matériels ayant des pièces prévues ou consommées, démarre sur la société repliée avec ses compteurs et cadre le matériel sélectionné avec ses pièces.
+
 ## 9.1.0 - 2026-09-09
 
 - [MINOR] La vue des relations relie directement les matériels aux pièces prévues et consommées, avec les quantités et la dernière utilisation consultables dans un graphe simple.

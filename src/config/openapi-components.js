@@ -1442,9 +1442,25 @@ export const openApiSchemas = {
         type: 'string',
         description: 'Nom de l’entité ou du groupe affiché dans le graphe.',
       },
-      description: { type: 'string' },
+      description: {
+        type: 'string',
+        description:
+          'Précisions sur le nœud ; les numéros de série des matériels sont affichés sans préfixe.',
+      },
       kind: { type: 'string', enum: ['company', 'domain', 'entity', 'technical'] },
       count: { type: 'integer', minimum: 0 },
+      materialCount: {
+        type: 'integer',
+        minimum: 0,
+        description:
+          'Sur la société du scope materialParts : nombre de matériels consultables ayant une pièce prévue ou consommée.',
+      },
+      partCount: {
+        type: 'integer',
+        minimum: 0,
+        description:
+          'Sur la société du scope materialParts : nombre de références de pièces distinctes consultables, y compris celles partagées entre matériels.',
+      },
       recordType: {
         type: 'string',
         description:

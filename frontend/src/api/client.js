@@ -15,8 +15,8 @@ client.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
       rememberCurrentReturnLocation();
-      clearSession();
       window.dispatchEvent(new Event('greendesk:unauthorized'));
+      clearSession();
     }
     return Promise.reject(error);
   },

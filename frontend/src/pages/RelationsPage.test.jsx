@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,14 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   getRelationsGraph: vi.fn(),
   useAuth: vi.fn(),
+  fitView: vi.fn(),
+  getCompanyLogo: vi.fn(),
 }));
-
-vi.mock('../api/relations.api.js', () => ({
-  getRelationsGraph: mocks.getRelationsGraph,
-}));
-vi.mock('../auth/useAuth.js', () => ({
-  default: mocks.useAuth,
-}));
+vi.mock('../api/company-logo.api.js', () => ({ getCompanyLogo: mocks.getCompanyLogo }));
+vi.mock('../api/relations.api.js', () => ({ getRelationsGraph: mocks.getRelationsGraph }));
+vi.mock('../auth/useAuth.js', () => ({ default: mocks.useAuth }));
 vi.mock('@xyflow/react', () => ({
   Background: () => null,
   Controls: () => null,
@@ -21,331 +19,185 @@ vi.mock('@xyflow/react', () => ({
   MarkerType: { ArrowClosed: 'arrow-closed' },
   Position: { Left: 'left', Right: 'right' },
   ReactFlowProvider: ({ children }) => children,
-  useReactFlow: () => ({ fitView: vi.fn() }),
-  ReactFlow: ({ nodes, edges, onNodeClick }) => (
-    <div aria-label="Graphe simulé">
-      {nodes.map((node) => (
-        <div key={node.id}>
-          <button type="button" onClick={(event) => onNodeClick(event, node)}>
-            {node.data.label}
-          </button>
-          {node.data.collapsible ? (
-            <button
-              type="button"
-              aria-label={`${node.data.collapsed ? 'Déplier' : 'Replier'} ${node.data.label}`}
-              onClick={() => node.data.onToggle(node.id)}
-            >
-              Basculer
+  useReactFlow: () => ({ fitView: mocks.fitView }),
+  ReactFlow: ({ nodes, edges, nodeTypes, onNodeClick }) => {
+    const Node = nodeTypes.relation;
+    return (
+      <div aria-label="Graphe simulé">
+        {nodes.map((node) => (
+          <div key={node.id}>
+            <button type="button" onClick={(event) => onNodeClick(event, node)}>
+              {node.data.label}
             </button>
-          ) : null}
-        </div>
-      ))}
-      {edges.map((edge) => (
-        <span data-testid={`edge-${edge.id}`} data-opacity={edge.style.opacity} key={edge.id}>
-          {edge.label}
-        </span>
-      ))}
-    </div>
-  ),
+            <Node data={node.data} />
+          </div>
+        ))}
+        {edges.map((edge) => (
+          <span data-testid={`edge-${edge.id}`} data-opacity={edge.style.opacity} key={edge.id}>
+            {edge.label}
+          </span>
+        ))}
+      </div>
+    );
+  },
 }));
 
 import RelationsPage, {
   filterCollapsedGraph,
   getCollapsibleNodeIds,
-  INACTIVE_EDGE_OPACITY,
+  getFocusNodeIds,
 } from './RelationsPage.jsx';
 
-const simplifiedGraph = {
+const groupEdge = (source, target) => ({
+  id: `${source}-${target}`,
+  source,
+  target,
+  kind: 'group',
+  label: '',
+  hierarchy: true,
+});
+const graph = {
+  scope: 'materialParts',
   mode: 'simplified',
   company: { uuid: 'company-uuid', name: 'Alpha' },
   nodes: [
-    { id: 'company', label: 'Alpha', kind: 'company' },
-    { id: 'fleet', label: 'Gestion du parc', kind: 'domain' },
-    { id: 'categories', label: 'Catégories', kind: 'domain', count: 1 },
-    { id: 'category:parks', label: 'Espaces verts', kind: 'entity' },
-    { id: 'manufacturers', label: 'Fabricants', kind: 'domain', count: 1 },
-    { id: 'manufacturer:husqvarna', label: 'Husqvarna', kind: 'entity' },
-    { id: 'suppliers', label: 'Fournisseurs', kind: 'domain', count: 1 },
-    { id: 'supplier:parts-pro', label: 'Pièces Pro', kind: 'entity' },
-    { id: 'materials', label: 'Matériels', kind: 'domain', count: 1 },
-    { id: 'material:mower', label: 'Tondeuse', kind: 'entity' },
-    { id: 'maintenance', label: 'Maintenance', kind: 'domain' },
-    { id: 'plans', label: 'Plans de maintenance', kind: 'domain', count: 1 },
-    { id: 'plan:mower', label: 'Entretien de la tondeuse', kind: 'entity' },
-    { id: 'operations', label: 'Opérations', kind: 'domain', count: 1 },
-    { id: 'operation:oil', label: 'Vidange', kind: 'entity' },
-    { id: 'parts', label: 'Pièces', kind: 'domain', count: 1 },
-    { id: 'part:filter', label: 'Filtre', kind: 'entity' },
+    { id: 'company', label: 'Alpha', kind: 'company', materialCount: 2, partCount: 1 },
+    { id: 'category:garden', label: 'Jardin', kind: 'domain', count: 1 },
+    { id: 'category:park', label: 'Parc', kind: 'domain', count: 1 },
+    {
+      id: 'material:mower',
+      label: 'Tondeuse',
+      kind: 'entity',
+      recordType: 'material',
+      path: '/materials/mower',
+      plansPath: '/maintenance?materialUuid=mower',
+    },
+    {
+      id: 'material:tractor',
+      label: 'Tracteur',
+      kind: 'entity',
+      recordType: 'material',
+      path: '/materials/tractor',
+    },
+    { id: 'part:oil', label: 'Huile', description: 'Réf. H1', kind: 'entity', recordType: 'part' },
   ],
   edges: [
+    groupEdge('company', 'category:garden'),
+    groupEdge('company', 'category:park'),
+    groupEdge('category:garden', 'material:mower'),
+    groupEdge('category:park', 'material:tractor'),
     {
-      id: 'company-fleet',
-      source: 'company',
-      target: 'fleet',
-      label: 'contient',
-      kind: 'group',
-      hierarchy: true,
-    },
-    {
-      id: 'fleet-categories',
-      source: 'fleet',
-      target: 'categories',
-      kind: 'group',
-      hierarchy: true,
-    },
-    {
-      id: 'categories-parks',
-      source: 'categories',
-      target: 'category:parks',
-      kind: 'group',
-      hierarchy: true,
-    },
-    {
-      id: 'fleet-manufacturers',
-      source: 'fleet',
-      target: 'manufacturers',
-      kind: 'group',
-      hierarchy: true,
-    },
-    {
-      id: 'manufacturers-husqvarna',
-      source: 'manufacturers',
-      target: 'manufacturer:husqvarna',
-      kind: 'group',
-      hierarchy: true,
-    },
-    {
-      id: 'fleet-suppliers',
-      source: 'fleet',
-      target: 'suppliers',
-      kind: 'group',
-      hierarchy: true,
-    },
-    {
-      id: 'suppliers-parts-pro',
-      source: 'suppliers',
-      target: 'supplier:parts-pro',
-      kind: 'group',
-      hierarchy: true,
-    },
-    {
-      id: 'fleet-materials',
-      source: 'fleet',
-      target: 'materials',
-      label: 'fabrique',
-      kind: 'group',
-      hierarchy: true,
-    },
-    {
-      id: 'materials-mower',
-      source: 'materials',
-      target: 'material:mower',
-      kind: 'group',
-      hierarchy: true,
-    },
-    {
-      id: 'parks-mower',
-      source: 'category:parks',
-      target: 'material:mower',
-      kind: 'direct',
-      hierarchy: true,
-      layout: true,
-    },
-    {
-      id: 'husqvarna-mower',
-      source: 'manufacturer:husqvarna',
-      target: 'material:mower',
-      kind: 'direct',
-      hierarchy: true,
-      layout: true,
-    },
-    {
-      id: 'company-maintenance',
-      source: 'company',
-      target: 'maintenance',
-      kind: 'group',
-      hierarchy: true,
-    },
-    {
-      id: 'maintenance-plans',
-      source: 'maintenance',
-      target: 'plans',
-      kind: 'group',
-      hierarchy: true,
-    },
-    {
-      id: 'plans-mower',
-      source: 'plans',
-      target: 'plan:mower',
-      kind: 'group',
-      hierarchy: true,
-    },
-    {
-      id: 'maintenance-operations',
-      source: 'maintenance',
-      target: 'operations',
-      kind: 'group',
-      hierarchy: true,
-    },
-    {
-      id: 'operations-oil',
-      source: 'operations',
-      target: 'operation:oil',
-      kind: 'group',
-      hierarchy: true,
-    },
-    {
-      id: 'oil-plan',
-      source: 'operation:oil',
-      target: 'plan:mower',
-      kind: 'direct',
-      hierarchy: true,
-      layout: true,
-    },
-    {
-      id: 'maintenance-parts',
-      source: 'maintenance',
-      target: 'parts',
-      kind: 'group',
-      hierarchy: true,
-    },
-    {
-      id: 'parts-filter',
-      source: 'parts',
-      target: 'part:filter',
-      kind: 'group',
-      hierarchy: true,
-    },
-    {
-      id: 'plan-filter',
-      source: 'plan:mower',
-      target: 'part:filter',
+      id: 'mower-oil',
+      source: 'material:mower',
+      target: 'part:oil',
       kind: 'association',
+      label: 'Prévue et consommée',
       hierarchy: true,
-      layout: true,
+      planned: true,
+      consumptions: [{ quantity: 1.75, unit: 'litre', lastUsedAt: '2026-09-09' }],
+    },
+    {
+      id: 'tractor-oil',
+      source: 'material:tractor',
+      target: 'part:oil',
+      kind: 'derived',
+      label: 'Prévue',
+      hierarchy: true,
+      planned: true,
+      consumptions: [],
     },
   ],
 };
-
-const completeGraph = {
-  ...simplifiedGraph,
-  mode: 'complete',
-  nodes: [
-    ...simplifiedGraph.nodes,
-    { id: 'materialFiles', label: 'Fichiers des matériels', kind: 'technical', count: 5 },
-  ],
-  edges: [
-    ...simplifiedGraph.edges,
-    {
-      id: 'mower-materialFiles',
-      source: 'material:mower',
-      target: 'materialFiles',
-      kind: 'direct',
-      hierarchy: true,
-    },
-  ],
+const renderPage = () =>
+  render(
+    <MemoryRouter>
+      <RelationsPage />
+    </MemoryRouter>,
+  );
+const openMower = async (user) => {
+  await user.click(await screen.findByRole('button', { name: 'Déplier Alpha' }));
+  await user.click(screen.getByRole('button', { name: 'Déplier Jardin' }));
+  await user.click(screen.getByRole('button', { name: 'Tondeuse', exact: true }));
 };
 
 describe('RelationsPage', () => {
   afterEach(cleanup);
-
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.useAuth.mockReturnValue({ activeCompany: { uuid: 'company-uuid', name: 'Alpha' } });
-    mocks.getRelationsGraph.mockResolvedValue({ data: { data: completeGraph } });
+    mocks.getRelationsGraph.mockResolvedValue({ data: { data: graph } });
   });
 
-  it('explores shared parts and real consumption without filters or search', async () => {
+  it('starts with only the company, its counts and a keyboard-accessible plus', async () => {
     const user = userEvent.setup();
-    mocks.getRelationsGraph.mockResolvedValue({
-      data: {
-        data: {
-          scope: 'materialParts',
-          mode: 'simplified',
-          company: { uuid: 'company-uuid', name: 'Alpha' },
-          nodes: [
-            { id: 'company', label: 'Alpha', kind: 'company' },
-            {
-              id: 'material:mower',
-              label: 'Tondeuse',
-              kind: 'entity',
-              recordType: 'material',
-              path: '/materials/mower',
-              plansPath: '/maintenance?materialUuid=mower',
-            },
-            {
-              id: 'material:tractor',
-              label: 'Tracteur',
-              kind: 'entity',
-              recordType: 'material',
-              path: '/materials/tractor',
-            },
-            {
-              id: 'part:oil',
-              label: 'Huile',
-              description: 'Réf. H1',
-              kind: 'entity',
-              recordType: 'part',
-            },
-          ],
-          edges: [
-            {
-              id: 'root-mower',
-              source: 'company',
-              target: 'material:mower',
-              kind: 'group',
-              label: '',
-              hierarchy: true,
-            },
-            {
-              id: 'root-tractor',
-              source: 'company',
-              target: 'material:tractor',
-              kind: 'group',
-              label: '',
-              hierarchy: true,
-            },
-            {
-              id: 'mower-oil',
-              source: 'material:mower',
-              target: 'part:oil',
-              kind: 'association',
-              label: 'Prévue et consommée',
-              hierarchy: true,
-              planned: true,
-              consumptions: [{ quantity: 1.75, unit: 'litre', lastUsedAt: '2026-09-09' }],
-            },
-            {
-              id: 'tractor-oil',
-              source: 'material:tractor',
-              target: 'part:oil',
-              kind: 'derived',
-              label: 'Prévue',
-              hierarchy: true,
-              planned: true,
-              consumptions: [],
-            },
-          ],
-        },
-      },
-    });
-    render(
-      <MemoryRouter>
-        <RelationsPage />
-      </MemoryRouter>,
+    renderPage();
+    const toggle = await screen.findByRole('button', { name: 'Déplier Alpha' });
+    expect(toggle).toHaveTextContent('+');
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByText('2 matériels concernés')).toBeVisible();
+    expect(screen.getByText('1 référence de pièce')).toBeVisible();
+    expect(screen.getByRole('img', { name: 'Logo GreenDesk' })).toHaveAttribute(
+      'src',
+      '/logo-greendesk.jpg',
     );
-    expect(await screen.findByRole('button', { name: 'Tondeuse', exact: true })).toBeVisible();
+    expect(mocks.getCompanyLogo).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Jardin', exact: true })).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Huile', exact: true })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Tondeuse', exact: true }));
+    expect(mocks.getRelationsGraph).toHaveBeenCalledWith('simplified', 'materialParts');
+    toggle.focus();
+    await user.keyboard('{Enter}');
+    expect(screen.getByRole('button', { name: 'Replier Alpha' })).toHaveTextContent('−');
+    expect(screen.getByRole('button', { name: 'Jardin', exact: true })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Tondeuse', exact: true })).not.toBeInTheDocument();
+  });
+
+  it('uses the active company logo in its collapsed tile and falls back if unavailable', async () => {
+    mocks.useAuth.mockReturnValue({
+      activeCompany: { uuid: 'company-uuid', name: 'Alpha', hasLogo: true },
+    });
+    mocks.getCompanyLogo.mockRejectedValue(new Error('Logo unavailable'));
+    renderPage();
+    expect(await screen.findByRole('img', { name: 'Logo GreenDesk' })).toHaveAttribute(
+      'src',
+      '/logo-greendesk.jpg',
+    );
+    expect(mocks.getCompanyLogo).toHaveBeenCalledWith('company-uuid');
+    expect(screen.getByRole('button', { name: 'Déplier Alpha' })).toBeVisible();
+  });
+
+  it('frames only the selected material and its visible parts, never the whole graph', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await openMower(user);
+    expect(
+      within(screen.getByLabelText('Graphe simulé')).getByRole('button', {
+        name: 'Huile',
+        exact: true,
+      }),
+    ).toBeVisible();
+    await waitFor(() =>
+      expect(mocks.fitView).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          nodes: [{ id: 'material:mower' }, { id: 'part:oil' }],
+          maxZoom: 1.2,
+        }),
+      ),
+    );
     const details = screen.getByRole('region', { name: 'Détails des relations' });
-    expect(within(details).getByText('Prévue et consommée')).toBeVisible();
     expect(within(details).getByText(/1,75 litre/)).toHaveTextContent('09/09/2026');
     expect(
       within(details).getByRole('link', { name: 'Voir les plans du matériel' }),
     ).toHaveAttribute('href', '/maintenance?materialUuid=mower');
+  });
+
+  it('opens the categories of every material sharing a selected part without duplicating it', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await openMower(user);
+    const details = screen.getByRole('region', { name: 'Détails des relations' });
     await user.click(within(details).getByRole('button', { name: 'Huile' }));
+    expect(screen.getByRole('button', { name: 'Replier Parc' })).toBeVisible();
     expect(within(details).getByRole('button', { name: 'Tondeuse' })).toBeVisible();
     expect(within(details).getByRole('button', { name: 'Tracteur' })).toBeVisible();
     expect(screen.getByTestId('edge-tractor-oil')).toHaveAttribute('data-opacity', '1');
@@ -355,148 +207,70 @@ describe('RelationsPage', () => {
         exact: true,
       }),
     ).toHaveLength(1);
-    await user.click(screen.getByRole('button', { name: 'Replier les branches' }));
+    await waitFor(() =>
+      expect(mocks.fitView).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          nodes: [{ id: 'part:oil' }, { id: 'material:mower' }, { id: 'material:tractor' }],
+        }),
+      ),
+    );
+  });
+
+  it('returns to the collapsed company from both the toolbar and its minus button', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await openMower(user);
+    await user.click(screen.getByRole('button', { name: 'Replier Alpha' }));
+    expect(screen.queryByRole('button', { name: 'Tondeuse', exact: true })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Détails des relations' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Huile', exact: true })).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(mocks.fitView).toHaveBeenLastCalledWith(
+        expect.objectContaining({ nodes: [{ id: 'company' }] }),
+      ),
+    );
+    await user.click(screen.getByRole('button', { name: 'Tout déplier' }));
+    expect(screen.getByRole('button', { name: 'Tondeuse', exact: true })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Replier les branches' }));
+    expect(screen.getByRole('button', { name: 'Déplier Alpha' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Jardin', exact: true })).not.toBeInTheDocument();
   });
 
-  it('explains when there are no readable materials', async () => {
+  it('explains an empty graph without inventing expandable branches', async () => {
     mocks.getRelationsGraph.mockResolvedValue({
-      data: { data: { nodes: [{ id: 'company', label: 'Alpha', kind: 'company' }], edges: [] } },
+      data: {
+        data: {
+          ...graph,
+          nodes: [{ ...graph.nodes[0], materialCount: 0, partCount: 0 }],
+          edges: [],
+        },
+      },
     });
-    render(
-      <MemoryRouter>
-        <RelationsPage />
-      </MemoryRouter>,
-    );
+    renderPage();
     expect(
-      await screen.findByText('Aucun matériel consultable dans cette société.'),
+      await screen.findByText(
+        'Aucun matériel avec une pièce prévue ou consommée consultable dans cette société.',
+      ),
     ).toHaveAttribute('role', 'status');
+    expect(screen.queryByRole('button', { name: 'Déplier Alpha' })).not.toBeInTheDocument();
   });
 
-  it('loads one complete graph without a mode selector', async () => {
-    const user = userEvent.setup();
-    render(
-      <MemoryRouter>
-        <RelationsPage />
-      </MemoryRouter>,
-    );
-
-    expect(await screen.findByRole('button', { name: 'Gestion du parc' })).toBeVisible();
-    expect(mocks.getRelationsGraph).toHaveBeenCalledWith('simplified', 'materialParts');
-    expect(screen.queryByRole('button', { name: 'Vue simplifiée' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Vue complète' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Matériels' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Fichiers des matériels' })).toBeNull();
-
-    await user.click(screen.getByRole('button', { name: 'Déplier Gestion du parc' }));
-    expect(await screen.findByRole('button', { name: 'Matériels' })).toBeVisible();
-    await user.click(await screen.findByRole('button', { name: 'Déplier Matériels' }));
-    await user.click(await screen.findByRole('button', { name: 'Déplier Tondeuse' }));
-    expect(await screen.findByRole('button', { name: 'Fichiers des matériels' })).toBeVisible();
-    expect(screen.queryByText(/Utilisez la molette/i)).not.toBeInTheDocument();
+  it('includes the company in collapsed branches and retains shared pieces reachable elsewhere', () => {
+    const allCollapsed = getCollapsibleNodeIds(graph);
+    expect(allCollapsed).toContain('company');
+    expect(filterCollapsedGraph(graph, allCollapsed).nodes.map(({ id }) => id)).toEqual([
+      'company',
+    ]);
+    const partial = filterCollapsedGraph(graph, new Set(['category:park']));
+    expect(partial.nodes.map(({ id }) => id)).toContain('part:oil');
+    expect(partial.edges.some(({ id }) => id === 'tractor-oil')).toBe(false);
   });
 
-  it('starts with every branch collapsed and opens fleet directories independently', async () => {
-    const user = userEvent.setup();
-    render(
-      <MemoryRouter>
-        <RelationsPage />
-      </MemoryRouter>,
-    );
-
-    expect(await screen.findByRole('button', { name: 'Gestion du parc' })).toBeVisible();
-    expect(screen.queryByRole('button', { name: 'Catégories' })).toBeNull();
-
-    await user.click(screen.getByRole('button', { name: 'Déplier Gestion du parc' }));
-
-    expect(await screen.findByRole('button', { name: 'Catégories' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Matériels' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Fabricants' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Fournisseurs' })).toBeVisible();
-    expect(screen.queryByRole('button', { name: 'Tondeuse' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Espaces verts' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Husqvarna' })).toBeNull();
-
-    await user.click(screen.getByRole('button', { name: 'Déplier Catégories' }));
-
-    expect(await screen.findByRole('button', { name: 'Espaces verts' })).toBeVisible();
-    expect(screen.queryByRole('button', { name: 'Husqvarna' })).toBeNull();
-
-    await user.click(screen.getByRole('button', { name: 'Déplier Espaces verts' }));
-
-    expect(await screen.findByRole('button', { name: 'Tondeuse' })).toBeVisible();
-  });
-
-  it('opens maintenance groups before their records and relations', async () => {
-    const user = userEvent.setup();
-    render(
-      <MemoryRouter>
-        <RelationsPage />
-      </MemoryRouter>,
-    );
-
-    await user.click(await screen.findByRole('button', { name: 'Déplier Maintenance' }));
-
-    expect(screen.getByRole('button', { name: 'Plans de maintenance' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Opérations' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Pièces' })).toBeVisible();
-    expect(screen.queryByRole('button', { name: 'Vidange' })).toBeNull();
-
-    await user.click(screen.getByRole('button', { name: 'Déplier Opérations' }));
-    await user.click(await screen.findByRole('button', { name: 'Déplier Vidange' }));
-
-    expect(await screen.findByRole('button', { name: 'Entretien de la tondeuse' })).toBeVisible();
-    expect(screen.queryByRole('button', { name: 'Filtre' })).toBeNull();
-
-    await user.click(screen.getByRole('button', { name: 'Déplier Entretien de la tondeuse' }));
-
-    expect(await screen.findByRole('button', { name: 'Filtre' })).toBeVisible();
-  });
-
-  it('makes non-active relation edges more discreet', async () => {
-    const user = userEvent.setup();
-    render(
-      <MemoryRouter>
-        <RelationsPage />
-      </MemoryRouter>,
-    );
-
-    await user.click(await screen.findByRole('button', { name: 'Déplier Gestion du parc' }));
-    await user.click(screen.getByRole('button', { name: 'Matériels' }));
-
-    expect(screen.getByTestId('edge-fleet-materials')).toHaveAttribute('data-opacity', '1');
-    expect(screen.getByTestId('edge-fleet-categories')).toHaveAttribute(
-      'data-opacity',
-      String(INACTIVE_EDGE_OPACITY),
-    );
-  });
-
-  it('removes the descendants of collapsed hierarchy branches', () => {
-    const filtered = filterCollapsedGraph(simplifiedGraph, new Set(['fleet', 'maintenance']));
-
-    expect(filtered.nodes.map(({ id }) => id)).toEqual(['company', 'fleet', 'maintenance']);
-    expect(filtered.edges.map(({ id }) => id)).toEqual(['company-fleet', 'company-maintenance']);
-  });
-
-  it('identifies every collapsible hierarchy branch except the company root', () => {
-    expect([...getCollapsibleNodeIds(simplifiedGraph)]).toEqual(
-      expect.arrayContaining([
-        'fleet',
-        'materials',
-        'categories',
-        'category:parks',
-        'manufacturers',
-        'manufacturer:husqvarna',
-        'suppliers',
-        'maintenance',
-        'plans',
-        'plan:mower',
-        'operations',
-        'operation:oil',
-        'parts',
-      ]),
-    );
-    expect(getCollapsibleNodeIds(simplifiedGraph)).not.toContain('company');
+  it('does not include ancestors or unrelated nodes in material framing', () => {
+    const nodes = graph.nodes.map((node) => ({ ...node, data: node }));
+    expect(getFocusNodeIds(nodes, graph.edges, 'material:mower')).toEqual([
+      'material:mower',
+      'part:oil',
+    ]);
+    expect(getFocusNodeIds(nodes, graph.edges, 'missing')).toEqual(['company']);
   });
 });

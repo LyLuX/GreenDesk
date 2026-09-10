@@ -42,5 +42,5 @@ export default function AuthenticatedImage({
   if (error)
     return <div className={className} role="img" aria-label={`Image indisponible : ${alt}`} />;
   if (!url) return <Loader className={className} label="Chargement de l’image" size="sm" />;
-  return <img className={className} src={url} alt={alt} />;
+  return <img className={className} src={url} alt={alt} onError={() => setError(true)} />;
 }

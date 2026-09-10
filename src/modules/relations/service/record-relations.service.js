@@ -110,9 +110,7 @@ export default class RecordRelationsService {
       });
     }
     for (const material of records.materials ?? []) {
-      const details = [material.model, material.serialNumber && `N° ${material.serialNumber}`]
-        .filter(Boolean)
-        .join(' · ');
+      const details = [material.model, material.serialNumber].filter(Boolean).join(' · ');
       addRecord('fleet', 'material', material, material.name, {
         description: details || 'Matériel',
         path: `/materials/${material.uuid}`,

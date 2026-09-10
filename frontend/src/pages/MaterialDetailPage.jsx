@@ -22,6 +22,9 @@ import useRuntimeConfig from '../config/useRuntimeConfig.js';
 import {
   maintenanceStatusClasses,
   maintenanceStatusLabels,
+  maintenanceTypeLabels,
+  maintenancePriorityLabels,
+  maintenancePriorityBadgeClasses,
 } from '../maintenance/maintenance.labels.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import { auditValuesAreEqual } from '../history/audit-values.js';
@@ -699,6 +702,7 @@ export default function MaterialDetailPage() {
                 <thead>
                   <tr>
                     <th>Plan</th>
+                    <th>Priorité</th>
                     <th>Échéance</th>
                     <th>État</th>
                   </tr>
@@ -706,11 +710,41 @@ export default function MaterialDetailPage() {
                 <tbody>
                   {maintenance.map((task) => (
                     <tr key={task.uuid}>
-                      <td>{task.title}</td>
+                      <td>
+                        <span className="d-block">{task.title}</span>
+                        <span className="d-block small text-body-secondary">
+                          {[
+                            maintenanceTypeLabels[task.maintenanceType],
+                            task.intervalDays === 0
+                              ? 'Selon l’usure'
+                              : task.intervalDays > 0
+                                ? task.intervalDays === 1
+                                  ? 'Chaque jour'
+                                  : `Tous les ${task.intervalDays} jours`
+                                : null,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </span>
+                      </td>
+                      <td>
+                        {maintenancePriorityLabels[task.priority] ? (
+                          <span
+                            className={`status-badge ${maintenancePriorityBadgeClasses[task.priority]}`}
+                          >
+                            {maintenancePriorityLabels[task.priority]}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
                       <td>
                         {task.status === 'wearBased'
                           ? 'Selon l’usure'
                           : formatDate(task.nextMaintenanceDate)}
+                        <span className="d-block small text-body-secondary">
+                          Dernier entretien : {formatDate(task.lastMaintenanceDate)}
+                        </span>
                       </td>
                       <td>
                         <span

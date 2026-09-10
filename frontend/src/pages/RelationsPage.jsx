@@ -17,6 +17,7 @@ import { getRelationsGraph } from '../api/relations.api.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import useAuth from '../auth/useAuth.js';
 import Loader from '../components/Loader.jsx';
+import CompanyLogo from '../components/CompanyLogo.jsx';
 import StatusPanel from '../components/StatusPanel.jsx';
 import { formatStockQuantity } from '../inventory/stock-status.js';
 import { formatDate } from '../utils/formatters.js';
@@ -35,13 +36,30 @@ const edgeStyles = Object.freeze({
 });
 export const INACTIVE_EDGE_OPACITY = 0.1;
 
-/** Returns every branch that can hide hierarchy descendants, except the company root. */
+/** Includes the company so the initial view can show only its collapsed tile. */
 export const getCollapsibleNodeIds = (graph) =>
-  new Set(
-    graph.edges
-      .filter(({ hierarchy, source }) => hierarchy && source !== 'company')
-      .map(({ source }) => source),
-  );
+  new Set(graph.edges.filter(({ hierarchy }) => hierarchy).map(({ source }) => source));
+
+/** Frames a selected material and its parts, or the visible descendants of a group. */
+export const getFocusNodeIds = (nodes, edges, focusId) => {
+  const focused = nodes.find(({ id }) => id === focusId);
+  if (!focused) return ['company'];
+  const ids = new Set([focusId]);
+  if (focused.data?.recordType === 'part') {
+    for (const edge of edges) if (edge.target === focusId) ids.add(edge.source);
+  } else {
+    const pending = [focusId];
+    while (pending.length) {
+      const source = pending.pop();
+      for (const edge of edges) {
+        if (edge.source !== source || ids.has(edge.target)) continue;
+        ids.add(edge.target);
+        pending.push(edge.target);
+      }
+    }
+  }
+  return [...ids];
+};
 
 /** Hides descendants whose hierarchy branch has been collapsed. */
 export const filterCollapsedGraph = (graph, collapsedIds) => {
@@ -97,6 +115,9 @@ function RelationNode({ data }) {
     >
       <Handle type="target" position={Position.Left} className="relation-node-handle" />
       <div className="relation-node-heading">
+        {data.id === 'company' ? (
+          <CompanyLogo company={data.company} className="brand-thumbnail flex-shrink-0" />
+        ) : null}
         <strong title={data.label}>{data.label}</strong>
         {data.collapsible ? (
           <button
@@ -113,7 +134,18 @@ function RelationNode({ data }) {
           </button>
         ) : null}
       </div>
-      {Number.isInteger(data.count) ? (
+      {Number.isInteger(data.materialCount) ? (
+        <div className="relation-node-count">
+          <div>
+            {data.materialCount.toLocaleString('fr-FR')} matériel{data.materialCount > 1 ? 's' : ''}{' '}
+            concerné{data.materialCount > 1 ? 's' : ''}
+          </div>
+          <div>
+            {data.partCount.toLocaleString('fr-FR')} référence{data.partCount > 1 ? 's' : ''} de
+            pièce{data.partCount > 1 ? 's' : ''}
+          </div>
+        </div>
+      ) : Number.isInteger(data.count) ? (
         <span className="relation-node-count">
           {data.count.toLocaleString('fr-FR')} enregistrement{data.count === 1 ? '' : 's'}
         </span>
@@ -143,7 +175,7 @@ const nodeTypes = { relation: RelationNode };
 
 function RelationDetails({ graph, selectedId, onSelect }) {
   const selected = graph?.nodes.find(({ id }) => id === selectedId);
-  if (!selected?.recordType) return null;
+  if (!['material', 'part'].includes(selected?.recordType)) return null;
   const nodesById = new Map(graph.nodes.map((node) => [node.id, node]));
   const relations = graph.edges.filter(
     (edge) =>
@@ -211,6 +243,7 @@ function RelationsGraphPage() {
   const [graph, setGraph] = useState(null);
   const [collapsedIds, setCollapsedIds] = useState(new Set());
   const [selectedId, setSelectedId] = useState(null);
+  const [focusId, setFocusId] = useState('company');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -226,6 +259,7 @@ function RelationsGraphPage() {
       setGraph(next);
       setCollapsedIds(getCollapsibleNodeIds(next));
       setSelectedId(null);
+      setFocusId('company');
     } catch (requestError) {
       setError(getApiErrorMessage(requestError));
     } finally {
@@ -238,6 +272,8 @@ function RelationsGraphPage() {
   }, [load]);
 
   const toggleNode = useCallback((id) => {
+    setFocusId(id);
+    setSelectedId(null);
     setCollapsedIds((current) => {
       const next = new Set(current);
       if (next.has(id)) next.delete(id);
@@ -249,11 +285,19 @@ function RelationsGraphPage() {
   const selectNode = useCallback(
     (id) => {
       setSelectedId(id);
+      setFocusId(id);
       setCollapsedIds((current) => {
         const next = new Set(current);
-        next.delete(id);
-        for (const edge of graph?.edges ?? []) {
-          if (edge.target === id && Array.isArray(edge.consumptions)) next.delete(edge.source);
+        const ancestors = [id];
+        const visited = new Set();
+        while (ancestors.length) {
+          const target = ancestors.pop();
+          if (visited.has(target)) continue;
+          visited.add(target);
+          next.delete(target);
+          for (const edge of graph?.edges ?? []) {
+            if (edge.target === target && edge.hierarchy) ancestors.push(edge.source);
+          }
         }
         return next;
       });
@@ -280,7 +324,10 @@ function RelationsGraphPage() {
       position: item.position,
       data: {
         ...item,
-        collapsible: item.id !== 'company' && hierarchySources.has(item.id),
+        ...(item.id === 'company'
+          ? { company: activeCompany?.uuid === graph.company?.uuid ? activeCompany : graph.company }
+          : {}),
+        collapsible: hierarchySources.has(item.id),
         collapsed: collapsedIds.has(item.id),
         highlightClass:
           selectedId && item.id !== selectedId
@@ -312,20 +359,26 @@ function RelationsGraphPage() {
       };
     });
     return { nodes: layoutedNodes, edges: flowEdges };
-  }, [collapsedIds, graph, navigate, selectedId, toggleNode]);
+  }, [activeCompany, collapsedIds, graph, navigate, selectedId, toggleNode]);
 
   const collapseBranches = () => {
     setCollapsedIds(graph ? getCollapsibleNodeIds(graph) : new Set());
     setSelectedId(null);
+    setFocusId('company');
   };
 
   useEffect(() => {
     if (loading || !flow.nodes.length) return undefined;
     const frame = window.requestAnimationFrame(() => {
-      fitView({ padding: 0.18, duration: 240 });
+      fitView({
+        nodes: getFocusNodeIds(flow.nodes, flow.edges, focusId).map((id) => ({ id })),
+        padding: 0.22,
+        maxZoom: 1.2,
+        duration: 300,
+      });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [collapsedIds, fitView, flow.nodes.length, loading]);
+  }, [fitView, flow, focusId, loading]);
 
   return (
     <main className="app-page relations-page">
@@ -365,7 +418,11 @@ function RelationsGraphPage() {
               <button
                 type="button"
                 className="btn btn-sm btn-outline-secondary"
-                onClick={() => setCollapsedIds(new Set())}
+                onClick={() => {
+                  setCollapsedIds(new Set());
+                  setSelectedId(null);
+                  setFocusId('company');
+                }}
               >
                 Tout déplier
               </button>
@@ -393,8 +450,6 @@ function RelationsGraphPage() {
                 nodesDraggable={false}
                 minZoom={0.2}
                 maxZoom={1.6}
-                fitView
-                fitViewOptions={{ padding: 0.18 }}
                 onNodeClick={(_event, selectedNode) => selectNode(selectedNode.id)}
                 onPaneClick={() => setSelectedId(null)}
                 aria-label="Graphe interactif des relations entre les entités"
@@ -406,7 +461,7 @@ function RelationsGraphPage() {
           </div>
           {!loading && graph?.nodes.length === 1 ? (
             <p className="p-3 mb-0" role="status">
-              Aucun matériel consultable dans cette société.
+              Aucun matériel avec une pièce prévue ou consommée consultable dans cette société.
             </p>
           ) : null}
           <RelationDetails graph={graph} selectedId={selectedId} onSelect={selectNode} />

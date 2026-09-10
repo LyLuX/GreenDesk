@@ -4,19 +4,51 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext, AuthProvider } from '../auth/AuthContext.jsx';
 import { rememberReturnLocation } from '../auth/return-location.js';
+import { saveSession } from '../auth/auth.storage.js';
 
-const mocks = vi.hoisted(() => ({ post: vi.fn() }));
+const mocks = vi.hoisted(() => ({ post: vi.fn(), notify: vi.fn() }));
 
 vi.mock('../api/client.js', () => ({
   default: { post: mocks.post },
 }));
 vi.mock('../notifications/useNotification.js', () => ({
-  default: () => ({ notify: vi.fn() }),
+  default: () => ({ notify: mocks.notify }),
 }));
 
 import LoginPage from './LoginPage.jsx';
+import { rememberSecurityLogout, SECURITY_LOGOUT_MESSAGE } from '../auth/security-logout.js';
 
 describe('LoginPage', () => {
+  it('notifies after authentication initialization discovers an expired session', async () => {
+    saveSession({
+      accessToken: `header.${btoa(JSON.stringify({ exp: 1 }))}.signature`,
+      user: { roles: [], permissions: [] },
+    });
+    render(
+      <AuthProvider>
+        <MemoryRouter>
+          <LoginPage />
+        </MemoryRouter>
+      </AuthProvider>,
+    );
+    expect(await screen.findByRole('button', { name: 'Se connecter' })).toBeVisible();
+    expect(mocks.notify).toHaveBeenCalledWith('info', SECURITY_LOGOUT_MESSAGE);
+  });
+  it('shows the security notification once after a reload', () => {
+    rememberSecurityLogout();
+    const renderLogin = () => (
+      <AuthContext.Provider value={{ isAuthenticated: false, isInitializing: false }}>
+        <MemoryRouter>
+          <LoginPage />
+        </MemoryRouter>
+      </AuthContext.Provider>
+    );
+    const { unmount } = render(renderLogin());
+    expect(mocks.notify).toHaveBeenCalledWith('info', SECURITY_LOGOUT_MESSAGE);
+    unmount();
+    render(renderLogin());
+    expect(mocks.notify).toHaveBeenCalledTimes(1);
+  });
   afterEach(() => {
     cleanup();
     localStorage.clear();
@@ -87,6 +119,10 @@ describe('LoginPage', () => {
     await user.click(screen.getByRole('button', { name: 'Se connecter' }));
 
     expect(login).toHaveBeenCalledWith('ada@greendesk.local', 'SecurePass123!');
+    expect(mocks.notify).toHaveBeenCalledWith(
+      'success',
+      'Bienvenue Ada, vous êtes maintenant connecté.',
+    );
     expect(await screen.findByText('/maintenance/parts?stockStatus=LOW#inventory')).toBeVisible();
     expect(sessionStorage.getItem('greendesk.returnLocation')).toBeNull();
   });

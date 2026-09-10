@@ -6,12 +6,15 @@ import RecordRelationsRepository from './record-relations.repository.js';
 
 /** Aggregates actual usage separately from current plans to avoid multiplying quantities. */
 export default class MaterialPartRelationsRepository extends RecordRelationsRepository {
-  async getMaterials() {
+  async getMaterials({ includeCategories = false } = {}) {
     const { companyId } = requireCompanyScope();
     return sequelize.query(
-      `SELECT uuid, name, model, serial_number AS serialNumber
-       FROM materials WHERE company_id = $companyId AND deleted_at IS NULL
-       ORDER BY name, id`,
+      `SELECT m.uuid, m.name, m.model, m.serial_number AS serialNumber
+              ${includeCategories ? ', c.uuid AS categoryUuid, c.name AS categoryName' : ''}
+       FROM materials m
+       ${includeCategories ? 'LEFT JOIN categories c ON c.id = m.category_id AND c.company_id = $companyId AND c.deleted_at IS NULL' : ''}
+       WHERE m.company_id = $companyId AND m.deleted_at IS NULL
+       ORDER BY ${includeCategories ? 'c.name, ' : ''}m.name, m.id`,
       { bind: { companyId }, type: QueryTypes.SELECT },
     );
   }

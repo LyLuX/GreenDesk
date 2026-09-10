@@ -16,6 +16,7 @@ vi.mock('./session-timeout.js', async (importOriginal) => ({
 
 import { AuthContext, AuthProvider } from './AuthContext.jsx';
 import { readSession, saveSession } from './auth.storage.js';
+import { consumeSecurityLogout, SECURITY_LOGOUT_REASON_KEY } from './security-logout.js';
 
 const tokenValidUntil = (expiresAt) => {
   const payload = btoa(JSON.stringify({ exp: Math.floor(expiresAt / 1000) }));
@@ -25,7 +26,12 @@ const tokenValidUntil = (expiresAt) => {
 function AuthenticationState() {
   return (
     <AuthContext.Consumer>
-      {(auth) => <span>{auth.isAuthenticated ? 'Session active' : 'Session inactive'}</span>}
+      {(auth) => (
+        <>
+          <span>{auth.isAuthenticated ? 'Session active' : 'Session inactive'}</span>
+          <button onClick={auth.logout}>Déconnexion</button>
+        </>
+      )}
     </AuthContext.Consumer>
   );
 }
@@ -37,6 +43,7 @@ describe('AuthProvider inactivity management', () => {
     vi.useFakeTimers();
     vi.setSystemTime(start);
     localStorage.clear();
+    sessionStorage.clear();
     vi.clearAllMocks();
     saveSession({
       accessToken: tokenValidUntil(start.getTime() + 60 * 60 * 1000),
@@ -73,6 +80,69 @@ describe('AuthProvider inactivity management', () => {
     });
     expect(mocks.reloadApplication).toHaveBeenCalledOnce();
     expect(screen.getByText('Session inactive')).toBeInTheDocument();
+    expect(consumeSecurityLogout()).toBe(true);
+  });
+
+  it('queues a single message when the server revokes the session', async () => {
+    render(
+      <AuthProvider>
+        <AuthenticationState />
+      </AuthProvider>,
+    );
+    await act(async () => {});
+    act(() => window.dispatchEvent(new Event('greendesk:unauthorized')));
+    expect(consumeSecurityLogout()).toBe(true);
+    act(() => window.dispatchEvent(new Event('greendesk:unauthorized')));
+    expect(consumeSecurityLogout()).toBe(false);
+    expect(readSession()).toBeNull();
+  });
+
+  it('queues a message for an expired session restored on startup', async () => {
+    saveSession({
+      accessToken: tokenValidUntil(start.getTime() - 1000),
+      user: { roles: [], permissions: [] },
+      lastActivityAt: start.getTime(),
+    });
+    render(
+      <AuthProvider>
+        <AuthenticationState />
+      </AuthProvider>,
+    );
+    await act(async () => {});
+    expect(consumeSecurityLogout()).toBe(true);
+    expect(screen.getByText('Session inactive')).toBeInTheDocument();
+  });
+
+  it.each([true, false])(
+    'preserves the logout reason from another tab (security=%s)',
+    async (security) => {
+      render(
+        <AuthProvider>
+          <AuthenticationState />
+        </AuthProvider>,
+      );
+      await act(async () => {});
+      if (security) localStorage.setItem(SECURITY_LOGOUT_REASON_KEY, 'security');
+      localStorage.removeItem('greendesk.session');
+      act(() => window.dispatchEvent(new StorageEvent('storage', { key: 'greendesk.session' })));
+      expect(consumeSecurityLogout()).toBe(security);
+    },
+  );
+
+  it('does not queue a security message for a voluntary logout, even on a 401', async () => {
+    mocks.post.mockImplementation(async () => {
+      window.dispatchEvent(new Event('greendesk:unauthorized'));
+      throw new Error('Unauthorized');
+    });
+    render(
+      <AuthProvider>
+        <AuthenticationState />
+      </AuthProvider>,
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByText('Déconnexion'));
+    });
+    expect(consumeSecurityLogout()).toBe(false);
   });
 
   it('renews a nearly expired token when the user remains active', async () => {

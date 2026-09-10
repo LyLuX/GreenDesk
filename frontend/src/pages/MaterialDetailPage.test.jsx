@@ -351,6 +351,50 @@ describe('MaterialDetailPage', () => {
     );
   });
 
+  it.each([
+    [30, 'Tous les 30 jours'],
+    [1, 'Chaque jour'],
+    [0, 'Selon l’usure'],
+  ])(
+    'shows compact maintenance details for an interval of %s days',
+    async (intervalDays, frequency) => {
+      mocks.hasPermission.mockImplementation((permission) => permission === 'maintenance.read');
+      mocks.listMaintenance.mockResolvedValue({
+        data: {
+          data: {
+            items: [
+              {
+                uuid: 'plan',
+                title: 'Vidange',
+                maintenanceType: 'preventive',
+                priority: 'high',
+                intervalDays,
+                lastMaintenanceDate: '2026-09-01',
+                nextMaintenanceDate: intervalDays ? '2026-10-01' : null,
+                status: intervalDays ? 'upcoming' : 'wearBased',
+              },
+            ],
+          },
+        },
+      });
+      const user = userEvent.setup();
+      render(
+        <MemoryRouter initialEntries={['/materials/material-uuid']}>
+          <Routes>
+            <Route path="/materials/:uuid" element={<MaterialDetailPage />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+      await screen.findByRole('img', { name: 'Logo Green' });
+      await user.click(screen.getByRole('tab', { name: 'Maintenance' }));
+      const row = (await screen.findByText('Vidange')).closest('tr');
+      expect(within(row).getByText(`Préventif · ${frequency}`)).toBeVisible();
+      expect(within(row).getByText('Élevée')).toHaveClass('priority-high');
+      expect(within(row).getByText('Dernier entretien : 01/09/2026')).toBeVisible();
+      expect(within(row).getAllByRole('cell')).toHaveLength(4);
+    },
+  );
+
   it('opens all maintenance plans filtered by the current material', async () => {
     mocks.hasPermission.mockImplementation((permission) => permission === 'maintenance.read');
     const user = userEvent.setup();

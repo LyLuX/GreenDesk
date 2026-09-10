@@ -13,8 +13,16 @@ const permissions = ['materials.read', 'maintenance.read', 'maintenance.parts.re
 const makeRepository = () => ({
   getCompany: jest.fn().mockResolvedValue({ uuid: 'company', name: 'Alpha' }),
   getMaterials: jest.fn().mockResolvedValue([
-    { uuid: 'mower', name: 'Tondeuse', model: 'M1', serialNumber: 'S1' },
-    { uuid: 'tractor', name: 'Tracteur' },
+    {
+      uuid: 'mower',
+      name: 'Tondeuse',
+      model: 'M1',
+      serialNumber: 'S1',
+      categoryUuid: 'garden',
+      categoryName: 'Jardin',
+    },
+    { uuid: 'tractor', name: 'Tracteur', categoryUuid: 'garden', categoryName: 'Jardin' },
+    { uuid: 'unused', name: 'Matériel sans pièce', categoryUuid: 'empty', categoryName: 'Vide' },
   ]),
   getRelationships: jest.fn().mockResolvedValue([
     {
@@ -69,16 +77,29 @@ describe('Material–part relationships', () => {
 
   it('shares parts across materials and separates planned links from actual consumption by unit', async () => {
     const graph = await new MaterialPartRelationsService(makeRepository()).getGraph({
-      permissions,
+      permissions: [...permissions, 'categories.read'],
     });
     expect(graph.scope).toBe('materialParts');
+    expect(graph.nodes.find(({ id }) => id === 'material:mower').description).toBe('M1 · S1');
     expect(graph.nodes.map(({ id }) => id)).toEqual([
       'company',
+      'category:garden',
       'material:mower',
       'material:tractor',
       'part:oil',
       'part:deleted',
     ]);
+    expect(graph.nodes[0]).toMatchObject({ materialCount: 2, partCount: 2 });
+    expect(graph.nodes.find(({ id }) => id === 'category:garden')).toMatchObject({
+      count: 2,
+      label: 'Jardin',
+    });
+    expect(graph.edges).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ source: 'company', target: 'category:garden' }),
+        expect.objectContaining({ source: 'category:garden', target: 'material:mower' }),
+      ]),
+    );
     expect(
       graph.edges.find(
         ({ source, target }) => source === 'material:mower' && target === 'part:oil',
@@ -126,6 +147,73 @@ describe('Material–part relationships', () => {
     const service = { getGraph: jest.fn().mockResolvedValue({ nodes: [], edges: [] }) };
     await new RelationsService({}, {}, service).getGraph({ scope: 'materialParts', permissions });
     expect(service.getGraph).toHaveBeenCalledWith({ mode: 'simplified', permissions });
+  });
+
+  it('does not expose category names without their permission', async () => {
+    const repository = makeRepository();
+    const graph = await new MaterialPartRelationsService(repository).getGraph({ permissions });
+    expect(repository.getMaterials).toHaveBeenCalledWith({ includeCategories: false });
+    expect(graph.nodes.some(({ id }) => id.startsWith('category:'))).toBe(false);
+    expect(JSON.stringify(graph)).not.toContain('Jardin');
+    expect(graph.nodes.find(({ id }) => id === 'materials')).toMatchObject({
+      label: 'Matériels',
+      count: 2,
+    });
+  });
+
+  it('keeps consumed-only materials under a fallback category and omits empty categories', async () => {
+    const repository = makeRepository();
+    repository.getRelationships.mockResolvedValue([
+      {
+        materialUuid: 'tractor',
+        partUuid: 'old',
+        partName: 'Ancienne pièce',
+        partReference: 'P1',
+        cataloguePart: 0,
+        planned: 0,
+        consumedQuantity: '2',
+        unit: 'pièce',
+        lastUsedAt: '2026-09-09',
+      },
+    ]);
+    repository.getMaterials.mockResolvedValue([
+      { uuid: 'tractor', name: 'Tracteur' },
+      { uuid: 'empty', name: 'Sans lien', categoryUuid: 'empty', categoryName: 'Vide' },
+    ]);
+    const graph = await new MaterialPartRelationsService(repository).getGraph({
+      permissions: [...permissions, 'categories.read'],
+    });
+    expect(graph.nodes.map(({ id }) => id)).toEqual([
+      'company',
+      'category:none',
+      'material:tractor',
+      'part:old',
+    ]);
+    expect(graph.nodes[1].label).toBe('Sans catégorie');
+    expect(graph.nodes[0]).toMatchObject({ materialCount: 1, partCount: 1 });
+  });
+
+  it('returns only the company with zero counts when no planned or consumed parts exist', async () => {
+    const repository = makeRepository();
+    repository.getRelationships.mockResolvedValue([]);
+    const graph = await new MaterialPartRelationsService(repository).getGraph({ permissions });
+    expect(graph.nodes).toEqual([
+      expect.objectContaining({ id: 'company', materialCount: 0, partCount: 0 }),
+    ]);
+    expect(graph.edges).toEqual([]);
+  });
+
+  it('only joins readable categories within the selected company', async () => {
+    const query = jest.spyOn(sequelize, 'query').mockResolvedValue([]);
+    const repository = new MaterialPartRelationsRepository();
+    await runWithCompanyScope({ companyId: 42 }, () =>
+      repository.getMaterials({ includeCategories: true }),
+    );
+    expect(query.mock.calls[0][0]).toContain('c.company_id = $companyId');
+    expect(query.mock.calls[0][0]).toContain('c.deleted_at IS NULL');
+    expect(query.mock.calls[0][0]).toContain('ORDER BY c.name, m.name, m.id');
+    await runWithCompanyScope({ companyId: 42 }, () => repository.getMaterials());
+    expect(query.mock.calls[1][0]).not.toContain('categories');
   });
 
   it('aggregates all three sources in SQL with company bindings on every joined resource', async () => {

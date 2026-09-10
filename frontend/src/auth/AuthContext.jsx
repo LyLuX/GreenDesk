@@ -5,6 +5,11 @@ import { isJwtExpired } from './jwt.js';
 import { clearReturnLocation } from './return-location.js';
 import { resolveActiveCompany, saveActiveCompanyUuid } from './company.storage.js';
 import {
+  rememberSecurityLogout,
+  clearSecurityLogout,
+  SECURITY_LOGOUT_REASON_KEY,
+} from './security-logout.js';
+import {
   ACTIVITY_THROTTLE_MS,
   getLastActivityAt,
   getTokenRemainingMs,
@@ -30,6 +35,8 @@ export function AuthProvider({ children }) {
   const isEndingSessionRef = useRef(false);
 
   const expireInactiveSession = useCallback(() => {
+    if (isEndingSessionRef.current || !sessionRef.current) return;
+    rememberSecurityLogout();
     isEndingSessionRef.current = true;
     clearTimeout(idleTimerRef.current);
     clearSession();
@@ -104,10 +111,12 @@ export function AuthProvider({ children }) {
       setSession(next);
       setActiveCompany(resolveActiveCompany(next.user?.companies));
     } else {
+      if (restored) rememberSecurityLogout();
       clearSession();
     }
     setInitializing(false);
     const expired = () => {
+      if (!isEndingSessionRef.current && sessionRef.current) rememberSecurityLogout();
       isEndingSessionRef.current = true;
       clearSession();
       sessionRef.current = null;
@@ -154,11 +163,20 @@ export function AuthProvider({ children }) {
       if (event.key !== SESSION_STORAGE_KEY) return;
       const stored = readSession();
       if (!stored) {
+        if (
+          !isEndingSessionRef.current &&
+          sessionRef.current &&
+          localStorage.getItem(SECURITY_LOGOUT_REASON_KEY) === 'security'
+        ) {
+          rememberSecurityLogout({ broadcast: false });
+        }
+        isEndingSessionRef.current = true;
         sessionRef.current = null;
         setSession(null);
         setActiveCompany(null);
         return;
       }
+      isEndingSessionRef.current = false;
       sessionRef.current = stored;
       lastActivityRef.current = getLastActivityAt(stored);
       lastPersistedActivityRef.current = lastActivityRef.current;
@@ -195,6 +213,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (email, password) => {
     const { data } = await client.post('/v1/auth/login', { email, password });
     const next = { ...data.data, lastActivityAt: Date.now() };
+    clearSecurityLogout();
     isEndingSessionRef.current = false;
     setLoggingOut(false);
     saveSession(next);
@@ -205,6 +224,7 @@ export function AuthProvider({ children }) {
   }, []);
   const logout = useCallback(async () => {
     isEndingSessionRef.current = true;
+    clearSecurityLogout();
     setLoggingOut(true);
     try {
       if (session?.accessToken) await client.post('/v1/auth/logout');
