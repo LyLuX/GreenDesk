@@ -23,6 +23,7 @@ import { MAX_MAINTENANCE_PART_UNIT_PRICE } from '../maintenance/maintenance-cost
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import { formatCurrency, formatOperationDateTime } from '../utils/formatters.js';
 import Button from './Button.jsx';
+import FormField from './FormField.jsx';
 import AutocompleteField from './AutocompleteField.jsx';
 import Loader from './Loader.jsx';
 import Modal from './Modal.jsx';
@@ -326,17 +327,15 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
           </label>
 
           {operation !== MINIMUM_STOCK_OPERATION ? (
-            <label className="form-label mb-0 text-body-secondary">
-              Date de l’opération
-              <input
-                className="form-control"
-                type="date"
-                max={getCurrentOperationDate()}
-                required
-                value={performedAt}
-                onChange={(event) => setPerformedAt(event.target.value)}
-              />
-            </label>
+            <FormField
+              label="Date de l’opération"
+              className="form-control"
+              type="date"
+              max={getCurrentOperationDate()}
+              required
+              value={performedAt}
+              onChange={(event) => setPerformedAt(event.target.value)}
+            />
           ) : null}
 
           {operation === STOCK_OPERATIONS.CONSUME ? (

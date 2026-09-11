@@ -1,4 +1,5 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, render as renderView, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -59,7 +60,37 @@ vi.mock('../components/ManufacturerLogo.jsx', () => ({
 import MaintenanceOperationsPage from './MaintenanceOperationsPage.jsx';
 import MaintenancePartsPage from './MaintenancePartsPage.jsx';
 
+const render = (view, initialEntries = ['/maintenance/parts']) =>
+  renderView(<MemoryRouter initialEntries={initialEntries}>{view}</MemoryRouter>);
+
 describe('dedicated maintenance catalogue pages', () => {
+  it('opens only the linked part, including inactive parts, and can clear the filter', async () => {
+    const uuid = 'fbc00c73-976e-4b18-940b-c09f7a14ac8b';
+    const selected = { uuid, name: 'Filtre à air', reference: 'RM-520', active: false };
+    const other = { uuid: 'other', name: 'Filtre à air', reference: 'OTHER', active: true };
+    mocks.listParts.mockImplementation(async (query) => ({
+      data: {
+        data: {
+          items: query.partUuid === uuid ? [selected] : [other],
+          pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
+        },
+      },
+    }));
+    const user = userEvent.setup();
+    render(<MaintenancePartsPage />, [`/maintenance/parts?partUuid=${uuid}`]);
+
+    expect(await screen.findByText('RM-520')).toBeInTheDocument();
+    expect(screen.queryByText('OTHER')).not.toBeInTheDocument();
+    expect(mocks.listParts).toHaveBeenCalledWith(
+      expect.objectContaining({ partUuid: uuid, active: 'all', page: 1 }),
+      expect.any(AbortSignal),
+    );
+    await user.click(screen.getByRole('button', { name: 'Afficher toutes les pièces' }));
+    expect(await screen.findByText('OTHER')).toBeInTheDocument();
+    expect(screen.queryByText('RM-520')).not.toBeInTheDocument();
+    expect(mocks.listParts.mock.lastCall[0]).not.toHaveProperty('partUuid');
+  });
+
   afterEach(cleanup);
 
   beforeEach(() => {

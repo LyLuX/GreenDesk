@@ -136,7 +136,7 @@ export default class RecordRelationsService {
     for (const part of records.parts ?? []) {
       addRecord('maintenance', 'part', part, part.name, {
         description: `Réf. ${part.reference}`,
-        path: '/maintenance/parts',
+        path: `/maintenance/parts?partUuid=${encodeURIComponent(part.uuid)}`,
       });
     }
     for (const file of records.materialFiles ?? []) {

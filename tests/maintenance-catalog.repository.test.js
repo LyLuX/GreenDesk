@@ -6,6 +6,21 @@ import MaintenanceCatalogRepository from '../src/modules/maintenance/repository/
 describe('MaintenanceCatalogRepository stock filters', () => {
   afterEach(() => jest.restoreAllMocks());
 
+  it('filters a linked part by exact UUID before pagination without excluding inactive parts', async () => {
+    const findAndCountAll = jest
+      .spyOn(MaintenancePart, 'findAndCountAll')
+      .mockResolvedValue({ count: 0, rows: [] });
+    const partUuid = 'fbc00c73-976e-4b18-940b-c09f7a14ac8b';
+    await new MaintenanceCatalogRepository().findParts({
+      partUuid,
+      active: 'all',
+      page: 1,
+      limit: 5,
+    });
+    expect(findAndCountAll.mock.calls[0][0].where).toEqual({ uuid: partUuid });
+    expect(findAndCountAll.mock.calls[0][0].limit).toBe(5);
+  });
+
   it('loads manufacturer logo metadata with low-stock parts without catalogue pagination', async () => {
     const findAll = jest.spyOn(MaintenancePart, 'findAll').mockResolvedValue([]);
     await new MaintenanceCatalogRepository().findLowStockParts();

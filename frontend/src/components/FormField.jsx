@@ -1,9 +1,11 @@
 import { useId } from 'react';
+import DatePicker from './DatePicker.jsx';
 export default function FormField({ label, error, ...props }) {
   const id = useId();
   const errorId = `${id}-error`;
   const { options, multiline, ...inputProps } = props;
   delete inputProps.valueType;
+  const Wrapper = props.type === 'date' ? 'div' : 'label';
   const controlProps = {
     id,
     'aria-describedby': error ? errorId : undefined,
@@ -12,9 +14,14 @@ export default function FormField({ label, error, ...props }) {
     ...inputProps,
   };
   return (
-    <label className="form-label mb-0 text-body-secondary" htmlFor={id}>
-      {label}
-      {multiline ? (
+    <Wrapper
+      className="form-label mb-0 text-body-secondary"
+      htmlFor={props.type === 'date' ? undefined : id}
+    >
+      {props.type === 'date' ? <label htmlFor={id}>{label}</label> : label}
+      {props.type === 'date' ? (
+        <DatePicker {...controlProps} label={label} />
+      ) : multiline ? (
         <textarea {...controlProps} />
       ) : options ? (
         <select {...controlProps}>
@@ -33,6 +40,6 @@ export default function FormField({ label, error, ...props }) {
           {error}
         </span>
       )}
-    </label>
+    </Wrapper>
   );
 }

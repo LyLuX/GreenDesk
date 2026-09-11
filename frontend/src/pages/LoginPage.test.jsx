@@ -1,10 +1,11 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext, AuthProvider } from '../auth/AuthContext.jsx';
 import { rememberReturnLocation } from '../auth/return-location.js';
 import { saveSession } from '../auth/auth.storage.js';
+import ProtectedRoute from '../auth/ProtectedRoute.jsx';
 
 const mocks = vi.hoisted(() => ({ post: vi.fn(), notify: vi.fn() }));
 
@@ -19,6 +20,77 @@ import LoginPage from './LoginPage.jsx';
 import { rememberSecurityLogout, SECURITY_LOGOUT_MESSAGE } from '../auth/security-logout.js';
 
 describe('LoginPage', () => {
+  it.each(['expired', 'revoked'])(
+    'returns to the dashboard after a %s session, with only the security notice',
+    async (reason) => {
+      const accessToken = `header.${btoa(JSON.stringify({ exp: reason === 'expired' ? 1 : Math.floor(Date.now() / 1000) + 3600 }))}.signature`;
+      saveSession({
+        accessToken,
+        user: { roles: [], permissions: [] },
+        lastActivityAt: Date.now(),
+      });
+      rememberReturnLocation('/maintenance/parts?old=true');
+      mocks.post.mockResolvedValue({
+        data: {
+          data: {
+            accessToken: 'new-token',
+            user: { firstName: 'Ada', roles: [], permissions: [] },
+          },
+        },
+      });
+      const user = userEvent.setup();
+      render(
+        <AuthProvider>
+          <MemoryRouter initialEntries={['/maintenance/parts?stockStatus=minimum']}>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route element={<ProtectedRoute />}>
+                <Route path="/maintenance/parts" element={<p>Pièces</p>} />
+                <Route path="/dashboard" element={<p>Tableau de bord</p>} />
+              </Route>
+            </Routes>
+          </MemoryRouter>
+        </AuthProvider>,
+      );
+      if (reason === 'revoked') {
+        await screen.findByText('Pièces');
+        act(() => window.dispatchEvent(new Event('greendesk:unauthorized')));
+      }
+      await screen.findByRole('button', { name: 'Se connecter' });
+      expect(mocks.notify.mock.calls).toEqual([['info', SECURITY_LOGOUT_MESSAGE]]);
+      expect(sessionStorage.getItem('greendesk.returnLocation')).toBeNull();
+      await user.type(screen.getByLabelText('Email'), 'ada@greendesk.local');
+      await user.type(screen.getByLabelText('Mot de passe'), 'SecurePass123!');
+      await user.click(screen.getByRole('button', { name: 'Se connecter' }));
+      expect(await screen.findByText('Tableau de bord')).toBeVisible();
+    },
+  );
+
+  it('discards an obsolete login destination and access warning after a security logout', () => {
+    rememberSecurityLogout();
+    render(
+      <AuthContext.Provider value={{ isAuthenticated: false, isInitializing: false }}>
+        <MemoryRouter
+          initialEntries={[
+            {
+              pathname: '/login',
+              state: {
+                from: '/maintenance',
+                notification: {
+                  type: 'error',
+                  message: 'Vous devez être connecté pour accéder à cette page.',
+                },
+              },
+            },
+          ]}
+        >
+          <LoginPage />
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+    expect(mocks.notify.mock.calls).toEqual([['info', SECURITY_LOGOUT_MESSAGE]]);
+    expect(sessionStorage.getItem('greendesk.returnLocation')).toBeNull();
+  });
   it('notifies after authentication initialization discovers an expired session', async () => {
     saveSession({
       accessToken: `header.${btoa(JSON.stringify({ exp: 1 }))}.signature`,

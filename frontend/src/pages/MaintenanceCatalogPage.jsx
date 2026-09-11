@@ -35,12 +35,14 @@ export default function MaintenanceCatalogPage({
   renderRowActions,
   rowActionPermissions,
   additionalFilters = [],
+  partUuid = '',
+  onClearPartFilter,
 }) {
   const { hasPermission } = useAuth();
   const { notify } = useNotification();
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState('');
-  const [active, setActive] = useState(activityStatusFilter.defaultValue);
+  const [active, setActive] = useState(partUuid ? '' : activityStatusFilter.defaultValue);
   const [additionalFilterValues, setAdditionalFilterValues] = useState(() =>
     Object.fromEntries(additionalFilters.map((filter) => [filter.name, filter.defaultValue ?? ''])),
   );
@@ -73,6 +75,7 @@ export default function MaintenanceCatalogPage({
           {
             page,
             limit,
+            ...(partUuid ? { partUuid } : {}),
             ...(debouncedSearch ? { search: debouncedSearch } : {}),
             active: active || 'all',
             ...Object.fromEntries(
@@ -93,7 +96,7 @@ export default function MaintenanceCatalogPage({
                   .includes(term),
               );
             const matchesStatus = active === '' || String(row.active) === active;
-            return matchesSearch && matchesStatus;
+            return matchesSearch && matchesStatus && (!partUuid || row.uuid === partUuid);
           });
           const localPage = paginateItems(filtered, page, limit);
           setRows(localPage.items);
@@ -109,7 +112,7 @@ export default function MaintenanceCatalogPage({
         if (!signal?.aborted) setIsLoading(false);
       }
     },
-    [active, additionalFilterValues, debouncedSearch, fields, limit, listItems, page],
+    [active, additionalFilterValues, debouncedSearch, fields, limit, listItems, page, partUuid],
   );
 
   useEffect(() => {
@@ -184,6 +187,12 @@ export default function MaintenanceCatalogPage({
         )}
       </div>
 
+      {partUuid && (
+        <div className="alert alert-info d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <span>Affichage limité à la pièce sélectionnée dans les relations.</span>
+          <Button onClick={onClearPartFilter}>Afficher toutes les pièces</Button>
+        </div>
+      )}
       <FilterPanel
         fields={[
           {

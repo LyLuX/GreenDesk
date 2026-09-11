@@ -5,6 +5,7 @@
 @import './styles/relations.css';
 @import './styles/layout.css';
 @import './styles/components.css';
+@import './styles/date-picker.css';
 @import './styles/access.css';
 @import './styles/dashboard.css';
 @import './styles/tables.css';

@@ -4,12 +4,15 @@ export const SECURITY_LOGOUT_REASON_KEY = 'greendesk.securityLogout.reason';
 
 /** Keeps the message across a reload and shares the reason with other open tabs. */
 export const rememberSecurityLogout = ({ broadcast = true } = {}) => {
+  clearReturnLocation();
   sessionStorage.setItem(pendingKey, 'true');
   if (broadcast) localStorage.setItem(SECURITY_LOGOUT_REASON_KEY, 'security');
 };
 
+export const hasPendingSecurityLogout = () => sessionStorage.getItem(pendingKey) === 'true';
+
 export const consumeSecurityLogout = () => {
-  const pending = sessionStorage.getItem(pendingKey) === 'true';
+  const pending = hasPendingSecurityLogout();
   sessionStorage.removeItem(pendingKey);
   return pending;
 };
@@ -18,3 +21,4 @@ export const clearSecurityLogout = () => {
   sessionStorage.removeItem(pendingKey);
   localStorage.removeItem(SECURITY_LOGOUT_REASON_KEY);
 };
+import { clearReturnLocation } from './return-location.js';

@@ -1098,6 +1098,12 @@ export const openApiPaths = {
       description: 'Nécessite `maintenance.parts.read` ou `maintenance.read`.',
       security: secure,
       parameters: [
+        {
+          name: 'partUuid',
+          in: 'query',
+          description: 'Limite la liste à la pièce sélectionnée dans les relations.',
+          schema: { type: 'string', format: 'uuid' },
+        },
         searchParameter,
         activeParameter,
         {

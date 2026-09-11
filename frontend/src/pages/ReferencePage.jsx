@@ -4,6 +4,7 @@ import getApiErrorMessage from '../api/get-api-error-message.js';
 import listAllPages from '../api/list-all-pages.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
+import AutocompleteField from '../components/AutocompleteField.jsx';
 import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import DataTable from '../components/DataTable.jsx';
@@ -313,18 +314,28 @@ export default function ReferencePage({
       {fields.map((field) => {
         return (
           <div className="d-grid gap-2" key={field.name}>
-            <FormField
-              label={field.label}
-              name={field.name}
-              type={field.type ?? 'text'}
-              step={field.step}
-              min={field.min}
-              defaultValue={editing?.[field.name] ?? editing?.[field.relation]?.uuid ?? ''}
-              required={field.required}
-              multiline={field.multiline}
-              options={selectOptions(field)}
-              disabled={Boolean(editing?.uuid && (!canUpdateRecord || field.immutableOnEdit))}
-            />
+            {field.suggestionsFromRecords && !editing?.uuid ? (
+              <AutocompleteField
+                label={field.label}
+                name={field.name}
+                required={field.required}
+                suggestions={rows.map((row) => row[field.name])}
+                suggestionsPlacement={field.suggestionsPlacement}
+              />
+            ) : (
+              <FormField
+                label={field.label}
+                name={field.name}
+                type={field.type ?? 'text'}
+                step={field.step}
+                min={field.min}
+                defaultValue={editing?.[field.name] ?? editing?.[field.relation]?.uuid ?? ''}
+                required={field.required}
+                multiline={field.multiline}
+                options={selectOptions(field)}
+                disabled={Boolean(editing?.uuid && (!canUpdateRecord || field.immutableOnEdit))}
+              />
+            )}
           </div>
         );
       })}

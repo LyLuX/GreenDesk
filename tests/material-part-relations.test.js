@@ -80,6 +80,10 @@ describe('Material–part relationships', () => {
       permissions: [...permissions, 'categories.read'],
     });
     expect(graph.scope).toBe('materialParts');
+    expect(graph.nodes.find(({ id }) => id === 'part:oil').path).toBe(
+      '/maintenance/parts?partUuid=oil',
+    );
+    expect(graph.nodes.find(({ id }) => id === 'part:deleted')).not.toHaveProperty('path');
     expect(graph.nodes.find(({ id }) => id === 'material:mower').description).toBe('M1 · S1');
     expect(graph.nodes.map(({ id }) => id)).toEqual([
       'company',

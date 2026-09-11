@@ -96,7 +96,7 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
     });
   }
 
-  findParts({ search, active, stockStatus, page, limit } = {}) {
+  findParts({ search, active, stockStatus, partUuid, page, limit } = {}) {
     const pagination = normalizePagination({ page, limit });
     const where = search
       ? {
@@ -109,6 +109,7 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
       : {};
     const normalizedActive = normalizeBooleanFilter(active, true);
     if (normalizedActive !== undefined) where.active = normalizedActive;
+    if (partUuid) where.uuid = partUuid;
     if (stockStatus === STOCK_STATUSES.IN_STOCK) {
       where[Op.and] = [
         sequelize.where(

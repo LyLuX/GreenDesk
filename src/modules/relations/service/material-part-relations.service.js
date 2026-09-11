@@ -94,7 +94,9 @@ export default class MaterialPartRelationsService {
           kind: 'entity',
           recordType: 'part',
           description: `Réf. ${row.partReference}${Number(row.cataloguePart) ? '' : ' · Pièce supprimée'}`,
-          ...(Number(row.cataloguePart) ? { path: '/maintenance/parts' } : {}),
+          ...(Number(row.cataloguePart)
+            ? { path: `/maintenance/parts?partUuid=${encodeURIComponent(row.partUuid)}` }
+            : {}),
         });
       }
       const id = `${source}-${target}`;

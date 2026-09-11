@@ -53,18 +53,48 @@ describe('AppLayout navigation drawer', () => {
     document.body.classList.remove('app-scroll-locked');
   });
 
-  it('keeps an accessible company selector when several companies are available', () => {
+  it('opens company choices with the keyboard and selects another company', async () => {
+    const user = userEvent.setup();
     mocks.companies = [mocks.activeCompany, { uuid: 'other-company-uuid', name: 'Autre société' }];
 
     renderLayout();
 
-    expect(screen.getByRole('combobox', { name: 'Société actuellement consultée' })).toHaveValue(
-      'company-uuid',
-    );
+    const trigger = screen.getByRole('button', { name: /Changer de société :/ });
+    trigger.focus();
+    await user.keyboard('{Enter}');
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Société actuellement consultée' })).toHaveFocus();
+    expect(document.activeElement).toHaveAttribute('aria-current', 'true');
+    await user.tab();
+    await user.keyboard('{Enter}');
+    expect(mocks.selectCompany).toHaveBeenCalledWith('other-company-uuid');
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(trigger).toHaveFocus();
+  });
+
+  it('closes company choices on Escape, outside click and focus leaving', async () => {
+    const user = userEvent.setup();
+    mocks.companies = [mocks.activeCompany, { uuid: 'other', name: 'Autre société' }];
+    renderLayout();
+    const trigger = screen.getByRole('button', { name: /Changer de société :/ });
+    await user.click(trigger);
+    await user.tab();
+    await user.keyboard('{Escape}');
+    expect(trigger).toHaveFocus();
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await user.click(trigger);
+    await user.click(screen.getByRole('heading', { name: 'Tableau de bord' }));
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await user.click(trigger);
+    await user.tab({ shift: true });
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('shows the currently selected company in the brand', () => {
     const { container } = renderLayout();
+
+    expect(screen.queryByRole('button', { name: /Changer de société/ })).not.toBeInTheDocument();
 
     expect(container.querySelector('.brand-company')).toHaveTextContent(
       'Société actuellement consultée',
@@ -72,7 +102,7 @@ describe('AppLayout navigation drawer', () => {
     expect(screen.getByRole('img', { name: 'Logo Société actuellement consultée' })).toHaveClass(
       'brand-logo',
     );
-    expect(container.querySelector('.brand-name')).toBeNull();
+    expect(container.querySelector('.brand-name')).toHaveTextContent('GreenDesk');
     expect(screen.getByRole('button', { name: 'Déconnexion' })).toHaveClass('btn-outline-critical');
     expect(screen.getByRole('button', { name: 'Déconnexion' })).not.toHaveClass(
       'btn-outline-light',

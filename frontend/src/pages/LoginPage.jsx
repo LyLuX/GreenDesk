@@ -29,15 +29,15 @@ export default function LoginPage() {
   };
 
   useEffect(() => {
-    rememberReturnLocation(location.state?.from);
-  }, [location.state?.from]);
-
-  useEffect(() => {
-    if (!isInitializing && !isAuthenticated && consumeSecurityLogout())
+    if (isInitializing || isAuthenticated) return;
+    if (consumeSecurityLogout()) {
+      clearReturnLocation();
+      postLoginDestinationRef.current = null;
       notify('info', SECURITY_LOGOUT_MESSAGE);
-  }, [isInitializing, isAuthenticated, notify]);
-
-  useEffect(() => {
+      navigate(location.pathname, { replace: true, state: null });
+      return;
+    }
+    rememberReturnLocation(location.state?.from);
     const notification = location.state?.notification;
     if (!notification) return;
 
@@ -46,7 +46,7 @@ export default function LoginPage() {
       replace: true,
       state: { ...location.state, notification: undefined },
     });
-  }, [location.pathname, location.state, navigate, notify]);
+  }, [isInitializing, isAuthenticated, location.pathname, location.state, navigate, notify]);
 
   if (isAuthenticated) {
     return <Navigate to={getPostLoginDestination()} replace />;

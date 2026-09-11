@@ -1468,7 +1468,8 @@ export const openApiSchemas = {
       },
       path: {
         type: 'string',
-        description: 'Route frontend autorisée ouverte depuis le nœud.',
+        description:
+          'Route frontend autorisée ouverte depuis le nœud. Les nœuds de pièces consultables incluent partUuid pour afficher uniquement la référence sélectionnée.',
       },
       plansPath: {
         type: 'string',

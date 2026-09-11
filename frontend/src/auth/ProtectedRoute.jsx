@@ -3,16 +3,18 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import Loader from '../components/Loader.jsx';
 import { rememberReturnLocation } from './return-location.js';
 import useAuth from './useAuth.js';
+import { hasPendingSecurityLogout } from './security-logout.js';
 export default function ProtectedRoute({ children }) {
   const { isAuthenticated, isInitializing, isLoggingOut } = useAuth();
   const location = useLocation();
   const returnLocation = `${location.pathname}${location.search}${location.hash}`;
+  const shouldRememberDestination = !isLoggingOut && !hasPendingSecurityLogout();
 
   useEffect(() => {
-    if (!isInitializing && !isAuthenticated && !isLoggingOut) {
+    if (!isInitializing && !isAuthenticated && shouldRememberDestination) {
       rememberReturnLocation(returnLocation);
     }
-  }, [isAuthenticated, isInitializing, isLoggingOut, returnLocation]);
+  }, [isAuthenticated, isInitializing, shouldRememberDestination, returnLocation]);
 
   if (isInitializing)
     return (
@@ -27,7 +29,7 @@ export default function ProtectedRoute({ children }) {
       to="/login"
       replace
       state={
-        !isLoggingOut
+        shouldRememberDestination
           ? {
               from: returnLocation,
               notification: {

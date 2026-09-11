@@ -11,7 +11,7 @@ describe('API client unauthorized responses', () => {
     window.history.replaceState({}, '', '/');
   });
 
-  it('remembers the current page before clearing a server-invalidated session', async () => {
+  it('does not remember the current page when clearing a server-invalidated session', async () => {
     const unauthorized = vi.fn();
     window.addEventListener('greendesk:unauthorized', unauthorized);
     window.history.replaceState({}, '', '/maintenance/parts?stockStatus=LOW#inventory');
@@ -30,9 +30,7 @@ describe('API client unauthorized responses', () => {
       .catch((reason) => reason);
 
     expect(error.response.status).toBe(401);
-    expect(sessionStorage.getItem(RETURN_LOCATION_STORAGE_KEY)).toBe(
-      '/maintenance/parts?stockStatus=LOW#inventory',
-    );
+    expect(sessionStorage.getItem(RETURN_LOCATION_STORAGE_KEY)).toBeNull();
     expect(localStorage.getItem(SESSION_STORAGE_KEY)).toBeNull();
     expect(unauthorized).toHaveBeenCalledOnce();
     window.removeEventListener('greendesk:unauthorized', unauthorized);

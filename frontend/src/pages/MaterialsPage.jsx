@@ -25,7 +25,7 @@ const columns = [
 ];
 
 const fields = [
-  { name: 'name', label: 'Nom', required: true },
+  { name: 'name', label: 'Nom', required: true, suggestionsFromRecords: true },
   {
     name: 'manufacturerUuid',
     label: 'Fabricant',
@@ -44,7 +44,13 @@ const fields = [
   { name: 'commissionedAt', label: 'Mise en service', type: 'date' },
   { name: 'retiredAt', label: 'Sortie de service', type: 'date' },
   { name: 'notes', label: 'Notes', multiline: true },
-  { name: 'unit', label: 'Unité', required: true },
+  {
+    name: 'unit',
+    label: 'Unité',
+    required: true,
+    suggestionsFromRecords: true,
+    suggestionsPlacement: 'top',
+  },
   {
     name: 'purchasePrice',
     label: 'Prix achat',

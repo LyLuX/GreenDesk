@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import useAuth from '../auth/useAuth.js';
 import CompanyLogo from '../components/CompanyLogo.jsx';
+import CompanySwitcher from '../components/CompanySwitcher.jsx';
 import SidebarNavigation from '../components/SidebarNavigation.jsx';
 import useNotification from '../notifications/useNotification.js';
 import { lockPageScroll } from '../utils/page-scroll-lock.js';
@@ -67,8 +68,8 @@ export default function AppLayout() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <div className="container-fluid d-flex align-items-center justify-content-between gap-3 px-4 pt-2">
-          <div className="d-flex align-items-center gap-3">
+        <div className="header-inner container-fluid d-flex align-items-center justify-content-between gap-3 px-3 px-sm-4 py-2">
+          <div className="header-brand d-flex align-items-center gap-3">
             <button
               ref={menuButtonRef}
               aria-controls="main-navigation"
@@ -79,40 +80,28 @@ export default function AppLayout() {
             >
               Menu
             </button>
-            <NavLink
-              className="brand-lockup d-flex align-items-center gap-3"
-              to="/dashboard"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <CompanyLogo company={activeCompany} className="brand-logo" />
-              <span>
-                {activeCompany?.hasLogo && <span className="brand-name d-block">GreenDesk</span>}
-                <span className="brand-company d-block">
-                  {activeCompany?.name ?? 'Aucune société'}
-                </span>
-              </span>
-            </NavLink>
-          </div>
-          <div className="d-flex align-items-center gap-3 text-white">
-            {companies.length > 1 ? (
-              <label className="d-flex align-items-center gap-2 small" htmlFor="active-company">
-                <select
-                  aria-label="Société actuellement consultée"
-                  className="form-select form-select-sm"
-                  id="active-company"
-                  value={activeCompany?.uuid ?? ''}
-                  onChange={(event) => {
-                    if (selectCompany(event.target.value)) window.location.reload();
+            <div className="brand-lockup d-flex align-items-center gap-2 gap-sm-3">
+              <NavLink
+                className="flex-shrink-0"
+                to="/dashboard"
+                aria-label="Tableau de bord"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <CompanyLogo company={activeCompany} className="brand-logo" />
+              </NavLink>
+              <div className="header-brand-text">
+                <span className="brand-name d-block">GreenDesk</span>
+                <CompanySwitcher
+                  companies={companies}
+                  activeCompany={activeCompany}
+                  onSelect={(uuid) => {
+                    if (selectCompany(uuid)) window.location.reload();
                   }}
-                >
-                  {companies.map((company) => (
-                    <option key={company.uuid} value={company.uuid}>
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="header-actions d-flex align-items-center gap-3 text-white">
             <span className="d-none d-sm-inline small">
               {user?.firstName} {user?.lastName}
             </span>

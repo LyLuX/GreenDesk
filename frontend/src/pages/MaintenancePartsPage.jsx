@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import {
@@ -43,6 +44,8 @@ const stockActionPermissions = [
 
 /** Dedicated exact maintenance-part management page. */
 export default function MaintenancePartsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const partUuid = searchParams.get('partUuid') || '';
   const [manufacturers, setManufacturers] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -134,6 +137,13 @@ export default function MaintenancePartsPage() {
   return (
     <>
       <MaintenanceCatalogPage
+        key={partUuid}
+        partUuid={partUuid}
+        onClearPartFilter={() => {
+          const next = new URLSearchParams(searchParams);
+          next.delete('partUuid');
+          setSearchParams(next);
+        }}
         title="Pièces de maintenance"
         subtitle="Références exactes à associer aux plans et à commander"
         singular="Pièce"

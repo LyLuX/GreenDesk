@@ -123,6 +123,7 @@ export const catalogListValidator = [
 ];
 export const partCatalogListValidator = [
   ...catalogListValidator,
+  query('partUuid').optional().isUUID(),
   query('stockStatus').optional({ values: 'falsy' }).isIn(STOCK_FILTER_VALUES),
 ];
 const optionalText = (name, maxLength) =>

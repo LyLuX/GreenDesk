@@ -60,6 +60,8 @@ a:hover {
 }
 
 .app-header {
+  position: relative;
+  z-index: 20;
   min-height: 76px;
   flex: 0 0 auto;
   background: var(--brand-forest);
@@ -93,6 +95,130 @@ a:hover {
 .brand-company {
   font-size: 0.72rem;
   color: var(--brand-company-color);
+}
+
+.header-brand,
+.header-brand .brand-lockup,
+.header-brand-text {
+  min-width: 0;
+}
+
+.header-brand {
+  flex: 1 1 max-content;
+  max-width: 100%;
+}
+
+.header-inner {
+  flex-wrap: wrap;
+}
+
+.header-brand-text {
+  flex: 1 1 auto;
+  padding: 2px;
+}
+
+.header-brand .brand-lockup {
+  flex: 1 1 auto;
+}
+
+.company-switcher {
+  position: relative;
+}
+
+.company-switcher-trigger > span:first-child,
+.header-brand-text > .brand-company {
+  overflow-x: auto;
+}
+
+.header-actions {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.header-brand-text > .brand-company {
+  white-space: nowrap;
+}
+
+.company-switcher-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: max-content;
+  max-width: 100%;
+  white-space: nowrap;
+  padding: 0.3rem 0.5rem 0.3rem 0;
+  border: 0;
+  border-radius: var(--bs-border-radius);
+  background: transparent;
+  text-align: left;
+}
+
+.company-switcher-trigger:hover,
+.company-switcher-trigger[aria-expanded='true'] {
+  background: color-mix(in srgb, var(--surface-color) 12%, transparent);
+}
+
+.company-switcher-trigger:focus-visible {
+  outline: 2px solid var(--brand-sun);
+  outline-offset: 2px;
+}
+
+.company-switcher-options {
+  display: block;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  width: max-content;
+  min-width: 0;
+  max-width: 100%;
+  max-height: min(24rem, 60dvh);
+  overflow-y: auto;
+  box-shadow: var(--bs-box-shadow);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 120ms ease, visibility 0s linear 120ms;
+}
+
+.company-switcher-options[data-open='true'] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+
+.company-switcher-options .dropdown-item {
+  white-space: nowrap;
+  min-width: max-content;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .company-switcher-options {
+    transition: none;
+  }
+}
+
+.company-switcher-options [aria-current='true'] {
+  color: var(--brand-forest);
+  background: var(--surface-highlight-color);
+  font-weight: 600;
+}
+
+.company-switcher-check {
+  flex: 0 0 1rem;
+}
+
+@media (max-width: 575.98px) {
+  .header-inner {
+    flex-wrap: wrap;
+  }
+
+  .header-brand {
+    width: 100%;
+  }
+
+  .header-actions {
+    margin-left: auto;
+  }
 }
 
 .brand-thumbnail,

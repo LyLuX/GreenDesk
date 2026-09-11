@@ -2,6 +2,18 @@
 
 ## Non publié
 
+## 9.1.2 - 2026-09-12
+
+- [PATCH] Les champs de date partagent un calendrier en français aux couleurs de GreenDesk, affiché en superposition au-dessus ou en dessous du champ pour rester visible, avec sélection rapide du mois et de l’année, raccourcis et navigation au clavier.
+
+- [PATCH] Un clic sur une pièce dans les relations affiche uniquement cette référence dans le catalogue, avec un bouton pour retrouver toutes les pièces.
+
+- [PATCH] La création d’un matériel propose les noms et unités déjà présents dans la liste pendant la saisie, comme pour les pièces de maintenance.
+
+- [PATCH] Le choix de société est intégré près du logo dans l’en-tête : titre GreenDesk toujours visible, nom aligné sur une seule ligne sans troncature, menu placé sous le bouton et ajusté au contenu, avec un fondu rapide à l’ouverture et à la fermeture.
+
+- [PATCH] Après une déconnexion de sécurité, seule la notification dédiée apparaît et la reconnexion mène au tableau de bord ; l’accès à un lien protégé sans connexion conserve son fonctionnement habituel.
+
 ## 9.1.1 - 2026-09-10
 
 - [PATCH] Les numéros de série sont affichés sans préfixe dans les relations et leur libellé est harmonisé dans les fiches imprimées.

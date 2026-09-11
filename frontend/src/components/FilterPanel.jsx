@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import DatePicker from './DatePicker.jsx';
 
 const MAX_FIELDS = 6;
 
@@ -23,10 +24,22 @@ export default function FilterPanel({
       {fields.map((field) => {
         const id = `${idPrefix}-${field.name}`;
         const isSelect = field.type === 'select';
+        const Input = field.type === 'date' ? DatePicker : 'input';
+        const Wrapper = field.type === 'date' ? 'div' : 'label';
 
         return (
-          <label className="form-label mb-0 text-body-secondary" htmlFor={id} key={field.name}>
-            {field.type === 'search' ? 'Recherche' : field.label}
+          <Wrapper
+            className="form-label mb-0 text-body-secondary"
+            key={field.name}
+            htmlFor={field.type === 'date' ? undefined : id}
+          >
+            {field.type === 'date' ? (
+              <label htmlFor={id}>{field.label}</label>
+            ) : field.type === 'search' ? (
+              'Recherche'
+            ) : (
+              field.label
+            )}
             {isSelect ? (
               <select
                 aria-label={field.ariaLabel}
@@ -44,7 +57,8 @@ export default function FilterPanel({
                 ))}
               </select>
             ) : (
-              <input
+              <Input
+                {...(field.type === 'date' ? { label: field.label } : {})}
                 aria-label={field.ariaLabel}
                 className="form-control"
                 id={id}
@@ -55,7 +69,7 @@ export default function FilterPanel({
                 onChange={(event) => field.onChange(event.target.value)}
               />
             )}
-          </label>
+          </Wrapper>
         );
       })}
     </section>
