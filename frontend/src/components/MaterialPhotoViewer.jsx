@@ -80,9 +80,7 @@ export default function MaterialPhotoViewer({ photos, selectedUuid, onSelect, on
               </small>
             )}
             <div className="d-flex flex-wrap align-items-center justify-content-center gap-2">
-              {selectedPhoto.isPrimary && (
-                <span className="status-badge">Photo principale</span>
-              )}
+              {selectedPhoto.isPrimary && <span className="status-badge">Photo principale</span>}
               {selectedPhoto.createdAt && (
                 <small className="text-body-secondary">
                   Ajoutée le {formatDateTime(selectedPhoto.createdAt)}

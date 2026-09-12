@@ -40,6 +40,32 @@ describe('ReferencePage pagination', () => {
 
   afterEach(cleanup);
 
+  it('reloads when a filter definition changes without changing its selected value', async () => {
+    api.list.mockResolvedValue({ data: { data: [{ uuid: 'one', name: 'Élément' }] } });
+    const props = {
+      title: 'Éléments',
+      resource: 'elements',
+      fields: [],
+      columns: [{ key: 'name', label: 'Nom' }],
+    };
+    const filter = { name: 'active', ...activityStatusFilter, toQuery: () => ({ active: true }) };
+    const { rerender } = render(<ReferencePage {...props} filters={[filter]} />);
+    await screen.findByText('Élément');
+    expect(api.list).toHaveBeenLastCalledWith(
+      expect.objectContaining({ active: true }),
+      expect.any(AbortSignal),
+    );
+    rerender(
+      <ReferencePage {...props} filters={[{ ...filter, toQuery: () => ({ active: false }) }]} />,
+    );
+    await waitFor(() =>
+      expect(api.list).toHaveBeenLastCalledWith(
+        expect.objectContaining({ active: false }),
+        expect.any(AbortSignal),
+      ),
+    );
+  });
+
   it('shows five rows by default and can use the largest page size', async () => {
     const rows = Array.from({ length: 6 }, (_value, index) => ({
       uuid: `uuid-${index + 1}`,

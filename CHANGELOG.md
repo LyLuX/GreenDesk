@@ -2,6 +2,16 @@
 
 ## Non publié
 
+## 9.1.3 - 2026-09-12
+
+- [PATCH] Les erreurs courantes des utilisateurs, des droits et des catalogues s’affichent en français, avec des conventions de développement documentées et un rangement cohérent du module catégories.
+
+- [PATCH] Les contrôles qualité couvrent désormais les composants React et leurs hooks, avec un formatage homogène vérifié automatiquement pour prévenir les régressions.
+
+- [PATCH] GitHub vérifie automatiquement les tests, le lint, la cohérence des versions, OpenAPI et la compilation à chaque push sur main et pour chaque pull request vers main.
+
+- [PATCH] Les installations et mises à jour SQL reposent entièrement sur des migrations vérifiées ; le démarrage signale les migrations manquantes et les tests MySQL contrôlent la conservation des données.
+
 ## 9.1.2 - 2026-09-12
 
 - [PATCH] Les champs de date partagent un calendrier en français aux couleurs de GreenDesk, affiché en superposition au-dessus ou en dessous du champ pour rester visible, avec sélection rapide du mois et de l’année, raccourcis et navigation au clavier.

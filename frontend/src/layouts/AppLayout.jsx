@@ -30,6 +30,7 @@ export default function AppLayout() {
 
   useEffect(() => {
     if (!isSidebarOpen) return undefined;
+    const menuButton = menuButtonRef.current;
     const releaseScrollLock = lockPageScroll();
     sidebarRef.current?.querySelector('.sidebar-close')?.focus();
     const handleDrawerKeydown = (event) => {
@@ -53,7 +54,7 @@ export default function AppLayout() {
     return () => {
       releaseScrollLock();
       window.removeEventListener('keydown', handleDrawerKeydown);
-      menuButtonRef.current?.focus();
+      menuButton?.focus();
     };
   }, [isSidebarOpen]);
 

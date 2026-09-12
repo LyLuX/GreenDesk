@@ -128,6 +128,23 @@ describe('RelationsPage', () => {
     mocks.getRelationsGraph.mockResolvedValue({ data: { data: graph } });
   });
 
+  it('reloads the graph when the active company changes', async () => {
+    const { rerender } = render(
+      <MemoryRouter>
+        <RelationsPage />
+      </MemoryRouter>,
+    );
+    await screen.findByRole('button', { name: 'Déplier Alpha' });
+    expect(mocks.getRelationsGraph).toHaveBeenCalledTimes(1);
+    mocks.useAuth.mockReturnValue({ activeCompany: { uuid: 'another-company', name: 'Beta' } });
+    rerender(
+      <MemoryRouter>
+        <RelationsPage />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(mocks.getRelationsGraph).toHaveBeenCalledTimes(2));
+  });
+
   it('starts with only the company, its counts and a keyboard-accessible plus', async () => {
     const user = userEvent.setup();
     renderPage();

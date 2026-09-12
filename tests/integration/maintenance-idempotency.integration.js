@@ -242,7 +242,7 @@ beforeAll(async () => {
   logger.silent = true;
   initializeModels();
   await sequelize.authenticate();
-  // Schema was cloned by the runner. Never sync/alter/force the source database.
+  // The runner reconstructs this isolated schema exclusively through migrations.
 });
 
 afterEach(() => {

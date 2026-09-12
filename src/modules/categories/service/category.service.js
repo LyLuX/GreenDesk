@@ -1,4 +1,4 @@
-import CategoryRepository from '../../../core/database/repositories/category.repository.js';
+import CategoryRepository from '../repository/category.repository.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';

@@ -1,0 +1,103 @@
+name: GreenDesk CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validation:
+    name: Validation GreenDesk
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Installer Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Installer les dépendances backend
+        run: npm ci
+
+      - name: Installer les dépendances frontend
+        run: npm ci --prefix frontend
+
+      - name: Vérifier le lint
+        run: npm run lint
+
+      - name: Vérifier le formatage
+        run: npm run format:check
+
+      - name: Tester le backend et les versions
+        run: npm test
+        env:
+          NODE_ENV: test
+
+      - name: Vérifier OpenAPI
+        run: npm run docs:check
+        env:
+          NODE_ENV: test
+
+      - name: Tester le frontend
+        run: npm test --prefix frontend -- --maxWorkers=2
+
+      - name: Compiler le frontend
+        run: npm run build --prefix frontend
+
+  mysql:
+    name: Validation MySQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: greendesk-ci-disposable
+          MYSQL_ROOT_HOST: '%'
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      NODE_ENV: test
+      DATABASE_HOST: 127.0.0.1
+      DATABASE_PORT: '3306'
+      DATABASE_USER: root
+      DATABASE_PASSWORD: greendesk-ci-disposable
+      DATABASE_LOGGING: 'false'
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Installer Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Installer les dépendances backend
+        run: npm ci
+      - name: Vérifier les migrations et les transactions MySQL
+        run: npm run test:integration

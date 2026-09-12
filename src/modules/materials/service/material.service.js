@@ -3,7 +3,7 @@ import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';
 import ManufacturerRepository from '../../manufacturers/repository/manufacturer.repository.js';
-import CategoryRepository from '../../../core/database/repositories/category.repository.js';
+import CategoryRepository from '../../categories/repository/category.repository.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 
 const relationIds = (events, keys) => [

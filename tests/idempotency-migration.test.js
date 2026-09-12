@@ -60,10 +60,7 @@ describe('API idempotency migration', () => {
 
     expect(queryInterface.createTable).not.toHaveBeenCalled();
     expect(queryInterface.addIndex).not.toHaveBeenCalled();
-    expect(queryInterface.removeColumn).toHaveBeenCalledWith(
-      'api_idempotency_keys',
-      'deleted_at',
-    );
+    expect(queryInterface.removeColumn).toHaveBeenCalledWith('api_idempotency_keys', 'deleted_at');
   });
 
   it('drops the idempotency store on rollback', async () => {

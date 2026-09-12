@@ -2,7 +2,7 @@ import { jest } from '@jest/globals';
 import { Op } from 'sequelize';
 import { validationResult } from 'express-validator';
 
-import CategoryRepository from '../src/core/database/repositories/category.repository.js';
+import CategoryRepository from '../src/modules/categories/repository/category.repository.js';
 import Category from '../src/modules/categories/model/category.model.js';
 import CompanyRepository from '../src/modules/companies/repository/company.repository.js';
 import Company from '../src/modules/companies/model/company.model.js';

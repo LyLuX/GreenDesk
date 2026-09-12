@@ -265,11 +265,11 @@ function RelationsGraphPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeCompany?.uuid]);
+  }, []);
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [load, activeCompany?.uuid]);
 
   const toggleNode = useCallback((id) => {
     setFocusId(id);

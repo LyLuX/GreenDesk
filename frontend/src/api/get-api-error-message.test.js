@@ -3,6 +3,41 @@ import { describe, expect, it } from 'vitest';
 import getApiErrorMessage from './get-api-error-message.js';
 
 describe('getApiErrorMessage', () => {
+  it.each([
+    [404, 'Material not found', 'Matériel introuvable.'],
+    [409, 'Email is already in use', 'Cette adresse email est déjà utilisée.'],
+    [409, 'Category name is already in use', 'Ce nom de catégorie est déjà utilisé.'],
+    [403, 'Insufficient permissions', 'Vous n’avez pas l’autorisation pour cette action.'],
+    [500, 'Internal server error', 'Une erreur serveur est survenue.'],
+  ])(
+    'displays the legacy API error %s / %s in French without changing the response',
+    (status, message, expected) => {
+      const error = { response: { status, data: { error: { message } } } };
+      expect(getApiErrorMessage(error)).toBe(expected);
+      expect(error.response.data.error.message).toBe(message);
+    },
+  );
+
+  it('preserves precise French errors and unknown messages', () => {
+    for (const message of [
+      'Une pièce associée au plan est introuvable.',
+      'Erreur métier spécifique',
+      'toString',
+    ]) {
+      expect(getApiErrorMessage({ response: { status: 409, data: { error: { message } } } })).toBe(
+        message,
+      );
+    }
+  });
+
+  it('provides a French fallback for validation failures without details', () => {
+    expect(
+      getApiErrorMessage({
+        response: { status: 400, data: { error: { message: 'Validation failed' } } },
+      }),
+    ).toBe('Les données saisies sont invalides.');
+  });
+
   it('translates invalid login credentials into French', () => {
     const error = {
       response: {

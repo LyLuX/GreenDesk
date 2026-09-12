@@ -125,7 +125,7 @@ function MaintenanceSheet({ sheet, printable = false }) {
         <h3>Compte rendu de l’intervention</h3>
         <div className="maintenance-sheet-completion-grid">
           <p>
-            Date d'intervention : <span />
+            Date d&apos;intervention : <span />
           </p>
           <p>
             Technicien : <span />

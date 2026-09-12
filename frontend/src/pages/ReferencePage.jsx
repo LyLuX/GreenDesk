@@ -19,6 +19,8 @@ import useNotification from '../notifications/useNotification.js';
 import normalizeFormValues from '../utils/normalize-form-values.js';
 import { paginateItems } from '../utils/pagination.js';
 
+const EMPTY_FILTERS = [];
+
 /** Reusable CRUD screen for reference data and the material catalogue. */
 export default function ReferencePage({
   title,
@@ -31,7 +33,7 @@ export default function ReferencePage({
   deletedUpdatePermission,
   statusPermission = updatePermission,
   statusAction = false,
-  filters = [],
+  filters = EMPTY_FILTERS,
   pagination = true,
   detailPath,
   fileField,
@@ -127,7 +129,7 @@ export default function ReferencePage({
         if (!signal?.aborted) setIsLoading(false);
       }
     },
-    [api, debouncedSearch, direction, filterValues, limit, page, pagination, sort],
+    [api, debouncedSearch, direction, filters, filterValues, limit, page, pagination, sort],
   );
 
   useEffect(() => {

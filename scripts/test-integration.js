@@ -12,6 +12,27 @@ const projectRoot = fileURLToPath(new URL('../', import.meta.url));
 let connection;
 let created = false;
 
+async function runNode(args) {
+  const code = await new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, args, {
+      cwd: projectRoot,
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        NODE_ENV: 'test',
+        TEST_DATABASE_NAME: database,
+        DATABASE_NAME: database,
+      },
+    });
+    child.once('error', reject);
+    child.once('exit', (status) => resolve(status ?? 1));
+  });
+  if (code !== 0) throw new Error(`Échec du contrôle : ${args.join(' ')}`);
+}
+
+const migrate = () =>
+  runNode(['node_modules/sequelize-cli/lib/sequelize', 'db:migrate', '--env', 'test']);
+
 try {
   connection = await mysql.createConnection({
     host: env.database.host,
@@ -22,29 +43,45 @@ try {
   await connection.query(`CREATE DATABASE \`${database}\` CHARACTER SET utf8mb4`);
   created = true;
   process.stdout.write(`Base MySQL de test isolée : ${database}\n`);
-  // Clone DDL only, including the installed migrations' indexes and foreign keys. No business data.
-  const [tables] = await connection.query(
-    `SHOW FULL TABLES FROM ${connection.escapeId(env.database.name)} WHERE Table_type = 'BASE TABLE'`,
+  await migrate();
+  await runNode(['scripts/check-schema.js']);
+
+  // Emulate an existing database with the complete old history but without this patch.
+  // All DDL stays on the random database created above, never the configured application DB.
+  await connection.query(`USE \`${database}\``);
+  await connection.query(
+    "INSERT INTO roles (uuid, name, description, created_at, updated_at) VALUES (UUID(), 'migration-survivor', 'Donnée à préserver', NOW(), NOW())",
   );
-  if (!tables.length) throw new Error('La base source ne contient aucune table.');
-  await connection.changeUser({ database });
-  await connection.query('SET FOREIGN_KEY_CHECKS = 0');
-  try {
-    for (const table of tables) {
-      const tableName = Object.values(table)[0];
-      const [definition] = await connection.query(
-        `SHOW CREATE TABLE ${connection.escapeId(env.database.name)}.${connection.escapeId(tableName)}`,
-      );
-      const ddl = definition[0]['Create Table'];
-      // Never allow a cloned foreign key to target an external schema.
-      if (/REFERENCES\s+`[^`]+`\s*\./i.test(ddl)) {
-        throw new Error(`Référence inter-base dans ${tableName} : copie refusée.`);
-      }
-      await connection.query(ddl);
-    }
-  } finally {
-    await connection.query('SET FOREIGN_KEY_CHECKS = 1');
+  const [before] = await connection.query('SELECT * FROM roles ORDER BY id');
+  const [references] = await connection.execute(
+    'SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME = ?',
+    [database, 'email_verification_tokens', 'user_id', 'users'],
+  );
+  for (const reference of references) {
+    await connection.query('ALTER TABLE email_verification_tokens DROP FOREIGN KEY ??', [
+      reference.CONSTRAINT_NAME,
+    ]);
   }
+  for (const table of [
+    'revoked_access_tokens',
+    'maintenance_interventions',
+    'inventory_stock_movements',
+  ]) {
+    await connection.query(`ALTER TABLE \`${table}\` DROP COLUMN deleted_at`);
+  }
+  await connection.execute('DELETE FROM SequelizeMeta WHERE name IN (?, ?)', [
+    '20260723_initial_schema.js',
+    '20260912_complete_migrated_schema.js',
+  ]);
+  await migrate();
+  await runNode(['scripts/check-schema.js']);
+  const [after] = await connection.query('SELECT * FROM roles ORDER BY id');
+  if (JSON.stringify(before) !== JSON.stringify(after))
+    throw new Error('La mise à niveau a modifié les données existantes.');
+  await migrate(); // A repeated deployment must be a no-op.
+  process.stdout.write(
+    'Reconstruction, adoption et mise à niveau SQL validées ; données conservées.\n',
+  );
   process.exitCode = await new Promise((resolve, reject) => {
     const child = spawn(
       process.execPath,

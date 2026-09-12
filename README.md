@@ -8,7 +8,7 @@ Sa finalité est de réunir dans un même outil les informations souvent dispers
 papier, tableaux et documents : matériels en service, caractéristiques, photos, entretiens à
 prévoir, pièces nécessaires, état des stocks, coûts et historique des actions réalisées.
 
-La version actuelle de GreenDesk est **9.1.2**.
+La version actuelle de GreenDesk est **9.1.3**.
 
 ## Ce que permet GreenDesk
 
@@ -85,6 +85,9 @@ plans et pièces.
 
 ## Fonctionnement technique
 
+Les [conventions de développement](docs/conventions.md) précisent l’organisation des modules,
+les responsabilités des services, les réponses publiques et la présentation des erreurs.
+
 GreenDesk est composé de deux applications :
 
 - une interface monopage en **React 19**, construite avec **Vite**, **Bootstrap** et React Flow ;
@@ -139,6 +142,16 @@ npm run db:migrate
 Le fichier `.env.example` documente la configuration disponible. Pour commencer, il suffit
 d’adapter la connexion MySQL, l’origine du frontend et le secret de session. La configuration SMTP
 est facultative hors des parcours qui envoient un email.
+
+Le démarrage vérifie l’historique des migrations et ne modifie jamais le schéma.
+Après une mise à jour, exécuter `npm run db:migrate:status`, `npm run db:migrate`, puis
+`npm run db:schema:check` avant de relancer le backend. Le dernier contrôle vérifie
+les colonnes, types, nullabilité, valeurs par défaut déclarées, index et références attendus.
+Le socle initial adopte les bases déjà migrées sans recréer leurs tables. Une base non vide
+sans historique est refusée et nécessite une reprise manuelle après sauvegarde.
+Les deux migrations de régularisation ne sont pas annulables automatiquement ; conserver
+une sauvegarde avant leur application. Si une création initiale échoue partiellement,
+recréer uniquement la base neuve jetable avant de réessayer, jamais une base contenant des données.
 
 Des données locales de démonstration peuvent être ajoutées en environnement de développement :
 
@@ -225,6 +238,22 @@ l’écriture du nouvel événement échoue. Aucun seuil de stock « inhabituel 
 
 ## Vérification du projet
 
+Le workflow [GreenDesk CI](.github/workflows/ci.yml) exécute automatiquement les contrôles
+sur chaque push sur `main` et chaque pull request vers `main`. Il peut aussi être lancé
+manuellement depuis l’onglet Actions du dépôt.
+
+Il utilise Node.js 22, installe les deux projets avec `npm ci`, puis lance le lint, les tests
+backend (dont la cohérence des versions), le contrôle OpenAPI, les tests frontend et le build
+de production. Un second job `Validation MySQL` lance les tests SQL sur un service MySQL 8.4
+éphémère. Aucun `.env` local ni secret applicatif n’est nécessaire.
+
+Le lint contrôle les fichiers JavaScript et JSX, les règles React et les dépendances des hooks.
+Les tests frontend disposent des environnements Vitest et Node ; le code applicatif utilise
+les globals du navigateur. Les PropTypes ne sont pas imposées. Le workflow vérifie également
+le formatage Prettier avec `npm run format:check` ; `npm run format` corrige les écarts localement.
+Les dépendances, la couverture et le build frontend sont exclus du formatage. Pour rendre les fusions bloquantes, configurer une protection de `main` exigeant une
+pull request et les contrôles `Validation GreenDesk` et `Validation MySQL` après sa première exécution réussie.
+
 Depuis la racine :
 
 ```powershell
@@ -240,10 +269,12 @@ Les tests adverses sur MySQL réel se lancent séparément :
 npm run test:integration
 ```
 
-Ils utilisent la connexion `DATABASE_*` du `.env` et nécessitent une base GreenDesk à jour
-ainsi que les droits de créer et supprimer une base temporaire sur ce serveur MySQL.
-Seule la structure des tables (index et contraintes compris) est copiée dans une base
-`greendesk_adversarial_<identifiant aléatoire>` ; aucune donnée métier n’est copiée ou modifiée.
+Ils utilisent la connexion `DATABASE_*` du `.env` et nécessitent les droits de créer et
+supprimer une base temporaire sur ce serveur MySQL. Aucune base GreenDesk préexistante
+n’est nécessaire : les migrations reconstruisent entièrement une base
+`greendesk_adversarial_<identifiant aléatoire>`. Le schéma est comparé aux modèles, puis
+une mise à niveau avec historique existant et données témoins est vérifiée.
+Aucune donnée de la base applicative n’est copiée ou modifiée.
 Les données de test sont créées dans cette base isolée, supprimée à la fin même en cas d’échec
 des tests. En cas d’arrêt forcé du processus, son nom affiché permet de repérer un éventuel
 résidu à supprimer. Un défaut de connexion ou de droits fait échouer la commande, sans ignorer

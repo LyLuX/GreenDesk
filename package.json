@@ -1,6 +1,6 @@
 {
   "name": "greendesk-backend",
-  "version": "9.1.2",
+  "version": "9.1.3",
   "private": true,
   "description": "Backend API foundation for GreenDesk.",
   "type": "module",
@@ -21,6 +21,7 @@
     "seed": "node src/seeders/development.js",
     "db:create": "sequelize-cli db:create",
     "db:migrate": "sequelize-cli db:migrate",
+    "db:schema:check": "node scripts/check-schema.js",
     "db:migrate:status": "sequelize-cli db:migrate:status",
     "db:migrate:undo": "sequelize-cli db:migrate:undo",
     "db:seed": "sequelize-cli db:seed:all",
@@ -51,6 +52,8 @@
   "devDependencies": {
     "@apidevtools/swagger-parser": "^12.1.0",
     "eslint": "^9.34.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^16.3.0",
     "jest": "^30.1.3",
     "prettier": "^3.6.2",

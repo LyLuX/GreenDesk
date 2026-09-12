@@ -176,7 +176,9 @@ a:hover {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 120ms ease, visibility 0s linear 120ms;
+  transition:
+    opacity 120ms ease,
+    visibility 0s linear 120ms;
 }
 
 .company-switcher-options[data-open='true'] {

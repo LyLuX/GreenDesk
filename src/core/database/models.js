@@ -23,7 +23,7 @@ import IdempotencyKey from '../idempotency/idempotency-key.model.js';
 let initialized = false;
 
 /**
- * Registers relationships once before Sequelize synchronizes the schema.
+ * Registers relationships once before application queries run.
  *
  * @returns {void}
  */

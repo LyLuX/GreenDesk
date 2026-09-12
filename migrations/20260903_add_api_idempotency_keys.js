@@ -37,14 +37,10 @@ module.exports = {
     const columns = await queryInterface.describeTable('api_idempotency_keys');
     const indexes = await queryInterface.showIndex('api_idempotency_keys');
     if (!indexes.some(({ name }) => name === 'uq_api_idempotency_company_user_key_hash')) {
-      await queryInterface.addIndex(
-        'api_idempotency_keys',
-        ['company_id', 'user_id', 'key_hash'],
-        {
-          name: 'uq_api_idempotency_company_user_key_hash',
-          unique: true,
-        },
-      );
+      await queryInterface.addIndex('api_idempotency_keys', ['company_id', 'user_id', 'key_hash'], {
+        name: 'uq_api_idempotency_company_user_key_hash',
+        unique: true,
+      });
     }
     if (columns.deleted_at) {
       await queryInterface.removeColumn('api_idempotency_keys', 'deleted_at');
