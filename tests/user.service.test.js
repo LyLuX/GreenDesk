@@ -52,14 +52,12 @@ describe('UserService', () => {
         name: 'EI BOURNAZEL Paul',
         active: true,
       }),
-      findByUuid: jest
-        .fn()
-        .mockResolvedValue({
-          id: 1,
-          uuid: 'a2b3c4d5-6e7f-4890-ab12-34567890cdef',
-          name: 'EI BOURNAZEL Paul',
-          active: true,
-        }),
+      findByUuid: jest.fn().mockResolvedValue({
+        id: 1,
+        uuid: 'a2b3c4d5-6e7f-4890-ab12-34567890cdef',
+        name: 'EI BOURNAZEL Paul',
+        active: true,
+      }),
       findByUuids: jest.fn(),
     };
     return {
