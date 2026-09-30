@@ -337,6 +337,7 @@ describe('MaintenancePage', () => {
       expect(mocks.getSheets).toHaveBeenCalledWith(
         {
           status: 'dueToday',
+          horizonDays: 0,
           includeOverdue: false,
           includeWearBased: false,
         },
@@ -557,7 +558,21 @@ describe('MaintenancePage', () => {
     expect(within(dialog).getByLabelText('Quantité')).toHaveValue(3);
   });
 
-  it('creates a plan with its operation and exact part instead of a free title', async () => {
+  it.each([
+    ['pièce', '1', 3],
+    [' Pièces ', '1', 3],
+    ['pièce(s)', '1', 3],
+    ['litre', '0.01', 0.6],
+    ['mètre', '0.01', 0.6],
+  ])('creates a plan with quantities adapted to %s', async (unit, step, amount) => {
+    mocks.listParts.mockResolvedValue({
+      data: {
+        data: {
+          items: [{ uuid: 'part-uuid', name: 'Bougie', reference: 'BPMR8Y', unit }],
+          pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
+        },
+      },
+    });
     const user = userEvent.setup();
     renderPage();
 
@@ -569,9 +584,9 @@ describe('MaintenancePage', () => {
     await user.type(within(dialog).getByLabelText('Dernier entretien'), '2026-07-01');
     await user.click(within(dialog).getByRole('checkbox', { name: 'Bougie — BPMR8Y' }));
     const quantity = within(dialog).getByLabelText('Quantité');
-    expect(quantity).toHaveAttribute('step', '0.01');
+    expect(quantity).toHaveAttribute('step', step);
     await user.clear(quantity);
-    await user.type(quantity, '0.6');
+    await user.type(quantity, String(amount));
     await user.click(within(dialog).getByRole('button', { name: 'Enregistrer' }));
 
     await waitFor(() =>
@@ -581,7 +596,7 @@ describe('MaintenancePage', () => {
           operationUuid: 'operation-uuid',
           intervalDays: 365,
           lastMaintenanceDate: '2026-07-01',
-          parts: [{ partUuid: 'part-uuid', quantity: 0.6 }],
+          parts: [{ partUuid: 'part-uuid', quantity: amount }],
         }),
       ),
     );

@@ -1,12 +1,16 @@
 import Category from '../model/category.model.js';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 import { Op } from 'sequelize';
-import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
+import CompanyScopedRepository from '../../../core/database/repositories/company-scoped.repository.js';
 import { normalizePagination } from '../../../core/utils/pagination.js';
-import { companyValues, companyWhere } from '../../../core/company/company-context.js';
+import {
+  requireCompanyInstance,
+  companyValues,
+  companyWhere,
+} from '../../../core/company/company-context.js';
 
 /** Sequelize persistence operations for category records. */
-export default class CategoryRepository extends TransactionalRepository {
+export default class CategoryRepository extends CompanyScopedRepository {
   async findAll({ search, active, page, limit } = {}) {
     const pagination = normalizePagination({ page, limit });
     const where = search ? { name: { [Op.like]: `%${search}%` } } : {};
@@ -37,12 +41,15 @@ export default class CategoryRepository extends TransactionalRepository {
     return Category.create(companyValues(values), { transaction });
   }
   async update(category, values, { transaction } = {}) {
-    return category.update(values, { transaction });
+    requireCompanyInstance(category);
+    return category.update(companyValues(values), { transaction });
   }
   async delete(category, { transaction } = {}) {
+    requireCompanyInstance(category);
     return category.destroy({ transaction });
   }
   async restore(category, { transaction } = {}) {
+    requireCompanyInstance(category);
     return category.restore({ transaction });
   }
 }

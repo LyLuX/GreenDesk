@@ -1,3 +1,4 @@
+import { companyTest as it } from './helpers/company-test.js';
 import { jest } from '@jest/globals';
 import { Op } from 'sequelize';
 
@@ -19,7 +20,7 @@ describe('MaterialRepository maintenance cascades', () => {
 
     expect(findAll).toHaveBeenCalledWith({
       attributes: ['uuid', 'name', 'active'],
-      where: { active: true },
+      where: { active: true, companyId: 1 },
       order: [['name', 'ASC']],
       limit: 5,
       offset: 0,
@@ -75,7 +76,7 @@ describe('MaterialRepository maintenance cascades', () => {
     expect(update).toHaveBeenCalledWith(
       { active: false, updatedBy: 7, updatedAt: deactivatedAt },
       expect.objectContaining({
-        where: { materialId: 5, active: true },
+        where: { materialId: 5, active: true, companyId: 1 },
         silent: true,
         transaction: { id: 'transaction' },
       }),

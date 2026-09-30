@@ -18,13 +18,13 @@ describe('PermissionService audit', () => {
       update: jest.fn(async (item, values) => Object.assign(item, values)),
       withTransaction: jest.fn((callback) => callback(transaction)),
     };
-    const auditService = { record: jest.fn() };
+    const auditService = { recordGlobal: jest.fn() };
     const userRepository = { incrementAuthorizationVersionsForPermission: jest.fn() };
     const service = new PermissionService(repository, auditService, userRepository);
 
     await service.update(permission.uuid, { description: 'Après' }, 42);
 
-    expect(auditService.record).toHaveBeenCalledWith(
+    expect(auditService.recordGlobal).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 42,
         action: 'UPDATE',
@@ -53,7 +53,7 @@ describe('PermissionService audit', () => {
       withTransaction: jest.fn((callback) => callback(transaction)),
     };
     const userRepository = { incrementAuthorizationVersionsForPermission: jest.fn() };
-    const service = new PermissionService(repository, { record: jest.fn() }, userRepository);
+    const service = new PermissionService(repository, { recordGlobal: jest.fn() }, userRepository);
 
     await service.update(permission.uuid, { name: 'materials.catalog.read' }, 42);
 
@@ -75,7 +75,7 @@ describe('PermissionService audit', () => {
       withTransaction: jest.fn((callback) => callback(transaction)),
     };
     const userRepository = { incrementAuthorizationVersionsForPermission: jest.fn() };
-    const service = new PermissionService(repository, { record: jest.fn() }, userRepository);
+    const service = new PermissionService(repository, { recordGlobal: jest.fn() }, userRepository);
 
     await service.remove(permission.uuid, 42);
 
@@ -105,7 +105,7 @@ describe('PermissionService audit', () => {
       withTransaction: jest.fn((callback) => callback(transaction)),
     };
     const userRepository = { incrementAuthorizationVersionsForPermission: jest.fn() };
-    const service = new PermissionService(repository, { record: jest.fn() }, userRepository);
+    const service = new PermissionService(repository, { recordGlobal: jest.fn() }, userRepository);
 
     await service.create({ name: 'materials.read', description: 'Consulter les matériels.' }, 42);
 
@@ -116,7 +116,7 @@ describe('PermissionService audit', () => {
 
   it('rejects manual creation in the role visibility namespace', async () => {
     const repository = { withTransaction: jest.fn() };
-    const service = new PermissionService(repository, { record: jest.fn() });
+    const service = new PermissionService(repository, { recordGlobal: jest.fn() });
 
     await expect(
       service.create({ name: 'users.roles.TECHNICIEN.read', description: 'Interdite' }),
@@ -133,7 +133,7 @@ describe('PermissionService audit', () => {
       findByUuid: jest.fn().mockResolvedValue(permission),
       withTransaction: jest.fn(),
     };
-    const service = new PermissionService(repository, { record: jest.fn() });
+    const service = new PermissionService(repository, { recordGlobal: jest.fn() });
 
     await expect(
       service.update(permission.uuid, { name: 'users.roles.TECHNICIEN.read' }),
@@ -152,7 +152,7 @@ describe('PermissionService audit', () => {
         findByUuid: jest.fn().mockResolvedValue(permission),
         withTransaction: jest.fn(),
       };
-      const service = new PermissionService(repository, { record: jest.fn() });
+      const service = new PermissionService(repository, { recordGlobal: jest.fn() });
 
       const promise =
         operation === 'update'

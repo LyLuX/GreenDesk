@@ -397,6 +397,12 @@ const maintenanceHistory = {
   type: 'object',
   required: ['uuid', 'performedAt', 'executionType'],
   properties: {
+    task: {
+      type: 'object',
+      description: 'Plan associé, présent dans l’historique agrégé d’un matériel.',
+      required: ['uuid', 'title'],
+      properties: { uuid, title: writeText(150) },
+    },
     uuid,
     performedAt: date,
     comment: nullableString,
@@ -1037,7 +1043,11 @@ export const openApiSchemas = {
       supplierUuid: { ...uuid, nullable: true },
       reference: writeText(150),
       supplierReference: { ...nullableString, maxLength: 150 },
-      unit: { ...writeText(50), default: 'pièce' },
+      unit: {
+        ...writeText(50),
+        default: 'pièce',
+        description: 'Unité libre, non exclusivement numérique (ex. pièce, litre, mètre).',
+      },
       unitPrice: {
         type: 'number',
         format: 'double',
@@ -1062,7 +1072,10 @@ export const openApiSchemas = {
       supplierUuid: { ...uuid, nullable: true },
       reference: writeText(150),
       supplierReference: { ...nullableString, maxLength: 150 },
-      unit: writeText(50),
+      unit: {
+        ...writeText(50),
+        description: 'Unité libre, non exclusivement numérique (ex. pièce, litre, mètre).',
+      },
       active: { type: 'boolean', description: 'Nécessite `maintenance.parts.status.update`.' },
     },
   },
@@ -1323,6 +1336,14 @@ export const openApiSchemas = {
     type: 'object',
     required: ['status', 'includeOverdue', 'includeWearBased', 'items'],
     properties: {
+      horizonDays: {
+        type: 'integer',
+        minimum: 0,
+        maximum: 365,
+        nullable: true,
+        description:
+          'Période demandée ; null si aucun horizon n’est fourni. Le statut exact reste prioritaire.',
+      },
       status: {
         type: 'string',
         enum: MAINTENANCE_DEADLINE_STATUSES,
@@ -1632,6 +1653,14 @@ export const openApiSchemas = {
   SupplierResponse: success(reference('Supplier')),
   SupplierListResponse: success(reference('SupplierPage')),
   MaintenancePartResponse: success(reference('MaintenancePart')),
+  MaintenancePartSuggestionsResponse: success({
+    type: 'object',
+    required: ['name', 'unit'],
+    properties: {
+      name: { type: 'array', items: { type: 'string' }, uniqueItems: true },
+      unit: { type: 'array', items: { type: 'string' }, uniqueItems: true },
+    },
+  }),
   MaintenancePartListResponse: success(reference('MaintenancePartPage')),
   StockMovementListResponse: success(reference('StockMovementPage')),
   MaintenancePartPriceHistoryListResponse: success(reference('MaintenancePartPriceHistoryPage')),
@@ -1740,7 +1769,7 @@ export const openApiParameters = {
     in: 'header',
     required: false,
     description:
-      'Société active. Obligatoire pour sélectionner une société autre que la première société accessible.',
+      'Société active. Obligatoire pour sélectionner une société autre que la première société accessible. Les accès métier exigent un contexte société valide ; son absence ou son invalidité entraîne un refus 403. Les identifiants société du corps ne remplacent jamais cette portée.',
     schema: uuid,
   },
   Uuid: {

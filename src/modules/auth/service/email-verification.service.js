@@ -3,7 +3,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import env from '../../../config/env.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
-import { getCompanyScope } from '../../../core/company/company-context.js';
+import { requireCompanyScope } from '../../../core/company/company-context.js';
 import logger from '../../../core/logger/logger.js';
 import { mailService as defaultMailService } from '../../../core/mail/mail.service.js';
 import { emailVerificationTemplate } from '../../../core/mail/templates/email-verification.template.js';
@@ -36,7 +36,10 @@ export default class EmailVerificationService {
     this.logger = serviceLogger;
   }
 
-  async issue(user, { actorUserId = null, suppressDeliveryErrors = false } = {}) {
+  async issue(
+    user,
+    { actorUserId = null, suppressDeliveryErrors = false, contextualAudit = false } = {},
+  ) {
     if (!user || user.emailVerifiedAt) return { sent: false };
     const now = new Date();
     const latest = await this.repository.findLatestForUser(user.id);
@@ -101,7 +104,7 @@ export default class EmailVerificationService {
       });
     });
     await Promise.resolve(
-      this.auditService.record({
+      this.auditService[contextualAudit ? 'record' : 'recordAttributed']({
         userId: actorUserId,
         companyId: user.companies?.[0]?.id,
         action: 'USER_EMAIL_VERIFICATION_SENT',
@@ -135,9 +138,9 @@ export default class EmailVerificationService {
   }
 
   async resendByUserUuid(uuid, actorUserId, actorClaims = null) {
-    const companyScope = getCompanyScope();
+    const companyScope = requireCompanyScope();
     const user = await this.userRepository.findByUuid(uuid, {
-      ...(!actorClaims?.permissions?.includes(companyPermissions.accessAll) && companyScope
+      ...(!actorClaims?.permissions?.includes(companyPermissions.accessAll)
         ? { companyId: companyScope.companyId }
         : {}),
     });
@@ -145,7 +148,7 @@ export default class EmailVerificationService {
     if (user.emailVerifiedAt) {
       throw new AppError('Email is already verified', HTTP_STATUS.CONFLICT);
     }
-    const delivery = await this.issue(user, { actorUserId });
+    const delivery = await this.issue(user, { actorUserId, contextualAudit: true });
     if (delivery.reason === 'cooldown') {
       throw new AppError(
         'Email verification resend cooldown active',
@@ -177,7 +180,7 @@ export default class EmailVerificationService {
       await this.repository.invalidateForUser(user.id, now, { transaction });
       if (!user.emailVerifiedAt) {
         await this.userRepository.update(user, { emailVerifiedAt: now }, { transaction });
-        await this.auditService.record(
+        await this.auditService.recordAttributed(
           {
             userId: user.id,
             companyId: user.companies?.[0]?.id,

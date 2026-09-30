@@ -263,6 +263,26 @@
   background: color-mix(in srgb, var(--brand-sun) 10%, var(--bs-body-bg));
 }
 
+.maintenance-history-table tr.maintenance-history-without-parts > td {
+  --bs-table-bg: var(--maintenance-exception-background);
+}
+
+.maintenance-history-table tr.maintenance-history-without-parts > td:first-child {
+  border-left: 4px solid var(--critical-color);
+}
+
+.maintenance-history-table tr.maintenance-history-partial-parts > td {
+  --bs-table-bg: color-mix(in srgb, var(--brand-sun) 10%, var(--bs-body-bg));
+}
+
+.maintenance-history-table tr.maintenance-history-partial-parts > td:first-child {
+  border-left: 4px solid var(--brand-sun);
+}
+
+.maintenance-history-table td {
+  overflow-wrap: anywhere;
+}
+
 .maintenance-execution-part {
   padding: 0.75rem 0.75rem 0.75rem 2.25rem;
   border: 1px solid var(--border);

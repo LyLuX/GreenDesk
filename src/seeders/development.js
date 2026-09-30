@@ -99,8 +99,8 @@ export async function seedDevelopmentData(credentials, dependencies = {}) {
   };
   const admin =
     existingAdmin && !existingAdmin.deletedAt
-      ? await userService.update(existingAdmin.uuid, adminValues)
-      : await userService.create(adminValues);
+      ? await userService.updateIdentity(existingAdmin.uuid, adminValues)
+      : await userService.createIdentity(adminValues);
   await userRepository.setRoles(admin, [adminRole]);
   await userRepository.setCompanies(admin, []);
 }

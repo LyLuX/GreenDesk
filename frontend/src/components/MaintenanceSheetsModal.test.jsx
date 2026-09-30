@@ -118,7 +118,7 @@ describe('MaintenanceSheetsModal', () => {
     ).toBeVisible();
   });
 
-  it('uses the same deadline controls as maintenance filtering', async () => {
+  it('preserves the page status until the shared print horizon is changed', async () => {
     const user = userEvent.setup();
     render(
       <MaintenanceSheetsModal
@@ -126,6 +126,7 @@ describe('MaintenanceSheetsModal', () => {
         onClose={vi.fn()}
         initialFilters={{
           status: 'upcoming',
+          horizonDays: 30,
           includeOverdue: false,
           includeWearBased: false,
         }}
@@ -136,6 +137,7 @@ describe('MaintenanceSheetsModal', () => {
       expect(mocks.getSheets).toHaveBeenCalledWith(
         {
           status: 'upcoming',
+          horizonDays: 30,
           includeOverdue: false,
           includeWearBased: false,
         },
@@ -144,18 +146,20 @@ describe('MaintenanceSheetsModal', () => {
     );
 
     const dialog = screen.getByRole('dialog', { name: 'Fiches de maintenance' });
-    expect(within(dialog).getByLabelText('Échéance')).toHaveValue('upcoming');
-    expect(within(dialog).getByRole('option', { name: 'À faire aujourd’hui' })).toHaveValue(
-      'dueToday',
-    );
-    expect(within(dialog).getByRole('option', { name: 'À jour' })).toHaveValue('upToDate');
-    await user.selectOptions(within(dialog).getByLabelText('Échéance'), 'dueToday');
+    expect(within(dialog).getByLabelText('Échéance')).toHaveValue('30');
+    expect(
+      within(dialog)
+        .getAllByRole('option')
+        .map((option) => option.value),
+    ).toEqual(['0', '30', '60', '90', '365']);
+    await user.selectOptions(within(dialog).getByLabelText('Échéance'), '60');
     await user.click(within(dialog).getByLabelText('Inclure les plans selon usure'));
 
     await waitFor(() =>
       expect(mocks.getSheets).toHaveBeenLastCalledWith(
         {
-          status: 'dueToday',
+          status: undefined,
+          horizonDays: 60,
           includeOverdue: false,
           includeWearBased: true,
         },

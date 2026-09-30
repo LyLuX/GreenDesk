@@ -401,6 +401,12 @@ export default class MaintenanceService {
     });
     return { task: this.toPublic(result.task), history: this.toHistory(result.history) };
   }
+  async getMaterialHistory(query) {
+    const result = await this.repository.findMaterialHistory(query);
+    return paginatedResult(result, normalizePagination(query), (history) =>
+      this.toHistory(history),
+    );
+  }
   async getHistory(uuid, query = {}) {
     const task = await this.getEntityByUuid(uuid);
     const result = await this.repository.findHistory(task.id, query);
@@ -516,7 +522,12 @@ export default class MaintenanceService {
       this.toIntervention(intervention),
     );
   }
-  async getMaintenanceSheets({ includeOverdue = false, includeWearBased = false, status } = {}) {
+  async getMaintenanceSheets({
+    horizonDays,
+    includeOverdue = false,
+    includeWearBased = false,
+    status,
+  } = {}) {
     const normalizedStatus = MAINTENANCE_DEADLINE_STATUSES.includes(status) ? status : undefined;
     const normalizedIncludeOverdue = normalizeBooleanFilter(includeOverdue) ?? false;
     const includeWearBasedPlans = normalizeBooleanFilter(includeWearBased) ?? false;
@@ -527,11 +538,22 @@ export default class MaintenanceService {
           ...(includeWearBasedPlans && normalizedStatus !== 'wearBased' ? ['wearBased'] : []),
         ]
       : [];
-    const tasks = statuses.length
-      ? await this.repository.findForMaintenanceSheets({ statuses })
-      : await this.repository.findForMaintenanceSheets();
+    const normalizedHorizon =
+      horizonDays === undefined ? null : Math.min(Math.max(Number(horizonDays) || 0, 0), 365);
+    const today = todayDateOnly();
+    const tasks =
+      !normalizedStatus && normalizedHorizon !== null
+        ? await this.repository.findForMaintenanceSheets({
+            from: normalizedIncludeOverdue ? undefined : today,
+            through: addDaysDateOnly(today, normalizedHorizon),
+            includeWearBased: includeWearBasedPlans,
+          })
+        : statuses.length
+          ? await this.repository.findForMaintenanceSheets({ statuses })
+          : await this.repository.findForMaintenanceSheets();
     return {
       status: normalizedStatus ?? null,
+      horizonDays: normalizedHorizon,
       includeOverdue: normalizedIncludeOverdue,
       includeWearBased: includeWearBasedPlans,
       items: tasks.map((task) => this.toMaintenanceSheet(task)),

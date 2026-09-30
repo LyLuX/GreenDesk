@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   history: [],
   listMaintenance: vi.fn(),
   listInterventions: vi.fn(),
+  listMaterialMaintenanceHistory: vi.fn(),
   materialFiles: [],
   uploadPhoto: vi.fn(),
 }));
@@ -29,6 +30,7 @@ vi.mock('../api/material-files.api.js', () => ({
 vi.mock('../api/maintenance.api.js', () => ({
   listMaintenance: mocks.listMaintenance,
   listMaintenanceInterventions: mocks.listInterventions,
+  listMaterialMaintenanceHistory: mocks.listMaterialMaintenanceHistory,
 }));
 vi.mock('../components/ManufacturerLogo.jsx', () => ({
   default: ({ manufacturer }) => <img alt={`Logo ${manufacturer.name}`} />,
@@ -54,6 +56,7 @@ describe('MaterialDetailPage', () => {
     mocks.hasPermission.mockReturnValue(false);
     mocks.listMaintenance.mockResolvedValue({ data: { data: { items: [] } } });
     mocks.listInterventions.mockResolvedValue({ data: { data: { items: [] } } });
+    mocks.listMaterialMaintenanceHistory.mockResolvedValue({ data: { data: { items: [] } } });
     mocks.getReference.mockImplementation((path) =>
       Promise.resolve({
         data: {

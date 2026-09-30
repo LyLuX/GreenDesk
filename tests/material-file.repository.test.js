@@ -1,3 +1,4 @@
+import { companyTest as it } from './helpers/company-test.js';
 import { jest } from '@jest/globals';
 
 import sequelize from '../src/config/database.js';
@@ -9,7 +10,11 @@ describe('MaterialFileRepository.setPrimary', () => {
 
   it('updates every photo in the same transaction', async () => {
     const transaction = {};
-    const file = { materialId: 8, update: jest.fn().mockResolvedValue({ uuid: 'photo' }) };
+    const file = {
+      companyId: 1,
+      materialId: 8,
+      update: jest.fn().mockResolvedValue({ uuid: 'photo' }),
+    };
     jest
       .spyOn(sequelize, 'transaction')
       .mockImplementation(async (...args) => args.at(-1)(transaction));
@@ -18,14 +23,18 @@ describe('MaterialFileRepository.setPrimary', () => {
     await expect(new MaterialFileRepository().setPrimary(file)).resolves.toEqual({ uuid: 'photo' });
     expect(MaterialFile.update).toHaveBeenCalledWith(
       { isPrimary: false },
-      { where: { materialId: 8, kind: 'photo' }, transaction },
+      { where: { companyId: 1, materialId: 8, kind: 'photo' }, transaction },
     );
     expect(file.update).toHaveBeenCalledWith({ isPrimary: true }, { transaction });
   });
 
   it('propagates an error so Sequelize rolls the transaction back', async () => {
     const transaction = {};
-    const file = { materialId: 8, update: jest.fn().mockRejectedValue(new Error('update failed')) };
+    const file = {
+      companyId: 1,
+      materialId: 8,
+      update: jest.fn().mockRejectedValue(new Error('update failed')),
+    };
     const callbackTransaction = jest
       .spyOn(sequelize, 'transaction')
       .mockImplementation(async (...args) => args.at(-1)(transaction));

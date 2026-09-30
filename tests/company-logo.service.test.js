@@ -25,7 +25,7 @@ describe('CompanyLogoService', () => {
       withTransaction: jest.fn((callback) => callback(transaction)),
       hasUserAssignment: jest.fn(),
     };
-    const auditService = { record: jest.fn() };
+    const auditService = { recordAttributed: jest.fn() };
     const service = new CompanyLogoService(repository, auditService);
     service.safeDeletePhysicalFile = jest.fn().mockResolvedValue(true);
     const file = {
@@ -55,7 +55,7 @@ describe('CompanyLogoService', () => {
     expect(service.safeDeletePhysicalFile).toHaveBeenCalledWith(
       expect.stringMatching(/uploads[\\/]companies[\\/]old\.png$/),
     );
-    expect(auditService.record).toHaveBeenCalledWith(
+    expect(auditService.recordAttributed).toHaveBeenCalledWith(
       expect.objectContaining({
         companyId: company.id,
         entity: 'COMPANY',
@@ -73,7 +73,7 @@ describe('CompanyLogoService', () => {
       update: jest.fn().mockImplementation(async (item, values) => Object.assign(item, values)),
       withTransaction: jest.fn((callback) => callback(transaction)),
     };
-    const service = new CompanyLogoService(repository, { record: jest.fn() });
+    const service = new CompanyLogoService(repository, { recordAttributed: jest.fn() });
     service.safeDeletePhysicalFile = jest.fn().mockResolvedValue(true);
 
     await service.add(
@@ -97,7 +97,7 @@ describe('CompanyLogoService', () => {
       findByUuid: jest.fn().mockResolvedValue(company),
       hasUserAssignment: jest.fn().mockResolvedValue(false),
     };
-    const service = new CompanyLogoService(repository, { record: jest.fn() });
+    const service = new CompanyLogoService(repository, { recordAttributed: jest.fn() });
 
     await expect(
       service.getForContent(company.uuid, {

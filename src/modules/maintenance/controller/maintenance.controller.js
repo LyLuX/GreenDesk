@@ -85,6 +85,9 @@ export default class MaintenanceController {
     );
     response.status(result.statusCode).json(result.body);
   }
+  async materialHistory(request, response) {
+    response.json(successResponse(await this.service.getMaterialHistory(request.query)));
+  }
   async history(request, response) {
     response.json(
       successResponse(await this.service.getHistory(request.params.uuid, request.query)),

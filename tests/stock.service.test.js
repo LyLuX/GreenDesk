@@ -1,9 +1,11 @@
+import { companyTest as it } from './helpers/company-test.js';
 import { jest } from '@jest/globals';
 
 import StockService from '../src/core/inventory/stock.service.js';
 
 const stockItem = (overrides = {}) => ({
   id: 7,
+  companyId: 1,
   name: 'Filtre à huile',
   quantityOnHand: 2,
   quantityOnOrder: 3,

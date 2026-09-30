@@ -6,7 +6,7 @@ const roleUuid = 'c8e14800-3be4-4fab-b774-0e6235fce203';
 const permissionUuid = 'd0fd8cdc-74d0-4f58-af27-6c181e05895d';
 const transaction = { id: 'transaction' };
 const withTransaction = jest.fn((callback) => callback(transaction));
-const auditService = { record: jest.fn() };
+const auditService = { recordGlobal: jest.fn() };
 
 describe('RoleService', () => {
   it('assigns resolved permissions when creating a role', async () => {

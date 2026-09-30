@@ -29,7 +29,7 @@ export default class AuthService {
   }
 
   async register(values) {
-    const user = await this.userService.create(values, null, 'USER', {
+    const user = await this.userService.createIdentity(values, null, 'USER', {
       requireEmailVerification: true,
     });
     const delivery = await this.emailVerificationService.issue(user, {
@@ -54,7 +54,7 @@ export default class AuthService {
     return this.authRepository.withTransaction(async (transaction) => {
       await this.authRepository.update(user, { lastLoginAt: new Date() }, { transaction });
       const session = await this.createSession(user);
-      await this.auditService.record(
+      await this.auditService.recordAttributed(
         {
           userId: user.id,
           companyId: user.companies?.[0]?.id,
@@ -81,7 +81,7 @@ export default class AuthService {
     if (!claims?.jti || !claims?.exp || !claims?.sub) {
       throw new AppError('Invalid or expired access token', HTTP_STATUS.UNAUTHORIZED);
     }
-    const user = await this.userService.getByUuid(claims.sub);
+    const user = await this.userService.getIdentityByUuid(claims.sub);
     if (!user?.isActive) {
       throw new AppError('Invalid or expired access token', HTTP_STATUS.UNAUTHORIZED);
     }
@@ -154,7 +154,7 @@ export default class AuthService {
       await this.authRepository.revokeAccessToken(claims.jti, new Date(claims.exp * 1000), {
         transaction,
       });
-      await this.auditService.record(
+      await this.auditService.recordAttributed(
         {
           userId: claims.userId,
           companyId: claims.companyAccess?.[0]?.id,

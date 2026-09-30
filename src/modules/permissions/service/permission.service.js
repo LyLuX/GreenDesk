@@ -50,7 +50,7 @@ export default class PermissionService {
           existingPermission.id,
           { transaction },
         );
-        await this.auditService.record(
+        await this.auditService.recordGlobal(
           {
             userId: actorUserId,
             action: 'RESTORE',
@@ -64,7 +64,7 @@ export default class PermissionService {
         return restored;
       }
       const permission = await this.permissionRepository.create(values, { transaction });
-      await this.auditService.record(
+      await this.auditService.recordGlobal(
         {
           userId: actorUserId,
           action: 'CREATE',
@@ -97,7 +97,7 @@ export default class PermissionService {
           transaction,
         });
       }
-      await this.auditService.record(
+      await this.auditService.recordGlobal(
         {
           userId: actorUserId,
           action: 'UPDATE',
@@ -124,7 +124,7 @@ export default class PermissionService {
         transaction,
       });
       await this.permissionRepository.delete(permission, { transaction });
-      await this.auditService.record(
+      await this.auditService.recordGlobal(
         {
           userId: actorUserId,
           action: 'DELETE',

@@ -1,3 +1,4 @@
+import { companyTest as it } from './helpers/company-test.js';
 import { jest } from '@jest/globals';
 import { Op } from 'sequelize';
 

@@ -40,6 +40,10 @@ export default class MaintenanceCatalogController {
     response.json(successResponse(await this.service.getParts(request.query)));
   }
 
+  async partSuggestions(_request, response) {
+    response.json(successResponse(await this.service.getPartSuggestions()));
+  }
+
   async createPart(request, response) {
     response
       .status(HTTP_STATUS.CREATED)

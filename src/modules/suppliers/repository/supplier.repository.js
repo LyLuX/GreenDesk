@@ -1,13 +1,17 @@
 import { Op } from 'sequelize';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 
-import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
+import CompanyScopedRepository from '../../../core/database/repositories/company-scoped.repository.js';
 import MaintenancePart from '../../maintenance/model/maintenance-part.model.js';
 import Supplier from '../model/supplier.model.js';
 import { normalizePagination } from '../../../core/utils/pagination.js';
-import { companyValues, companyWhere } from '../../../core/company/company-context.js';
+import {
+  requireCompanyInstance,
+  companyValues,
+  companyWhere,
+} from '../../../core/company/company-context.js';
 
-export default class SupplierRepository extends TransactionalRepository {
+export default class SupplierRepository extends CompanyScopedRepository {
   findAll({ search, active, page, limit } = {}) {
     const pagination = normalizePagination({ page, limit });
     const where = search ? { name: { [Op.like]: `%${search}%` } } : {};
@@ -38,12 +42,15 @@ export default class SupplierRepository extends TransactionalRepository {
     return Supplier.create(companyValues(values), { transaction });
   }
   update(item, values, { transaction } = {}) {
-    return item.update(values, { transaction });
+    requireCompanyInstance(item);
+    return item.update(companyValues(values), { transaction });
   }
   restore(item, { transaction } = {}) {
+    requireCompanyInstance(item);
     return item.restore({ transaction });
   }
   delete(item, { transaction } = {}) {
+    requireCompanyInstance(item);
     return item.destroy({ transaction });
   }
   countParts(supplierId, { transaction } = {}) {

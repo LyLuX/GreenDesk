@@ -2,6 +2,18 @@
 
 ## Non publié
 
+## 9.1.4 - 2026-09-30
+
+- [PATCH] Le durcissement R1 refuse les accès métier sans société valide et les modifications de données d’une autre société, tout en préservant les parcours d’authentification, d’administration et leur historique.
+
+- [PATCH] Les unités de pièces exclusivement numériques sont refusées avec une aide à la saisie, et les quantités dont l’unité contient le mot « pièce » ou « pièces » (avec ou sans accent, y compris « pièce(s) ») évoluent par pas de 1 dans les formulaires de stock, de commande et de maintenance.
+
+- [PATCH] L’onglet Maintenance d’un matériel affiche l’historique de ses plans dans un tableau paginé, avec les mêmes codes couleurs et des quantités de pièces compactes : « nom x quantité », ou « x 0 » pour les pièces non remplacées.
+
+- [PATCH] Les propositions de désignation et d’unité des pièces proviennent de tout le catalogue de la société, indépendamment de la pagination et des filtres affichés.
+
+- [PATCH] Les fiches de maintenance proposent les mêmes échéances d’impression que les pièces à commander, en conservant les correspondances avec les filtres de la page Maintenance.
+
 ## 9.1.3 - 2026-09-12
 
 - [PATCH] Les erreurs courantes des utilisateurs, des droits et des catalogues s’affichent en français, avec des conventions de développement documentées et un rangement cohérent du module catégories.

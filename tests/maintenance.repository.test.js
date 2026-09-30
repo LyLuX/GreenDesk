@@ -1,15 +1,45 @@
+import { companyTest as it } from './helpers/company-test.js';
 import { jest } from '@jest/globals';
 import { Op } from 'sequelize';
 
 import sequelize from '../src/config/database.js';
 import { initializeModels } from '../src/core/database/models.js';
 import MaintenanceTask from '../src/modules/maintenance/model/maintenance-task.model.js';
+import MaintenanceHistory from '../src/modules/maintenance/model/maintenance-history.model.js';
+import { runWithCompanyScope } from '../src/core/company/company-context.js';
 import MaintenanceRepository from '../src/modules/maintenance/repository/maintenance.repository.js';
 
 initializeModels();
 
 describe('MaintenanceRepository order list', () => {
   afterEach(() => jest.restoreAllMocks());
+
+  it('paginates material history across all active and inactive plans within the company', async () => {
+    const find = jest
+      .spyOn(MaintenanceHistory, 'findAndCountAll')
+      .mockResolvedValue({ count: 0, rows: [] });
+    await runWithCompanyScope({ companyId: 42 }, () =>
+      new MaintenanceRepository().findMaterialHistory({
+        materialUuid: 'material-uuid',
+        page: 2,
+        limit: 5,
+      }),
+    );
+    const query = find.mock.calls[0][0];
+    expect(query).toMatchObject({ where: { companyId: 42 }, limit: 5, offset: 5 });
+    const task = query.include.find((item) => item.as === 'task');
+    expect(task.where).toEqual({ companyId: 42 });
+    expect(task.required).toBe(true);
+    expect(task.include[0]).toMatchObject({
+      required: true,
+      where: { companyId: 42, uuid: 'material-uuid' },
+    });
+    expect(query.order).toEqual([
+      ['performed_at', 'DESC'],
+      ['created_at', 'DESC'],
+      ['id', 'DESC'],
+    ]);
+  });
 
   it('loads workshop and ordered quantities required to calculate uncovered needs', async () => {
     const findAll = jest.spyOn(MaintenanceTask, 'findAll').mockResolvedValue([]);
@@ -86,6 +116,26 @@ describe('MaintenanceRepository order list', () => {
     expect(paginatedSelect).toContain('ORDER BY nextMaintenanceDate IS NULL ASC');
     expect(paginatedSelect).not.toContain('MaintenanceTask.next_maintenance_date IS NULL');
   });
+
+  it.each([false, true])(
+    'matches order-list date bounds with wear-based inclusion %s',
+    async (includeWearBased) => {
+      const findAll = jest.spyOn(MaintenanceTask, 'findAll').mockResolvedValue([]);
+      const repository = new MaintenanceRepository();
+      const period = { from: '2026-09-16', through: '2026-11-15' };
+      await repository.findForOrderList(period);
+      await repository.findForMaintenanceSheets({ ...period, includeWearBased });
+      const orderWhere = findAll.mock.calls[0][0].where;
+      const sheetFilters = findAll.mock.calls[1][0].where[Op.and][0][Op.or];
+      expect(sheetFilters).toHaveLength(includeWearBased ? 2 : 1);
+      expect(sheetFilters[0]).toEqual({
+        intervalDays: orderWhere.intervalDays,
+        nextMaintenanceDate: orderWhere.nextMaintenanceDate,
+      });
+      if (includeWearBased)
+        expect(sheetFilters[1].val).toContain('MaintenanceTask.interval_days = 0');
+    },
+  );
 
   it('loads requested sheet statuses and sorts dated sheets before undated sheets', async () => {
     const findAll = jest.spyOn(MaintenanceTask, 'findAll').mockResolvedValue([]);

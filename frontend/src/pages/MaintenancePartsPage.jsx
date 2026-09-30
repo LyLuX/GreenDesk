@@ -5,6 +5,7 @@ import getApiErrorMessage from '../api/get-api-error-message.js';
 import {
   createMaintenancePart,
   deleteMaintenancePart,
+  getMaintenancePartSuggestions,
   listMaintenanceParts,
   updateMaintenancePart,
 } from '../api/maintenance.api.js';
@@ -113,6 +114,7 @@ export default function MaintenancePartsPage() {
     {
       name: 'unit',
       label: 'Unité',
+      placeholder: 'pièce, litre, mètre…',
       required: true,
       suggestionsFromRecords: true,
       suggestionsPlacement: 'top',
@@ -182,6 +184,7 @@ export default function MaintenancePartsPage() {
           },
         ]}
         listItems={listMaintenanceParts}
+        loadSuggestions={getMaintenancePartSuggestions}
         createItem={createMaintenancePart}
         updateItem={updateMaintenancePart}
         deleteItem={deleteMaintenancePart}

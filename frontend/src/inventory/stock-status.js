@@ -54,3 +54,7 @@ export const formatStockQuantity = (quantity, unit) => {
       : normalizedUnit;
   return `${numericQuantity.toLocaleString('fr-FR')} ${displayedUnit}`.trim();
 };
+
+/** Uses whole increments for pieces and hundredths for other units. */
+export const getStockQuantityStep = (unit) =>
+  /(?<![\p{L}\p{N}_-])pi[eè]ces?(?![\p{L}\p{N}_-])/iu.test(String(unit ?? '').trim()) ? 1 : 0.01;

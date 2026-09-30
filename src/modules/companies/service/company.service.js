@@ -58,7 +58,7 @@ export default class CompanyService {
       if (!claims.permissions?.includes(companyPermissions.accessAll)) {
         await this.repository.assignUser(savedCompany.id, userId, { transaction });
       }
-      await this.auditService.record(
+      await this.auditService.recordGlobal(
         {
           userId,
           action: existing ? 'RESTORE' : 'CREATE',
@@ -90,7 +90,7 @@ export default class CompanyService {
           transaction,
         });
       }
-      await this.auditService.record(
+      await this.auditService.recordGlobal(
         {
           userId,
           action: 'UPDATE',
@@ -118,7 +118,7 @@ export default class CompanyService {
         );
       }
       await this.repository.delete(company, { transaction });
-      await this.auditService.record(
+      await this.auditService.recordGlobal(
         {
           userId,
           action: 'DELETE',
@@ -144,7 +144,7 @@ export default class CompanyService {
       }
       const oldValues = company.toJSON();
       await this.repository.restore(company, { transaction });
-      await this.auditService.record(
+      await this.auditService.recordGlobal(
         {
           userId,
           action: 'RESTORE',

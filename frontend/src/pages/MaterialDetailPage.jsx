@@ -17,6 +17,7 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Loader from '../components/Loader.jsx';
 import ManufacturerLogo from '../components/ManufacturerLogo.jsx';
 import MaterialPhotoViewer from '../components/MaterialPhotoViewer.jsx';
+import MaterialMaintenanceHistory from '../components/MaterialMaintenanceHistory.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
 import useRuntimeConfig from '../config/useRuntimeConfig.js';
 import {
@@ -775,6 +776,9 @@ export default function MaterialDetailPage() {
           >
             Voir la maintenance
           </Link>
+          {hasPermission(maintenancePermissions.plans.read) && (
+            <MaterialMaintenanceHistory key={uuid} materialUuid={uuid} />
+          )}
           <h3 className="h5 mb-3 mt-5">Interventions ponctuelles</h3>
           {interventions.length === 0 ? (
             <p className="text-body-secondary">Aucune intervention ponctuelle enregistrée.</p>

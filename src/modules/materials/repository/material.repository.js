@@ -1,13 +1,17 @@
 import { Op } from 'sequelize';
 
-import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
+import CompanyScopedRepository from '../../../core/database/repositories/company-scoped.repository.js';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 import { normalizePagination } from '../../../core/utils/pagination.js';
 import Material from '../model/material.model.js';
 import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.js';
 import Category from '../../categories/model/category.model.js';
 import MaintenanceTask from '../../maintenance/model/maintenance-task.model.js';
-import { companyValues, companyWhere } from '../../../core/company/company-context.js';
+import {
+  requireCompanyInstance,
+  companyValues,
+  companyWhere,
+} from '../../../core/company/company-context.js';
 
 const include = [
   {
@@ -19,7 +23,7 @@ const include = [
 ];
 
 /** Sequelize persistence operations for material catalogue records. */
-export default class MaterialRepository extends TransactionalRepository {
+export default class MaterialRepository extends CompanyScopedRepository {
   async findOptions({ search, active, page, limit } = {}) {
     const pagination = normalizePagination({ page, limit });
     const where = search ? { name: { [Op.like]: `%${search}%` } } : {};
@@ -105,14 +109,17 @@ export default class MaterialRepository extends TransactionalRepository {
   }
 
   async update(material, values, options = {}) {
-    return material.update(values, options);
+    requireCompanyInstance(material);
+    return material.update(companyValues(values), options);
   }
 
   async delete(material, options = {}) {
+    requireCompanyInstance(material);
     return material.destroy(options);
   }
 
   async restore(material, options = {}) {
+    requireCompanyInstance(material);
     return material.restore(options);
   }
 

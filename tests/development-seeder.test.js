@@ -78,8 +78,8 @@ describe('local development seeder safety', () => {
   });
 
   it.each([
-    { existingAdmin: { uuid: 'existing-admin', deletedAt: null }, operation: 'update' },
-    { existingAdmin: null, operation: 'create' },
+    { existingAdmin: { uuid: 'existing-admin', deletedAt: null }, operation: 'updateIdentity' },
+    { existingAdmin: null, operation: 'createIdentity' },
   ])(
     'creates or rotates the local administrator ($operation)',
     async ({ existingAdmin, operation }) => {
@@ -113,8 +113,8 @@ describe('local development seeder safety', () => {
         setCompanies: jest.fn().mockResolvedValue(undefined),
       };
       const userService = {
-        update: jest.fn().mockResolvedValue(admin),
-        create: jest.fn().mockResolvedValue(admin),
+        updateIdentity: jest.fn().mockResolvedValue(admin),
+        createIdentity: jest.fn().mockResolvedValue(admin),
       };
       const credentials = {
         email: 'admin@greendesk.local',
@@ -134,12 +134,12 @@ describe('local development seeder safety', () => {
         password: credentials.password,
         isActive: true,
       });
-      if (operation === 'update') {
-        expect(userService.update).toHaveBeenCalledWith(existingAdmin.uuid, expectedValues);
-        expect(userService.create).not.toHaveBeenCalled();
+      if (operation === 'updateIdentity') {
+        expect(userService.updateIdentity).toHaveBeenCalledWith(existingAdmin.uuid, expectedValues);
+        expect(userService.createIdentity).not.toHaveBeenCalled();
       } else {
-        expect(userService.create).toHaveBeenCalledWith(expectedValues);
-        expect(userService.update).not.toHaveBeenCalled();
+        expect(userService.createIdentity).toHaveBeenCalledWith(expectedValues);
+        expect(userService.updateIdentity).not.toHaveBeenCalled();
       }
       expect(userRepository.setRoles).toHaveBeenCalledWith(admin, [adminRole]);
       expect(roleRepository.setPermissions).toHaveBeenCalledWith(

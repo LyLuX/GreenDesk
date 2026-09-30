@@ -14,6 +14,7 @@ import {
 import { listMaterialOptions } from '../api/reference.api.js';
 import {
   formatStockQuantity,
+  getStockQuantityStep,
   STOCK_OPERATIONS,
   stockOperationPresentation,
 } from '../inventory/stock-status.js';
@@ -160,6 +161,8 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
   }, [canConsume, debouncedMaterialSearch, part]);
 
   if (!part || !currentPart) return null;
+
+  const quantityStep = getStockQuantityStep(currentPart.unit);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -364,9 +367,9 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                 <input
                   className="form-control"
                   type="number"
-                  min="0.01"
+                  min={quantityStep}
                   max={currentPart.quantityOnHand}
-                  step="0.01"
+                  step={quantityStep}
                   required
                   value={quantity}
                   onChange={(event) => setQuantity(event.target.value)}
@@ -406,7 +409,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                 type="number"
                 min="0"
                 max="1000000"
-                step="0.01"
+                step={quantityStep}
                 required
                 value={minimumStockQuantity}
                 onChange={(event) => setMinimumStockQuantity(event.target.value)}
@@ -423,7 +426,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                       type="number"
                       min="0"
                       max="1000000"
-                      step="0.01"
+                      step={quantityStep}
                       required
                       value={quantityOnHand}
                       onChange={(event) => setQuantityOnHand(event.target.value)}
@@ -440,7 +443,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                       type="number"
                       min="0"
                       max="1000000"
-                      step="0.01"
+                      step={quantityStep}
                       required
                       value={quantityOnOrder}
                       onChange={(event) => setQuantityOnOrder(event.target.value)}
@@ -455,9 +458,9 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
               <input
                 className="form-control"
                 type="number"
-                min="0.01"
+                min={quantityStep}
                 max={operation === STOCK_OPERATIONS.RECEIVE ? currentPart.quantityOnOrder : 1000000}
-                step="0.01"
+                step={quantityStep}
                 required
                 value={quantity}
                 onChange={(event) => setQuantity(event.target.value)}

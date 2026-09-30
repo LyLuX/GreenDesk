@@ -14,7 +14,7 @@ import MaintenanceTask from '../../maintenance/model/maintenance-task.model.js';
 import User from '../../users/model/user.model.js';
 import AuditLog from '../model/audit-log.model.js';
 import { HISTORY_SECTIONS } from '../history.constants.js';
-import { companyWhere, getCompanyScope } from '../../../core/company/company-context.js';
+import { companyWhere, requireCompanyScope } from '../../../core/company/company-context.js';
 
 const AUDIT_TYPES = Object.freeze({
   MATERIAL: 'material',
@@ -133,10 +133,10 @@ export default class HistoryRepository {
     );
     if (!entities.length) return { count: 0, rows: [] };
 
-    const companyScope = getCompanyScope();
+    const companyScope = requireCompanyScope();
     const where = {
       entity: { [Op.in]: entities },
-      ...(section === HISTORY_SECTIONS.ADMINISTRATION && companyScope?.accessAll
+      ...(section === HISTORY_SECTIONS.ADMINISTRATION && companyScope.accessAll === true
         ? {
             [Op.and]: [
               {

@@ -27,6 +27,7 @@ export default function MaintenanceCatalogPage({
   fields,
   columns,
   listItems,
+  loadSuggestions,
   createItem,
   updateItem,
   deleteItem,
@@ -41,6 +42,9 @@ export default function MaintenanceCatalogPage({
   const { hasPermission } = useAuth();
   const { notify } = useNotification();
   const [rows, setRows] = useState([]);
+  const [suggestions, setSuggestions] = useState({});
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionsError, setSuggestionsError] = useState('');
   const [search, setSearch] = useState('');
   const [active, setActive] = useState(partUuid ? '' : activityStatusFilter.defaultValue);
   const [additionalFilterValues, setAdditionalFilterValues] = useState(() =>
@@ -120,6 +124,25 @@ export default function MaintenanceCatalogPage({
     load(controller.signal);
     return () => controller.abort();
   }, [load]);
+
+  useEffect(() => {
+    if (!editing || !loadSuggestions) return;
+    const controller = new AbortController();
+    setSuggestions({});
+    setSuggestionsLoading(true);
+    setSuggestionsError('');
+    loadSuggestions(controller.signal)
+      .then((response) => {
+        if (!controller.signal.aborted) setSuggestions(response.data.data);
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) setSuggestionsError(getApiErrorMessage(error));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setSuggestionsLoading(false);
+      });
+    return () => controller.abort();
+  }, [editing, loadSuggestions]);
 
   const save = async (event) => {
     event.preventDefault();
@@ -308,6 +331,11 @@ export default function MaintenanceCatalogPage({
               {formError}
             </p>
           )}
+          {suggestionsError && (
+            <p role="alert" className="alert alert-warning mb-0">
+              Impossible de charger les propositions : {suggestionsError}
+            </p>
+          )}
           {fields
             .filter((field) => !field.createOnly || !editing?.uuid)
             .map((field) => {
@@ -321,7 +349,12 @@ export default function MaintenanceCatalogPage({
                   key={field.name}
                   {...fieldProps}
                   defaultValue={defaultValue}
-                  suggestions={rows.map((row) => row[field.name])}
+                  suggestions={
+                    loadSuggestions
+                      ? (suggestions[field.name] ?? [])
+                      : rows.map((row) => row[field.name])
+                  }
+                  loading={Boolean(loadSuggestions) && suggestionsLoading}
                 />
               ) : (
                 <FormField key={field.name} {...fieldProps} defaultValue={defaultValue} />

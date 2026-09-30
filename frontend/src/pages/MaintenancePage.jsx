@@ -1,3 +1,4 @@
+import { getStockQuantityStep } from '../inventory/stock-status.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import getApiErrorMessage from '../api/get-api-error-message.js';
@@ -25,6 +26,11 @@ import MaintenanceOrderListModal, {
   getOrderListFiltersForDeadline,
 } from '../components/MaintenanceOrderListModal.jsx';
 import MaintenanceSheetsModal from '../components/MaintenanceSheetsModal.jsx';
+import {
+  maintenanceHistoryClass,
+  MaintenanceExecutionBadge,
+  MaintenanceExecutionParts,
+} from '../components/MaintenanceHistoryDetails.jsx';
 import Modal from '../components/Modal.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
@@ -32,7 +38,6 @@ import useNotification from '../notifications/useNotification.js';
 import normalizeFormValues from '../utils/normalize-form-values.js';
 import { activityStatusFilter } from '../filters/filter-options.js';
 import {
-  maintenanceExecutionTypeLabels,
   maintenancePriorityBadgeClasses,
   maintenancePriorityLabels,
   maintenanceStatusClasses,
@@ -73,35 +78,6 @@ const remainingDays = (value) => {
   if (value === null || value === undefined) return '—';
   return `${Number(value).toLocaleString('fr-FR')} ${Math.abs(Number(value)) === 1 ? 'jour' : 'jours'}`;
 };
-const maintenanceHistoryClass = (executionType) => {
-  if (executionType === 'withoutPartReplacement') return 'maintenance-history-without-parts';
-  if (executionType === 'partialPartReplacement') return 'maintenance-history-partial-parts';
-  return '';
-};
-
-function MaintenanceExecutionParts({ entry }) {
-  if (!maintenanceExecutionTypeLabels[entry.executionType] || !entry.partsSnapshot?.length) {
-    return null;
-  }
-  const consumed = entry.partsSnapshot.filter((part) => part.consumed);
-  const retained = entry.partsSnapshot.filter((part) => !part.consumed);
-  const formatParts = (parts) => parts.map((part) => `${part.name} × ${part.quantity}`).join(', ');
-  return (
-    <>
-      {consumed.length > 0 && (
-        <small className="d-block text-body-secondary">
-          Pièces remplacées : {formatParts(consumed)}
-        </small>
-      )}
-      {retained.length > 0 && (
-        <small className="d-block text-body-secondary">
-          Pièces non remplacées : {formatParts(retained)}
-        </small>
-      )}
-    </>
-  );
-}
-
 function CustomDescriptionField({ field, checked, value, onToggle, onChange }) {
   return (
     <div className="d-grid gap-2">
@@ -901,8 +877,8 @@ export default function MaintenancePage() {
                             className="maintenance-plan-quantity form-control form-control-sm"
                             type="number"
                             name={`quantity:${part.uuid}`}
-                            min="0.01"
-                            step="0.01"
+                            min={getStockQuantityStep(part.unit)}
+                            step={getStockQuantityStep(part.unit)}
                             value={partQuantities[part.uuid] ?? assigned?.quantity ?? 1}
                             onChange={(event) =>
                               setPartQuantities((current) => ({
@@ -1092,17 +1068,7 @@ export default function MaintenancePage() {
                       ? `${entry.performedByUser.firstName} ${entry.performedByUser.lastName}`
                       : 'Utilisateur supprimé'}
                   </span>
-                  {maintenanceExecutionTypeLabels[entry.executionType] && (
-                    <span
-                      className={`status-badge ${
-                        entry.executionType === 'partialPartReplacement'
-                          ? 'maintenance-history-partial'
-                          : 'maintenance-history-exception'
-                      }`}
-                    >
-                      {maintenanceExecutionTypeLabels[entry.executionType]}
-                    </span>
-                  )}
+                  <MaintenanceExecutionBadge executionType={entry.executionType} />
                 </div>
                 <br />
                 {entry.comment || 'Sans commentaire'}

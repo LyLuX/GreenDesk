@@ -41,7 +41,7 @@ export default class CompanyLogoService {
           },
           { transaction },
         );
-        await this.auditService.record(
+        await this.auditService.recordAttributed(
           {
             companyId: company.id,
             userId,
@@ -76,7 +76,7 @@ export default class CompanyLogoService {
         { logoFileName: null, logoOriginalName: null, logoMimeType: null },
         { transaction },
       );
-      await this.auditService.record(
+      await this.auditService.recordAttributed(
         {
           companyId: company.id,
           userId,

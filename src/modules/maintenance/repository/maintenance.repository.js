@@ -1,5 +1,5 @@
 import { Op, Sequelize } from 'sequelize';
-import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
+import CompanyScopedRepository from '../../../core/database/repositories/company-scoped.repository.js';
 import { normalizePagination } from '../../../core/utils/pagination.js';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 import Material from '../../materials/model/material.model.js';
@@ -13,7 +13,11 @@ import Supplier from '../../suppliers/model/supplier.model.js';
 import MaintenanceTask from '../model/maintenance-task.model.js';
 import MaintenanceTaskPart from '../model/maintenance-task-part.model.js';
 import User from '../../users/model/user.model.js';
-import { companyValues, companyWhere } from '../../../core/company/company-context.js';
+import {
+  requireCompanyInstance,
+  companyValues,
+  companyWhere,
+} from '../../../core/company/company-context.js';
 
 const materialInclude = {
   model: Material,
@@ -93,7 +97,7 @@ const getStatusFilter = (status) => {
   return null;
 };
 
-export default class MaintenanceRepository extends TransactionalRepository {
+export default class MaintenanceRepository extends CompanyScopedRepository {
   async findAll({
     search,
     materialUuid,
@@ -187,7 +191,8 @@ export default class MaintenanceRepository extends TransactionalRepository {
     return MaintenanceTask.create(companyValues(values), options);
   }
   async update(task, values, options = {}) {
-    return task.update(values, options);
+    requireCompanyInstance(task);
+    return task.update(companyValues(values), options);
   }
   async createHistory(values, options = {}) {
     return MaintenanceHistory.create(companyValues(values), options);
@@ -270,8 +275,18 @@ export default class MaintenanceRepository extends TransactionalRepository {
       order: [['next_maintenance_date', 'ASC']],
     });
   }
-  async findForMaintenanceSheets({ statuses = [] } = {}) {
+  async findForMaintenanceSheets({ statuses = [], from, through, includeWearBased = false } = {}) {
     const statusFilters = statuses.map((status) => getStatusFilter(status)).filter(Boolean);
+    if (!statusFilters.length && through) {
+      statusFilters.push({
+        intervalDays: { [Op.gt]: 0 },
+        nextMaintenanceDate: {
+          ...(from ? { [Op.gte]: from } : {}),
+          [Op.lte]: through,
+        },
+      });
+      if (includeWearBased) statusFilters.push(getStatusFilter('wearBased'));
+    }
     return MaintenanceTask.findAll({
       where: companyWhere({
         active: true,
@@ -285,6 +300,39 @@ export default class MaintenanceRepository extends TransactionalRepository {
         ['title', 'ASC'],
         ['id', 'ASC'],
       ],
+    });
+  }
+  async findMaterialHistory({ materialUuid, ...query }) {
+    const pagination = normalizePagination(query);
+    return MaintenanceHistory.findAndCountAll({
+      where: companyWhere(),
+      include: [
+        {
+          model: MaintenanceTask,
+          as: 'task',
+          attributes: ['uuid', 'title'],
+          required: true,
+          where: companyWhere(),
+          include: [
+            {
+              model: Material,
+              as: 'material',
+              attributes: [],
+              required: true,
+              where: companyWhere({ uuid: materialUuid }),
+            },
+          ],
+        },
+        { model: User, as: 'performedByUser', attributes: ['uuid', 'firstName', 'lastName'] },
+      ],
+      order: [
+        ['performed_at', 'DESC'],
+        ['created_at', 'DESC'],
+        ['id', 'DESC'],
+      ],
+      limit: pagination.limit,
+      offset: pagination.offset,
+      distinct: true,
     });
   }
   async findHistory(taskId, query = {}) {
@@ -301,6 +349,7 @@ export default class MaintenanceRepository extends TransactionalRepository {
     });
   }
   async remove(task, options = {}) {
+    requireCompanyInstance(task);
     return task.destroy(options);
   }
 }

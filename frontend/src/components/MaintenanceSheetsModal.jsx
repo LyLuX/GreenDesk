@@ -4,7 +4,10 @@ import { createPortal } from 'react-dom';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import { getMaintenanceSheets, recordMaintenanceSheetPrint } from '../api/maintenance.api.js';
 import useAuth from '../auth/useAuth.js';
-import { defaultMaintenanceSheetFilters } from '../maintenance/maintenance-deadline-filters.js';
+import {
+  defaultMaintenanceSheetFilters,
+  maintenanceHorizonOptions,
+} from '../maintenance/maintenance-deadline-filters.js';
 import {
   maintenancePriorityBadgeClasses,
   maintenancePriorityLabels,
@@ -206,11 +209,6 @@ export default function MaintenanceSheetsModal({ open, onClose, initialFilters }
   }, [load, open]);
 
   const items = data?.items ?? [];
-  const includesEveryDeadline = !filters.status;
-  const includesOverdue =
-    includesEveryDeadline || filters.status === 'overdue' || filters.includeOverdue;
-  const includesWearBased =
-    includesEveryDeadline || filters.status === 'wearBased' || filters.includeWearBased;
   const printSheets = async () => {
     setPrinting(true);
     setPrintError('');
@@ -241,16 +239,16 @@ export default function MaintenanceSheetsModal({ open, onClose, initialFilters }
               Échéance
               <select
                 className="form-select"
-                value={filters.status ?? ''}
+                value={filters.horizonDays}
                 onChange={(event) =>
-                  setFilters({
-                    ...(event.target.value ? { status: event.target.value } : {}),
-                    ...defaultMaintenanceSheetFilters,
-                  })
+                  setFilters((current) => ({
+                    ...current,
+                    status: undefined,
+                    horizonDays: Number(event.target.value),
+                  }))
                 }
               >
-                <option value="">Toutes les échéances</option>
-                {Object.entries(maintenanceStatusLabels).map(([value, label]) => (
+                {maintenanceHorizonOptions.map(({ value, label }) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
@@ -261,11 +259,11 @@ export default function MaintenanceSheetsModal({ open, onClose, initialFilters }
               <input
                 type="checkbox"
                 className="form-check-input"
-                checked={includesOverdue}
-                disabled={includesEveryDeadline || filters.status === 'overdue'}
+                checked={filters.includeOverdue}
                 onChange={(event) =>
                   setFilters((current) => ({
                     ...current,
+                    status: undefined,
                     includeOverdue: event.target.checked,
                   }))
                 }
@@ -276,11 +274,11 @@ export default function MaintenanceSheetsModal({ open, onClose, initialFilters }
               <input
                 type="checkbox"
                 className="form-check-input"
-                checked={includesWearBased}
-                disabled={includesEveryDeadline || filters.status === 'wearBased'}
+                checked={filters.includeWearBased}
                 onChange={(event) =>
                   setFilters((current) => ({
                     ...current,
+                    status: undefined,
                     includeWearBased: event.target.checked,
                   }))
                 }

@@ -318,7 +318,7 @@ describe('OpenAPI contract', () => {
     expect(maintenanceSheetParameters).toEqual(
       expect.arrayContaining(['status', 'includeOverdue', 'includeWearBased']),
     );
-    expect(maintenanceSheetParameters).not.toContain('horizonDays');
+    expect(maintenanceSheetParameters).toContain('horizonDays');
     expect(swaggerSpec.paths['/maintenance/sheets'].get.description).toContain(
       'tous les plans actifs',
     );

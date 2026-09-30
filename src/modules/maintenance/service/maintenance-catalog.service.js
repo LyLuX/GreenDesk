@@ -37,6 +37,10 @@ export default class MaintenanceCatalogService {
     return paginatedResult(result, normalizePagination(query), (item) => this.toPublic(item));
   }
 
+  getPartSuggestions() {
+    return this.repository.findPartSuggestions();
+  }
+
   async getOperationEntity(uuid, options) {
     const operation = await this.repository.findOperationByUuid(uuid, options);
     if (!operation)

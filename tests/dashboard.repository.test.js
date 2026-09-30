@@ -1,3 +1,4 @@
+import { companyTest as it } from './helpers/company-test.js';
 import { jest } from '@jest/globals';
 
 import DashboardRepository from '../src/modules/dashboard/repository/dashboard.repository.js';

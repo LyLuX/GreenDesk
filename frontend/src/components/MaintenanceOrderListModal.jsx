@@ -1,3 +1,4 @@
+import { getStockQuantityStep } from '../inventory/stock-status.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -186,9 +187,9 @@ function OrderPartsTable({
                           <input
                             className="form-control form-control-sm maintenance-order-quantity"
                             type="number"
-                            min="0.01"
+                            min={getStockQuantityStep(part.unit)}
                             max="1000000"
-                            step="0.01"
+                            step={getStockQuantityStep(part.unit)}
                             value={orderQuantities[part.uuid] ?? part.quantity}
                             onChange={(event) =>
                               onOrderQuantityChange(part.uuid, event.target.value)

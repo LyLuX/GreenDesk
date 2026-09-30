@@ -1,3 +1,4 @@
+import { requireCompanyInstance } from '../company/company-context.js';
 import HTTP_STATUS from '../constants/http-status.js';
 import AppError from '../errors/app-error.js';
 import StockMovementRepository from './stock-movement.repository.js';
@@ -32,6 +33,7 @@ export default class StockService {
     },
     { transaction } = {},
   ) {
+    requireCompanyInstance(item);
     const currentOnHand = decimalQuantity(item.quantityOnHand ?? 0, 'La quantité en stock', {
       allowZero: true,
     });

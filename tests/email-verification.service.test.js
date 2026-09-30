@@ -1,7 +1,11 @@
+import { runWithCompanyScope } from '../src/core/company/company-context.js';
 import { createHash } from 'node:crypto';
 import { jest } from '@jest/globals';
 
 import EmailVerificationService from '../src/modules/auth/service/email-verification.service.js';
+
+const scopedResend = (service, ...args) =>
+  runWithCompanyScope({ companyId: 1 }, () => service.resendByUserUuid(...args));
 
 const user = {
   id: 4,
@@ -30,7 +34,7 @@ describe('EmailVerificationService', () => {
       repository,
       {},
       mailService,
-      { record: jest.fn() },
+      { record: jest.fn(), recordAttributed: jest.fn() },
       { ttlHours: 24, ttlMs: 86_400_000, cooldownMs: 60_000 },
       'https://greendesk.example.test',
       { error: jest.fn() },
@@ -57,7 +61,7 @@ describe('EmailVerificationService', () => {
       findById: jest.fn().mockResolvedValue(persistedUser),
       update: jest.fn(),
     };
-    const auditService = { record: jest.fn() };
+    const auditService = { record: jest.fn(), recordAttributed: jest.fn() };
     const service = new EmailVerificationService(
       repository,
       userRepository,
@@ -78,7 +82,7 @@ describe('EmailVerificationService', () => {
     expect(repository.invalidateForUser).toHaveBeenCalledWith(user.id, expect.any(Date), {
       transaction,
     });
-    expect(auditService.record).toHaveBeenCalledWith(
+    expect(auditService.recordAttributed).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'USER_EMAIL_VERIFIED', entityUuid: user.uuid }),
       { transaction },
     );
@@ -115,7 +119,7 @@ describe('EmailVerificationService', () => {
       repository,
       userRepository,
       mailService,
-      { record: jest.fn() },
+      { record: jest.fn(), recordAttributed: jest.fn() },
       { ttlHours: 24, ttlMs: 86_400_000, cooldownMs: 60_000 },
       'https://greendesk.example.test',
       { error: jest.fn() },
@@ -125,7 +129,7 @@ describe('EmailVerificationService', () => {
       message: 'Si un compte non vérifié correspond à cette adresse, un nouvel email a été envoyé.',
       resendCooldownSeconds: 60,
     });
-    await expect(service.resendByUserUuid(user.uuid, 8)).rejects.toMatchObject({
+    await expect(scopedResend(service, user.uuid, 8)).rejects.toMatchObject({
       statusCode: 429,
       retryAfterSeconds: expect.any(Number),
     });

@@ -1,9 +1,9 @@
-import { companyValues, companyWhere } from '../company/company-context.js';
-import TransactionalRepository from '../database/repositories/transactional.repository.js';
+import { requireCompanyInstance, companyValues, companyWhere } from '../company/company-context.js';
+import CompanyScopedRepository from '../database/repositories/company-scoped.repository.js';
 import IdempotencyKey from './idempotency-key.model.js';
 
 /** Persists successful idempotent API responses in the same transaction as their side effects. */
-export default class IdempotencyRepository extends TransactionalRepository {
+export default class IdempotencyRepository extends CompanyScopedRepository {
   create(values, { transaction } = {}) {
     return IdempotencyKey.create(companyValues(values), { transaction });
   }
@@ -15,6 +15,7 @@ export default class IdempotencyRepository extends TransactionalRepository {
   }
 
   complete(record, values, { transaction } = {}) {
-    return record.update(values, { transaction });
+    requireCompanyInstance(record);
+    return record.update(companyValues(values), { transaction });
   }
 }

@@ -1,7 +1,7 @@
 import { Op } from 'sequelize';
 
 import sequelize from '../../../config/database.js';
-import TransactionalRepository from '../../../core/database/repositories/transactional.repository.js';
+import CompanyScopedRepository from '../../../core/database/repositories/company-scoped.repository.js';
 import normalizeBooleanFilter from '../../../core/utils/normalize-boolean-filter.js';
 import { normalizePagination } from '../../../core/utils/pagination.js';
 import MaintenanceTask from '../model/maintenance-task.model.js';
@@ -12,7 +12,11 @@ import PartManufacturer from '../../manufacturers/model/part-manufacturer.model.
 import Supplier from '../../suppliers/model/supplier.model.js';
 import User from '../../users/model/user.model.js';
 import { STOCK_FILTERS, STOCK_STATUSES } from '../../../core/inventory/stock-status.js';
-import { companyValues, companyWhere } from '../../../core/company/company-context.js';
+import {
+  requireCompanyInstance,
+  companyValues,
+  companyWhere,
+} from '../../../core/company/company-context.js';
 
 const manufacturerInclude = {
   model: PartManufacturer,
@@ -39,7 +43,23 @@ const partCostAttributes = {
 };
 
 /** Persistence operations for reusable maintenance operations and exact parts. */
-export default class MaintenanceCatalogRepository extends TransactionalRepository {
+export default class MaintenanceCatalogRepository extends CompanyScopedRepository {
+  async findPartSuggestions() {
+    const entries = await Promise.all(
+      ['name', 'unit'].map(async (field) => {
+        const rows = await MaintenancePart.findAll({
+          attributes: [field],
+          where: companyWhere(),
+          group: [field],
+          order: [[field, 'ASC']],
+          raw: true,
+        });
+        return [field, rows.map((row) => row[field]).filter(Boolean)];
+      }),
+    );
+    return Object.fromEntries(entries);
+  }
+
   findOperations({ search, active, page, limit } = {}) {
     const pagination = normalizePagination({ page, limit });
     const where = search ? { name: { [Op.like]: `%${search}%` } } : {};
@@ -74,14 +94,17 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
   }
 
   updateOperation(operation, values, { transaction } = {}) {
-    return operation.update(values, { transaction });
+    requireCompanyInstance(operation);
+    return operation.update(companyValues(values), { transaction });
   }
 
   restoreOperation(operation, { transaction } = {}) {
+    requireCompanyInstance(operation);
     return operation.restore({ transaction });
   }
 
   removeOperation(operation, { transaction } = {}) {
+    requireCompanyInstance(operation);
     return operation.destroy({ transaction });
   }
 
@@ -90,7 +113,7 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
   }
 
   updateTasksForOperation(operationId, values, { transaction } = {}) {
-    return MaintenanceTask.update(values, {
+    return MaintenanceTask.update(companyValues(values), {
       where: companyWhere({ operationId }),
       transaction,
     });
@@ -245,7 +268,8 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
   }
 
   updatePart(part, values, { transaction } = {}) {
-    return part.update(values, { transaction });
+    requireCompanyInstance(part);
+    return part.update(companyValues(values), { transaction });
   }
 
   createPartPriceHistory(values, { transaction } = {}) {
@@ -273,10 +297,12 @@ export default class MaintenanceCatalogRepository extends TransactionalRepositor
   }
 
   restorePart(part, { transaction } = {}) {
+    requireCompanyInstance(part);
     return part.restore({ transaction });
   }
 
   removePart(part, { transaction } = {}) {
+    requireCompanyInstance(part);
     return part.destroy({ transaction });
   }
 

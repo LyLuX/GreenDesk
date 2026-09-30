@@ -1,3 +1,4 @@
+import { companyTest as it } from './helpers/company-test.js';
 import { jest } from '@jest/globals';
 
 import UserService from '../src/modules/users/service/user.service.js';
@@ -39,7 +40,11 @@ describe('UserService', () => {
         .fn()
         .mockResolvedValue({ id: 3, uuid: 'a5eaf09e-49b1-4fa3-a022-1a20854b06bd' }),
     };
-    const auditService = { record: jest.fn() };
+    const auditService = {
+      record: jest.fn(),
+      recordAttributed: jest.fn(),
+      recordGlobal: jest.fn(),
+    };
     const companyRepository = {
       findFirstActive: jest.fn().mockResolvedValue({
         id: 1,
@@ -47,7 +52,14 @@ describe('UserService', () => {
         name: 'EI BOURNAZEL Paul',
         active: true,
       }),
-      findByUuid: jest.fn(),
+      findByUuid: jest
+        .fn()
+        .mockResolvedValue({
+          id: 1,
+          uuid: 'a2b3c4d5-6e7f-4890-ab12-34567890cdef',
+          name: 'EI BOURNAZEL Paul',
+          active: true,
+        }),
       findByUuids: jest.fn(),
     };
     return {
@@ -56,6 +68,23 @@ describe('UserService', () => {
       auditService,
     };
   };
+
+  it('keeps registration and seeder identity writes explicit without business scope', async () => {
+    const { service, userRepository, auditService } = createService();
+    await runWithCompanyScope(null, async () => {
+      await service.createIdentity({
+        firstName: 'Ada',
+        lastName: 'Lovelace',
+        email: user.email,
+        password: 'SecurePass123!',
+      });
+      expect(auditService.recordAttributed).toHaveBeenCalled();
+      expect(auditService.record).not.toHaveBeenCalled();
+      await service.updateIdentity(user.uuid, { firstName: 'Ada' });
+      expect(auditService.recordGlobal).toHaveBeenCalled();
+      expect(userRepository.findByUuid).toHaveBeenCalledWith(user.uuid, { transaction });
+    });
+  });
 
   it('creates a user with a hashed password', async () => {
     const { service, userRepository, auditService } = createService();
@@ -105,6 +134,7 @@ describe('UserService', () => {
       page: 1,
       limit: 5,
       visibleRoleNames: ['USER', 'MANAGER'],
+      companyId: 1,
     });
   });
 
@@ -113,7 +143,10 @@ describe('UserService', () => {
 
     await service.getAll({}, ['users.read', 'users.all.read']);
 
-    expect(userRepository.findAll).toHaveBeenCalledWith({ visibleRoleNames: undefined });
+    expect(userRepository.findAll).toHaveBeenCalledWith({
+      visibleRoleNames: undefined,
+      companyId: 1,
+    });
   });
 
   it('intersects user visibility with the active company', async () => {
@@ -150,6 +183,7 @@ describe('UserService', () => {
 
     expect(userRepository.findByUuid).toHaveBeenCalledWith(user.uuid, {
       visibleRoleNames: ['USER'],
+      companyId: 1,
     });
   });
 
@@ -291,6 +325,7 @@ describe('UserService', () => {
     expect(userRepository.findByUuid).toHaveBeenCalledWith(deletedUser.uuid, {
       withDeleted: true,
       transaction,
+      companyId: 1,
     });
     expect(userRepository.restore).toHaveBeenCalledWith(deletedUser, { transaction });
     expect(userRepository.update).not.toHaveBeenCalled();

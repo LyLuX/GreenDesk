@@ -65,6 +65,13 @@ const authorizeOrderList = (request, response, next) => {
 };
 router.use(authenticate, resolveCompanyContext);
 router.get(
+  '/history',
+  authorize(maintenancePermissions.plans.read),
+  validator.materialHistoryValidator,
+  validateRequest,
+  asyncHandler(controller.materialHistory.bind(controller)),
+);
+router.get(
   '/operations',
   authorize(maintenancePermissions.operations.read, maintenancePermissions.plans.read),
   validator.catalogListValidator,
@@ -104,6 +111,11 @@ router.get(
   validator.partCatalogListValidator,
   validateRequest,
   asyncHandler(catalogController.parts.bind(catalogController)),
+);
+router.get(
+  '/parts/suggestions',
+  authorize(maintenancePermissions.parts.read, maintenancePermissions.plans.read),
+  asyncHandler(catalogController.partSuggestions.bind(catalogController)),
 );
 router.post(
   '/parts',

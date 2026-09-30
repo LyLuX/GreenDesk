@@ -85,7 +85,7 @@ export default class RoleService {
           transaction,
         });
         const restored = await this.roleRepository.findByUuid(existingRole.uuid, { transaction });
-        await this.auditService.record(
+        await this.auditService.recordGlobal(
           {
             userId: actorUserId,
             action: 'RESTORE',
@@ -106,7 +106,7 @@ export default class RoleService {
         { transaction },
       );
       const created = await this.roleRepository.findByUuid(role.uuid, { transaction });
-      await this.auditService.record(
+      await this.auditService.recordGlobal(
         {
           userId: actorUserId,
           action: 'CREATE',
@@ -153,7 +153,7 @@ export default class RoleService {
         });
       }
       const updated = await this.roleRepository.findByUuid(uuid, { transaction });
-      await this.auditService.record(
+      await this.auditService.recordGlobal(
         {
           userId: actorUserId,
           action: 'UPDATE',
@@ -191,7 +191,7 @@ export default class RoleService {
       if (visibilityPermission) {
         await this.permissionRepository.delete(visibilityPermission, { transaction });
       }
-      await this.auditService.record(
+      await this.auditService.recordGlobal(
         {
           userId: actorUserId,
           action: 'DELETE',

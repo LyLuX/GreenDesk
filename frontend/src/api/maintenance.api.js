@@ -11,6 +11,8 @@ export const setMaintenanceStatus = (uuid, active) =>
 export const deleteMaintenance = (uuid) => client.delete(`/v1/maintenance/${uuid}`);
 export const executeMaintenance = (uuid, payload, idempotencyKey) =>
   client.post(`/v1/maintenance/${uuid}/execute`, payload, idempotencyRequestConfig(idempotencyKey));
+export const listMaterialMaintenanceHistory = (params, signal) =>
+  client.get('/v1/maintenance/history', { params, signal });
 export const maintenanceHistory = (uuid, params, signal) =>
   client.get(`/v1/maintenance/${uuid}/history`, {
     params: compactQueryParams(params),
@@ -39,6 +41,8 @@ export const listMaintenanceParts = (params, signal) =>
     params: compactQueryParams(params, { active: true }),
     signal,
   });
+export const getMaintenancePartSuggestions = (signal) =>
+  client.get('/v1/maintenance/parts/suggestions', { signal });
 export const createMaintenancePart = (payload) => client.post('/v1/maintenance/parts', payload);
 export const updateMaintenancePart = (uuid, payload) =>
   client.put(`/v1/maintenance/parts/${uuid}`, payload);

@@ -683,6 +683,8 @@ describe('MaintenanceOrderListModal', () => {
     render(<MaintenanceOrderListModal open onClose={vi.fn()} />);
 
     const quantity = await screen.findByLabelText('Quantité commandée pour Bougie');
+    expect(quantity).toHaveAttribute('step', '1');
+    expect(quantity).toHaveAttribute('min', '1');
     await user.clear(quantity);
     await user.type(quantity, '3');
     expect(quantity).toHaveClass('maintenance-order-quantity');

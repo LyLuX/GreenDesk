@@ -413,7 +413,7 @@ export const openApiPaths = {
       tags: ['Users'],
       summary: 'Met à jour un utilisateur et ses rôles.',
       description:
-        '`users.update` protège les informations générales, `users.status.update` le statut, `users.password.update` le mot de passe, `users.roles.update` les rôles et `users.companies.update` les sociétés. Toutes les permissions correspondant aux champs fournis sont exigées. Le nom de famille est stocké en majuscules. Une modification effective des rôles ou des sociétés invalide immédiatement toutes les sessions de l’utilisateur concerné, y compris lorsqu’il réalise lui-même l’opération.',
+        '`users.update` protège les informations générales, `users.status.update` le statut, `users.password.update` le mot de passe, `users.roles.update` les rôles et `users.companies.update` les sociétés. Toutes les permissions correspondant aux champs fournis sont exigées. Une unité exclusivement numérique est refusée (400). Le nom de famille est stocké en majuscules. Une modification effective des rôles ou des sociétés invalide immédiatement toutes les sessions de l’utilisateur concerné, y compris lorsqu’il réalise lui-même l’opération.',
       security: secure,
       requestBody: jsonBody('UserUpdateRequest'),
       responses: {
@@ -506,7 +506,7 @@ export const openApiPaths = {
       tags: ['Roles'],
       summary: 'Met à jour la description et les permissions d’un rôle.',
       description:
-        '`roles.update` protège la description. Le nom du rôle est immuable après sa création. Modifier `permissionUuids` nécessite `roles.permissions.update`. Toutes les permissions correspondant aux champs fournis sont exigées. Une modification effective des permissions invalide immédiatement toutes les sessions des utilisateurs concernés, y compris celle de l’administrateur réalisant l’opération.',
+        '`roles.update` protège la description. Le nom du rôle est immuable après sa création. Modifier `permissionUuids` nécessite `roles.permissions.update`. Toutes les permissions correspondant aux champs fournis sont exigées. Une unité exclusivement numérique est refusée (400). Une modification effective des permissions invalide immédiatement toutes les sessions des utilisateurs concernés, y compris celle de l’administrateur réalisant l’opération.',
       security: secure,
       requestBody: jsonBody('RoleUpdateRequest'),
       responses: {
@@ -622,7 +622,7 @@ export const openApiPaths = {
       tags: ['Categories'],
       summary: 'Met à jour une catégorie, y compris son statut actif ou inactif.',
       description:
-        '`categories.update` protège le nom et la description. Modifier `active` nécessite `categories.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées.',
+        '`categories.update` protège le nom et la description. Modifier `active` nécessite `categories.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées. Une unité exclusivement numérique est refusée (400).',
       security: secure,
       requestBody: jsonBody('CategoryUpdateRequest'),
       responses: {
@@ -673,7 +673,7 @@ export const openApiPaths = {
       tags: ['Manufacturers'],
       summary: 'Met à jour un fabricant, y compris son statut actif ou inactif.',
       description:
-        '`manufacturers.update` protège le nom. Modifier `active` nécessite `manufacturers.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées.',
+        '`manufacturers.update` protège le nom. Modifier `active` nécessite `manufacturers.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées. Une unité exclusivement numérique est refusée (400).',
       security: secure,
       requestBody: jsonBody('ManufacturerUpdateRequest'),
       responses: {
@@ -834,7 +834,7 @@ export const openApiPaths = {
       tags: ['Materials'],
       summary: 'Met à jour un matériel, y compris son statut actif ou inactif.',
       description:
-        '`materials.update` protège les informations générales. Modifier `active` nécessite `materials.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées. La désactivation rend inactifs les plans actifs associés. La réactivation restaure uniquement les plans désactivés au même instant que le matériel.',
+        '`materials.update` protège les informations générales. Modifier `active` nécessite `materials.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées. Une unité exclusivement numérique est refusée (400). La désactivation rend inactifs les plans actifs associés. La réactivation restaure uniquement les plans désactivés au même instant que le matériel.',
       security: secure,
       requestBody: jsonBody('MaterialUpdateRequest'),
       responses: {
@@ -1020,7 +1020,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Met à jour une opération et les intitulés des plans associés.',
       description:
-        '`maintenance.operations.update` protège les informations générales. Modifier `active` nécessite `maintenance.operations.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées.',
+        '`maintenance.operations.update` protège les informations générales. Modifier `active` nécessite `maintenance.operations.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées. Une unité exclusivement numérique est refusée (400).',
       security: secure,
       requestBody: jsonBody('MaintenanceOperationUpdateRequest'),
       responses: {
@@ -1073,7 +1073,7 @@ export const openApiPaths = {
       summary:
         'Met à jour un fournisseur, son statut actif ou inactif et le nom conservé sur ses pièces.',
       description:
-        '`suppliers.update` protège les informations générales. Modifier `active` nécessite `suppliers.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées.',
+        '`suppliers.update` protège les informations générales. Modifier `active` nécessite `suppliers.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées. Une unité exclusivement numérique est refusée (400).',
       security: secure,
       requestBody: jsonBody('SupplierUpdateRequest'),
       responses: {
@@ -1125,12 +1125,27 @@ export const openApiPaths = {
       operationId: 'createMaintenancePart',
       tags: ['Maintenance'],
       summary: 'Crée ou restaure une référence de pièce.',
-      description: 'Nécessite `maintenance.parts.create`.',
+      description:
+        'Nécessite `maintenance.parts.create`. Une unité exclusivement numérique est refusée (400).',
       security: secure,
       requestBody: jsonBody('MaintenancePartCreateRequest'),
       responses: {
         201: jsonResponse('MaintenancePartResponse', 'Pièce créée.'),
         ...writeErrors,
+      },
+    },
+  },
+  '/maintenance/parts/suggestions': {
+    get: {
+      operationId: 'getMaintenancePartSuggestions',
+      tags: ['Maintenance'],
+      summary: 'Propose les désignations et unités existantes du catalogue de pièces.',
+      description:
+        'Nécessite `maintenance.parts.read` ou `maintenance.read`. Retourne les valeurs distinctes des pièces non supprimées de la société courante, actives ou inactives, sans pagination ni filtre de liste.',
+      security: secure,
+      responses: {
+        200: jsonResponse('MaintenancePartSuggestionsResponse', 'Propositions retournées.'),
+        ...standardErrors,
       },
     },
   },
@@ -1141,7 +1156,7 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Met à jour une référence de pièce.',
       description:
-        '`maintenance.parts.update` protège les informations générales. Modifier `active` nécessite `maintenance.parts.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées.',
+        '`maintenance.parts.update` protège les informations générales. Modifier `active` nécessite `maintenance.parts.status.update`. Toutes les permissions correspondant aux champs fournis sont exigées. Une unité exclusivement numérique est refusée (400).',
       security: secure,
       requestBody: jsonBody('MaintenancePartUpdateRequest'),
       responses: {
@@ -1300,9 +1315,15 @@ export const openApiPaths = {
       tags: ['Maintenance'],
       summary: 'Liste les fiches de maintenance à consulter ou à imprimer.',
       description:
-        'Nécessite la permission dédiée `maintenance.sheets.read`. Le filtre `status` reprend exactement les échéances de la liste des plans. Sans statut, tous les plans actifs sont retournés. `includeOverdue` et `includeWearBased` permettent d’ajouter respectivement les plans en retard et ceux suivis selon l’usure à une échéance sélectionnée. Les fiches sont triées côté serveur par échéance croissante (plans sans échéance en dernier), puis par priorité décroissante, titre et identifiant.',
+        'Nécessite la permission dédiée `maintenance.sheets.read`. Le filtre `status` reprend exactement les échéances de la liste des plans. Le statut est prioritaire sur `horizonDays`. Sans statut, `horizonDays` sélectionne les échéances entre aujourd’hui et le nombre de jours indiqué (bornes incluses), avec ajout facultatif des retards et des plans selon l’usure. Sans statut ni horizon, tous les plans actifs sont retournés. `includeOverdue` et `includeWearBased` permettent d’ajouter respectivement les plans en retard et ceux suivis selon l’usure à une échéance sélectionnée. Les fiches sont triées côté serveur par échéance croissante (plans sans échéance en dernier), puis par priorité décroissante, titre et identifiant.',
       security: secure,
       parameters: [
+        {
+          name: 'horizonDays',
+          in: 'query',
+          description: 'Période en jours, ignorée lorsqu’un statut exact est fourni.',
+          schema: { type: 'integer', minimum: 0, maximum: 365 },
+        },
         {
           name: 'status',
           in: 'query',
@@ -1513,6 +1534,33 @@ export const openApiPaths = {
       },
     },
   },
+  '/maintenance/history': {
+    get: {
+      operationId: 'getMaterialMaintenanceHistory',
+      tags: ['Maintenance'],
+      summary: 'Liste les entretiens réalisés pour les plans d’un matériel.',
+      description:
+        'Nécessite `maintenance.read`. Limité à la société courante, inclut les plans inactifs. Tri par date de réalisation, date de création et identifiant décroissants.',
+      security: secure,
+      parameters: [
+        pageParameter,
+        limitParameter,
+        {
+          name: 'materialUuid',
+          in: 'query',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+        },
+      ],
+      responses: {
+        200: jsonResponse(
+          'MaintenanceHistoryResponse',
+          'Historique paginé avec le plan associé à chaque entretien. Liste vide si le matériel est introuvable dans la société courante.',
+        ),
+        ...standardErrors,
+      },
+    },
+  },
   '/maintenance/{uuid}/history': {
     parameters: [uuidParameter],
     get: {
@@ -1655,6 +1703,7 @@ for (const [path, pathItem] of Object.entries(openApiPaths)) {
   for (const operation of Object.values(pathItem)) {
     if (!operation?.responses) continue;
     operation.parameters = [...(operation.parameters ?? []), companyUuidHeader];
+    operation.responses[403] ??= responseRef('Forbidden');
   }
 }
 

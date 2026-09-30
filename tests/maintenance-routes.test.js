@@ -3,6 +3,9 @@ import jwt from 'jsonwebtoken';
 import request from 'supertest';
 
 const catalogController = {
+  partSuggestions: jest.fn((_request, response) =>
+    response.json({ success: true, data: { name: [], unit: [] } }),
+  ),
   operations: jest.fn((_request, response) => response.json({ success: true, data: [] })),
   createOperation: jest.fn((_request, response) =>
     response.status(201).json({ success: true, data: {} }),
@@ -28,6 +31,9 @@ const catalogController = {
   removePart: jest.fn((_request, response) => response.status(204).send()),
 };
 const maintenanceController = {
+  materialHistory: jest.fn((_request, response) =>
+    response.json({ success: true, data: { items: [], pagination: {} } }),
+  ),
   getAll: jest.fn((_request, response) => response.json({ success: true, data: [] })),
   getByUuid: jest.fn((_request, response) => response.json({ success: true, data: {} })),
   orderList: jest.fn((_request, response) => response.json({ success: true, data: [] })),
@@ -71,6 +77,7 @@ jest.unstable_mockModule(
       updateOperation = catalogController.updateOperation;
       removeOperation = catalogController.removeOperation;
       parts = catalogController.parts;
+      partSuggestions = catalogController.partSuggestions;
       createPart = catalogController.createPart;
       updatePart = catalogController.updatePart;
       updatePartStock = catalogController.updatePartStock;
@@ -84,6 +91,7 @@ jest.unstable_mockModule(
 );
 jest.unstable_mockModule('../src/modules/maintenance/controller/maintenance.controller.js', () => ({
   default: class MaintenanceController {
+    materialHistory = maintenanceController.materialHistory;
     getAll = maintenanceController.getAll;
     getByUuid = maintenanceController.getByUuid;
     orderList = maintenanceController.orderList;
@@ -144,6 +152,31 @@ const authorization = (permissions) => `Bearer ${tokenFor(permissions)}`;
 const uuid = 'f75ce638-18d2-4e29-9958-2afaa4ae5151';
 
 describe('maintenance catalogue route permissions', () => {
+  it.each([
+    [[], `?materialUuid=${uuid}`, 403],
+    [['maintenance.read'], `?materialUuid=${uuid}&page=2&limit=5`, 200],
+    [['maintenance.read'], '', 400],
+    [['maintenance.read'], '?materialUuid=invalid', 400],
+    [['maintenance.read'], `?materialUuid=${uuid}&page=0`, 400],
+  ])(
+    'protects and validates material maintenance history (%j, %s)',
+    async (permissions, query, status) => {
+      await request(app)
+        .get(`/api/v1/maintenance/history${query}`)
+        .set('Authorization', authorization(permissions))
+        .expect(status);
+    },
+  );
+  it.each([
+    [[], 403],
+    [['maintenance.parts.read'], 200],
+    [['maintenance.read'], 200],
+  ])('protects part suggestions for %j', async (permissions, status) => {
+    await request(app)
+      .get('/api/v1/maintenance/parts/suggestions')
+      .set('Authorization', authorization(permissions))
+      .expect(status);
+  });
   beforeAll(() => {
     jest
       .spyOn(sequelize, 'transaction')
@@ -242,6 +275,21 @@ describe('maintenance catalogue route permissions', () => {
       .expect(400);
   });
 
+  it.each([
+    ['0', 200],
+    ['60', 200],
+    ['365', 200],
+    ['-1', 400],
+    ['366', 400],
+    ['1.5', 400],
+    ['invalid', 400],
+  ])('validates the sheet horizon %s', async (horizonDays, statusCode) => {
+    await request(app)
+      .get(`/api/v1/maintenance/sheets?horizonDays=${horizonDays}`)
+      .set('Authorization', authorization(['maintenance.sheets.read']))
+      .expect(statusCode);
+  });
+
   it('protects maintenance sheet print history with the sheets permission', async () => {
     const path = '/api/v1/maintenance/sheets/print-events';
 
@@ -307,6 +355,41 @@ describe('maintenance catalogue route permissions', () => {
       expect.anything(),
     );
   });
+
+  it.each(['1', '12', ' 1,5 ', '-2', '1e3'])(
+    'rejects numeric part units %s on creation and update',
+    async (unit) => {
+      for (const [method, path, permission] of [
+        ['post', '/api/v1/maintenance/parts', 'maintenance.parts.create'],
+        ['put', `/api/v1/maintenance/parts/${uuid}`, 'maintenance.parts.update'],
+      ]) {
+        const response = await request(app)
+          [method](path)
+          .set('Authorization', authorization([permission]))
+          .send({ name: 'Boulon', reference: '145-0411', unit })
+          .expect(400);
+        expect(response.body.error.details).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              path: 'unit',
+              msg: 'Indiquez une unité, par exemple : pièce, litre, mètre.',
+            }),
+          ]),
+        );
+      }
+    },
+  );
+
+  it.each(['pièce', 'litre', 'mètre', 'm2', 'lot de 12'])(
+    'accepts descriptive part units %s',
+    async (unit) => {
+      await request(app)
+        .post('/api/v1/maintenance/parts')
+        .set('Authorization', authorization(['maintenance.parts.create']))
+        .send({ name: 'Boulon', reference: '145-0411', unit })
+        .expect(201);
+    },
+  );
 
   it('requires part-specific permissions for part writes', async () => {
     const payload = { name: 'Bougie', reference: 'BPMR8Y', unit: 'pièce', unitPrice: 12.5 };

@@ -49,7 +49,7 @@ describe('AuthService', () => {
   it('registers a user with the USER default role', async () => {
     const registeredUser = { id: 1, uuid, emailVerifiedAt: null };
     const userService = {
-      create: jest.fn().mockResolvedValue(registeredUser),
+      createIdentity: jest.fn().mockResolvedValue(registeredUser),
       publicUser: jest.fn((user) => user),
     };
     const emailVerificationService = {
@@ -58,14 +58,14 @@ describe('AuthService', () => {
     const service = new AuthService(
       {},
       userService,
-      { record: jest.fn() },
+      { recordAttributed: jest.fn() },
       emailVerificationService,
     );
     const result = await service.register({
       email: 'ada@greendesk.local',
       password: 'SecurePass123!',
     });
-    expect(userService.create).toHaveBeenCalledWith(expect.any(Object), null, 'USER', {
+    expect(userService.createIdentity).toHaveBeenCalledWith(expect.any(Object), null, 'USER', {
       requireEmailVerification: true,
     });
     expect(emailVerificationService.issue).toHaveBeenCalledWith(registeredUser, {
@@ -87,7 +87,7 @@ describe('AuthService', () => {
     const service = new AuthService(
       authRepository,
       { publicUser: (value) => value.toJSON() },
-      { record: jest.fn() },
+      { recordAttributed: jest.fn() },
     );
     const result = await service.login(user.email, 'SecurePass123!');
     expect(result.accessToken).toEqual(expect.any(String));
@@ -117,7 +117,7 @@ describe('AuthService', () => {
     const service = new AuthService(
       { findByEmailWithPassword: jest.fn().mockResolvedValue(null) },
       {},
-      { record: jest.fn() },
+      { recordAttributed: jest.fn() },
     );
     await expect(service.login('ada@greendesk.local', 'wrong')).rejects.toMatchObject({
       statusCode: 401,
@@ -129,7 +129,7 @@ describe('AuthService', () => {
     const service = new AuthService(
       { findByEmailWithPassword: jest.fn().mockResolvedValue(user) },
       {},
-      { record: jest.fn() },
+      { recordAttributed: jest.fn() },
     );
     await expect(service.login(user.email, 'SecurePass123!')).rejects.toMatchObject({
       statusCode: 403,
@@ -143,10 +143,10 @@ describe('AuthService', () => {
     const service = new AuthService(
       authRepository,
       {
-        getByUuid: jest.fn().mockResolvedValue(user),
+        getIdentityByUuid: jest.fn().mockResolvedValue(user),
         publicUser: (value) => value.toJSON(),
       },
-      { record: jest.fn() },
+      { recordAttributed: jest.fn() },
     );
     const expiresAt = 1_800_000_000;
 
@@ -168,7 +168,7 @@ describe('AuthService', () => {
 
   it('revokes the current token on logout', async () => {
     const authRepository = transactional({ revokeAccessToken: jest.fn() });
-    const auditService = { record: jest.fn() };
+    const auditService = { recordAttributed: jest.fn() };
     const service = new AuthService(authRepository, {}, auditService);
     const expiresAt = 1_800_000_000;
 
@@ -179,7 +179,7 @@ describe('AuthService', () => {
       new Date(expiresAt * 1000),
       { transaction },
     );
-    expect(auditService.record).toHaveBeenCalledWith(
+    expect(auditService.recordAttributed).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'LOGOUT_SUCCESS', userId: 1 }),
       { transaction },
     );

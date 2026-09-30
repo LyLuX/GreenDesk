@@ -24,7 +24,7 @@ const createService = () => {
     }),
     withTransaction: jest.fn((callback) => callback(transaction)),
   };
-  const auditService = { record: jest.fn() };
+  const auditService = { recordGlobal: jest.fn() };
   return { service: new CompanyService(repository, auditService), repository, auditService };
 };
 
@@ -48,7 +48,7 @@ describe('CompanyService deleted records', () => {
     });
     expect(repository.restore).toHaveBeenCalledWith(deletedCompany, { transaction });
     expect(deletedCompany.active).toBe(false);
-    expect(auditService.record).toHaveBeenCalledWith(
+    expect(auditService.recordGlobal).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'RESTORE', entity: 'COMPANY' }),
       { transaction },
     );

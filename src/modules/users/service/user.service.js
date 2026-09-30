@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import administrationPermissions from '../../../core/constants/administration-permissions.js';
-import { getCompanyScope } from '../../../core/company/company-context.js';
+import { requireCompanyScope } from '../../../core/company/company-context.js';
 import { readableRoleNames } from '../../../core/constants/user-visibility-permissions.js';
 import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';
@@ -13,6 +13,7 @@ import UserRepository from '../repository/user.repository.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 
 const PASSWORD_ROUNDS = 12;
+const IDENTITY_ACCESS = Symbol('identityAccess');
 const sameUuids = (left = [], right = []) => {
   const leftUuids = left.map(({ uuid }) => uuid).sort();
   const rightUuids = right.map(({ uuid }) => uuid).sort();
@@ -47,27 +48,23 @@ export default class UserService {
   }
 
   async getAll(query = {}, visibilityPermissions = []) {
-    const companyScope = getCompanyScope();
+    const companyScope = requireCompanyScope();
     const result = await this.userRepository.findAll({
       ...query,
       visibleRoleNames: this.visibleRoleNames(visibilityPermissions),
-      ...(!visibilityPermissions.includes(companyPermissions.accessAll) && companyScope
+      ...(!visibilityPermissions.includes(companyPermissions.accessAll)
         ? { companyId: companyScope.companyId }
         : {}),
     });
     return paginatedResult(result, normalizePagination(query));
   }
 
-  async getByUuid(uuid, { visibilityPermissions, ...options } = {}) {
-    const companyScope = getCompanyScope();
+  async getByUuid(uuid, { visibilityPermissions = [], ...options } = {}) {
+    const companyScope = requireCompanyScope();
     const user = await this.userRepository.findByUuid(uuid, {
       ...options,
-      ...(visibilityPermissions
-        ? { visibleRoleNames: this.visibleRoleNames(visibilityPermissions) }
-        : {}),
-      ...(visibilityPermissions &&
-      !visibilityPermissions.includes(companyPermissions.accessAll) &&
-      companyScope
+      visibleRoleNames: this.visibleRoleNames(visibilityPermissions),
+      ...(!visibilityPermissions.includes(companyPermissions.accessAll)
         ? { companyId: companyScope.companyId }
         : {}),
     });
@@ -75,17 +72,43 @@ export default class UserService {
     return user;
   }
 
+  /** Internal identity lookup for authentication and server-owned rereads; not an admin endpoint. */
+  async getIdentityByUuid(uuid, options = {}) {
+    const user = await this.userRepository.findByUuid(uuid, options);
+    if (!user) throw new AppError('User not found', HTTP_STATUS.NOT_FOUND);
+    return user;
+  }
+
+  /** Explicit registration/seeder entry point, independent of a selected business company. */
+  createIdentity(values, actorUserId = null, defaultRoleName = null, options = {}) {
+    return this.create(values, actorUserId, defaultRoleName, {
+      ...options,
+      identityAccess: IDENTITY_ACCESS,
+    });
+  }
+
+  /** Only the guarded development seeder uses this internal identity mutation. */
+  updateIdentity(uuid, values) {
+    return this.update(uuid, values, null, null, IDENTITY_ACCESS);
+  }
+
   async create(
     values,
     actorUserId = null,
     defaultRoleName = null,
-    { requireEmailVerification = false, actorClaims = null } = {},
+    { requireEmailVerification = false, actorClaims = null, identityAccess } = {},
   ) {
+    const isIdentity = identityAccess === IDENTITY_ACCESS;
+    if (!isIdentity) requireCompanyScope();
     const email = values.email.toLowerCase();
     const { roleUuids, companyUuids, ...userValues } = values;
     const emailVerifiedAt = requireEmailVerification ? null : new Date();
     const assignedRoles = roleUuids?.length ? await this.findRoles(roleUuids) : null;
-    const assignedCompanies = await this.resolveCompanies(companyUuids, actorClaims);
+    const assignedCompanies = await this.resolveCompanies(
+      companyUuids,
+      actorClaims,
+      identityAccess,
+    );
     if (!assignedCompanies.length && !rolesGrantGlobalCompanyAccess(assignedRoles)) {
       throw new AppError(
         'Un utilisateur sans accès global doit appartenir à au moins une société.',
@@ -140,7 +163,7 @@ export default class UserService {
       if (existingUser) {
         await this.userRepository.incrementAuthorizationVersion(existingUser.id, { transaction });
       }
-      await this.auditService.record(
+      await this.auditService[isIdentity ? 'recordAttributed' : 'record'](
         {
           userId: actorUserId,
           companyId: assignedCompanies[0]?.id,
@@ -152,19 +175,22 @@ export default class UserService {
         },
         { transaction },
       );
-      return this.getByUuid(user.uuid, { transaction });
+      return this.getIdentityByUuid(user.uuid, { transaction });
     });
   }
 
-  async update(uuid, values, actorUserId = null, actorClaims = null) {
-    const user = await this.getByUuid(uuid, {
-      visibilityPermissions: actorClaims?.permissions,
-    });
+  async update(uuid, values, actorUserId = null, actorClaims = null, identityAccess) {
+    const isIdentity = identityAccess === IDENTITY_ACCESS;
+    const user = isIdentity
+      ? await this.getIdentityByUuid(uuid)
+      : await this.getByUuid(uuid, { visibilityPermissions: actorClaims?.permissions });
     const oldValues = this.publicUser(user);
     const { roleUuids, companyUuids, ...updateValues } = values;
     const assignedRoles = roleUuids !== undefined ? await this.findRoles(roleUuids) : null;
     const assignedCompanies =
-      companyUuids !== undefined ? await this.resolveCompanies(companyUuids, actorClaims) : null;
+      companyUuids !== undefined
+        ? await this.resolveCompanies(companyUuids, actorClaims, identityAccess)
+        : null;
     const rolesChanged = assignedRoles !== null && !sameUuids(user.roles, assignedRoles);
     const companiesChanged =
       assignedCompanies !== null && !sameUuids(user.companies, assignedCompanies);
@@ -196,7 +222,7 @@ export default class UserService {
       if (companiesChanged || rolesChanged) {
         await this.userRepository.incrementAuthorizationVersion(user.id, { transaction });
       }
-      await this.auditService.record(
+      await this.auditService[isIdentity ? 'recordGlobal' : 'record'](
         {
           userId: actorUserId,
           action: 'USER_UPDATED',
@@ -207,11 +233,12 @@ export default class UserService {
         },
         { transaction },
       );
-      return this.getByUuid(uuid, { transaction });
+      return this.getIdentityByUuid(uuid, { transaction });
     });
   }
 
   async remove(uuid, actorUserId = null, actorClaims = null) {
+    requireCompanyScope();
     await this.userRepository.withTransaction(async (transaction) => {
       const user = await this.getByUuid(uuid, {
         transaction,
@@ -233,12 +260,12 @@ export default class UserService {
   }
 
   async restore(uuid, actorUserId = null, actorClaims = null) {
+    const companyScope = requireCompanyScope();
     return this.userRepository.withTransaction(async (transaction) => {
-      const companyScope = getCompanyScope();
       const user = await this.userRepository.findByUuid(uuid, {
         withDeleted: true,
         transaction,
-        ...(!actorClaims?.permissions?.includes(companyPermissions.accessAll) && companyScope
+        ...(!actorClaims?.permissions?.includes(companyPermissions.accessAll)
           ? { companyId: companyScope.companyId }
           : {}),
       });
@@ -298,9 +325,9 @@ export default class UserService {
   }
 
   /** Resolves company assignments without allowing an actor to escape its own company boundary. */
-  async resolveCompanies(companyUuids, actorClaims = null) {
+  async resolveCompanies(companyUuids, actorClaims = null, identityAccess) {
+    const scope = identityAccess === IDENTITY_ACCESS ? null : requireCompanyScope();
     if (companyUuids === undefined) {
-      const scope = getCompanyScope();
       const company = scope
         ? await this.companyRepository.findByUuid(scope.companyUuid)
         : await this.companyRepository.findFirstActive();
@@ -312,8 +339,8 @@ export default class UserService {
 
     const uniqueUuids = [...new Set(companyUuids)];
     const hasGlobalAccess = actorClaims?.permissions?.includes(companyPermissions.accessAll);
-    if (actorClaims && !hasGlobalAccess) {
-      const accessibleUuids = new Set((actorClaims.companyAccess ?? []).map(({ uuid }) => uuid));
+    if (identityAccess !== IDENTITY_ACCESS && !hasGlobalAccess) {
+      const accessibleUuids = new Set((actorClaims?.companyAccess ?? []).map(({ uuid }) => uuid));
       if (uniqueUuids.some((uuid) => !accessibleUuids.has(uuid))) {
         throw new AppError('Accès à cette société interdit.', HTTP_STATUS.FORBIDDEN);
       }

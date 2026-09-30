@@ -8,6 +8,32 @@ import {
 describe('MaintenanceService', () => {
   const createService = () => new MaintenanceService({ findAll: jest.fn() }, {}, {});
 
+  it('returns the same history details with their plan and pagination for a material', async () => {
+    const entry = {
+      id: 12,
+      maintenanceTaskId: 3,
+      performedBy: 4,
+      uuid: 'history',
+      performedAt: '2026-09-01',
+      comment: 'Entretien partiel',
+      executionType: 'partialPartReplacement',
+      task: { uuid: 'task', title: 'Vidange' },
+      partsSnapshot: [{ name: 'Filtre', quantity: 1, consumed: false }],
+      performedByUser: { uuid: 'user', firstName: 'Jean', lastName: 'Dupont' },
+    };
+    const repository = {
+      findMaterialHistory: jest.fn().mockResolvedValue({ count: 6, rows: [entry] }),
+    };
+    const service = new MaintenanceService(repository, {}, {});
+    const query = { materialUuid: 'material', page: 2, limit: 5 };
+    const result = await service.getMaterialHistory(query);
+    expect(repository.findMaterialHistory).toHaveBeenCalledWith(query);
+    expect(result.items).toEqual([service.toHistory(entry)]);
+    expect(result.items[0]).not.toHaveProperty('maintenanceTaskId');
+    expect(result.items[0]).not.toHaveProperty('performedBy');
+    expect(result.pagination).toEqual({ page: 2, limit: 5, total: 6, totalPages: 2 });
+  });
+
   it.each([false, true])(
     'includes logo metadata directly in order items (lowStockOnly=%s)',
     async (lowStockOnly) => {
@@ -400,6 +426,39 @@ describe('MaintenanceService', () => {
       }),
     );
   });
+
+  it.each([0, 30, 60, 90, 365])(
+    'uses the same %s-day bounds for sheets and ordered parts',
+    async (horizonDays) => {
+      const repository = {
+        findForMaintenanceSheets: jest.fn().mockResolvedValue([]),
+        findForOrderList: jest.fn().mockResolvedValue([]),
+      };
+      const service = new MaintenanceService(repository, {}, {}, {});
+      for (const includeOverdue of [false, true]) {
+        const filters = { horizonDays, includeOverdue, includeWearBased: true };
+        await service.getMaintenanceSheets(filters);
+        await service.getOrderList(filters);
+        const sheetQuery = repository.findForMaintenanceSheets.mock.lastCall[0];
+        const orderQuery = repository.findForOrderList.mock.calls.at(-2)[0];
+        expect(sheetQuery).toEqual({
+          from: orderQuery.from,
+          through: orderQuery.through,
+          includeWearBased: true,
+        });
+      }
+    },
+  );
+
+  it.each(['dueToday', 'upcoming', 'overdue', 'upToDate', 'wearBased'])(
+    'preserves exact %s associations ahead of the horizon',
+    async (status) => {
+      const repository = { findForMaintenanceSheets: jest.fn().mockResolvedValue([]) };
+      const service = new MaintenanceService(repository, {}, {}, {});
+      await service.getMaintenanceSheets({ status, horizonDays: 60 });
+      expect(repository.findForMaintenanceSheets).toHaveBeenCalledWith({ statuses: [status] });
+    },
+  );
 
   it('returns every active plan when maintenance sheets have no deadline filter', async () => {
     const repository = { findForMaintenanceSheets: jest.fn().mockResolvedValue([]) };

@@ -20,7 +20,7 @@ describe('CompanyService authorization invalidation', () => {
       update: jest.fn(async (item, values) => Object.assign(item, values)),
       invalidateUserSessions: jest.fn(),
     };
-    const service = new CompanyService(repository, { record: jest.fn() });
+    const service = new CompanyService(repository, { recordGlobal: jest.fn() });
 
     await service.update(company.uuid, { active: false }, 42, {
       permissions: ['companies.access.all'],

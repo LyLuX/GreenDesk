@@ -64,6 +64,7 @@ export const createValidator = [
 export const updateValidator = [uuid, ...fields];
 export const uuidValidator = [uuid];
 export const historyValidator = [uuid, ...paginationValidator];
+export const materialHistoryValidator = [query('materialUuid').isUUID(), ...paginationValidator];
 export const interventionListValidator = [
   query('materialUuid').optional({ values: 'falsy' }).isUUID(),
   ...paginationValidator,
@@ -109,7 +110,10 @@ const deadlineStatusValidator = [
   query('includeOverdue').optional().isBoolean().toBoolean(),
   query('includeWearBased').optional().isBoolean().toBoolean(),
 ];
-export const maintenanceSheetListValidator = [...deadlineStatusValidator];
+export const maintenanceSheetListValidator = [
+  ...deadlineStatusValidator,
+  query('horizonDays').optional().isInt({ min: 0, max: 365 }).toInt(),
+];
 export const orderListValidator = [
   ...deadlineStatusValidator,
   query('horizonDays').optional().isInt({ min: 0, max: 365 }).toInt(),
@@ -152,6 +156,15 @@ export const updateOperationValidator = [
   body('maintenanceType').optional().isIn(MAINTENANCE_TYPES),
   body('active').optional().isBoolean().toBoolean(),
 ];
+const partUnitValidator = () =>
+  body('unit')
+    .optional()
+    .trim()
+    .notEmpty()
+    .isLength({ max: 50 })
+    .custom((value) => !/^[+\-]?(?:\d+(?:[.,]\d*)?|[.,]\d+)(?:[eE][+\-]?\d+)?$/.test(value))
+    .withMessage('Indiquez une unité, par exemple : pièce, litre, mètre.');
+
 export const createPartValidator = [
   body('name').trim().notEmpty().isLength({ max: 150 }),
   optionalText('manufacturer', 150),
@@ -159,7 +172,7 @@ export const createPartValidator = [
   body('supplierUuid').optional({ nullable: true }).isUUID(),
   body('reference').trim().notEmpty().isLength({ max: 150 }),
   optionalText('supplierReference', 150),
-  body('unit').optional().trim().notEmpty().isLength({ max: 50 }),
+  partUnitValidator(),
   unitPriceValidator({ optional: true }),
 ];
 export const updatePartValidator = [
@@ -170,7 +183,7 @@ export const updatePartValidator = [
   body('supplierUuid').optional({ nullable: true }).isUUID(),
   body('reference').optional().trim().notEmpty().isLength({ max: 150 }),
   optionalText('supplierReference', 150),
-  body('unit').optional().trim().notEmpty().isLength({ max: 50 }),
+  partUnitValidator(),
   body('active').optional().isBoolean().toBoolean(),
 ];
 export const updatePartStockValidator = [

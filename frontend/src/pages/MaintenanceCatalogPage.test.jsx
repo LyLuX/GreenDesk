@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   listManufacturers: vi.fn(),
   listSuppliers: vi.fn(),
   listParts: vi.fn(),
+  partSuggestions: vi.fn(),
   createPart: vi.fn(),
   updatePart: vi.fn(),
   updatePartStock: vi.fn(),
@@ -31,6 +32,7 @@ vi.mock('../api/maintenance.api.js', () => ({
   updateMaintenanceOperation: mocks.updateOperation,
   deleteMaintenanceOperation: mocks.deleteOperation,
   listMaintenanceParts: mocks.listParts,
+  getMaintenancePartSuggestions: mocks.partSuggestions,
   createMaintenancePart: mocks.createPart,
   updateMaintenancePart: mocks.updatePart,
   updateMaintenancePartStock: mocks.updatePartStock,
@@ -95,6 +97,9 @@ describe('dedicated maintenance catalogue pages', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.partSuggestions.mockResolvedValue({
+      data: { data: { name: ['Bougie', 'Huile moteur'], unit: ['pièce', 'litre'] } },
+    });
     mocks.hasPermission.mockReturnValue(true);
     mocks.listOperations.mockResolvedValue({
       data: {
@@ -407,7 +412,19 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(unit).toHaveValue('pièce');
   });
 
-  it('manages workshop and ordered quantities from a dedicated reusable action', async () => {
+  it.each([
+    'pièce',
+    'pièce(s)',
+    ' PIÈCE(S) ',
+    'piece(s)',
+    'pièce (s)',
+    'à la pièce',
+    'pièces détachées',
+    'unité : pièce(s)',
+  ])('manages stock with whole increments for %s', async (unit) => {
+    const response = await mocks.listParts();
+    response.data.data[0].unit = unit;
+    mocks.listParts.mockResolvedValue(response);
     const user = userEvent.setup();
     render(<MaintenancePartsPage />);
 
@@ -426,6 +443,12 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(operationDate).toHaveAttribute('max', operationDate.value);
     expect(quantityOnHand).toHaveValue(0);
     expect(quantityOnOrder).toHaveValue(0);
+    expect(quantityOnHand).toHaveAttribute('step', '1');
+    expect(quantityOnOrder).toHaveAttribute('step', '1');
+    quantityOnHand.stepUp();
+    expect(quantityOnHand).toHaveValue(1);
+    quantityOnOrder.stepUp();
+    expect(quantityOnOrder).toHaveValue(1);
     expect(quantityOnHand.closest('.col-sm-5')?.parentElement).toHaveClass(
       'justify-content-around',
       'text-center',
@@ -498,7 +521,7 @@ describe('dedicated maintenance catalogue pages', () => {
             uuid: 'part-uuid',
             name: 'Bougie',
             reference: 'BPMR8Y',
-            unit: 'pièce',
+            unit: 'litre',
             quantityOnHand: 2,
             quantityOnOrder: 0,
             unitPrice: 10,
@@ -606,12 +629,13 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(screen.queryByLabelText('Date de l’opération')).not.toBeInTheDocument();
 
     await user.clear(minimumStock);
-    await user.type(minimumStock, '2.5');
+    expect(minimumStock).toHaveAttribute('step', '1');
+    await user.type(minimumStock, '3');
     await user.click(screen.getByRole('button', { name: 'Enregistrer le stock minimum' }));
 
     await waitFor(() =>
       expect(mocks.updatePartMinimumStock).toHaveBeenCalledWith('part-uuid', {
-        minimumStockQuantity: 2.5,
+        minimumStockQuantity: 3,
       }),
     );
     expect(mocks.notify).toHaveBeenCalledWith('success', 'Stock minimum mis à jour.');
@@ -619,7 +643,23 @@ describe('dedicated maintenance catalogue pages', () => {
       within(screen.getByRole('dialog')).getByText('Stock minimum', {
         selector: '.stock-summary-card span',
       }).nextElementSibling,
-    ).toHaveTextContent('2,5 pièces');
+    ).toHaveTextContent('3 pièces');
+  });
+
+  it('loads suggestions beyond the displayed parts and refreshes them on reopening', async () => {
+    const user = userEvent.setup();
+    render(<MaintenancePartsPage />);
+    await user.click(await screen.findByRole('button', { name: 'Créer' }));
+    await user.type(screen.getByLabelText('Unité'), 'lit');
+    await user.click(await screen.findByRole('option', { name: 'litre' }));
+    expect(screen.getByLabelText('Unité')).toHaveValue('litre');
+    await user.type(screen.getByLabelText('Désignation'), 'Hui');
+    expect(await screen.findByRole('option', { name: 'Huile moteur' })).toBeVisible();
+    expect(mocks.partSuggestions).toHaveBeenCalledWith(expect.any(AbortSignal));
+    await user.keyboard('{Escape}');
+    await user.keyboard('{Escape}');
+    await user.click(screen.getByRole('button', { name: 'Créer' }));
+    expect(mocks.partSuggestions).toHaveBeenCalledTimes(2);
   });
 
   it('reports that no designation is proposed when the database is empty', async () => {
