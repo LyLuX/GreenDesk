@@ -11,6 +11,7 @@ import AuthRepository from '../repository/auth.repository.js';
 import EmailVerificationService from './email-verification.service.js';
 import CompanyRepository from '../../companies/repository/company.repository.js';
 import companyPermissions from '../../companies/company.permissions.js';
+import { REGISTRATION_FIELDS, userWriteValues } from '../../users/user-write-values.js';
 
 /** Registration and credential-based authentication. */
 export default class AuthService {
@@ -29,6 +30,7 @@ export default class AuthService {
   }
 
   async register(values) {
+    values = userWriteValues(values, REGISTRATION_FIELDS);
     const user = await this.userService.createIdentity(values, null, 'USER', {
       requireEmailVerification: true,
     });

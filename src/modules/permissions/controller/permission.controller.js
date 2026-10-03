@@ -10,6 +10,9 @@ export default class PermissionController {
   async getAll(request, response) {
     response.json(successResponse(await this.permissionService.getAll(request.query)));
   }
+  async getOptions(_request, response) {
+    response.json(successResponse(await this.permissionService.getOptions()));
+  }
   async create(request, response) {
     response
       .status(HTTP_STATUS.CREATED)

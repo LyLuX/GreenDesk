@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import client from './client.js';
-import { createReferenceApi, listMaterialOptions } from './reference.api.js';
+import { createReferenceApi, listMaterialOptions, listPermissionOptions } from './reference.api.js';
 import { listUsers } from './users.api.js';
 import {
   listMaintenance,
@@ -36,6 +36,13 @@ function captureUrls() {
 
 describe('canonical API list URLs', () => {
   afterEach(() => vi.restoreAllMocks());
+
+  it('loads permission options without pagination parameters', async () => {
+    captureUrls();
+    expect(await listPermissionOptions(new AbortController().signal)).toBe(
+      '/api/v1/permissions/options',
+    );
+  });
 
   it.each(activeLists)(
     '%s omits the active default and orders pagination first',

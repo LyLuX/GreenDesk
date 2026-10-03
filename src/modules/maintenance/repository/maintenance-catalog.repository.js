@@ -18,17 +18,21 @@ import {
   companyWhere,
 } from '../../../core/company/company-context.js';
 
-const manufacturerInclude = {
+const manufacturerInclude = () => ({
   model: PartManufacturer,
   as: 'manufacturerDirectory',
+  where: companyWhere(),
+  required: false,
   attributes: ['uuid', 'name', 'logoFileName'],
-};
-const supplierInclude = {
+});
+const supplierInclude = () => ({
   model: Supplier,
   as: 'supplierDirectory',
+  where: companyWhere(),
+  required: false,
   attributes: ['uuid', 'name'],
-};
-const partDirectoryIncludes = [manufacturerInclude, supplierInclude];
+});
+const partDirectoryIncludes = () => [manufacturerInclude(), supplierInclude()];
 const partCostAttributes = {
   include: [
     [
@@ -36,6 +40,7 @@ const partCostAttributes = {
         SELECT COALESCE(SUM(usage_cost.total_cost), 0)
         FROM maintenance_part_usages AS usage_cost
         WHERE usage_cost.maintenance_part_id = MaintenancePart.id
+          AND usage_cost.company_id = MaintenancePart.company_id
       )`),
       'totalMaintenanceCost',
     ],
@@ -184,7 +189,7 @@ export default class MaintenanceCatalogRepository extends CompanyScopedRepositor
     return MaintenancePart.findAndCountAll({
       where: companyWhere(where),
       attributes: partCostAttributes,
-      include: partDirectoryIncludes,
+      include: partDirectoryIncludes(),
       order: [
         ['name', 'ASC'],
         ['manufacturer', 'ASC'],
@@ -201,7 +206,7 @@ export default class MaintenanceCatalogRepository extends CompanyScopedRepositor
       where: companyWhere({ uuid }),
       attributes: partCostAttributes,
       paranoid: !withDeleted,
-      include: partDirectoryIncludes,
+      include: partDirectoryIncludes(),
       transaction,
       lock: lock ? transaction?.LOCK.UPDATE : undefined,
     });
@@ -210,7 +215,7 @@ export default class MaintenanceCatalogRepository extends CompanyScopedRepositor
   findPartsByUuids(uuids, { transaction, lock = false } = {}) {
     return MaintenancePart.findAll({
       where: companyWhere({ uuid: { [Op.in]: uuids }, active: true }),
-      include: partDirectoryIncludes,
+      include: partDirectoryIncludes(),
       transaction,
       lock: lock ? transaction?.LOCK.UPDATE : undefined,
       order: [['id', 'ASC']],
@@ -238,7 +243,7 @@ export default class MaintenanceCatalogRepository extends CompanyScopedRepositor
           ),
         ],
       }),
-      include: partDirectoryIncludes,
+      include: partDirectoryIncludes(),
       order: [
         ['name', 'ASC'],
         ['manufacturer', 'ASC'],

@@ -67,6 +67,38 @@ describe('UserService', () => {
     };
   };
 
+  it.each([
+    ['passwordHash', 'attacker-selected-hash'],
+    ['password_hash', 'attacker-selected-hash'],
+    ['authorization_version', 0],
+    ['roles', [{ name: 'ADMIN' }]],
+    ['authorizationVersion', 0],
+    ['emailVerifiedAt', '2026-01-01'],
+    ['lastLoginAt', '2026-01-01'],
+    ['id', 2],
+    ['uuid', 'b5eaf09e-49b1-4fa3-a022-1a20854b06bd'],
+    ['deletedAt', null],
+    ['createdAt', '2026-01-01'],
+    ['updatedAt', '2026-01-01'],
+  ])('rejects client-owned %s before any identity write', async (field, value) => {
+    const { service, userRepository } = createService();
+    await expect(
+      service.update(user.uuid, { firstName: 'Modified', [field]: value }),
+    ).rejects.toMatchObject({ statusCode: 400 });
+    await expect(
+      service.create({
+        firstName: 'Ada',
+        lastName: 'Lovelace',
+        email: user.email,
+        password: 'SecurePass123!',
+        [field]: value,
+      }),
+    ).rejects.toMatchObject({ statusCode: 400 });
+    expect(userRepository.update).not.toHaveBeenCalled();
+    expect(userRepository.create).not.toHaveBeenCalled();
+    expect(userRepository.withTransaction).not.toHaveBeenCalled();
+  });
+
   it('keeps registration and seeder identity writes explicit without business scope', async () => {
     const { service, userRepository, auditService } = createService();
     await runWithCompanyScope(null, async () => {

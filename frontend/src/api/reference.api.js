@@ -25,6 +25,8 @@ export const createReferenceApi = (resource) => ({
   restore: (uuid) => client.post(`/v1/${resource}/${uuid}/restore`),
 });
 
+export const listPermissionOptions = (signal) => client.get('/v1/permissions/options', { signal });
+
 export const listMaterialOptions = (params, signal) =>
   client.get('/v1/materials/options', {
     params: compactQueryParams(params, { active: true }),

@@ -73,19 +73,26 @@ const auditSubjectJoinQuery = (auditUuidPlaceholders) => `
   FROM audit_logs AS auditLogs
   LEFT JOIN materials AS materials
     ON auditLogs.entity = 'MATERIAL' AND materials.uuid = auditLogs.entity_uuid
+    AND materials.company_id = auditLogs.company_id
   LEFT JOIN categories AS categories
     ON auditLogs.entity = 'CATEGORY' AND categories.uuid = auditLogs.entity_uuid
+    AND categories.company_id = auditLogs.company_id
   LEFT JOIN part_manufacturers AS manufacturers
     ON auditLogs.entity = 'MANUFACTURER' AND manufacturers.uuid = auditLogs.entity_uuid
+    AND manufacturers.company_id = auditLogs.company_id
   LEFT JOIN suppliers AS suppliers
     ON auditLogs.entity = 'SUPPLIER' AND suppliers.uuid = auditLogs.entity_uuid
+    AND suppliers.company_id = auditLogs.company_id
   LEFT JOIN maintenance_tasks AS maintenanceTasks
     ON auditLogs.entity = 'MAINTENANCE_TASK' AND maintenanceTasks.uuid = auditLogs.entity_uuid
+    AND maintenanceTasks.company_id = auditLogs.company_id
   LEFT JOIN maintenance_operations AS maintenanceOperations
     ON auditLogs.entity = 'MAINTENANCE_OPERATION'
     AND maintenanceOperations.uuid = auditLogs.entity_uuid
+    AND maintenanceOperations.company_id = auditLogs.company_id
   LEFT JOIN maintenance_parts AS maintenanceParts
     ON auditLogs.entity = 'MAINTENANCE_PART' AND maintenanceParts.uuid = auditLogs.entity_uuid
+    AND maintenanceParts.company_id = auditLogs.company_id
   LEFT JOIN companies AS companies
     ON auditLogs.entity = 'COMPANY' AND companies.uuid = auditLogs.entity_uuid
   LEFT JOIN users AS auditUsers
@@ -95,6 +102,7 @@ const auditSubjectJoinQuery = (auditUuidPlaceholders) => `
   LEFT JOIN permissions AS permissions
     ON auditLogs.entity = 'PERMISSION' AND permissions.uuid = auditLogs.entity_uuid
   WHERE auditLogs.uuid IN (${auditUuidPlaceholders})
+    AND (auditLogs.company_id = $companyId OR (auditLogs.company_id IS NULL AND $accessAll = 1))
 `;
 
 const dateOnlyWhere = ({ from, through }) => ({
@@ -191,7 +199,11 @@ export default class HistoryRepository {
       .map((key) => `$${key}`)
       .join(', ');
     const [subjects] = await sequelize.query(auditSubjectJoinQuery(auditUuidPlaceholders), {
-      bind: auditUuidBinds,
+      bind: {
+        ...auditUuidBinds,
+        companyId: companyScope.companyId,
+        accessAll: companyScope.accessAll === true ? 1 : 0,
+      },
     });
     const subjectByAuditUuid = new Map(
       subjects.map(({ auditUuid, subjectLabel }) => [auditUuid, subjectLabel]),
@@ -240,14 +252,23 @@ export default class HistoryRepository {
         {
           model: MaintenanceTask,
           as: 'task',
+          where: companyWhere(),
+          required: false,
           attributes: ['uuid', 'title'],
           paranoid: false,
           include: [
-            { model: Material, as: 'material', attributes: ['uuid', 'name'], paranoid: false },
+            {
+              model: Material,
+              as: 'material',
+              attributes: ['uuid', 'name'],
+              paranoid: false,
+              where: companyWhere(),
+              required: false,
+            },
           ],
         },
         userInclude('performedByUser', query.userUuid),
-        { model: MaintenancePartUsage, as: 'partUsages' },
+        { model: MaintenancePartUsage, as: 'partUsages', where: companyWhere(), required: false },
       ],
       order: [
         ['performedAt', 'DESC'],
@@ -277,9 +298,16 @@ export default class HistoryRepository {
     return MaintenanceIntervention.findAndCountAll({
       where,
       include: [
-        { model: Material, as: 'material', attributes: ['uuid', 'name'], paranoid: false },
+        {
+          model: Material,
+          as: 'material',
+          attributes: ['uuid', 'name'],
+          paranoid: false,
+          where: companyWhere(),
+          required: false,
+        },
         userInclude('performedByUser', query.userUuid),
-        { model: MaintenancePartUsage, as: 'partUsages' },
+        { model: MaintenancePartUsage, as: 'partUsages', where: companyWhere(), required: false },
       ],
       order: [
         ['performedAt', 'DESC'],
@@ -359,6 +387,8 @@ export default class HistoryRepository {
         {
           model: MaintenancePart,
           as: 'part',
+          where: companyWhere(),
+          required: false,
           attributes: ['uuid', 'name', 'reference'],
           paranoid: false,
         },

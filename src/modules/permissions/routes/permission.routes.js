@@ -22,6 +22,11 @@ router.get(
   validateRequest,
   asyncHandler(controller.getAll.bind(controller)),
 );
+router.get(
+  '/options',
+  authorize(administrationPermissions.permissions.read),
+  asyncHandler(controller.getOptions.bind(controller)),
+);
 router.post(
   '/',
   authorize(administrationPermissions.permissions.create),

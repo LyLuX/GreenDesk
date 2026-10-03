@@ -457,7 +457,7 @@ const auditLog = {
       properties: {
         manufacturer: { type: 'string', nullable: true },
         category: { type: 'string', nullable: true },
-        purchasePrice: { type: 'number', minimum: 0 },
+        purchasePrice: { type: 'number', minimum: 0, maximum: MAX_UNIT_PRICE },
       },
       additionalProperties: true,
     },
@@ -469,7 +469,7 @@ const auditLog = {
       properties: {
         manufacturer: { type: 'string', nullable: true },
         category: { type: 'string', nullable: true },
-        purchasePrice: { type: 'number', minimum: 0 },
+        purchasePrice: { type: 'number', minimum: 0, maximum: MAX_UNIT_PRICE },
       },
       additionalProperties: true,
     },
@@ -481,7 +481,7 @@ const pagination = {
   type: 'object',
   required: ['page', 'limit', 'total', 'totalPages'],
   properties: {
-    page: { type: 'integer', minimum: 1 },
+    page: { type: 'integer', minimum: 1, maximum: 10000 },
     limit: { type: 'integer', enum: [5, 10, 25] },
     total: { type: 'integer', minimum: 0 },
     totalPages: { type: 'integer', minimum: 1 },
@@ -491,15 +491,21 @@ const pagination = {
 const materialWriteProperties = {
   name: writeText(150),
   unit: writeText(50),
-  purchasePrice: { type: 'number', minimum: 0 },
+  purchasePrice: { type: 'number', minimum: 0, maximum: MAX_UNIT_PRICE },
   manufacturerUuid: { ...uuid, nullable: true },
+  brandUuid: {
+    ...uuid,
+    nullable: true,
+    deprecated: true,
+    description: 'Alias historique de manufacturerUuid.',
+  },
   categoryUuid: { ...uuid, nullable: true },
   model: { ...nullableString, maxLength: 150 },
   serialNumber: { ...nullableString, maxLength: 150 },
   purchaseDate: nullableDate,
   commissionedAt: nullableDate,
   retiredAt: nullableDate,
-  notes: nullableString,
+  notes: { ...nullableString, maxLength: 10000 },
 };
 
 const maintenanceWriteProperties = {
@@ -509,7 +515,7 @@ const maintenanceWriteProperties = {
     deprecated: true,
     description: 'Compatibilité avec les anciens clients sans catalogue.',
   },
-  description: nullableString,
+  description: { ...nullableString, maxLength: 10000 },
   maintenanceType: {
     type: 'string',
     enum: MAINTENANCE_TYPES,
@@ -523,13 +529,14 @@ const maintenanceWriteProperties = {
   },
   lastMaintenanceDate: date,
   priority: { type: 'string', enum: MAINTENANCE_PRIORITIES, default: 'normal' },
-  notes: nullableString,
+  notes: { ...nullableString, maxLength: 10000 },
   parts: {
     type: 'array',
     maxItems: 50,
     items: {
       type: 'object',
       required: ['partUuid', 'quantity'],
+      additionalProperties: false,
       properties: {
         partUuid: uuid,
         quantity: decimalQuantity(100000),
@@ -549,7 +556,20 @@ export const openApiSchemas = {
         required: ['message'],
         properties: {
           message: { type: 'string' },
-          details: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          details: {
+            type: 'array',
+            description: 'Métadonnées de validation sans valeur saisie ni diagnostic interne.',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                type: { type: 'string' },
+                path: { type: 'string' },
+                location: { type: 'string' },
+                msg: { type: 'string' },
+              },
+            },
+          },
         },
       },
     },
@@ -778,6 +798,7 @@ export const openApiSchemas = {
   },
   RegisterRequest: {
     type: 'object',
+    additionalProperties: false,
     required: ['firstName', 'lastName', 'email', 'password'],
     properties: {
       firstName: writeText(100),
@@ -810,25 +831,30 @@ export const openApiSchemas = {
     },
   },
   UserCreateRequest: {
-    allOf: [
-      reference('RegisterRequest'),
-      {
-        type: 'object',
-        properties: {
-          roleUuids: {
-            ...arrayOf(uuid),
-            description: 'Nécessite `users.roles.update`.',
-          },
-          companyUuids: {
-            ...arrayOf(uuid),
-            description: 'Nécessite `users.companies.update`.',
-          },
-        },
+    type: 'object',
+    additionalProperties: false,
+    required: ['firstName', 'lastName', 'email', 'password'],
+    properties: {
+      firstName: writeText(100),
+      lastName: {
+        ...writeText(100),
+        description: 'Nom de famille normalisé en majuscules par le serveur.',
       },
-    ],
+      email: { type: 'string', format: 'email' },
+      password: { type: 'string', format: 'password', minLength: 8, writeOnly: true },
+      roleUuids: {
+        ...arrayOf(uuid),
+        description: 'Nécessite `users.roles.update`.',
+      },
+      companyUuids: {
+        ...arrayOf(uuid),
+        description: 'Nécessite `users.companies.update`.',
+      },
+    },
   },
   UserUpdateRequest: {
     type: 'object',
+    additionalProperties: false,
     properties: {
       firstName: writeText(100),
       lastName: {
@@ -856,10 +882,11 @@ export const openApiSchemas = {
   },
   RoleCreateRequest: {
     type: 'object',
+    additionalProperties: false,
     required: ['name'],
     properties: {
       name: writeText(100),
-      description: { type: 'string', maxLength: 500 },
+      description: { ...nullableString, maxLength: 500 },
       permissionUuids: {
         ...arrayOf(uuid),
         description: 'Nécessite `roles.permissions.update`.',
@@ -868,8 +895,9 @@ export const openApiSchemas = {
   },
   RoleUpdateRequest: {
     type: 'object',
+    additionalProperties: false,
     properties: {
-      description: { type: 'string', maxLength: 500 },
+      description: { ...nullableString, maxLength: 500 },
       permissionUuids: {
         ...arrayOf(uuid),
         description: 'Nécessite `roles.permissions.update`.',
@@ -878,39 +906,45 @@ export const openApiSchemas = {
   },
   PermissionCreateRequest: {
     type: 'object',
+    additionalProperties: false,
     required: ['name'],
     properties: {
       name: writeText(150),
-      description: { type: 'string', maxLength: 500 },
+      description: { ...nullableString, maxLength: 500 },
     },
   },
   PermissionUpdateRequest: {
     type: 'object',
+    additionalProperties: false,
     properties: {
       name: writeText(150),
-      description: { type: 'string', maxLength: 500 },
+      description: { ...nullableString, maxLength: 500 },
     },
   },
   CategoryCreateRequest: {
     type: 'object',
+    additionalProperties: false,
     required: ['name'],
-    properties: { name: writeText(150), description: { type: 'string' } },
+    properties: { name: writeText(150), description: { ...nullableString, maxLength: 10000 } },
   },
   CategoryUpdateRequest: {
     type: 'object',
+    additionalProperties: false,
     properties: {
       name: writeText(150),
-      description: { type: 'string' },
+      description: { ...nullableString, maxLength: 10000 },
       active: { type: 'boolean', description: 'Nécessite `categories.status.update`.' },
     },
   },
   ManufacturerCreateRequest: {
     type: 'object',
+    additionalProperties: false,
     required: ['name'],
     properties: { name: writeText(150) },
   },
   ManufacturerUpdateRequest: {
     type: 'object',
+    additionalProperties: false,
     properties: {
       name: writeText(150),
       active: { type: 'boolean', description: 'Nécessite `manufacturers.status.update`.' },
@@ -918,11 +952,13 @@ export const openApiSchemas = {
   },
   MaterialCreateRequest: {
     type: 'object',
+    additionalProperties: false,
     required: ['name', 'unit', 'purchasePrice'],
     properties: materialWriteProperties,
   },
   MaterialUpdateRequest: {
     type: 'object',
+    additionalProperties: false,
     properties: {
       ...materialWriteProperties,
       active: {
@@ -934,6 +970,7 @@ export const openApiSchemas = {
   },
   MaintenanceCreateRequest: {
     type: 'object',
+    additionalProperties: false,
     required: ['materialUuid', 'intervalDays', 'lastMaintenanceDate'],
     oneOf: [
       { required: ['operationUuid'] },
@@ -946,6 +983,7 @@ export const openApiSchemas = {
   },
   MaintenanceUpdateRequest: {
     type: 'object',
+    additionalProperties: false,
     properties: maintenanceWriteProperties,
   },
   MaintenanceStatusRequest: {
@@ -964,7 +1002,8 @@ export const openApiSchemas = {
     properties: {
       performedAt: date,
       comment: {
-        type: 'string',
+        ...nullableString,
+        maxLength: 10000,
         description: 'Obligatoire lorsque `partsAction` vaut `partial` ou `skip`.',
       },
       partsAction: {
@@ -1009,18 +1048,20 @@ export const openApiSchemas = {
   },
   MaintenanceOperationCreateRequest: {
     type: 'object',
+    additionalProperties: false,
     required: ['name', 'maintenanceType'],
     properties: {
       name: writeText(150),
-      description: nullableString,
+      description: { ...nullableString, maxLength: 10000 },
       maintenanceType: { type: 'string', enum: MAINTENANCE_TYPES },
     },
   },
   MaintenanceOperationUpdateRequest: {
     type: 'object',
+    additionalProperties: false,
     properties: {
       name: writeText(150),
-      description: nullableString,
+      description: { ...nullableString, maxLength: 10000 },
       maintenanceType: { type: 'string', enum: MAINTENANCE_TYPES },
       active: {
         type: 'boolean',
@@ -1030,6 +1071,7 @@ export const openApiSchemas = {
   },
   MaintenancePartCreateRequest: {
     type: 'object',
+    additionalProperties: false,
     required: ['name', 'reference'],
     properties: {
       name: writeText(150),
@@ -1060,6 +1102,7 @@ export const openApiSchemas = {
   },
   MaintenancePartUpdateRequest: {
     type: 'object',
+    additionalProperties: false,
     properties: {
       name: writeText(150),
       manufacturer: {
@@ -1162,23 +1205,25 @@ export const openApiSchemas = {
   },
   SupplierCreateRequest: {
     type: 'object',
+    additionalProperties: false,
     required: ['name'],
     properties: {
       name: writeText(150),
       contactName: { ...nullableString, maxLength: 150 },
       email: { type: 'string', format: 'email', nullable: true, maxLength: 254 },
       phone: { ...nullableString, maxLength: 50 },
-      notes: nullableString,
+      notes: { ...nullableString, maxLength: 10000 },
     },
   },
   SupplierUpdateRequest: {
     type: 'object',
+    additionalProperties: false,
     properties: {
       name: writeText(150),
       contactName: { ...nullableString, maxLength: 150 },
       email: { type: 'string', format: 'email', nullable: true, maxLength: 254 },
       phone: { ...nullableString, maxLength: 50 },
-      notes: nullableString,
+      notes: { ...nullableString, maxLength: 10000 },
       active: { type: 'boolean', description: 'Nécessite `suppliers.status.update`.' },
     },
   },
@@ -1207,7 +1252,11 @@ export const openApiSchemas = {
     type: 'object',
     required: ['accessToken', 'user'],
     properties: {
-      accessToken: { type: 'string', description: 'JWT access token.' },
+      accessToken: {
+        type: 'string',
+        description:
+          'Jeton JWT signé émis par GreenDesk ; sub, userId, jti, exp, authorizationVersion et permissions sont obligatoires. Un jeton incomplet, expiré, révoqué ou associé à un compte inactif ou une version obsolète est refusé (401).',
+      },
       user: {
         type: 'object',
         required: ['uuid', 'firstName', 'lastName', 'email', 'roles', 'permissions', 'companies'],
@@ -1631,6 +1680,20 @@ export const openApiSchemas = {
   RoleListResponse: success(reference('RolePage')),
   PermissionResponse: success(reference('Permission')),
   PermissionListResponse: success(reference('PermissionPage')),
+  PermissionOptionsResponse: success({
+    type: 'array',
+    maxItems: 10000,
+    items: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['uuid', 'name', 'description'],
+      properties: {
+        uuid,
+        name: writeText(150),
+        description: { ...nullableString, maxLength: 500 },
+      },
+    },
+  }),
   CategoryResponse: success(reference('Category')),
   CategoryListResponse: success(reference('CategoryPage')),
   ManufacturerResponse: success(reference('Manufacturer')),

@@ -310,8 +310,10 @@ export default function MaintenancePage() {
         partUuid,
         quantity: Number(partQuantities[partUuid]) || 1,
       }));
-      if (dialog.type === 'edit') await updateMaintenance(dialog.item.uuid, payload);
-      else await createMaintenance(payload);
+      if (dialog.type === 'edit') {
+        delete payload.materialUuid;
+        await updateMaintenance(dialog.item.uuid, payload);
+      } else await createMaintenance(payload);
       notify(
         'success',
         dialog.type === 'edit' ? 'Plan d’entretien modifié.' : 'Plan d’entretien créé.',

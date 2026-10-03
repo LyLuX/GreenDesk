@@ -692,6 +692,7 @@ describe('MaintenancePage', () => {
         expect.objectContaining({ description: 'Description catalogue' }),
       ),
     );
+    expect(mocks.updateMaintenance.mock.calls[0][1]).not.toHaveProperty('materialUuid');
   });
 
   it('creates a wear-based plan with a zero interval', async () => {

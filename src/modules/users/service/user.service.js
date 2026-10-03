@@ -11,6 +11,7 @@ import companyPermissions from '../../companies/company.permissions.js';
 import CompanyRepository from '../../companies/repository/company.repository.js';
 import UserRepository from '../repository/user.repository.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
+import { USER_CREATE_FIELDS, USER_UPDATE_FIELDS, userWriteValues } from '../user-write-values.js';
 
 const PASSWORD_ROUNDS = 12;
 const IDENTITY_ACCESS = Symbol('identityAccess');
@@ -100,8 +101,9 @@ export default class UserService {
   ) {
     const isIdentity = identityAccess === IDENTITY_ACCESS;
     if (!isIdentity) requireCompanyScope();
+    values = userWriteValues(values, isIdentity ? USER_UPDATE_FIELDS : USER_CREATE_FIELDS);
     const email = values.email.toLowerCase();
-    const { roleUuids, companyUuids, ...userValues } = values;
+    const { roleUuids, companyUuids, password, ...userValues } = values;
     const emailVerifiedAt = requireEmailVerification ? null : new Date();
     const assignedRoles = roleUuids?.length ? await this.findRoles(roleUuids) : null;
     const assignedCompanies = await this.resolveCompanies(
@@ -115,7 +117,7 @@ export default class UserService {
         HTTP_STATUS.BAD_REQUEST,
       );
     }
-    const passwordHash = await bcrypt.hash(values.password, PASSWORD_ROUNDS);
+    const passwordHash = await bcrypt.hash(password, PASSWORD_ROUNDS);
     return this.userRepository.withTransaction(async (transaction) => {
       const existingUser = await this.userRepository.findByEmail(email, {
         withDeleted: true,
@@ -181,6 +183,7 @@ export default class UserService {
 
   async update(uuid, values, actorUserId = null, actorClaims = null, identityAccess) {
     const isIdentity = identityAccess === IDENTITY_ACCESS;
+    values = userWriteValues(values, USER_UPDATE_FIELDS);
     const user = isIdentity
       ? await this.getIdentityByUuid(uuid)
       : await this.getByUuid(uuid, { visibilityPermissions: actorClaims?.permissions });
@@ -307,7 +310,7 @@ export default class UserService {
           ...company
         }) => ({
           ...company,
-          hasLogo: Boolean(logoFileName),
+          hasLogo: Boolean(logoFileName || company.hasLogo),
         }),
       );
     }

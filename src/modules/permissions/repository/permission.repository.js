@@ -20,6 +20,13 @@ export default class PermissionRepository extends TransactionalRepository {
       offset: pagination.offset,
     });
   }
+  async findOptions(limit) {
+    return Permission.findAll({
+      attributes: ['uuid', 'name', 'description'],
+      order: [['name', 'ASC']],
+      limit,
+    });
+  }
   async findByUuid(uuid, { transaction } = {}) {
     return Permission.findOne({ where: { uuid }, transaction });
   }

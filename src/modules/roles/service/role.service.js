@@ -1,3 +1,4 @@
+import { writeValues } from '../../../core/validators/write-values.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import {
@@ -29,6 +30,9 @@ const publicRole = (role) => {
   };
 };
 
+const CREATE_FIELDS = ['name', 'description', 'permissionUuids'];
+const UPDATE_FIELDS = ['description', 'permissionUuids'];
+
 /** Business operations for roles. */
 export default class RoleService {
   constructor(
@@ -52,6 +56,7 @@ export default class RoleService {
     return role;
   }
   async create(values, actorUserId = null) {
+    values = writeValues(values, CREATE_FIELDS);
     const { permissionUuids, ...roleValues } = values;
     const permissions = permissionUuids?.length
       ? await this.findPermissions(permissionUuids)
@@ -120,13 +125,14 @@ export default class RoleService {
     });
   }
   async update(uuid, values, actorUserId = null) {
-    const role = await this.getByUuid(uuid);
-    if (Object.hasOwn(values, 'name')) {
+    if (values && Object.hasOwn(values, 'name')) {
       throw new AppError(
         'Le nom d’un rôle ne peut pas être modifié après sa création.',
         HTTP_STATUS.BAD_REQUEST,
       );
     }
+    values = writeValues(values, UPDATE_FIELDS);
+    const role = await this.getByUuid(uuid);
     const { permissionUuids, ...roleValues } = values;
     const requestedPermissions =
       permissionUuids !== undefined ? await this.findPermissions(permissionUuids) : null;

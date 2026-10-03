@@ -19,19 +19,25 @@ import {
   companyWhere,
 } from '../../../core/company/company-context.js';
 
-const materialInclude = {
+const materialInclude = () => ({
   model: Material,
   as: 'material',
+  where: companyWhere(),
+  required: false,
   attributes: ['uuid', 'name', 'model', 'serialNumber', 'active'],
-};
-const operationInclude = {
+});
+const operationInclude = () => ({
   model: MaintenanceOperation,
   as: 'operation',
+  where: companyWhere(),
+  required: false,
   attributes: ['uuid', 'name', 'description', 'maintenanceType'],
-};
-const partsInclude = {
+});
+const partsInclude = () => ({
   model: MaintenancePart,
   as: 'parts',
+  where: companyWhere(),
+  required: false,
   attributes: [
     'id',
     'uuid',
@@ -46,20 +52,24 @@ const partsInclude = {
     'quantityOnOrder',
     'active',
   ],
-  through: { attributes: ['quantity'] },
+  through: { attributes: ['quantity'], where: companyWhere() },
   include: [
     {
       model: PartManufacturer,
       as: 'manufacturerDirectory',
+      where: companyWhere(),
+      required: false,
       attributes: ['uuid', 'name', 'logoFileName'],
     },
     {
       model: Supplier,
       as: 'supplierDirectory',
+      where: companyWhere(),
+      required: false,
       attributes: ['uuid'],
     },
   ],
-};
+});
 
 const getStatusConditions = ({ taskAlias = 'MaintenanceTask', today, upcoming }) => {
   const overdue =
@@ -113,7 +123,7 @@ export default class MaintenanceRepository extends CompanyScopedRepository {
       const pattern = `%${search}%`;
       const matchingTasks = await MaintenanceTask.findAll({
         attributes: ['id'],
-        include: [materialInclude, operationInclude],
+        include: [materialInclude(), operationInclude()],
         where: companyWhere({
           [Op.or]: [
             { title: { [Op.like]: pattern } },
@@ -135,11 +145,11 @@ export default class MaintenanceRepository extends CompanyScopedRepository {
     if (statusFilter) where[Op.and] = [statusFilter];
     const include = [
       {
-        ...materialInclude,
-        ...(materialUuid ? { where: { uuid: materialUuid }, required: true } : {}),
+        ...materialInclude(),
+        ...(materialUuid ? { where: companyWhere({ uuid: materialUuid }), required: true } : {}),
       },
-      operationInclude,
-      partsInclude,
+      operationInclude(),
+      partsInclude(),
     ];
     const pagination = normalizePagination({ page, limit });
     return MaintenanceTask.findAndCountAll({
@@ -175,14 +185,14 @@ export default class MaintenanceRepository extends CompanyScopedRepository {
           ),
         ],
       }),
-      include: [materialInclude, operationInclude, partsInclude],
+      include: [materialInclude(), operationInclude(), partsInclude()],
       order: [['next_maintenance_date', 'ASC']],
     });
   }
   async findByUuid(uuid, options = {}) {
     return MaintenanceTask.findOne({
       where: companyWhere({ uuid }),
-      include: [materialInclude, operationInclude, partsInclude],
+      include: [materialInclude(), operationInclude(), partsInclude()],
       transaction: options.transaction,
       lock: options.lock ? options.transaction?.LOCK.UPDATE : undefined,
     });
@@ -206,11 +216,11 @@ export default class MaintenanceRepository extends CompanyScopedRepository {
       where: companyWhere(),
       include: [
         {
-          ...materialInclude,
-          ...(materialUuid ? { where: { uuid: materialUuid }, required: true } : {}),
+          ...materialInclude(),
+          ...(materialUuid ? { where: companyWhere({ uuid: materialUuid }), required: true } : {}),
         },
         { model: User, as: 'performedByUser', attributes: ['uuid', 'firstName', 'lastName'] },
-        { model: MaintenancePartUsage, as: 'partUsages' },
+        { model: MaintenancePartUsage, as: 'partUsages', where: companyWhere(), required: false },
       ],
       order: [
         ['performedAt', 'DESC'],
@@ -225,9 +235,9 @@ export default class MaintenanceRepository extends CompanyScopedRepository {
     return MaintenanceIntervention.findOne({
       where: companyWhere({ uuid }),
       include: [
-        materialInclude,
+        materialInclude(),
         { model: User, as: 'performedByUser', attributes: ['uuid', 'firstName', 'lastName'] },
-        { model: MaintenancePartUsage, as: 'partUsages' },
+        { model: MaintenancePartUsage, as: 'partUsages', where: companyWhere(), required: false },
       ],
     });
   }
@@ -271,7 +281,7 @@ export default class MaintenanceRepository extends CompanyScopedRepository {
         active: true,
         ...deadlineFilter,
       }),
-      include: [materialInclude, operationInclude, partsInclude],
+      include: [materialInclude(), operationInclude(), partsInclude()],
       order: [['next_maintenance_date', 'ASC']],
     });
   }
@@ -292,7 +302,7 @@ export default class MaintenanceRepository extends CompanyScopedRepository {
         active: true,
         ...(statusFilters.length ? { [Op.and]: [{ [Op.or]: statusFilters }] } : {}),
       }),
-      include: [materialInclude, operationInclude, partsInclude],
+      include: [materialInclude(), operationInclude(), partsInclude()],
       order: [
         [Sequelize.literal('MaintenanceTask.next_maintenance_date IS NULL'), 'ASC'],
         ['next_maintenance_date', 'ASC'],

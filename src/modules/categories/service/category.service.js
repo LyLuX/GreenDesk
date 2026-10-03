@@ -1,8 +1,12 @@
+import { writeValues } from '../../../core/validators/write-values.js';
 import CategoryRepository from '../repository/category.repository.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
+
+const CREATE_FIELDS = ['name', 'description'];
+const UPDATE_FIELDS = ['name', 'description', 'active'];
 
 /** Business lifecycle for categories. */
 export default class CategoryService {
@@ -20,6 +24,7 @@ export default class CategoryService {
     return item;
   }
   async create(values, userId) {
+    values = writeValues(values, CREATE_FIELDS);
     return this.categoryRepository.withTransaction(async (transaction) => {
       const existingCategory = await this.categoryRepository.findByName(values.name, {
         withDeleted: true,
@@ -57,6 +62,7 @@ export default class CategoryService {
     });
   }
   async update(uuid, values, userId) {
+    values = writeValues(values, UPDATE_FIELDS);
     return this.categoryRepository.withTransaction(async (transaction) => {
       const item = await this.getByUuid(uuid, { transaction });
       const oldValues = item.toJSON();

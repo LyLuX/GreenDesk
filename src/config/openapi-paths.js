@@ -14,6 +14,8 @@ const withCacheControl = (response) => ({
 });
 const jsonBody = (schemaName, required = true) => ({
   required,
+  description:
+    'Corps JSON limité à 1 Mo. Les schémas fermés refusent tout champ supplémentaire (400), notamment les identifiants internes, dates système et métadonnées de fichiers.',
   content: { 'application/json': { schema: schemaRef(schemaName) } },
 });
 const jsonResponse = (schemaName, description) =>
@@ -64,7 +66,7 @@ const pageParameter = {
   name: 'page',
   in: 'query',
   required: false,
-  schema: { type: 'integer', minimum: 1, default: 1 },
+  schema: { type: 'integer', minimum: 1, maximum: 10000, default: 1 },
 };
 const limitParameter = {
   name: 'limit',
@@ -104,7 +106,7 @@ export const openApiPaths = {
       tags: ['Auth'],
       summary: 'Crée un compte avec le rôle utilisateur par défaut.',
       description:
-        'Disponible uniquement lorsque `PUBLIC_REGISTRATION_ENABLED=true`. Cette option est désactivée par défaut en production. Le nom de famille est stocké en majuscules.',
+        'Disponible uniquement lorsque `PUBLIC_REGISTRATION_ENABLED=true`. Cette option est désactivée par défaut en production. Seuls firstName, lastName, email et password sont acceptés ; les champs supplémentaires, notamment les rôles ou sociétés, sont refusés (400). Le rôle USER et la société initiale sont attribués par le serveur. Le nom de famille est stocké en majuscules.',
       requestBody: jsonBody('RegisterRequest'),
       responses: {
         201: jsonResponse(
@@ -173,6 +175,8 @@ export const openApiPaths = {
       operationId: 'refreshSession',
       tags: ['Auth'],
       summary: 'Renouvelle le jeton JWT actif et révoque celui qu’il remplace.',
+      description:
+        'Exige un jeton GreenDesk complet : sub, userId, jti, exp, authorizationVersion et permissions. Les jetons incomplets, expirés, révoqués ou obsolètes sont refusés (401).',
       security: secure,
       responses: {
         200: jsonResponse('AuthSessionResponse', 'Session renouvelée.'),
@@ -301,6 +305,9 @@ export const openApiPaths = {
         content: {
           'multipart/form-data': {
             schema: {
+              description:
+                'Un seul fichier ; champs texte limités à 1 Ko, noms de champs à 100 octets et nom original du fichier à 255 caractères. Logos : aucun champ texte et au plus 2 parties ; photos/documents : un champ (name/documentType) et au plus 3 parties. Excès, champ inconnu, type ou signature invalide : 400 et nettoyage.',
+              additionalProperties: false,
               type: 'object',
               required: ['file'],
               properties: {
@@ -385,7 +392,7 @@ export const openApiPaths = {
       tags: ['Users'],
       summary: 'Crée un utilisateur et lui attribue éventuellement des rôles.',
       description:
-        'Nécessite `users.create`. Fournir `roleUuids` nécessite `users.roles.update` et fournir `companyUuids` nécessite `users.companies.update`. Restaurer implicitement un compte supprimé portant le même email nécessite aussi `users.deleted.update`. Sans `companyUuids`, la société active est attribuée. Le nom de famille est stocké en majuscules.',
+        'Nécessite `users.create`. Fournir `roleUuids` nécessite `users.roles.update` et fournir `companyUuids` nécessite `users.companies.update`. Restaurer implicitement un compte supprimé portant le même email nécessite aussi `users.deleted.update`. Sans `companyUuids`, la société active est attribuée. Les champs hors contrat sont refusés (400), y compris les identifiants, le hash de mot de passe et la version de session. Le nom de famille est stocké en majuscules.',
       security: secure,
       requestBody: jsonBody('UserCreateRequest'),
       responses: {
@@ -413,7 +420,7 @@ export const openApiPaths = {
       tags: ['Users'],
       summary: 'Met à jour un utilisateur et ses rôles.',
       description:
-        '`users.update` protège les informations générales, `users.status.update` le statut, `users.password.update` le mot de passe, `users.roles.update` les rôles et `users.companies.update` les sociétés. Toutes les permissions correspondant aux champs fournis sont exigées. Une unité exclusivement numérique est refusée (400). Le nom de famille est stocké en majuscules. Une modification effective des rôles ou des sociétés invalide immédiatement toutes les sessions de l’utilisateur concerné, y compris lorsqu’il réalise lui-même l’opération.',
+        '`users.update` protège les informations générales, `users.status.update` le statut, `users.password.update` le mot de passe, `users.roles.update` les rôles et `users.companies.update` les sociétés. Toutes les permissions correspondant aux champs fournis sont exigées. Les champs hors contrat sont refusés (400) ; passwordHash, authorizationVersion et les autres champs internes restent exclusivement gérés par le serveur. Une unité exclusivement numérique est refusée (400). Le nom de famille est stocké en majuscules. Une modification effective des rôles ou des sociétés invalide immédiatement toutes les sessions de l’utilisateur concerné, y compris lorsqu’il réalise lui-même l’opération.',
       security: secure,
       requestBody: jsonBody('UserUpdateRequest'),
       responses: {
@@ -550,6 +557,23 @@ export const openApiPaths = {
       responses: {
         201: jsonResponse('PermissionResponse', 'Permission créée.'),
         ...writeErrors,
+      },
+    },
+  },
+  '/permissions/options': {
+    get: {
+      operationId: 'listPermissionOptions',
+      tags: ['Permissions'],
+      summary: 'Retourne le catalogue des permissions pour les sélecteurs.',
+      description:
+        'Nécessite `permissions.read`. Retourne en un appel les permissions non supprimées, triées par nom, avec uuid, name et description. Le catalogue est limité à 10 000 éléments ; un dépassement renvoie 409 sans résultat tronqué. Aucun paramètre de pagination.',
+      security: secure,
+      responses: {
+        200: jsonResponse('PermissionOptionsResponse', 'Catalogue des permissions retourné.'),
+        401: responseRef('Unauthorized'),
+        403: responseRef('Forbidden'),
+        409: responseRef('Conflict'),
+        500: responseRef('InternalError'),
       },
     },
   },
@@ -716,6 +740,9 @@ export const openApiPaths = {
         content: {
           'multipart/form-data': {
             schema: {
+              description:
+                'Un seul fichier ; champs texte limités à 1 Ko, noms de champs à 100 octets et nom original du fichier à 255 caractères. Logos : aucun champ texte et au plus 2 parties ; photos/documents : un champ (name/documentType) et au plus 3 parties. Excès, champ inconnu, type ou signature invalide : 400 et nettoyage.',
+              additionalProperties: false,
               type: 'object',
               required: ['file'],
               properties: {
@@ -882,6 +909,9 @@ export const openApiPaths = {
         content: {
           'multipart/form-data': {
             schema: {
+              description:
+                'Un seul fichier ; champs texte limités à 1 Ko, noms de champs à 100 octets et nom original du fichier à 255 caractères. Logos : aucun champ texte et au plus 2 parties ; photos/documents : un champ (name/documentType) et au plus 3 parties. Excès, champ inconnu, type ou signature invalide : 400 et nettoyage.',
+              additionalProperties: false,
               type: 'object',
               required: ['file'],
               properties: {
@@ -912,6 +942,9 @@ export const openApiPaths = {
         content: {
           'multipart/form-data': {
             schema: {
+              description:
+                'Un seul fichier ; champs texte limités à 1 Ko, noms de champs à 100 octets et nom original du fichier à 255 caractères. Logos : aucun champ texte et au plus 2 parties ; photos/documents : un champ (name/documentType) et au plus 3 parties. Excès, champ inconnu, type ou signature invalide : 400 et nettoyage.',
+              additionalProperties: false,
               type: 'object',
               required: ['file', 'documentType'],
               properties: {
@@ -968,7 +1001,12 @@ export const openApiPaths = {
       description: 'Nécessite `materials.read`.',
       security: secure,
       responses: {
-        200: binaryResponse('Document PDF.', ['application/pdf']),
+        200: binaryResponse('Photo ou document PDF protégé.', [
+          'application/pdf',
+          'image/jpeg',
+          'image/png',
+          'image/webp',
+        ]),
         ...resourceErrors,
       },
     },

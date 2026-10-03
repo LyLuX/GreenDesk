@@ -1,3 +1,4 @@
+import { writeValues } from '../../../core/validators/write-values.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import { isRoleUserReadPermission } from '../../../core/constants/user-visibility-permissions.js';
 import AppError from '../../../core/errors/app-error.js';
@@ -5,6 +6,11 @@ import PermissionRepository from '../repository/permission.repository.js';
 import AuditService from '../../audit/service/audit.service.js';
 import UserRepository from '../../users/repository/user.repository.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
+
+export const MAX_PERMISSION_OPTIONS = 10000;
+
+const CREATE_FIELDS = ['name', 'description'];
+const UPDATE_FIELDS = ['name', 'description'];
 
 /** Business operations for permissions. */
 export default class PermissionService {
@@ -21,12 +27,23 @@ export default class PermissionService {
     const result = await this.permissionRepository.findAll(query);
     return paginatedResult(result, normalizePagination(query));
   }
+  async getOptions() {
+    const options = await this.permissionRepository.findOptions(MAX_PERMISSION_OPTIONS + 1);
+    if (options.length > MAX_PERMISSION_OPTIONS) {
+      throw new AppError(
+        'Le catalogue des permissions dépasse la limite autorisée.',
+        HTTP_STATUS.CONFLICT,
+      );
+    }
+    return options;
+  }
   async getByUuid(uuid) {
     const permission = await this.permissionRepository.findByUuid(uuid);
     if (!permission) throw new AppError('Permission not found', HTTP_STATUS.NOT_FOUND);
     return permission;
   }
   async create(values, actorUserId = null) {
+    values = writeValues(values, CREATE_FIELDS);
     if (isRoleUserReadPermission(values.name)) {
       throw new AppError(
         'Cette famille de permissions est réservée à la gestion automatique des rôles.',
@@ -78,6 +95,7 @@ export default class PermissionService {
     });
   }
   async update(uuid, values, actorUserId = null) {
+    values = writeValues(values, UPDATE_FIELDS);
     const permission = await this.getByUuid(uuid);
     if (
       isRoleUserReadPermission(permission.name) ||

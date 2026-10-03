@@ -14,10 +14,7 @@ export function errorHandler(error, _request, response, _next) {
   const statusCode = error.statusCode ?? HTTP_STATUS.INTERNAL_SERVER_ERROR;
   const retryAfterSeconds = Math.ceil(Number(error.retryAfterSeconds));
 
-  logger.error(error.message, {
-    stack: error.stack,
-    statusCode,
-  });
+  logger.error('HTTP request failed', { statusCode });
 
   if (
     statusCode === HTTP_STATUS.TOO_MANY_REQUESTS &&
@@ -30,11 +27,12 @@ export function errorHandler(error, _request, response, _next) {
   response.status(statusCode).json({
     success: false,
     error: {
-      message:
-        error.isOperational || statusCode < HTTP_STATUS.INTERNAL_SERVER_ERROR
-          ? error.message
+      message: error.isOperational
+        ? error.message
+        : statusCode < HTTP_STATUS.INTERNAL_SERVER_ERROR
+          ? 'La requête est invalide.'
           : 'Internal server error',
-      ...(error.details ? { details: error.details } : {}),
+      ...(error.isOperational && error.details ? { details: error.details } : {}),
     },
   });
 }
@@ -46,9 +44,9 @@ export function errorHandler(error, _request, response, _next) {
  * @param {import('express').Response} response - Outgoing HTTP response.
  * @returns {void}
  */
-export function notFoundHandler(request, response) {
+export function notFoundHandler(_request, response) {
   response.status(HTTP_STATUS.NOT_FOUND).json({
     success: false,
-    error: { message: `Route ${request.method} ${request.originalUrl} not found` },
+    error: { message: 'Route introuvable.' },
   });
 }

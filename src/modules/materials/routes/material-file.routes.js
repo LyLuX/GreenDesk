@@ -1,3 +1,10 @@
+import { param } from 'express-validator';
+import { validateRequest } from '../../../core/middlewares/validate-request.js';
+import {
+  uploadLimits,
+  uploadLimitError,
+  validateUploadFields,
+} from '../../../core/middlewares/upload-limits.js';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -28,7 +35,7 @@ const storage = multer.diskStorage({
 const makeUpload = (types, maxSizeBytes) =>
   multer({
     storage,
-    limits: { fileSize: maxSizeBytes },
+    limits: uploadLimits(maxSizeBytes, 1),
     fileFilter: (_request, file, callback) =>
       callback(
         types.includes(file.mimetype) ? null : new Error('Unsupported file type'),
@@ -51,6 +58,8 @@ router.use(authenticate, resolveCompanyContext);
 const upload = (middleware, maxSizeMb) => (request, response, next) =>
   middleware(request, response, (error) => {
     if (!error) return next();
+    const limitError = uploadLimitError(error);
+    if (limitError) return next(limitError);
     if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE')
       return next(
         new AppError(`Le fichier ne doit pas dépasser ${maxSizeMb} Mo.`, HTTP_STATUS.BAD_REQUEST),
@@ -60,8 +69,11 @@ const upload = (middleware, maxSizeMb) => (request, response, next) =>
 router.post(
   '/:uuid/photos',
   authorize(fleetPermissions.materials.photos.create),
+  param('uuid').isUUID(),
+  validateRequest,
   upload(photoUpload.single('file'), env.uploads.image.maxSizeMb),
   validatePhotoSignature,
+  validateUploadFields(['name']),
   asyncHandler(async (request, response) =>
     response.status(201).json({
       success: true,
@@ -74,8 +86,11 @@ router.post(
 router.post(
   '/:uuid/documents',
   authorize(fleetPermissions.materials.documents.create),
+  param('uuid').isUUID(),
+  validateRequest,
   upload(documentUpload.single('file'), env.uploads.document.maxSizeMb),
   validateDocumentSignature,
+  validateUploadFields(['documentType']),
   asyncHandler(async (request, response) =>
     response.status(201).json({
       success: true,
@@ -88,6 +103,8 @@ router.post(
 router.patch(
   '/files/:fileUuid/primary',
   authorize(fleetPermissions.materials.photos.setPrimary),
+  param('fileUuid').isUUID(),
+  validateRequest,
   asyncHandler(async (request, response) =>
     response.json({ success: true, data: await service.setPrimary(request.params.fileUuid) }),
   ),
@@ -95,6 +112,8 @@ router.patch(
 router.get(
   '/files/:fileUuid/content',
   authorize(fleetPermissions.materials.read),
+  param('fileUuid').isUUID(),
+  validateRequest,
   asyncHandler(async (request, response) => {
     const file = await service.getForContent(request.params.fileUuid);
     response.type(file.mimeType);
@@ -105,6 +124,8 @@ router.get(
 router.get(
   '/files/:fileUuid/download',
   authorize(fleetPermissions.materials.read),
+  param('fileUuid').isUUID(),
+  validateRequest,
   asyncHandler(async (request, response) => {
     const file = await service.getForDownload(request.params.fileUuid);
     response.download(path.resolve(uploadDirectory, file.fileName), file.originalName);
@@ -113,6 +134,8 @@ router.get(
 router.delete(
   '/files/:fileUuid',
   authorize(fleetPermissions.materials.files.delete),
+  param('fileUuid').isUUID(),
+  validateRequest,
   asyncHandler(async (request, response) => {
     await service.remove(request.params.fileUuid);
     response.status(204).send();

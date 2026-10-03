@@ -70,6 +70,7 @@ vi.mock('../api/users.api.js', () => ({
 }));
 vi.mock('../api/reference.api.js', () => ({
   createReferenceApi: (resource) => mocks.referenceApis[resource],
+  listPermissionOptions: (signal) => mocks.referenceApis.permissions.list(signal),
 }));
 vi.mock('../notifications/useNotification.js', () => ({
   default: () => ({ notify: vi.fn() }),
@@ -417,48 +418,23 @@ describe('administrator table pagination', () => {
     expect(screen.queryByText('Rôle 5')).not.toBeInTheDocument();
   });
 
-  it('automatically loads every permission page without a manual load button', async () => {
+  it('loads more than 25 permissions in one request for the filter and editor', async () => {
     const user = userEvent.setup();
-    mocks.referenceApis.permissions.list
-      .mockResolvedValueOnce({
-        data: {
-          data: {
-            items: [{ uuid: 'permission-alpha', name: 'alpha.read', description: '' }],
-            pagination: { page: 1, limit: 25, total: 2, totalPages: 2 },
-          },
-        },
-      })
-      .mockResolvedValueOnce({
-        data: {
-          data: {
-            items: [{ uuid: 'permission-beta', name: 'beta.read', description: '' }],
-            pagination: { page: 2, limit: 25, total: 2, totalPages: 2 },
-          },
-        },
-      });
-
+    const permissions = Array.from({ length: 76 }, (_, index) => ({
+      uuid: `permission-${index}`,
+      name: `catalogue.${index}.read`,
+      description: '',
+    }));
+    mocks.referenceApis.permissions.list.mockClear();
+    mocks.referenceApis.permissions.list.mockResolvedValueOnce({ data: { data: permissions } });
     render(<RolesPage />);
-
-    expect(await screen.findByRole('option', { name: 'beta.read' })).toBeVisible();
-    expect(mocks.referenceApis.permissions.list).toHaveBeenCalledWith(
-      { page: 1, limit: 25 },
-      expect.any(AbortSignal),
-    );
-    expect(mocks.referenceApis.permissions.list).toHaveBeenCalledWith(
-      { page: 2, limit: 25 },
-      expect.any(AbortSignal),
-    );
-    expect(
-      screen.queryByRole('button', { name: 'Charger plus de permissions' }),
-    ).not.toBeInTheDocument();
-
+    expect(await screen.findByRole('option', { name: 'catalogue.75.read' })).toBeVisible();
+    expect(mocks.referenceApis.permissions.list).toHaveBeenCalledTimes(1);
+    expect(mocks.referenceApis.permissions.list).toHaveBeenCalledWith(expect.any(AbortSignal));
     await user.click(screen.getByRole('button', { name: 'Créer un rôle' }));
     const dialog = within(screen.getByRole('dialog', { name: 'Créer un rôle' }));
-    expect(dialog.getByLabelText('alpha.read')).toBeVisible();
-    expect(dialog.getByLabelText('beta.read')).toBeVisible();
-    expect(
-      dialog.queryByRole('button', { name: 'Charger plus de permissions' }),
-    ).not.toBeInTheDocument();
+    expect(dialog.getByLabelText(/catalogue\.75\.read/)).toBeVisible();
+    expect(mocks.referenceApis.permissions.list).toHaveBeenCalledTimes(1);
   });
 
   it('shows only the first five role permissions followed by an ellipsis', async () => {

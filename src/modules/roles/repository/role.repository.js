@@ -20,7 +20,7 @@ export default class RoleRepository extends TransactionalRepository {
     const pagination = normalizePagination({ page, limit });
     const pattern = search ? `%${search}%` : undefined;
     const pageResult = await Role.findAndCountAll({
-      attributes: ['id'],
+      attributes: ['id', 'name'],
       where: pattern
         ? {
             [Op.or]: [{ name: { [Op.like]: pattern } }, { description: { [Op.like]: pattern } }],

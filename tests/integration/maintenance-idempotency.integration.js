@@ -7,6 +7,7 @@ import app from '../../src/app.js';
 import env from '../../src/config/env.js';
 import sequelize from '../../src/config/database.js';
 import { initializeModels } from '../../src/core/database/models.js';
+import { getCompanyScope } from '../../src/core/company/company-context.js';
 import IdempotencyKey from '../../src/core/idempotency/idempotency-key.model.js';
 import StockMovement from '../../src/core/inventory/stock-movement.model.js';
 import logger from '../../src/core/logger/logger.js';
@@ -250,6 +251,7 @@ afterEach(() => {
   sequelize.removeHook('beforeQuery', 'observe-contention');
   AuditLog.removeHook('afterCreate', 'fail-after-writes');
   AuditLog.removeHook('afterCreate', 'hold-stock');
+  AuditLog.removeHook('afterCreate', 'hold-rollback-A');
   IdempotencyKey.removeHook('afterCreate', 'observe-second-key');
 });
 
@@ -310,6 +312,53 @@ test('une intervention locale ne peut pas consommer les pièces d’une autre so
   await send(scenario, b, randomUUID(), { body }).expect(400);
   expect(await snapshot(a)).toEqual(beforeA);
   expect(await snapshot(b)).toEqual(beforeB);
+});
+
+test('A en rollback et B en commit simultanés gardent leurs écritures et contextes séparés', async () => {
+  const a = await fixture();
+  const b = await fixture(a.user);
+  const scenario = cases[2];
+  const token = tokenFor(a, [scenario.permission], [a.company, b.company]);
+  const key = randomUUID();
+  const beforeA = await snapshot(a);
+  const paused = barrier();
+  const release = barrier();
+  const observedScopes = [];
+  let uncommittedA;
+  AuditLog.addHook('afterCreate', 'hold-rollback-A', async (record, options) => {
+    observedScopes.push([Number(record.companyId), getCompanyScope()?.companyId]);
+    if (Number(record.companyId) !== Number(a.company.id)) return;
+    uncommittedA = await snapshot(a, options.transaction);
+    paused.resolve();
+    await bounded(release.promise);
+    throw new Error('Panne A injectée après les écritures');
+  });
+
+  const first = send(scenario, a, key, { token }).then((response) => response);
+  let second;
+  try {
+    await bounded(paused.promise);
+    second = send(scenario, b, key, { token }).then((response) => response);
+    const committedB = await bounded(second);
+    expect(committedB.status).toBe(200);
+    expectOneWrite(await snapshot(b), scenario, committedB);
+  } finally {
+    release.resolve();
+    await Promise.allSettled([first, second]);
+  }
+
+  expect((await first).status).toBe(500);
+  expect(uncommittedA.movements).toHaveLength(1);
+  expect(uncommittedA.audits).toHaveLength(1);
+  expect(uncommittedA.keys).toHaveLength(1);
+  expect(await snapshot(a)).toEqual(beforeA);
+  expectOneWrite(await snapshot(b), scenario, await second);
+  expect(observedScopes).toEqual(
+    expect.arrayContaining([
+      [Number(a.company.id), Number(a.company.id)],
+      [Number(b.company.id), Number(b.company.id)],
+    ]),
+  );
 });
 
 afterAll(async () => {

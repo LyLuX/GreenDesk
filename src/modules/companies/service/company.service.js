@@ -1,9 +1,13 @@
+import { writeValues } from '../../../core/validators/write-values.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
 import AuditService from '../../audit/service/audit.service.js';
 import companyPermissions from '../company.permissions.js';
 import CompanyRepository from '../repository/company.repository.js';
+
+const CREATE_FIELDS = ['name', 'description'];
+const UPDATE_FIELDS = ['name', 'description', 'active'];
 
 /** Global company lifecycle, kept independent from application roles. */
 export default class CompanyService {
@@ -33,6 +37,7 @@ export default class CompanyService {
   }
 
   async create(values, userId, claims = {}) {
+    values = writeValues(values, CREATE_FIELDS);
     const company = await this.repository.withTransaction(async (transaction) => {
       const existing = await this.repository.findByName(values.name, {
         withDeleted: true,
@@ -74,6 +79,7 @@ export default class CompanyService {
   }
 
   async update(uuid, values, userId, claims = null) {
+    values = writeValues(values, UPDATE_FIELDS);
     this.assertAccessible(uuid, claims);
     const company = await this.repository.withTransaction(async (transaction) => {
       const companyToUpdate = await this.getEntityByUuid(uuid, claims, { transaction });

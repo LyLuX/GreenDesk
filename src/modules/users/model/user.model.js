@@ -14,7 +14,11 @@ class User extends Model {
       values.companies = values.companies.map((company) => {
         const companyValues = typeof company.toJSON === 'function' ? company.toJSON() : company;
         const publicCompany = { ...companyValues };
+        publicCompany.hasLogo = Boolean(publicCompany.logoFileName);
         delete publicCompany.id;
+        delete publicCompany.logoFileName;
+        delete publicCompany.logoOriginalName;
+        delete publicCompany.logoMimeType;
         return publicCompany;
       });
     }

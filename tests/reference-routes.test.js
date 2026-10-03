@@ -1,6 +1,7 @@
 import { jest } from '@jest/globals';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
+import RevokedAccessToken from '../src/modules/auth/model/revoked-access-token.model.js';
 
 import app from '../src/app.js';
 import env from '../src/config/env.js';
@@ -15,15 +16,19 @@ const tokenFor = (permissions) =>
     {
       sub: 'f75ce638-18d2-4e29-9958-2afaa4ae5151',
       userId: 1,
+      authorizationVersion: 0,
+      jti: 'route-test-token',
       roles: [],
       permissions,
       companyAccess: [{ id: 1, uuid: 'f75ce638-18d2-4e29-9958-2afaa4ae5151' }],
     },
     env.jwt.secret,
+    { expiresIn: '5m' },
   );
 
 describe('reference routes authorization and validation', () => {
   beforeAll(() => {
+    jest.spyOn(RevokedAccessToken, 'findOne').mockResolvedValue(null);
     jest
       .spyOn(sequelize, 'transaction')
       .mockImplementation(async (...args) => args.at(-1)({ id: 'route-test-transaction' }));

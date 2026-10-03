@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import getApiErrorMessage from '../api/get-api-error-message.js';
-import listAllPages from '../api/list-all-pages.js';
-import { createReferenceApi } from '../api/reference.api.js';
+import { createReferenceApi, listPermissionOptions } from '../api/reference.api.js';
 import useAuth from '../auth/useAuth.js';
 import Button from '../components/Button.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
@@ -23,7 +22,6 @@ import {
 const emptyRole = () => ({ name: '', description: '', permissionUuids: [] });
 const roleUserReadPermissionName = (roleName) => `users.roles.${roleName}.read`;
 const rolesApi = createReferenceApi('roles');
-const permissionsApi = createReferenceApi('permissions');
 const visiblePermissionCount = 5;
 
 function PermissionActionFamilyCheckbox({
@@ -232,9 +230,9 @@ export default function RolesPage() {
     }
     const controller = new AbortController();
     setLoadingPermissions(true);
-    listAllPages(permissionsApi.list, {}, controller.signal)
-      .then((items) => {
-        setPermissions(items);
+    listPermissionOptions(controller.signal)
+      .then((response) => {
+        setPermissions(response.data.data);
       })
       .catch((requestError) => {
         if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));

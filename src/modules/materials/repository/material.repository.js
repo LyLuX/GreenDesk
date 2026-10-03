@@ -13,13 +13,21 @@ import {
   companyWhere,
 } from '../../../core/company/company-context.js';
 
-const include = [
+const include = () => [
   {
     model: PartManufacturer,
     as: 'manufacturer',
+    where: companyWhere(),
+    required: false,
     attributes: ['uuid', 'name', 'logoFileName'],
   },
-  { model: Category, as: 'category', attributes: ['uuid', 'name'] },
+  {
+    model: Category,
+    as: 'category',
+    attributes: ['uuid', 'name'],
+    where: companyWhere(),
+    required: false,
+  },
 ];
 
 /** Sequelize persistence operations for material catalogue records. */
@@ -58,10 +66,15 @@ export default class MaterialRepository extends CompanyScopedRepository {
     if (normalizedActive !== undefined) where.active = normalizedActive;
     const filteredInclude = [
       {
-        ...include[0],
-        ...(manufacturerUuid ? { where: { uuid: manufacturerUuid }, required: true } : {}),
+        ...include()[0],
+        ...(manufacturerUuid
+          ? { where: companyWhere({ uuid: manufacturerUuid }), required: true }
+          : {}),
       },
-      { ...include[1], ...(categoryUuid ? { where: { uuid: categoryUuid }, required: true } : {}) },
+      {
+        ...include()[1],
+        ...(categoryUuid ? { where: companyWhere({ uuid: categoryUuid }), required: true } : {}),
+      },
     ];
     const pagination = normalizePagination({ page, limit });
     const sortField = ['name', 'purchasePrice', 'purchaseDate'].includes(sort)
@@ -84,7 +97,7 @@ export default class MaterialRepository extends CompanyScopedRepository {
   async findByUuid(uuid, options = {}) {
     return Material.findOne({
       where: companyWhere({ uuid }),
-      include: [...include, { association: 'files' }],
+      include: [...include(), { association: 'files', where: companyWhere(), required: false }],
       transaction: options.transaction,
       lock: options.lock ? options.transaction?.LOCK.UPDATE : undefined,
     });

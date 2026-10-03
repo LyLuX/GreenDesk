@@ -1,3 +1,8 @@
+import {
+  uploadLimits,
+  uploadLimitError,
+  validateUploadFields,
+} from '../../../core/middlewares/upload-limits.js';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -33,7 +38,7 @@ const logoUpload = multer({
     filename: (_request, file, callback) =>
       callback(null, `${crypto.randomUUID()}${MANUFACTURER_LOGO_EXTENSION_BY_MIME[file.mimetype]}`),
   }),
-  limits: { fileSize: env.uploads.image.maxSizeBytes },
+  limits: uploadLimits(env.uploads.image.maxSizeBytes),
   fileFilter: (_request, file, callback) => {
     const allowed = MANUFACTURER_LOGO_MIME_TYPES.includes(file.mimetype);
     callback(allowed ? null : new Error('Unsupported logo type'), allowed);
@@ -46,6 +51,8 @@ const validateLogoSignature = createFileSignatureValidator(
 const uploadLogo = (request, response, next) =>
   logoUpload.single('file')(request, response, (error) => {
     if (!error) return next();
+    const limitError = uploadLimitError(error);
+    if (limitError) return next(limitError);
     if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE') {
       return next(
         new AppError(
@@ -92,6 +99,7 @@ router.post(
   validateRequest,
   uploadLogo,
   validateLogoSignature,
+  validateUploadFields([]),
   asyncHandler(controller.uploadLogo.bind(controller)),
 );
 router.delete(

@@ -1,3 +1,4 @@
+import { writeValues } from '../../../core/validators/write-values.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import { STOCK_OPERATIONS, STOCKABLE_TYPES } from '../../../core/inventory/stock-operation.js';
@@ -40,6 +41,30 @@ const partUsageSnapshot = (part, quantity, consumed) => {
     consumed,
   };
 };
+
+const CREATE_FIELDS = [
+  'materialUuid',
+  'operationUuid',
+  'title',
+  'description',
+  'maintenanceType',
+  'priority',
+  'intervalDays',
+  'lastMaintenanceDate',
+  'notes',
+  'parts',
+];
+const UPDATE_FIELDS = [
+  'operationUuid',
+  'title',
+  'description',
+  'maintenanceType',
+  'priority',
+  'intervalDays',
+  'lastMaintenanceDate',
+  'notes',
+  'parts',
+];
 
 /** Calculates maintenance deadlines and records completed maintenance. */
 export default class MaintenanceService {
@@ -92,6 +117,12 @@ export default class MaintenanceService {
     };
   }
   async create(values, userId) {
+    values = writeValues(values, CREATE_FIELDS);
+    if (values.parts !== undefined) {
+      if (!Array.isArray(values.parts))
+        throw new AppError('La liste des pièces est invalide.', HTTP_STATUS.BAD_REQUEST);
+      values.parts = values.parts.map((part) => writeValues(part, ['partUuid', 'quantity']));
+    }
     const deadlines = this.calculateDeadlines(values);
     const { operationUuid, parts = [] } = values;
     const planValues = { ...values };
@@ -149,6 +180,12 @@ export default class MaintenanceService {
     return this.toPublic(await this.repository.findByUuid(task.uuid));
   }
   async update(uuid, values, userId) {
+    values = writeValues(values, UPDATE_FIELDS);
+    if (values.parts !== undefined) {
+      if (!Array.isArray(values.parts))
+        throw new AppError('La liste des pièces est invalide.', HTTP_STATUS.BAD_REQUEST);
+      values.parts = values.parts.map((part) => writeValues(part, ['partUuid', 'quantity']));
+    }
     const task = await this.getEntityByUuid(uuid);
     const oldValues = task.toJSON();
     const deadlines = this.calculateDeadlines(values, task);

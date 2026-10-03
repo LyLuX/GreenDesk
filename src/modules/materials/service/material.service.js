@@ -1,3 +1,4 @@
+import { writeValues } from '../../../core/validators/write-values.js';
 import MaterialRepository from '../repository/material.repository.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
@@ -59,6 +60,36 @@ const publicAuditSnapshot = (snapshot, manufacturerNames, categoryNames) => {
   return values;
 };
 
+const CREATE_FIELDS = [
+  'name',
+  'unit',
+  'purchasePrice',
+  'manufacturerUuid',
+  'brandUuid',
+  'categoryUuid',
+  'model',
+  'serialNumber',
+  'purchaseDate',
+  'commissionedAt',
+  'retiredAt',
+  'notes',
+];
+const UPDATE_FIELDS = [
+  'name',
+  'unit',
+  'purchasePrice',
+  'manufacturerUuid',
+  'brandUuid',
+  'categoryUuid',
+  'model',
+  'serialNumber',
+  'purchaseDate',
+  'commissionedAt',
+  'retiredAt',
+  'notes',
+  'active',
+];
+
 /** Parses a DATEONLY value as UTC and rejects invalid calendar values. */
 export function parseDateOnly(value) {
   if (!value) return null;
@@ -107,6 +138,7 @@ export default class MaterialService {
     return item;
   }
   async create(values, userId) {
+    values = writeValues(values, CREATE_FIELDS);
     await this.ensureAvailable(values);
     this.ensureDatesAreCoherent(values);
     values = await this.resolveRelations(values);
@@ -142,6 +174,7 @@ export default class MaterialService {
     });
   }
   async update(uuid, values, userId) {
+    values = writeValues(values, UPDATE_FIELDS);
     let item = await this.getEntityByUuid(uuid);
     let oldValues;
     await this.ensureAvailable(values, item.uuid);

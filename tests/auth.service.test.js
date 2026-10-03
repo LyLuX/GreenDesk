@@ -46,6 +46,27 @@ const makeUser = async () => ({
 });
 
 describe('AuthService', () => {
+  it.each([
+    { roleUuids: [uuid] },
+    { companyUuids: [uuid] },
+    { authorizationVersion: 0 },
+    { passwordHash: 'attacker-hash' },
+    { isActive: true },
+  ])('rejects privileged registration input %j before creating an identity', async (extra) => {
+    const userService = { createIdentity: jest.fn() };
+    const service = new AuthService({}, userService);
+    await expect(
+      service.register({
+        firstName: 'Ada',
+        lastName: 'Lovelace',
+        email: 'ada@example.invalid',
+        password: 'SecurePass123!',
+        ...extra,
+      }),
+    ).rejects.toMatchObject({ statusCode: 400 });
+    expect(userService.createIdentity).not.toHaveBeenCalled();
+  });
+
   it('registers a user with the USER default role', async () => {
     const registeredUser = { id: 1, uuid, emailVerifiedAt: null };
     const userService = {
@@ -76,6 +97,14 @@ describe('AuthService', () => {
       verificationEmailSent: true,
       verificationEmailResendCooldownSeconds: 60,
     });
+  });
+
+  it('issues large MySQL BIGINT user identities without numeric coercion', async () => {
+    const user = await makeUser();
+    user.id = '9007199254740993';
+    const service = new AuthService({}, { publicUser: (value) => value.toJSON() });
+    const session = await service.createSession(user);
+    expect(jwt.decode(session.accessToken).userId).toBe('9007199254740993');
   });
 
   it('returns an access token for valid credentials', async () => {

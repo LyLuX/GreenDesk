@@ -33,7 +33,9 @@ describe('HistoryRepository', () => {
     expect(query.mock.calls[0][0]).toContain('LEFT JOIN maintenance_parts');
     expect(query.mock.calls[0][0]).toContain('LEFT JOIN companies');
     expect(query.mock.calls[0][0]).toContain('LEFT JOIN permissions');
-    expect(query.mock.calls[0][1]).toEqual({ bind: { auditUuid0: 'audit-1' } });
+    expect(query.mock.calls[0][1]).toEqual({
+      bind: { auditUuid0: 'audit-1', companyId: 1, accessAll: 0 },
+    });
     expect(result.rows[0]).toEqual(expect.objectContaining({ subjectLabel: 'Filtre (FH-01)' }));
   });
 

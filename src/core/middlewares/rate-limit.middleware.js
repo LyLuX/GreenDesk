@@ -31,7 +31,10 @@ const limiterOptions = ({
       requestId: request.id,
       ip: request.ip,
       method: request.method,
-      path: request.path,
+      path:
+        typeof request.route?.path === 'string'
+          ? `${request.baseUrl ?? ''}${request.route.path}`
+          : 'unknown',
     });
     response.status(options.statusCode ?? HTTP_STATUS.TOO_MANY_REQUESTS).json({
       success: false,

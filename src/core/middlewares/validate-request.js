@@ -15,7 +15,12 @@ export function validateRequest(request, _response, next) {
   const errors = validationResult(request);
 
   if (!errors.isEmpty()) {
-    const details = errors.array({ onlyFirstError: true });
+    const details = errors.array({ onlyFirstError: true }).map(({ type, path, location, msg }) => ({
+      type,
+      path,
+      location,
+      msg,
+    }));
     const messages = [
       ...new Set(
         details.map((error) =>

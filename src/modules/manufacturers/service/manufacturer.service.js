@@ -1,8 +1,12 @@
+import { writeValues } from '../../../core/validators/write-values.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';
 import ManufacturerRepository from '../repository/manufacturer.repository.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
+
+const CREATE_FIELDS = ['name'];
+const UPDATE_FIELDS = ['name', 'active'];
 
 /** Global manufacturer lifecycle shared by materials and maintenance parts. */
 export default class ManufacturerService {
@@ -29,6 +33,7 @@ export default class ManufacturerService {
   }
 
   async create(values, userId) {
+    values = writeValues(values, CREATE_FIELDS);
     const existing = await this.repository.findByName(values.name, { withDeleted: true });
     if (existing && !existing.deletedAt) {
       throw new AppError('Ce fabricant existe déjà.', HTTP_STATUS.CONFLICT);
@@ -64,6 +69,7 @@ export default class ManufacturerService {
   }
 
   async update(uuid, values, userId) {
+    values = writeValues(values, UPDATE_FIELDS);
     const item = await this.getEntityByUuid(uuid);
     if (values.name) {
       const duplicate = await this.repository.findByName(values.name);

@@ -1,3 +1,4 @@
+import { writeValues } from '../../../core/validators/write-values.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import StockService from '../../../core/inventory/stock.service.js';
@@ -49,6 +50,7 @@ export default class MaintenanceCatalogService {
   }
 
   async createOperation(values, userId) {
+    values = writeValues(values, ['name', 'description', 'maintenanceType']);
     const existing = await this.repository.findOperationByName(values.name, {
       withDeleted: true,
     });
@@ -84,6 +86,7 @@ export default class MaintenanceCatalogService {
   }
 
   async updateOperation(uuid, values, userId) {
+    values = writeValues(values, ['name', 'description', 'maintenanceType', 'active']);
     const operation = await this.getOperationEntity(uuid);
     if (values.name) {
       const duplicate = await this.repository.findOperationByName(values.name);
@@ -144,6 +147,16 @@ export default class MaintenanceCatalogService {
   }
 
   async createPart(values, userId) {
+    values = writeValues(values, [
+      'name',
+      'manufacturer',
+      'manufacturerUuid',
+      'supplierUuid',
+      'reference',
+      'supplierReference',
+      'unit',
+      'unitPrice',
+    ]);
     const prepared = await this.repository.withTransaction(async (transaction) => {
       const partValues = await this.preparePartValues(values, transaction, null, {
         includeUnitPrice: true,
@@ -181,6 +194,16 @@ export default class MaintenanceCatalogService {
   }
 
   async updatePart(uuid, values, userId) {
+    values = writeValues(values, [
+      'name',
+      'manufacturer',
+      'manufacturerUuid',
+      'supplierUuid',
+      'reference',
+      'supplierReference',
+      'unit',
+      'active',
+    ]);
     const part = await this.getPartEntity(uuid);
     const oldValues = this.toPublic(part);
     await this.repository.withTransaction(async (transaction) => {

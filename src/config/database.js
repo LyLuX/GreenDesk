@@ -17,7 +17,9 @@ const sequelize = new Sequelize(env.database.name, env.database.user, env.databa
     charset: 'utf8mb4',
   },
   timezone: '+00:00',
-  logging: env.database.logging ? (message) => logger.debug(message) : false,
+  logging: env.database.logging
+    ? () => logger.debug('Database statement executed', { event: 'database.statement' })
+    : false,
   define: {
     underscored: true,
     timestamps: true,

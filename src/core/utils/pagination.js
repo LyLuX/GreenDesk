@@ -1,4 +1,5 @@
 export const DEFAULT_PAGE = 1;
+export const MAX_PAGE = 10000;
 export const DEFAULT_PAGE_LIMIT = 5;
 export const PAGE_LIMITS = Object.freeze([5, 10, 25]);
 
@@ -6,7 +7,11 @@ export const PAGE_LIMITS = Object.freeze([5, 10, 25]);
 export function normalizePagination({ page = DEFAULT_PAGE, limit = DEFAULT_PAGE_LIMIT } = {}) {
   const requestedPage = Number(page);
   const normalizedPage =
-    Number.isInteger(requestedPage) && requestedPage >= DEFAULT_PAGE ? requestedPage : DEFAULT_PAGE;
+    Number.isSafeInteger(requestedPage) &&
+    requestedPage >= DEFAULT_PAGE &&
+    requestedPage <= MAX_PAGE
+      ? requestedPage
+      : DEFAULT_PAGE;
   const requestedLimit = Number(limit);
   const normalizedLimit = PAGE_LIMITS.includes(requestedLimit)
     ? requestedLimit

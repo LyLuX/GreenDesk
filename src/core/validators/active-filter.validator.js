@@ -1,9 +1,12 @@
+import { isScalarInput } from './scalar-input.js';
 import { query } from 'express-validator';
 
 /** An omitted status uses the repository default; "all" explicitly disables the filter. */
 export const activeFilterValidator = () =>
   query('active')
     .optional({ values: 'falsy' })
+    .custom(isScalarInput)
+    .bail()
     .isIn(['true', 'false', '1', '0', 'all'])
     .withMessage('Le statut doit être true, false ou all.')
     .customSanitizer((value) =>

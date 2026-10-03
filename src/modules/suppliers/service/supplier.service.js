@@ -1,8 +1,12 @@
+import { writeValues } from '../../../core/validators/write-values.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import AppError from '../../../core/errors/app-error.js';
 import AuditService from '../../audit/service/audit.service.js';
 import SupplierRepository from '../repository/supplier.repository.js';
 import { normalizePagination, paginatedResult } from '../../../core/utils/pagination.js';
+
+const CREATE_FIELDS = ['name', 'contactName', 'email', 'phone', 'notes'];
+const UPDATE_FIELDS = ['name', 'contactName', 'email', 'phone', 'notes', 'active'];
 
 /** Global supplier lifecycle shared by maintenance parts and future purchasing modules. */
 export default class SupplierService {
@@ -25,6 +29,7 @@ export default class SupplierService {
     return item;
   }
   async create(values, userId) {
+    values = writeValues(values, CREATE_FIELDS);
     const existing = await this.repository.findByName(values.name, { withDeleted: true });
     if (existing && !existing.deletedAt) {
       throw new AppError('Ce fournisseur existe déjà.', HTTP_STATUS.CONFLICT);
@@ -59,6 +64,7 @@ export default class SupplierService {
     return this.toPublic(item);
   }
   async update(uuid, values, userId) {
+    values = writeValues(values, UPDATE_FIELDS);
     const item = await this.getEntityByUuid(uuid);
     if (values.name) {
       const duplicate = await this.repository.findByName(values.name);
