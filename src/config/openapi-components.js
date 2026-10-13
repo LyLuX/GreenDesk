@@ -615,6 +615,8 @@ export const openApiSchemas = {
   AuditLog: auditLog,
   HistoryEvent: {
     type: 'object',
+    description:
+      'Les entretiens réalisés sur un plan, y compris selon usure, conservent le type planned_execution même avec le filtre maintenance_plan.',
     required: ['uuid', 'occurredAt', 'recordedAt', 'type', 'action', 'subject', 'user', 'details'],
     properties: {
       uuid: { type: 'string' },
@@ -708,6 +710,27 @@ export const openApiSchemas = {
       createdAt: dateTime,
     },
   },
+  MaintenanceHistoryDateCorrectionRequest: {
+    description:
+      'Correction critique réservée à maintenance.parts.history.date.update, avec consultation de la pièce autorisée.',
+    type: 'object',
+    additionalProperties: false,
+    required: ['kind', 'performedAt', 'previousPerformedAt'],
+    properties: {
+      kind: { type: 'string', enum: ['stock', 'price'] },
+      performedAt: { ...date, description: 'Nouvelle date métier, au plus tard aujourd’hui.' },
+      previousPerformedAt: {
+        ...date,
+        description:
+          'Date affichée avant correction, pour détecter les modifications concurrentes.',
+      },
+    },
+  },
+  MaintenanceHistoryDateCorrectionResponse: success({
+    type: 'object',
+    required: ['uuid', 'kind', 'performedAt'],
+    properties: { uuid, kind: { type: 'string', enum: ['stock', 'price'] }, performedAt: date },
+  }),
   MaintenancePartPriceHistory: {
     type: 'object',
     required: ['uuid', 'previousUnitPrice', 'unitPrice', 'performedAt', 'createdAt'],

@@ -4,6 +4,7 @@ import getApiErrorMessage from '../api/get-api-error-message.js';
 import { resolveIdempotencyAttempt } from '../api/idempotency.js';
 import useAuth from '../auth/useAuth.js';
 import {
+  correctMaintenancePartHistoryDate,
   createMaintenanceIntervention,
   listMaintenancePartPriceHistory,
   listMaintenancePartStockMovements,
@@ -24,6 +25,7 @@ import { MAX_MAINTENANCE_PART_UNIT_PRICE } from '../maintenance/maintenance-cost
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import { formatCurrency, formatOperationDateTime } from '../utils/formatters.js';
 import Button from './Button.jsx';
+import ConfirmDialog from './ConfirmDialog.jsx';
 import FormField from './FormField.jsx';
 import AutocompleteField from './AutocompleteField.jsx';
 import Loader from './Loader.jsx';
@@ -62,6 +64,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
   const canAdjustOnOrder = hasPermission(maintenancePermissions.parts.stock.adjustOnOrder);
   const canOrder = hasPermission(maintenancePermissions.parts.stock.order);
   const canReceive = hasPermission(maintenancePermissions.parts.stock.receive);
+  const canCorrectDates = hasPermission(maintenancePermissions.parts.history.date.update);
   const canConsume = hasPermission(maintenancePermissions.parts.stock.consume);
   const canUpdatePrice = hasPermission(maintenancePermissions.parts.price.update);
   const canUpdateMinimumStock = hasPermission(maintenancePermissions.parts.stock.minimumUpdate);
@@ -97,6 +100,11 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
   const [priceHistory, setPriceHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [dateCorrection, setDateCorrection] = useState(null);
+  const [correctedDate, setCorrectedDate] = useState('');
+  const [confirmDateCorrection, setConfirmDateCorrection] = useState(false);
+  const [correctingDate, setCorrectingDate] = useState(false);
+  const dateEditorRef = useRef(null);
   const [error, setError] = useState('');
   const idempotencyAttemptRef = useRef(null);
   const debouncedMaterialSearch = useDebouncedValue(materialSearch, 300);
@@ -119,6 +127,8 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
 
   useEffect(() => {
     if (!part) return undefined;
+    setDateCorrection(null);
+    setConfirmDateCorrection(false);
     setCurrentPart(part);
     setQuantityOnHand(String(part.quantityOnHand ?? 0));
     setQuantityOnOrder(String(part.quantityOnOrder ?? 0));
@@ -159,6 +169,54 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
       });
     return () => controller.abort();
   }, [canConsume, debouncedMaterialSearch, part]);
+
+  useEffect(() => {
+    if (dateCorrection) {
+      dateEditorRef.current?.scrollIntoView?.({ block: 'nearest' });
+      dateEditorRef.current?.querySelector('input')?.focus();
+    }
+  }, [dateCorrection]);
+
+  const canCorrectMovement = (movement) => {
+    if (
+      !canCorrectDates ||
+      (movement.sourceType && movement.sourceType !== 'maintenanceIntervention')
+    )
+      return false;
+    if (movement.operation === STOCK_OPERATIONS.CONSUME) {
+      return movement.sourceType === 'maintenanceIntervention';
+    }
+    return [STOCK_OPERATIONS.ORDER, STOCK_OPERATIONS.RECEIVE, STOCK_OPERATIONS.ADJUST].includes(
+      movement.operation,
+    );
+  };
+  const beginDateCorrection = (entry, kind) => {
+    setError('');
+    setCorrectedDate(entry.performedAt);
+    setDateCorrection({ ...entry, kind });
+  };
+  const saveDateCorrection = async () => {
+    if (correctingDate || !dateCorrection) return;
+    setCorrectingDate(true);
+    setError('');
+    try {
+      await correctMaintenancePartHistoryDate(part.uuid, dateCorrection.uuid, {
+        kind: dateCorrection.kind,
+        performedAt: correctedDate,
+        previousPerformedAt: dateCorrection.performedAt,
+      });
+      setConfirmDateCorrection(false);
+      setDateCorrection(null);
+      notify('success', 'Date de l’opération corrigée.');
+      await loadHistory(part.uuid);
+      await onUpdated?.(currentPart);
+    } catch (requestError) {
+      setConfirmDateCorrection(false);
+      setError(getApiErrorMessage(requestError));
+    } finally {
+      setCorrectingDate(false);
+    }
+  };
 
   if (!part || !currentPart) return null;
 
@@ -267,7 +325,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
       title={`Gérer le stock — ${part.name}`}
       subtitle={part.reference}
       onClose={onClose}
-      busy={busy}
+      busy={busy || correctingDate || confirmDateCorrection}
       className="stock-management-modal"
     >
       <div className="stock-summary-grid mb-4">
@@ -305,7 +363,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
         </p>
       ) : null}
 
-      {permittedOperations.length ? (
+      {dateCorrection ? null : permittedOperations.length ? (
         <form className="d-grid gap-3" onSubmit={submit}>
           <label className="form-label mb-0 text-body-secondary">
             Opérations
@@ -497,8 +555,86 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
           </Button>
         </form>
       ) : (
-        <p className="alert alert-info">Aucune opération de stock ne vous est autorisée.</p>
+        <p className="alert alert-info">
+          {canCorrectDates
+            ? 'Choisissez un événement dans l’historique pour corriger sa date.'
+            : 'Aucune opération de stock ne vous est autorisée.'}
+        </p>
       )}
+
+      {dateCorrection && (
+        <form
+          ref={dateEditorRef}
+          className="surface p-3 d-grid gap-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            setConfirmDateCorrection(true);
+          }}
+        >
+          <h3 className="h6 mb-0">Corriger la date de l’opération</h3>
+          <p className="mb-0 text-body-secondary">
+            {dateCorrection.sourceType === 'maintenanceIntervention'
+              ? 'La correction s’applique à l’intervention entière et à toutes ses pièces utilisées.'
+              : 'La correction modifie uniquement la date de cet événement.'}{' '}
+            Les quantités, les coûts et l’heure d’enregistrement sont conservés.
+          </p>
+          <FormField
+            label="Date corrigée"
+            type="date"
+            required
+            max={getCurrentOperationDate()}
+            value={correctedDate}
+            onChange={(event) => setCorrectedDate(event.target.value)}
+            disabled={correctingDate}
+          />
+          <div className="d-flex gap-2 flex-wrap">
+            <button
+              type="submit"
+              className="btn btn-danger"
+              disabled={
+                correctingDate || !correctedDate || correctedDate === dateCorrection.performedAt
+              }
+            >
+              Enregistrer la date
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              disabled={correctingDate}
+              onClick={() => {
+                setDateCorrection(null);
+                setError('');
+              }}
+            >
+              Annuler
+            </button>
+            {error && (
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                disabled={correctingDate || loadingHistory}
+                onClick={async () => {
+                  setDateCorrection(null);
+                  setError('');
+                  await loadHistory(part.uuid);
+                }}
+              >
+                Recharger l’historique
+              </button>
+            )}
+          </div>
+        </form>
+      )}
+      <ConfirmDialog
+        open={confirmDateCorrection}
+        title="Confirmer la correction de date"
+        description={`La date passera du ${formatOperationDateTime(dateCorrection?.performedAt)} au ${formatOperationDateTime(correctedDate)}.${dateCorrection?.sourceType === 'maintenanceIntervention' ? ' Toutes les pièces de cette intervention seront mises à jour.' : ''} Les quantités et les coûts restent identiques.`}
+        confirmLabel="Corriger la date"
+        destructive
+        busy={correctingDate}
+        onClose={() => setConfirmDateCorrection(false)}
+        onConfirm={saveDateCorrection}
+      />
 
       <h3 className="h6 mt-4">Derniers mouvements</h3>
       {loadingHistory ? (
@@ -512,6 +648,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                 <th>Opération</th>
                 <th>Stock</th>
                 <th>Commande</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -521,6 +658,21 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                   <td>{stockOperationPresentation[movement.operation] ?? movement.operation}</td>
                   <td>{formatChange(movement.quantityOnHandChange, currentPart.unit)}</td>
                   <td>{formatChange(movement.quantityOnOrderChange, currentPart.unit)}</td>
+                  <td>
+                    {canCorrectMovement(movement) ? (
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger btn-sm text-nowrap"
+                        disabled={busy || correctingDate || Boolean(dateCorrection)}
+                        aria-label={`Corriger la date du mouvement du ${formatOperationDateTime(movement.performedAt, movement.createdAt)}`}
+                        onClick={() => beginDateCorrection(movement, 'stock')}
+                      >
+                        Corriger la date
+                      </button>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -542,6 +694,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                 <th>Ancien prix</th>
                 <th>Nouveau prix</th>
                 <th>Utilisateur</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -554,6 +707,21 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                     {entry.changedByUser
                       ? `${entry.changedByUser.firstName} ${entry.changedByUser.lastName}`
                       : 'Utilisateur supprimé'}
+                  </td>
+                  <td>
+                    {canCorrectDates ? (
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger btn-sm text-nowrap"
+                        disabled={busy || correctingDate || Boolean(dateCorrection)}
+                        aria-label={`Corriger la date du prix du ${formatOperationDateTime(entry.performedAt, entry.createdAt)}`}
+                        onClick={() => beginDateCorrection(entry, 'price')}
+                      >
+                        Corriger la date
+                      </button>
+                    ) : (
+                      '—'
+                    )}
                   </td>
                 </tr>
               ))}

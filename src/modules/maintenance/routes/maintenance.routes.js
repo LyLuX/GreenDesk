@@ -157,6 +157,13 @@ router.patch(
   validateRequest,
   asyncHandler(catalogController.updatePartMinimumStock.bind(catalogController)),
 );
+router.patch(
+  '/parts/:uuid/history/:entryUuid/date',
+  authorizeAll(maintenancePermissions.parts.read, maintenancePermissions.parts.history.date.update),
+  validator.correctHistoryDateValidator,
+  validateRequest,
+  asyncHandler(catalogController.correctHistoryDate.bind(catalogController)),
+);
 router.get(
   '/parts/:uuid/stock-movements',
   authorize(maintenancePermissions.parts.read),

@@ -15,9 +15,12 @@ import {
   historyTypeLabels,
 } from '../history/history.config.js';
 import { auditValuesAreEqual } from '../history/audit-values.js';
-import { formatCurrency, formatOperationDateTime } from '../utils/formatters.js';
+import { formatCurrency, formatDate, formatOperationDateTime } from '../utils/formatters.js';
 
 const fieldLabels = Object.freeze({
+  performedAt: 'Date de l’opération',
+  entryUuid: 'Événement',
+  kind: 'Type d’historique',
   name: 'Nom',
   title: 'Désignation',
   description: 'Description',
@@ -35,8 +38,9 @@ const fieldLabels = Object.freeze({
   logoMimeType: 'Format du logo',
 });
 
-const displayValue = (value) => {
+const displayValue = (value, key) => {
   if (value === null || value === undefined || value === '') return 'non renseigné';
+  if (key === 'performedAt') return formatDate(value);
   if (typeof value === 'boolean') return value ? 'oui' : 'non';
   if (Array.isArray(value)) {
     return value
@@ -54,9 +58,9 @@ const auditChanges = ({ oldValues, newValues }) => {
     .slice(0, 3)
     .map((key) => {
       const label = fieldLabels[key] || key;
-      if (!oldValues) return `${label} : ${displayValue(newValues?.[key])}`;
-      if (!newValues) return `${label} : ${displayValue(oldValues?.[key])}`;
-      return `${label} : ${displayValue(oldValues?.[key])} → ${displayValue(newValues?.[key])}`;
+      if (!oldValues) return `${label} : ${displayValue(newValues?.[key], key)}`;
+      if (!newValues) return `${label} : ${displayValue(oldValues?.[key], key)}`;
+      return `${label} : ${displayValue(oldValues?.[key], key)} → ${displayValue(newValues?.[key], key)}`;
     });
 };
 

@@ -16,7 +16,18 @@ export default function PermissionsPage() {
       ]}
       columns={[
         { key: 'name', label: 'Code' },
-        { key: 'description', label: 'Description' },
+        {
+          key: 'description',
+          label: 'Description',
+          render: (value) =>
+            value ? (
+              <span className="d-block text-truncate permission-description-summary" title={value}>
+                {value}
+              </span>
+            ) : (
+              '—'
+            ),
+        },
       ]}
     />
   );

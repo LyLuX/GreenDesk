@@ -21,6 +21,9 @@ const maintenancePermissions = Object.freeze({
   }),
   parts: Object.freeze({
     read: 'maintenance.parts.read',
+    history: Object.freeze({
+      date: Object.freeze({ update: 'maintenance.parts.history.date.update' }),
+    }),
     create: 'maintenance.parts.create',
     update: 'maintenance.parts.update',
     delete: 'maintenance.parts.delete',

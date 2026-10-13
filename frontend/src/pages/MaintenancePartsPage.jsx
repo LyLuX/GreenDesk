@@ -39,6 +39,7 @@ const stockFilters = [
   },
 ];
 const stockActionPermissions = [
+  maintenancePermissions.parts.history.date.update,
   ...Object.values(maintenancePermissions.parts.stock),
   maintenancePermissions.parts.price.update,
 ];

@@ -329,6 +329,11 @@ const permissionDefinitions = [
       'Enregistrer une pièce utilisée lors d’une intervention de maintenance ponctuelle.',
   },
   {
+    name: maintenancePermissions.parts.history.date.update,
+    description:
+      'Corriger les dates des mouvements de stock, interventions ponctuelles et changements de prix des pièces de maintenance.',
+  },
+  {
     name: maintenancePermissions.parts.price.update,
     description: 'Modifier le prix unitaire courant d’une pièce de maintenance.',
   },

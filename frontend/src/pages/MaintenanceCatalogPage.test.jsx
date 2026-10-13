@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   updatePartMinimumStock: vi.fn(),
   listPartStockMovements: vi.fn(),
   listPartPriceHistory: vi.fn(),
+  correctHistoryDate: vi.fn(),
   createIntervention: vi.fn(),
   listMaterials: vi.fn(),
   deletePart: vi.fn(),
@@ -40,6 +41,7 @@ vi.mock('../api/maintenance.api.js', () => ({
   updateMaintenancePartMinimumStock: mocks.updatePartMinimumStock,
   listMaintenancePartStockMovements: mocks.listPartStockMovements,
   listMaintenancePartPriceHistory: mocks.listPartPriceHistory,
+  correctMaintenancePartHistoryDate: mocks.correctHistoryDate,
   createMaintenanceIntervention: mocks.createIntervention,
   deleteMaintenancePart: mocks.deletePart,
 }));

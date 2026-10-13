@@ -218,7 +218,9 @@ export default class HistoryRepository {
   }
 
   async findPlannedExecutions(query, fetchLimit) {
-    if (query.type && query.type !== 'planned_execution') return { count: 0, rows: [] };
+    if (query.type && !['maintenance_plan', 'planned_execution'].includes(query.type)) {
+      return { count: 0, rows: [] };
+    }
     if (
       query.action &&
       !['EXECUTE', 'EXECUTE_PARTIAL_PARTS', 'EXECUTE_WITHOUT_PARTS'].includes(

@@ -84,3 +84,6 @@ export const getMaintenanceSheets = (params, signal) =>
     signal,
   });
 export const recordMaintenanceSheetPrint = () => client.post('/v1/maintenance/sheets/print-events');
+
+export const correctMaintenancePartHistoryDate = (uuid, entryUuid, payload) =>
+  client.patch(`/v1/maintenance/parts/${uuid}/history/${entryUuid}/date`, payload);

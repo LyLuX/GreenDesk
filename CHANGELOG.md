@@ -2,6 +2,19 @@
 
 ## Non publié
 
+## 9.2.0 - 2026-10-13
+
+- [PATCH] Les descriptions longues du tableau des permissions sont raccourcies
+  avec des points de suspension ; leur texte complet reste visible au survol.
+
+- [MINOR] La gestion d’une pièce permet de corriger les dates des mouvements de
+  stock, des interventions ponctuelles associées et des changements de prix,
+  sans modifier les quantités ni les coûts, avec une action critique en rouge
+  protégée par une permission dédiée.
+
+- [PATCH] Le filtre « Plan de maintenance » de l’historique inclut les entretiens
+  réalisés sur les plans, y compris ceux selon usure.
+
 ## 9.1.5 - 2026-10-03
 
 - [PATCH] La page des rôles charge le catalogue des permissions en un seul appel

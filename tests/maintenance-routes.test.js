@@ -18,6 +18,7 @@ const catalogController = {
     response.status(201).json({ success: true, data: {} }),
   ),
   updatePart: jest.fn((_request, response) => response.json({ success: true, data: {} })),
+  correctHistoryDate: jest.fn((_request, response) => response.json({ success: true, data: {} })),
   updatePartStock: jest.fn((_request, response) => response.json({ success: true, data: {} })),
   updatePartPrice: jest.fn((_request, response) => response.json({ success: true, data: {} })),
   updatePartMinimumStock: jest.fn((_request, response) =>
@@ -81,6 +82,7 @@ jest.unstable_mockModule(
       partSuggestions = catalogController.partSuggestions;
       createPart = catalogController.createPart;
       updatePart = catalogController.updatePart;
+      correctHistoryDate = catalogController.correctHistoryDate;
       updatePartStock = catalogController.updatePartStock;
       updatePartPrice = catalogController.updatePartPrice;
       updatePartMinimumStock = catalogController.updatePartMinimumStock;
@@ -156,6 +158,59 @@ const authorization = (permissions) => `Bearer ${tokenFor(permissions)}`;
 const uuid = 'f75ce638-18d2-4e29-9958-2afaa4ae5151';
 
 describe('maintenance catalogue route permissions', () => {
+  it.each([
+    [[], {}, 403],
+    [['maintenance.parts.read'], {}, 403],
+    [['maintenance.parts.stock.consume'], {}, 403],
+    [['maintenance.parts.history.date.update'], {}, 403],
+    [
+      ['maintenance.parts.read', 'maintenance.parts.stock.consume'],
+      { kind: 'stock', performedAt: '2026-09-19', previousPerformedAt: '2026-10-13' },
+      403,
+    ],
+    [
+      ['maintenance.parts.read', 'maintenance.parts.price.update'],
+      { kind: 'price', performedAt: '2026-09-19', previousPerformedAt: '2026-10-13' },
+      403,
+    ],
+    [
+      ['maintenance.parts.read', 'maintenance.parts.history.date.update'],
+      { kind: 'stock', performedAt: '2026-09-19', previousPerformedAt: '2026-10-13' },
+      200,
+    ],
+    [
+      ['maintenance.parts.read', 'maintenance.parts.history.date.update'],
+      { kind: 'price', performedAt: '2026-09-19', previousPerformedAt: '2026-10-13' },
+      200,
+    ],
+    [
+      ['maintenance.parts.read', 'maintenance.parts.history.date.update'],
+      { kind: 'stock', performedAt: '2026-02-30', previousPerformedAt: '2026-10-13' },
+      400,
+    ],
+    [
+      ['maintenance.parts.read', 'maintenance.parts.history.date.update'],
+      { kind: 'stock', performedAt: '2026-09-19T12:00:00Z', previousPerformedAt: '2026-10-13' },
+      400,
+    ],
+    [
+      ['maintenance.parts.read', 'maintenance.parts.history.date.update'],
+      { kind: 'stock', performedAt: '2026-09-19', previousPerformedAt: '2026-10-13', quantity: 3 },
+      400,
+    ],
+    [
+      ['maintenance.parts.read', 'maintenance.parts.history.date.update'],
+      { kind: 'stock', performedAt: '2026-09-19' },
+      400,
+    ],
+  ])('protects and validates date correction (%j)', async (permissions, body, status) => {
+    await request(app)
+      .patch(`/api/v1/maintenance/parts/${uuid}/history/${uuid}/date`)
+      .set('Authorization', authorization(permissions))
+      .send(body)
+      .expect(status);
+  });
+
   it.each([
     [[], `?materialUuid=${uuid}`, 403],
     [['maintenance.read'], `?materialUuid=${uuid}&page=2&limit=5`, 200],

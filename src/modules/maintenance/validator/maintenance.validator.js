@@ -302,3 +302,27 @@ export const updatePartMinimumStockValidator = [
   quantity('minimumStockQuantity', { allowZero: true }),
 ];
 export const priceHistoryListValidator = [uuid, ...paginationValidator];
+
+export const correctHistoryDateValidator = [
+  uuid,
+  param('entryUuid').custom(isScalarInput).bail().isUUID(),
+  body('kind').isString().bail().isIn(['stock', 'price']),
+  ...['performedAt', 'previousPerformedAt'].map((field) =>
+    body(field)
+      .isString()
+      .bail()
+      .isISO8601({ strict: true })
+      .matches(/^\d{4}-\d{2}-\d{2}$/),
+  ),
+  body().custom((value) => {
+    if (
+      !value ||
+      Object.keys(value).some(
+        (key) => !['kind', 'performedAt', 'previousPerformedAt'].includes(key),
+      )
+    ) {
+      throw new Error('Seuls le type et les dates de l’événement peuvent être fournis.');
+    }
+    return true;
+  }),
+];

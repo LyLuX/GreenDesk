@@ -1,3 +1,4 @@
+import MaintenanceHistoryDateService from '../service/maintenance-history-date.service.js';
 import HTTP_STATUS from '../../../core/constants/http-status.js';
 import IdempotencyService from '../../../core/idempotency/idempotency.service.js';
 import { successResponse } from '../../../core/responses/api-response.js';
@@ -9,6 +10,7 @@ export default class MaintenanceCatalogController {
     service = new MaintenanceCatalogService(),
     idempotencyService = new IdempotencyService(),
   ) {
+    this.dateService = new MaintenanceHistoryDateService();
     this.service = service;
     this.idempotencyService = idempotencyService;
   }
@@ -94,6 +96,19 @@ export default class MaintenanceCatalogController {
           request.params.uuid,
           request.body,
           request.user.userId,
+        ),
+      ),
+    );
+  }
+
+  async correctHistoryDate(request, response) {
+    response.json(
+      successResponse(
+        await this.dateService.correct(
+          request.params.uuid,
+          request.params.entryUuid,
+          request.body,
+          request.user,
         ),
       ),
     );

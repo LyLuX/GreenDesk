@@ -1227,6 +1227,25 @@ export const openApiPaths = {
       },
     },
   },
+  '/maintenance/parts/{uuid}/history/{entryUuid}/date': {
+    parameters: [
+      uuidParameter,
+      { name: 'entryUuid', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+    ],
+    patch: {
+      operationId: 'correctMaintenancePartHistoryDate',
+      tags: ['Maintenance'],
+      summary: 'Corrige la date métier d’un mouvement ou d’un changement de prix.',
+      description:
+        'Nécessite maintenance.parts.read et la permission dédiée maintenance.parts.history.date.update, indépendamment des permissions de création des opérations de stock ou de prix. La correction transactionnelle conserve quantités, coûts et horodatages. Pour une intervention ponctuelle, elle synchronise toute l’intervention, toutes ses consommations et mouvements, l’audit de création et la réponse idempotente conservée. Un audit DATE_CORRECTION conserve les dates avant et après. Les consommations liées aux plans et les migrations ne sont pas modifiables ici (409). Une date invalide ou future est refusée (400), un événement extérieur à la pièce ou société est introuvable (404), une date modifiée depuis la lecture est refusée (409).',
+      security: secure,
+      requestBody: jsonBody('MaintenanceHistoryDateCorrectionRequest'),
+      responses: {
+        200: jsonResponse('MaintenanceHistoryDateCorrectionResponse', 'Date corrigée.'),
+        ...writeErrors,
+      },
+    },
+  },
   '/maintenance/parts/{uuid}/stock-movements': {
     parameters: [uuidParameter],
     get: {
@@ -1686,6 +1705,8 @@ export const openApiPaths = {
         {
           name: 'type',
           in: 'query',
+          description:
+            'maintenance_plan inclut les événements des plans et leurs entretiens réalisés, y compris selon usure. planned_execution retourne uniquement les entretiens réalisés sur un plan.',
           schema: {
             type: 'string',
             enum: [

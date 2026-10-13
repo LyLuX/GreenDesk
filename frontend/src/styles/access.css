@@ -1,3 +1,7 @@
+.permission-description-summary {
+  max-width: min(32rem, 55vw);
+}
+
 .permission-picker {
   display: grid;
   max-height: min(24rem, 45vh);
