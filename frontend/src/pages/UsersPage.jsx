@@ -1,3 +1,4 @@
+import TableActions from '../components/TableActions.jsx';
 import { useCallback, useEffect, useState } from 'react';
 import getApiErrorMessage, { getRetryAfterSeconds } from '../api/get-api-error-message.js';
 import listAllPages from '../api/list-all-pages.js';
@@ -481,24 +482,55 @@ export default function UsersPage() {
                     <td>
                       {user.deletedAt ? (
                         canRestore && (
-                          <div className="d-flex h-100 w-100 align-items-center justify-content-center">
+                          <TableActions>
                             <button
                               aria-label={`Restaurer ${user.firstName} ${user.lastName}`}
-                              className="btn btn-sm btn-outline-brand-blue flex-fill"
+                              className="btn btn-sm btn-outline-brand"
                               type="button"
                               disabled={Boolean(restoring)}
                               onClick={() => setConfirmation({ action: 'restore', user })}
                             >
                               {restoring === user.uuid ? 'Restauration…' : 'Restaurer'}
                             </button>
-                          </div>
+                          </TableActions>
                         )
                       ) : (
-                        <div className="d-flex h-100 w-100 flex-wrap align-items-center justify-content-center gap-1">
+                        <TableActions
+                          secondary={
+                            <>
+                              {canUpdateStatus && (
+                                <button
+                                  aria-label={`${user.isActive ? 'Désactiver' : 'Activer'} ${
+                                    user.firstName
+                                  } ${user.lastName}`}
+                                  className={`btn btn-sm ${getStatusActionButtonClass(
+                                    user.isActive,
+                                  )}`}
+                                  type="button"
+                                  disabled={Boolean(removing || changingStatus)}
+                                  onClick={() => setConfirmation({ action: 'status', user })}
+                                >
+                                  {user.isActive ? 'Désactiver' : 'Activer'}
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  aria-label={`Supprimer ${user.firstName} ${user.lastName}`}
+                                  className="btn btn-sm btn-outline-danger"
+                                  type="button"
+                                  disabled={Boolean(removing || changingStatus)}
+                                  onClick={() => setConfirmation({ action: 'delete', user })}
+                                >
+                                  {removing === user.uuid ? 'Suppression…' : 'Supprimer'}
+                                </button>
+                              )}
+                            </>
+                          }
+                        >
                           {canOpenEdit && (
                             <button
                               aria-label={`Modifier ${user.firstName} ${user.lastName}`}
-                              className="btn btn-sm btn-outline-brand flex-fill"
+                              className="btn btn-sm btn-outline-edit"
                               type="button"
                               disabled={Boolean(removing || changingStatus)}
                               onClick={() => openEdit(user)}
@@ -506,27 +538,12 @@ export default function UsersPage() {
                               Modifier
                             </button>
                           )}
-                          {canUpdateStatus && (
-                            <button
-                              aria-label={`${user.isActive ? 'Désactiver' : 'Activer'} ${
-                                user.firstName
-                              } ${user.lastName}`}
-                              className={`btn btn-sm ${getStatusActionButtonClass(
-                                user.isActive,
-                              )} flex-fill`}
-                              type="button"
-                              disabled={Boolean(removing || changingStatus)}
-                              onClick={() => setConfirmation({ action: 'status', user })}
-                            >
-                              {user.isActive ? 'Désactiver' : 'Activer'}
-                            </button>
-                          )}
                           {canResendVerification && !user.emailVerifiedAt && (
                             <TimedProgressButton
                               aria-label={`Renvoyer l’email de vérification à ${user.firstName} ${user.lastName}`}
                               busy={resendingVerification === user.uuid}
                               busyLabel="Envoi…"
-                              className="btn btn-sm btn-outline-secondary flex-fill"
+                              className="btn btn-sm btn-outline-secondary"
                               cooldown={verificationCooldowns[user.uuid]}
                               cooldownLabel={(seconds) => `Disponible dans ${seconds} s`}
                               type="button"
@@ -538,18 +555,7 @@ export default function UsersPage() {
                               Renvoyer la vérification
                             </TimedProgressButton>
                           )}
-                          {canDelete && (
-                            <button
-                              aria-label={`Supprimer ${user.firstName} ${user.lastName}`}
-                              className="btn btn-sm btn-outline-danger flex-fill"
-                              type="button"
-                              disabled={Boolean(removing || changingStatus)}
-                              onClick={() => setConfirmation({ action: 'delete', user })}
-                            >
-                              {removing === user.uuid ? 'Suppression…' : 'Supprimer'}
-                            </button>
-                          )}
-                        </div>
+                        </TableActions>
                       )}
                     </td>
                   </tr>
@@ -710,6 +716,9 @@ export default function UsersPage() {
         onClose={() => !removing && !restoring && !changingStatus && setConfirmation(null)}
         onConfirm={confirmAction}
         busy={Boolean(removing || restoring || changingStatus)}
+        variant={
+          confirmation?.action === 'status' && confirmation?.user.isActive ? 'warning' : undefined
+        }
         destructive={
           confirmation?.action === 'delete' ||
           (confirmation?.action === 'status' && confirmation?.user.isActive)

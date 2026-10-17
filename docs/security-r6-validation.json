@@ -1,0 +1,99 @@
+{
+  "date": "2026-10-17",
+  "baseRevision": "8a6102011cb50fb1fd698f34577008a58c33a226",
+  "workingTreeModified": true,
+  "releaseStatus": "PATCH en attente, 1/5 ; aucun commit/push R6",
+  "sourceDigestFormat": "SHA-256 du contenu UTF-8, fins de ligne CRLF normalisées en LF",
+  "sources": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "17f2f4d38685e45c1e5d48efcc78fe200ae9360e2849bf4682cabee653af07ac"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "3748ec8ad290f2cce018aa854f076bec497183447cd3863e2011b99d67d9a297"
+    },
+    {
+      "path": "README.md",
+      "sha256": "fa24bec42a2f7c34c727bf316cf3d71b15678051fec0576f181e50b03007173c"
+    },
+    {
+      "path": "scripts/test-integration.js",
+      "sha256": "3670d0bee23c022006570d79f907fcc496663adfa320fddda70fa07a47686c45"
+    },
+    {
+      "path": "scripts/ci-security-gate.js",
+      "sha256": "d9ed4edba6f743fe257b254e6404087641a54451818def7eb823ac2edd00a2c0"
+    },
+    {
+      "path": "tests/ci-security-gate.test.js",
+      "sha256": "24dd5c0d74f5e724c54c242bfbb2e2116fddd0d16114c5c3f97bf4b8befd38cb"
+    },
+    {
+      "path": "tests/integration/maintenance-idempotency.integration.js",
+      "sha256": "001ebfadbd8c2d2bffeaac9d989b7aedbe33377b64a1889b292aa0053dfc42dd"
+    },
+    {
+      "path": "docs/security-release-gates.md",
+      "sha256": "60ed3ac847b8de0479961256e6eac898514ff5076e1dc00f4725fe10d9e49290"
+    }
+  ],
+  "reports": [
+    {
+      "path": "coverage/security/backend.json",
+      "sha256": "1aef4d7156cdc56adc20cc61aee926a63f9d53c95045bdd59ba095e8b10decdd",
+      "passedTests": 1333,
+      "totalTests": 1333,
+      "failedTests": 0,
+      "pendingTests": 0
+    },
+    {
+      "path": "coverage/security/openapi.json",
+      "sha256": "860b9e0d9937a651ed8ac4db0fc2f99e1bb58413eb40ed87027ae74c1e5270a4",
+      "passedTests": 35,
+      "totalTests": 35,
+      "failedTests": 0,
+      "pendingTests": 0
+    },
+    {
+      "path": "coverage/security/mysql.json",
+      "sha256": "bf2785eefe36bb157f777c5137059083868a34f9e9f25908a11965f9f1c9f8b9",
+      "passedTests": 79,
+      "totalTests": 79,
+      "failedTests": 0,
+      "pendingTests": 0
+    },
+    {
+      "path": "frontend/coverage/security/frontend.json",
+      "sha256": "4e6314cca6f23c492dd8b4627cc1585703bfcd0e4a1ed712c0679afcf7c2d7e6",
+      "passedTests": 372,
+      "totalTests": 372,
+      "failedTests": 0,
+      "pendingTests": 0
+    }
+  ],
+  "additionalChecks": [
+    "Lint réussi",
+    "YAML analysé ; trois jobs et trois étapes de conservation, dépendances et always() vérifiés",
+    "Build frontend réussi après les tests",
+    "Runner MySQL : migrations, schéma, conservation et suppression de la base temporaire réussis"
+  ],
+  "github": {
+    "observedDate": "2026-10-17",
+    "mainProtected": false,
+    "rulesets": [],
+    "newWorkflowPublished": false,
+    "lastPublishedSuccessfulRun": "https://github.com/LyLuX/GreenDesk/actions/runs/39029997020"
+  },
+  "limitations": [
+    "Preuves locales de copie de travail ; pas de commit R6 livré à référencer avant publication du lot.",
+    "Les compteurs et empreintes permettent de retrouver les rapports locaux ; les rapports complets ne sont pas versionnés.",
+    "Activation et vérification sur GitHub du nouveau contrôle, puis protection de branche à effectuer après publication.",
+    "Aucun environnement de production ou de préproduction déployé selon l’utilisateur."
+  ],
+  "documentationMaintenance": {
+    "date": "2026-10-17",
+    "change": "Suppression du dossier local hardening à la demande de l’utilisateur ; points de suivi regroupés dans docs/security-release-gates.md.",
+    "technicalValidationUnchanged": true
+  }
+}

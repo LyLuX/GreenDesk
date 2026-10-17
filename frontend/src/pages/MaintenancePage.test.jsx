@@ -356,21 +356,16 @@ describe('MaintenancePage', () => {
       name: 'Supprimer Vidange annuelle',
     });
 
-    expect(editButton).toHaveClass('btn-sm', 'btn-outline-brand');
-    expect(editButton).toHaveClass('flex-fill');
+    expect(editButton).toHaveClass('btn-sm', 'btn-outline-edit');
+    expect(editButton).not.toHaveClass('flex-fill');
     expect(editButton).not.toHaveClass('btn-brand');
     expect(deleteButton).toHaveClass('btn-sm', 'btn-outline-danger');
     expect(screen.getByRole('button', { name: 'Désactiver Vidange annuelle' })).toHaveClass(
-      'btn-outline-secondary',
+      'btn-outline-deactivate',
     );
-    expect(editButton.parentElement).toHaveClass(
-      'd-flex',
-      'h-100',
-      'w-100',
-      'flex-wrap',
-      'align-items-center',
-      'justify-content-center',
-    );
+    expect(editButton.parentElement).toHaveClass('btn-group');
+    expect(deleteButton.parentElement).toHaveClass('btn-group');
+    expect(deleteButton.parentElement).not.toBe(editButton.parentElement);
   });
 
   it('uses blue buttons to activate an inactive maintenance plan', async () => {
@@ -401,11 +396,11 @@ describe('MaintenancePage', () => {
     const activateButton = await screen.findByRole('button', {
       name: 'Activer Vidange annuelle',
     });
-    expect(activateButton).toHaveClass('btn-outline-brand-blue');
+    expect(activateButton).toHaveClass('btn-outline-brand');
 
     await user.click(activateButton);
     expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Activer' })).toHaveClass(
-      'btn-outline-brand-blue',
+      'btn-outline-brand',
     );
   });
 

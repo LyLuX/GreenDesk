@@ -103,6 +103,9 @@ describe('AppLayout navigation drawer', () => {
       'brand-logo',
     );
     expect(container.querySelector('.brand-name')).toHaveTextContent('GreenDesk');
+    expect(screen.getByRole('contentinfo').parentElement).toBe(
+      container.querySelector('.app-workspace'),
+    );
     expect(screen.getByRole('button', { name: 'Déconnexion' })).toHaveClass('btn-outline-critical');
     expect(screen.getByRole('button', { name: 'Déconnexion' })).not.toHaveClass(
       'btn-outline-light',
@@ -139,6 +142,36 @@ describe('AppLayout navigation drawer', () => {
     expect(menuButton).toHaveAttribute('aria-expanded', 'false');
     expect(navigation).not.toHaveClass('open');
     expect(menuButton).toHaveFocus();
+  });
+
+  it('exposes a modal drawer and releases the workspace when switching to desktop', async () => {
+    const listeners = new Set();
+    const media = {
+      matches: false,
+      addEventListener: vi.fn((_event, listener) => listeners.add(listener)),
+      removeEventListener: vi.fn((_event, listener) => listeners.delete(listener)),
+    };
+    vi.stubGlobal('matchMedia', () => media);
+    try {
+      const user = userEvent.setup();
+      const { container, unmount } = renderLayout();
+      await user.click(screen.getByRole('button', { name: 'Menu' }));
+      expect(screen.getByRole('dialog', { name: 'Menu GreenDesk' })).toHaveAttribute(
+        'aria-modal',
+        'true',
+      );
+      expect(container.querySelector('.app-workspace')).toHaveAttribute('inert');
+      media.matches = true;
+      const { act } = await import('@testing-library/react');
+      act(() => listeners.forEach((listener) => listener()));
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(container.querySelector('.app-workspace')).not.toHaveAttribute('inert');
+      expect(document.body).not.toHaveClass('app-scroll-locked');
+      unmount();
+      expect(listeners.size).toBe(0);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('closes the drawer after navigating to a page', async () => {

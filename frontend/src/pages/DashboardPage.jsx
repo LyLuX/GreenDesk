@@ -333,7 +333,7 @@ export default function DashboardPage() {
         {maintenanceDialog?.status && (
           <div className="mt-4 d-flex justify-content-end">
             <Link
-              className="btn btn-outline-brand"
+              className="btn btn-outline-brand-blue"
               to={`/maintenance?status=${encodeURIComponent(maintenanceDialog.status)}`}
             >
               Voir la maintenance

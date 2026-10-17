@@ -99,13 +99,13 @@ describe('production CSS build', () => {
     const styles = readStyles();
 
     expect(styles).toMatch(
-      /\.table-shell\s*\{[^}]*width:\s*fit-content;[^}]*min-width:\s*min\(100%,\s*48rem\);[^}]*max-width:\s*100%;[^}]*margin-inline:\s*auto;[^}]*overflow:\s*visible;/,
+      /\.table-shell\s*\{[^}]*width:\s*100%;[^}]*min-width:\s*min\(100%,\s*48rem\);[^}]*max-width:\s*100%;[^}]*margin-inline:\s*auto;[^}]*overflow:\s*visible;/,
     );
     expect(styles).toMatch(
-      /\.table-responsive\s*\{[^}]*max-width:\s*100%;[^}]*overflow-x:\s*visible;/,
+      /\.table-responsive\s*\{[^}]*max-width:\s*100%;[^}]*overflow-x:\s*auto;/,
     );
     expect(styles).toMatch(
-      /\.table-responsive\s*>\s*\.table\s*\{[^}]*min-width:\s*min\(100%,\s*48rem\);[^}]*max-width:\s*100%;[^}]*white-space:\s*normal;/,
+      /\.table-responsive\s*>\s*\.table\s*\{[^}]*min-width:\s*40rem;[^}]*max-width:\s*100%;[^}]*white-space:\s*normal;/,
     );
     const responsiveTableRule = styles.match(/\.table-responsive\s*>\s*\.table\s*\{([^}]*)\}/)?.[1];
     expect(responsiveTableRule).not.toMatch(/(?:^|;)\s*width\s*:/);
@@ -178,17 +178,13 @@ describe('production CSS build', () => {
   it('visually separates dashboard cards from their dedicated background', () => {
     const styles = readStyles();
 
-    expect(styles).toMatch(
-      /--dashboard-background:\s*color-mix\(\s*in srgb,\s*var\(--brand-mist\) 92%,\s*var\(--brand-forest\) 8%\s*\);/,
-    );
+    expect(styles).toMatch(/--dashboard-background:\s*var\(--brand-mist\);/);
     expect(styles).toMatch(
       /\.app-content:has\(> \.dashboard-page\)[^{]*\{[^}]*background:\s*var\(--dashboard-background\);/,
     );
+    expect(styles).toMatch(/\.metric-card\s*\{[^}]*box-shadow:\s*var\(--shadow-sm\);/);
     expect(styles).toMatch(
-      /\.metric-card\s*\{[^}]*box-shadow:\s*0 0\.35rem 1rem var\(--metric-shadow-color\);/,
-    );
-    expect(styles).toMatch(
-      /\.metric-card\s*\{[^}]*--metric-card-accent:\s*var\(--brand-leaf\);[^}]*border-left:\s*4px solid var\(--metric-card-accent\);[^}]*background:\s*color-mix\(\s*in srgb,\s*var\(--metric-card-accent\) 10%,\s*var\(--surface-color\)\s*\);/,
+      /\.metric-card\s*\{[^}]*--metric-card-accent:\s*var\(--brand-leaf\);[^}]*border-top:\s*3px solid var\(--metric-card-accent\);[^}]*background:\s*var\(--surface-color\);/,
     );
   });
 
@@ -246,12 +242,12 @@ describe('production CSS build', () => {
   it('centralizes theme colors shared by several interface roles', () => {
     const styles = readStyles();
     const sharedColors = [
-      ['--surface-highlight-color', '#edf3e9'],
-      ['--control-border-color', '#cbd7ce'],
+      ['--surface-highlight-color', '#f0f5f3'],
+      ['--control-border-color', '#d8dfdc'],
       ['--brand-focus-color', 'color-mix(in srgb, var(--brand-leaf) 16%, transparent)'],
       ['--relation-company-color', '#236941'],
-      ['--sidebar-text-color', '#435149'],
-      ['--brand-company-color', '#dbe8d7'],
+      ['--sidebar-text-color', '#c5d0cb'],
+      ['--brand-company-color', '#52645b'],
     ];
 
     for (const [variable, color] of sharedColors) {

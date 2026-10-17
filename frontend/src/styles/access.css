@@ -176,15 +176,14 @@
 .auth-card {
   width: min(100%, 440px);
   border: 1px solid var(--border);
-  border-top: 4px solid var(--brand-sun);
-  border-radius: 0.55rem;
-  box-shadow: 0 0.8rem 2.2rem var(--auth-shadow-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
 }
 
 .auth-logo {
   display: block;
-  width: 200px;
-  height: 200px;
+  width: 120px;
+  height: 120px;
   margin-inline: auto;
   object-fit: contain;
 }

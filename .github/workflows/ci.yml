@@ -41,6 +41,9 @@ jobs:
       - name: Installer les dépendances frontend
         run: npm ci --prefix frontend
 
+      - name: Préparer les rapports
+        run: mkdir -p coverage/security frontend/coverage/security
+
       - name: Vérifier le lint
         run: npm run lint
 
@@ -48,20 +51,31 @@ jobs:
         run: npm run format:check
 
       - name: Tester le backend et les versions
-        run: npm test
+        run: npm test -- --json --outputFile=coverage/security/backend.json
         env:
           NODE_ENV: test
 
       - name: Vérifier OpenAPI
-        run: npm run docs:check
+        run: npm run docs:check -- --json --outputFile=coverage/security/openapi.json
         env:
           NODE_ENV: test
 
       - name: Tester le frontend
-        run: npm test --prefix frontend -- --maxWorkers=2
+        run: npm test --prefix frontend -- --maxWorkers=2 --reporter=default --reporter=json --outputFile=coverage/security/frontend.json
 
       - name: Compiler le frontend
         run: npm run build --prefix frontend
+
+      - name: Conserver les preuves applicatives
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: security-validation-${{ github.sha }}-${{ github.run_attempt }}
+          retention-days: 30
+          if-no-files-found: error
+          path: |
+            coverage/security/*.json
+            frontend/coverage/security/*.json
 
   mysql:
     name: Validation MySQL
@@ -101,3 +115,41 @@ jobs:
         run: npm ci
       - name: Vérifier les migrations et les transactions MySQL
         run: npm run test:integration
+
+      - name: Conserver les preuves MySQL
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: security-mysql-${{ github.sha }}-${{ github.run_attempt }}
+          retention-days: 30
+          if-no-files-found: error
+          path: coverage/security/mysql.json
+
+  security:
+    name: Sécurité GreenDesk
+    needs: [validation, mysql]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Installer Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+      - name: Refuser une validation incomplète ou en échec
+        run: node scripts/ci-security-gate.js
+        env:
+          CI_VALIDATION_RESULT: ${{ needs.validation.result }}
+          CI_MYSQL_RESULT: ${{ needs.mysql.result }}
+      - name: Conserver la décision liée au commit
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: security-gate-${{ github.sha }}-${{ github.run_attempt }}
+          retention-days: 30
+          if-no-files-found: error
+          path: coverage/security/gate.json

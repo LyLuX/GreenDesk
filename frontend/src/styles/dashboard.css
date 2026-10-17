@@ -2,13 +2,13 @@
   --metric-card-accent: var(--brand-leaf);
 
   display: flex;
-  min-height: 108px;
+  min-height: 132px;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-left: 4px solid var(--metric-card-accent);
-  border-radius: 0.45rem;
-  background: color-mix(in srgb, var(--metric-card-accent) 10%, var(--surface-color));
-  box-shadow: 0 0.35rem 1rem var(--metric-shadow-color);
+  border-top: 3px solid var(--metric-card-accent);
+  border-radius: var(--radius-md);
+  background: var(--surface-color);
+  box-shadow: var(--shadow-sm);
 }
 
 .app-content:has(> .dashboard-page),
@@ -34,8 +34,8 @@
 .dashboard-section-title {
   margin: 0;
   padding-bottom: 0.55rem;
-  border-bottom: 2px solid var(--border);
-  color: var(--brand-forest-dark);
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
   font-size: 1.15rem;
   font-weight: 700;
 }
@@ -83,8 +83,11 @@
 }
 
 .metric-value {
-  color: var(--brand-forest-dark);
-  font-size: 1.75rem;
+  color: var(--ink);
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
   font-weight: 700;
 }
 
@@ -97,8 +100,9 @@
   cursor: pointer;
 }
 
-.metric-card-button:hover .metric-value {
-  color: var(--brand-forest);
+.metric-card-button:hover .metric-value,
+.metric-card-button:focus-visible .metric-value {
+  color: var(--metric-card-accent);
 }
 
 .metric-card-button:focus-visible {
@@ -107,7 +111,7 @@
 }
 
 .metric-card-empty {
-  opacity: 0.68;
+  --metric-card-accent: var(--border);
 }
 
 .metric-card.maintenance-upcoming {
@@ -128,4 +132,13 @@
 
 .metric-card.maintenance-low-stock {
   --metric-card-accent: var(--critical-color);
+}
+
+.metric-card:has(.metric-card-button:hover) {
+  border-color: var(--metric-card-accent);
+  box-shadow: var(--shadow-md);
+}
+.metric-card-button .metric-label::after {
+  content: ' ↗';
+  color: var(--metric-card-accent);
 }

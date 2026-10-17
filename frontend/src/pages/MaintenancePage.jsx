@@ -1,3 +1,4 @@
+import TableActions from '../components/TableActions.jsx';
 import { getStockQuantityStep } from '../inventory/stock-status.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -506,7 +507,7 @@ export default function MaintenancePage() {
           {hasPermission(maintenancePermissions.sheets.read) ? (
             <button
               type="button"
-              className="btn btn-outline-brand"
+              className="btn btn-outline-brand-blue"
               onClick={() => setSheetsOpen(true)}
             >
               Fiches de maintenance
@@ -514,7 +515,7 @@ export default function MaintenancePage() {
           ) : null}
           <button
             type="button"
-            className="btn btn-outline-brand"
+            className="btn btn-outline-brand-blue"
             onClick={() => setOrderListOpen(true)}
           >
             Pièces à commander
@@ -671,11 +672,38 @@ export default function MaintenancePage() {
                     </span>
                   </td>
                   <td>
-                    <div className="d-flex h-100 w-100 flex-wrap align-items-center justify-content-center gap-1">
+                    <TableActions
+                      secondary={
+                        <>
+                          {hasPermission(maintenancePermissions.plans.status.update) && (
+                            <button
+                              aria-label={`${item.active ? 'Désactiver' : 'Activer'} ${item.title}`}
+                              className={`btn btn-sm ${getStatusActionButtonClass(item.active)}`}
+                              type="button"
+                              disabled={busy}
+                              onClick={() => setConfirmation({ action: 'status', item })}
+                            >
+                              {item.active ? 'Désactiver' : 'Activer'}
+                            </button>
+                          )}
+                          {hasPermission(maintenancePermissions.plans.delete) && (
+                            <button
+                              aria-label={`Supprimer ${item.title}`}
+                              className="btn btn-sm btn-outline-danger"
+                              type="button"
+                              disabled={busy}
+                              onClick={() => setConfirmation({ action: 'delete', item })}
+                            >
+                              Supprimer
+                            </button>
+                          )}
+                        </>
+                      }
+                    >
                       {hasPermission(maintenancePermissions.plans.update) && (
                         <button
                           aria-label={`Modifier ${item.title}`}
-                          className="btn btn-sm btn-outline-brand flex-fill"
+                          className="btn btn-sm btn-outline-edit"
                           type="button"
                           disabled={busy}
                           onClick={() => openPlanDialog('edit', item)}
@@ -683,23 +711,10 @@ export default function MaintenancePage() {
                           Modifier
                         </button>
                       )}
-                      {hasPermission(maintenancePermissions.plans.status.update) && (
-                        <button
-                          aria-label={`${item.active ? 'Désactiver' : 'Activer'} ${item.title}`}
-                          className={`btn btn-sm ${getStatusActionButtonClass(
-                            item.active,
-                          )} flex-fill`}
-                          type="button"
-                          disabled={busy}
-                          onClick={() => setConfirmation({ action: 'status', item })}
-                        >
-                          {item.active ? 'Désactiver' : 'Activer'}
-                        </button>
-                      )}
                       {hasPermission(maintenancePermissions.plans.execute) && item.active && (
                         <button
                           aria-label={`Effectuer ${item.title}`}
-                          className="btn btn-sm btn-outline-brand flex-fill"
+                          className="btn btn-sm btn-outline-brand"
                           type="button"
                           disabled={busy}
                           onClick={() => {
@@ -712,25 +727,14 @@ export default function MaintenancePage() {
                       )}
                       <button
                         aria-label={`Voir l’historique de ${item.title}`}
-                        className="btn btn-sm btn-outline-brand flex-fill"
+                        className="btn btn-sm btn-outline-brand-blue"
                         type="button"
                         disabled={busy}
                         onClick={() => showHistory(item)}
                       >
                         Historique
                       </button>
-                      {hasPermission(maintenancePermissions.plans.delete) && (
-                        <button
-                          aria-label={`Supprimer ${item.title}`}
-                          className="btn btn-sm btn-outline-danger flex-fill"
-                          type="button"
-                          disabled={busy}
-                          onClick={() => setConfirmation({ action: 'delete', item })}
-                        >
-                          Supprimer
-                        </button>
-                      )}
-                    </div>
+                    </TableActions>
                   </td>
                 </tr>
               ))}
@@ -1114,6 +1118,9 @@ export default function MaintenancePage() {
         onClose={() => !busy && setConfirmation(null)}
         onConfirm={confirmAction}
         busy={busy}
+        variant={
+          confirmation?.action === 'status' && confirmation?.item.active ? 'warning' : undefined
+        }
         destructive={confirmation?.action === 'delete' || confirmation?.item.active}
       />
     </main>

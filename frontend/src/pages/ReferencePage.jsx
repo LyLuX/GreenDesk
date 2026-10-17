@@ -10,6 +10,7 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import DataTable from '../components/DataTable.jsx';
 import FilterPanel from '../components/FilterPanel.jsx';
 import FormField from '../components/FormField.jsx';
+import MaterialFormSectionTitle from '../components/MaterialFormSectionTitle.jsx';
 import Loader from '../components/Loader.jsx';
 import Modal from '../components/Modal.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
@@ -316,6 +317,7 @@ export default function ReferencePage({
       {fields.map((field) => {
         return (
           <div className="d-grid gap-2" key={field.name}>
+            {isMaterialForm && <MaterialFormSectionTitle fieldName={field.name} />}
             {field.suggestionsFromRecords && !editing?.uuid ? (
               <AutocompleteField
                 label={field.label}
@@ -555,6 +557,7 @@ export default function ReferencePage({
         onClose={() => !statusActionId && setConfirmation(null)}
         onConfirm={confirmAction}
         busy={Boolean(statusActionId)}
+        variant={confirmation?.action === 'disable' ? 'warning' : undefined}
         destructive={confirmation?.action !== 'restore'}
       />
     </main>

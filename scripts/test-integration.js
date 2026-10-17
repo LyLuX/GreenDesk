@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
+import { mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import mysql from 'mysql2/promise';
 
@@ -34,6 +35,7 @@ const migrate = () =>
   runNode(['node_modules/sequelize-cli/lib/sequelize', 'db:migrate', '--env', 'test']);
 
 try {
+  mkdirSync(new URL('../coverage/security/', import.meta.url), { recursive: true });
   connection = await mysql.createConnection({
     host: env.database.host,
     port: env.database.port,
@@ -91,6 +93,8 @@ try {
         '--config',
         'jest.integration.config.js',
         '--runInBand',
+        '--json',
+        '--outputFile=coverage/security/mysql.json',
       ],
       {
         cwd: projectRoot,

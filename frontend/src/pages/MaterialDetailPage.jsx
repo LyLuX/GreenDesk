@@ -1,3 +1,4 @@
+import TableActions from '../components/TableActions.jsx';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import getApiErrorMessage from '../api/get-api-error-message.js';
@@ -372,11 +373,13 @@ export default function MaterialDetailPage() {
   return (
     <main className="app-page">
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-        <Link className="btn btn-outline-brand" to="/materials">
+        <Link className="btn btn-outline-secondary" to="/materials">
           Retour aux matériels
         </Link>
         {hasPermission(fleetPermissions.materials.update) && (
-          <Button onClick={() => navigate(`/materials/${uuid}/edit`)}>Modifier</Button>
+          <Button variant="edit" onClick={() => navigate(`/materials/${uuid}/edit`)}>
+            Modifier
+          </Button>
         )}
       </div>
       <div className="material-detail-heading mt-4">
@@ -522,6 +525,7 @@ export default function MaterialDetailPage() {
                         <Button
                           type="button"
                           disabled={uploadingPhotos}
+                          variant="secondary"
                           onClick={() => removeQueuedPhoto(item.localId)}
                         >
                           Retirer
@@ -569,6 +573,7 @@ export default function MaterialDetailPage() {
                           {hasPermission(fleetPermissions.materials.photos.setPrimary) && (
                             <Button
                               type="button"
+                              variant="edit"
                               disabled={file.isPrimary}
                               onClick={async () => {
                                 await setPrimaryMaterialPhoto(file.uuid);
@@ -582,6 +587,7 @@ export default function MaterialDetailPage() {
                             <Button
                               type="button"
                               disabled={removingFileUuid === file.uuid}
+                              variant="danger"
                               onClick={() => setFileToDelete(file)}
                             >
                               Supprimer
@@ -672,20 +678,26 @@ export default function MaterialDetailPage() {
                         <td>{file.originalName}</td>
                         <td>{documentTypeLabels[file.documentType] ?? 'Autre'}</td>
                         <td>
-                          <div className="d-flex flex-wrap gap-2">
-                            <Button type="button" onClick={() => download(file)}>
+                          <TableActions
+                            secondary={
+                              <>
+                                {hasPermission(fleetPermissions.materials.files.delete) && (
+                                  <Button
+                                    type="button"
+                                    disabled={removingFileUuid === file.uuid}
+                                    variant="danger"
+                                    onClick={() => setFileToDelete(file)}
+                                  >
+                                    Supprimer
+                                  </Button>
+                                )}
+                              </>
+                            }
+                          >
+                            <Button variant="view" type="button" onClick={() => download(file)}>
                               Télécharger
                             </Button>
-                            {hasPermission(fleetPermissions.materials.files.delete) && (
-                              <Button
-                                type="button"
-                                disabled={removingFileUuid === file.uuid}
-                                onClick={() => setFileToDelete(file)}
-                              >
-                                Supprimer
-                              </Button>
-                            )}
-                          </div>
+                          </TableActions>
                         </td>
                       </tr>
                     ))}
@@ -781,7 +793,7 @@ export default function MaterialDetailPage() {
                 onPageChange={setMaintenancePage}
               />
               <Link
-                className="btn btn-outline-brand mt-3"
+                className="btn btn-outline-brand-blue mt-3"
                 to={`/maintenance?materialUuid=${encodeURIComponent(uuid)}`}
               >
                 Voir la maintenance

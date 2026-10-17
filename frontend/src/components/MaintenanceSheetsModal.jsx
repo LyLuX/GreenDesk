@@ -292,7 +292,13 @@ export default function MaintenanceSheetsModal({ open, onClose, initialFilters }
               <p role="alert" className="mb-0">
                 {error}
               </p>
-              <Button type="button" className="btn-sm" onClick={() => load()} disabled={loading}>
+              <Button
+                type="button"
+                variant="secondary"
+                className="btn-sm"
+                onClick={() => load()}
+                disabled={loading}
+              >
                 Réessayer
               </Button>
             </div>
@@ -316,7 +322,12 @@ export default function MaintenanceSheetsModal({ open, onClose, initialFilters }
 
           {items.length ? (
             <div className="maintenance-sheets-actions d-flex justify-content-end">
-              <Button type="button" disabled={loading || printing} onClick={printSheets}>
+              <Button
+                variant="view"
+                type="button"
+                disabled={loading || printing}
+                onClick={printSheets}
+              >
                 {printing ? 'Enregistrement de l’impression…' : 'Imprimer les fiches'}
               </Button>
             </div>

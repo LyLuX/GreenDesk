@@ -690,10 +690,10 @@ describe('dedicated maintenance catalogue pages', () => {
     expect(screen.getByText('Contrôle')).toBeVisible();
     expect(screen.queryByText('Vidange')).not.toBeInTheDocument();
     const activateButton = screen.getByRole('button', { name: 'Activer Contrôle' });
-    expect(activateButton).toHaveClass('btn-outline-brand-blue');
+    expect(activateButton).toHaveClass('btn-outline-brand');
 
     await user.click(activateButton);
-    expect(screen.getByRole('button', { name: 'Réactiver' })).toHaveClass('btn-outline-brand-blue');
+    expect(screen.getByRole('button', { name: 'Réactiver' })).toHaveClass('btn-outline-brand');
   });
 
   it.each(['ordered', 'inStock', 'minimum'])(

@@ -2,6 +2,34 @@
 
 ## Non publié
 
+## 9.4.1 - 2026-10-17
+
+- [PATCH] Les boutons de modification utilisent partout le libellé « Modifier ».
+
+- [PATCH] Les actions se distinguent par la modification en violet, la
+  désactivation en orange vif et la suppression en rouge, avec une confirmation
+  orange pleine pour désactiver.
+
+- [PATCH] Les actions des tableaux sont compactes, centrées et
+  regroupées par usage, avec la gestion séparée des changements d’état et de
+  la suppression.
+
+## 9.4.0 - 2026-10-17
+
+- [PATCH] Le lancement du frontend avec `dev:lan` permet aussi d’utiliser
+  `greendesk.org`, tout en conservant l’accès par adresse IP sur le réseau local.
+
+- [MINOR] L’interface adopte un design homogène avec navigation latérale, en-tête
+  allégé, tableaux et formulaires modernisés, et un affichage adapté aux mobiles ;
+  le pied de page reste dans la zone de contenu sans interrompre la barre latérale,
+  et les boutons distinguent les actions par des couleurs cohérentes, avec la
+  désactivation en ambre et la suppression en rouge ; le survol des cartes du
+  tableau de bord reprend leur couleur d’accent.
+
+- [PATCH] Le durcissement R6 vérifie l’annulation complète des opérations en cas
+  de panne, leur reprise sans doublon et le maintien des refus de permissions ;
+  la CI refuse une validation de sécurité incomplète et conserve ses preuves.
+
 ## 9.3.0 - 2026-10-17
 
 - [PATCH] Le durcissement R5 met à jour les dépendances de sécurité, protège

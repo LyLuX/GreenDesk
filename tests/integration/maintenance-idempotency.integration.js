@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { jest } from '@jest/globals';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
@@ -247,6 +248,12 @@ beforeAll(async () => {
 });
 
 afterEach(() => {
+  jest.restoreAllMocks();
+  AuditLog.removeHook('beforeCreate', 'r6-failure');
+  AuditLog.removeHook('afterCreate', 'r6-failure');
+  AuditLog.removeHook('afterCreate', 'r6-rollback-contender');
+  IdempotencyKey.removeHook('afterUpdate', 'r6-failure');
+
   IdempotencyKey.removeHook('afterCreate', 'hold-reservation');
   sequelize.removeHook('beforeQuery', 'observe-contention');
   AuditLog.removeHook('afterCreate', 'fail-after-writes');
@@ -446,6 +453,74 @@ describe.each(cases)('$name — MySQL réel', (scenario) => {
     expectOneWrite(await snapshot(data), scenario, responses[0]);
   });
 
+  test('une requête concurrente reprend la même clé après le rollback de la première', async () => {
+    const data = await fixture();
+    const key = randomUUID();
+    const paused = barrier();
+    const contender = barrier();
+    const release = barrier();
+    let firstTransaction;
+    let secondTransaction;
+    AuditLog.addHook('afterCreate', 'r6-rollback-contender', async (_record, options) => {
+      if (firstTransaction) return;
+      firstTransaction = options.transaction.id;
+      paused.resolve();
+      await bounded(release.promise);
+      throw new Error('R6 première transaction annulée');
+    });
+    sequelize.addHook('beforeQuery', 'observe-contention', (options) => {
+      if (
+        firstTransaction &&
+        options.type === 'INSERT' &&
+        options.instance instanceof IdempotencyKey
+      ) {
+        secondTransaction = options.transaction.id;
+        contender.resolve();
+      }
+    });
+    const first = send(scenario, data, key).then((response) => response);
+    let second;
+    try {
+      await bounded(paused.promise);
+      second = send(scenario, data, key).then((response) => response);
+      await bounded(contender.promise);
+      expect(secondTransaction).not.toBe(firstTransaction);
+    } finally {
+      release.resolve();
+      await Promise.allSettled([first, second]);
+    }
+    expect((await first).status).toBe(500);
+    const committed = await second;
+    expect(committed.status).toBe(scenario.status);
+    const state = await snapshot(data);
+    expectOneWrite(state, scenario, committed);
+    const replay = await send(scenario, data, key).expect(scenario.status);
+    expect(replay.body).toEqual(committed.body);
+    expect(await snapshot(data)).toEqual(state);
+  });
+
+  test('un refus reste sans effet lorsque le logger de sécurité tombe en panne', async () => {
+    const data = await fixture();
+    const before = await snapshot(data);
+    const token = tokenFor(data, []);
+    const warn = jest.spyOn(logger, 'warn').mockImplementation(() => {
+      throw new Error('R6 logger de sécurité indisponible');
+    });
+    for (
+      let attempt = 0;
+      attempt < env.securityLogging.authorizationDenials.threshold;
+      attempt += 1
+    ) {
+      const response = await send(scenario, data, randomUUID(), { token }).expect(403);
+      expect(response.body).toEqual({
+        success: false,
+        error: { message: 'Insufficient permissions' },
+      });
+    }
+    expect(warn).toHaveBeenCalled();
+    expect(await snapshot(data)).toEqual(before);
+  });
+
   test('même clé avec des données différentes : conflit sans modification', async () => {
     const data = await fixture();
     const key = randomUUID();
@@ -455,28 +530,39 @@ describe.each(cases)('$name — MySQL réel', (scenario) => {
     expect(await snapshot(data)).toEqual(committed);
   });
 
-  test('erreur après les écritures : rollback intégral puis réutilisation de la clé', async () => {
-    const data = await fixture();
-    const key = randomUUID();
-    const before = await snapshot(data);
-    let uncommitted;
-    AuditLog.addHook('afterCreate', 'fail-after-writes', async (_record, options) => {
-      uncommitted = await snapshot(data, options.transaction);
-      throw new Error('Panne injectée après les écritures métier et audit');
-    });
-    await send(scenario, data, key).expect(500);
-    // Prove that real writes preceded the injected failure, rather than failing validation early.
-    expect(uncommitted.movements).toHaveLength(scenario.consumes ? 2 : 1);
-    expect(uncommitted.audits).toHaveLength(1);
-    expect(uncommitted.keys).toHaveLength(1);
-    expect(uncommitted.usages).toHaveLength(scenario.consumes ? 2 : 0);
-    expect(uncommitted.history).toHaveLength(scenario === cases[0] ? 1 : 0);
-    expect(uncommitted.interventions).toHaveLength(scenario === cases[1] ? 1 : 0);
-    expect(await snapshot(data)).toEqual(before);
-    AuditLog.removeHook('afterCreate', 'fail-after-writes');
-    const retried = await send(scenario, data, key).expect(scenario.status);
-    expectOneWrite(await snapshot(data), scenario, retried);
-  });
+  test.each([
+    ['audit indisponible avant insertion', AuditLog, 'beforeCreate', 0],
+    ['audit en échec après insertion', AuditLog, 'afterCreate', 1],
+    ['réponse idempotente en échec après sauvegarde', IdempotencyKey, 'afterUpdate', 1],
+  ])(
+    '%s : rollback intégral puis réutilisation de la clé',
+    async (_name, model, hook, auditCount) => {
+      const data = await fixture();
+      const key = randomUUID();
+      const before = await snapshot(data);
+      let uncommitted;
+      model.addHook(hook, 'r6-failure', async (_record, options) => {
+        uncommitted = await snapshot(data, options.transaction);
+        throw new Error('Panne injectée après les écritures métier et audit');
+      });
+      await send(scenario, data, key).expect(500);
+      // Prove that real writes preceded the injected failure, rather than failing validation early.
+      expect(uncommitted.movements).toHaveLength(scenario.consumes ? 2 : 1);
+      expect(uncommitted.audits).toHaveLength(auditCount);
+      expect(uncommitted.keys).toHaveLength(1);
+      if (model === IdempotencyKey) {
+        expect(uncommitted.keys[0].responseStatus).toBe(scenario.status);
+        expect(uncommitted.keys[0].responseBody.success).toBe(true);
+      }
+      expect(uncommitted.usages).toHaveLength(scenario.consumes ? 2 : 0);
+      expect(uncommitted.history).toHaveLength(scenario === cases[0] ? 1 : 0);
+      expect(uncommitted.interventions).toHaveLength(scenario === cases[1] ? 1 : 0);
+      expect(await snapshot(data)).toEqual(before);
+      model.removeHook(hook, 'r6-failure');
+      const retried = await send(scenario, data, key).expect(scenario.status);
+      expectOneWrite(await snapshot(data), scenario, retried);
+    },
+  );
 
   test('isolation des sociétés : même utilisateur et clé, réponses et écritures indépendantes', async () => {
     const a = await fixture();
