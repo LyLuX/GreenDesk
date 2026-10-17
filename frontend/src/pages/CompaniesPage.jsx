@@ -51,6 +51,7 @@ export default function CompaniesPage() {
         { key: 'description', label: 'Description' },
         {
           key: 'active',
+          hideOnMobile: true,
           label: 'Statut',
           render: (value, company) => (
             <>

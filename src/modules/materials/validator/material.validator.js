@@ -46,7 +46,7 @@ export const createValidator = [
     .custom(isScalarInput)
     .bail()
     .isFloat({ min: 0, max: MAX_UNIT_PRICE })
-    .withMessage('Le prix d’achat doit être un nombre positif ou nul.')
+    .withMessage('Le tarif doit être un nombre positif ou nul.')
     .toFloat(),
   body('manufacturerUuid')
     .optional({ nullable: true })
@@ -120,7 +120,7 @@ export const updateValidator = [
     .custom(isScalarInput)
     .bail()
     .isFloat({ min: 0, max: MAX_UNIT_PRICE })
-    .withMessage('Le prix d’achat doit être un nombre positif ou nul.')
+    .withMessage('Le tarif doit être un nombre positif ou nul.')
     .toFloat(),
   body('manufacturerUuid')
     .optional({ nullable: true })

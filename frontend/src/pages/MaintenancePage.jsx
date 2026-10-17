@@ -1,3 +1,4 @@
+import ResponsiveTable from '../components/ResponsiveTable.jsx';
 import TableActions from '../components/TableActions.jsx';
 import { getStockQuantityStep } from '../inventory/stock-status.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -618,7 +619,7 @@ export default function MaintenancePage() {
       )}
       {!isLoading && items.length > 0 && (
         <div className="table-shell table-responsive">
-          <table className="table table-hover align-middle">
+          <ResponsiveTable className="table table-hover align-middle">
             <thead>
               <tr>
                 <th>Matériel</th>
@@ -739,7 +740,7 @@ export default function MaintenancePage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       )}
       <PaginationControls

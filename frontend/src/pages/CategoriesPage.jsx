@@ -19,9 +19,10 @@ export default function CategoriesPage() {
       ]}
       columns={[
         { key: 'name', label: 'Nom' },
-        { key: 'description', label: 'Description' },
+        { key: 'description', label: 'Description', hideOnMobile: true },
         {
           key: 'active',
+          hideOnMobile: true,
           label: 'Statut',
           render: (value) => (
             <span className={`status-badge ${value ? '' : 'inactive'}`}>

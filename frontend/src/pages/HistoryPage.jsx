@@ -32,6 +32,7 @@ const fieldLabels = Object.freeze({
   quantityOnHand: 'Stock disponible',
   quantityOnOrder: 'Quantité commandée',
   unitPrice: 'Prix unitaire',
+  purchasePrice: 'Tarif',
   permissions: 'Permissions',
   roles: 'Rôles',
   logoOriginalName: 'Logo',
@@ -138,7 +139,7 @@ const renderDetails = (row) => {
 const columns = [
   {
     key: 'occurredAt',
-    label: 'Date et heure',
+    label: 'Date',
     render: (value, row) => formatOperationDateTime(value, row.recordedAt),
   },
   {

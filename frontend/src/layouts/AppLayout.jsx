@@ -11,7 +11,8 @@ import { lockPageScroll } from '../utils/page-scroll-lock.js';
 
 const focusableElements = (container) =>
   [...(container?.querySelectorAll('a[href], button:not([disabled])') ?? [])].filter(
-    (element) => !element.closest('[hidden]'),
+    (element) =>
+      !element.closest('[hidden]') && window.getComputedStyle(element).display !== 'none',
   );
 
 export default function AppLayout() {

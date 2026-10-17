@@ -21,11 +21,12 @@ export default function SuppliersPage() {
       ]}
       columns={[
         { key: 'name', label: 'Nom' },
-        { key: 'contactName', label: 'Contact' },
-        { key: 'email', label: 'E-mail' },
+        { key: 'contactName', label: 'Contact', hideOnMobile: true },
+        { key: 'email', label: 'E-mail', hideOnMobile: true },
         { key: 'phone', label: 'Téléphone' },
         {
           key: 'active',
+          hideOnMobile: true,
           label: 'Statut',
           render: (value) => (
             <span className={`status-badge ${value ? '' : 'inactive'}`}>

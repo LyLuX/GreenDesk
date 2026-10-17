@@ -25,11 +25,13 @@ describe('production CSS build', () => {
       '.maintenance-order-list-printable',
       '.maintenance-sheets-printable',
       '.btn-outline-critical',
+      '.table-mobile-stacked',
     ]) {
       expect(result.css).toContain(selector);
     }
     expect(result.css).toContain('--relation-edge-direct-color:');
     expect(result.css).toContain('--relation-marker-color:');
+    expect(result.css).toContain('content: attr(data-label)');
     expect(result.css).toContain('@media print');
     expect(result.css).toContain('@media (max-width: 575.98px)');
   });
@@ -99,13 +101,13 @@ describe('production CSS build', () => {
     const styles = readStyles();
 
     expect(styles).toMatch(
-      /\.table-shell\s*\{[^}]*width:\s*100%;[^}]*min-width:\s*min\(100%,\s*48rem\);[^}]*max-width:\s*100%;[^}]*margin-inline:\s*auto;[^}]*overflow:\s*visible;/,
+      /\.table-shell\s*\{[^}]*width:\s*100%;[^}]*min-width:\s*0;[^}]*max-width:\s*100%;[^}]*margin-inline:\s*auto;[^}]*overflow:\s*visible;/,
     );
     expect(styles).toMatch(
       /\.table-responsive\s*\{[^}]*max-width:\s*100%;[^}]*overflow-x:\s*auto;/,
     );
     expect(styles).toMatch(
-      /\.table-responsive\s*>\s*\.table\s*\{[^}]*min-width:\s*40rem;[^}]*max-width:\s*100%;[^}]*white-space:\s*normal;/,
+      /\.table-responsive\s*>\s*\.table\s*\{[^}]*min-width:\s*0;[^}]*max-width:\s*100%;[^}]*white-space:\s*normal;/,
     );
     const responsiveTableRule = styles.match(/\.table-responsive\s*>\s*\.table\s*\{([^}]*)\}/)?.[1];
     expect(responsiveTableRule).not.toMatch(/(?:^|;)\s*width\s*:/);

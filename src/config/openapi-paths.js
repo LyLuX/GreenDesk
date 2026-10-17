@@ -798,6 +798,7 @@ export const openApiPaths = {
         {
           name: 'sort',
           in: 'query',
+          description: 'Champ de tri : nom, tarif (`purchasePrice`) ou date d’achat.',
           schema: {
             type: 'string',
             enum: ['name', 'purchasePrice', 'purchaseDate'],

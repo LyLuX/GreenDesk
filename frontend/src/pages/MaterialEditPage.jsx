@@ -21,7 +21,7 @@ const fields = [
   { name: 'unit', label: 'Unité', required: true },
   {
     name: 'purchasePrice',
-    label: 'Prix d’achat',
+    label: 'Tarif',
     type: 'number',
     valueType: 'number',
     step: '0.01',

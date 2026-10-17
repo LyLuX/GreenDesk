@@ -367,7 +367,7 @@ describe('MaterialDetailPage', () => {
     expect(screen.getByText('Fabricant')).toBeVisible();
     expect(screen.getByText('GreenDesk')).toBeVisible();
     expect(screen.getByText('Nom')).toBeVisible();
-    expect(screen.queryByText('Prix d’achat')).not.toBeInTheDocument();
+    expect(screen.queryByText('Tarif')).not.toBeInTheDocument();
   });
 
   it('uses the GreenDesk badge color assigned to each history action', async () => {

@@ -20,6 +20,7 @@ export const navigationSections = [
     item: {
       label: 'Relations des entités',
       path: '/relations',
+      hideOnMobile: true,
       permission: relationsPermissions.read,
     },
   },

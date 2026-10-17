@@ -10,9 +10,7 @@ import { isJwtExpired } from '../auth/jwt.js';
 
 describe('frontend value utilities', () => {
   it('normalizes price fields to numbers', () => {
-    const fields = [
-      { name: 'purchasePrice', label: 'Prix achat', required: true, valueType: 'number' },
-    ];
+    const fields = [{ name: 'purchasePrice', label: 'Tarif', required: true, valueType: 'number' }];
     expect(normalizeFormValues({ purchasePrice: '25.50' }, fields)).toEqual({
       purchasePrice: 25.5,
     });

@@ -1,3 +1,4 @@
+import ResponsiveTable from './ResponsiveTable.jsx';
 import { useEffect, useState } from 'react';
 import { listMaterialMaintenanceHistory } from '../api/maintenance.api.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
@@ -54,14 +55,18 @@ export default function MaterialMaintenanceHistory({ materialUuid }) {
         <p className="text-body-secondary">Aucun entretien enregistré.</p>
       ) : (
         <div className="table-shell table-responsive overflow-auto">
-          <table className="table table-hover align-middle maintenance-history-table">
+          <ResponsiveTable className="table table-hover align-middle maintenance-history-table">
             <thead>
               <tr>
-                <th scope="col">Date et heure</th>
+                <th scope="col">Date</th>
                 <th scope="col">Plan</th>
-                <th scope="col">Commentaire</th>
+                <th scope="col" className="d-none d-sm-table-cell">
+                  Commentaire
+                </th>
                 <th scope="col">Remplacement des pièces</th>
-                <th scope="col">Utilisateur</th>
+                <th scope="col" className="d-none d-sm-table-cell">
+                  Utilisateur
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -69,7 +74,7 @@ export default function MaterialMaintenanceHistory({ materialUuid }) {
                 <tr key={entry.uuid} className={maintenanceHistoryClass(entry.executionType)}>
                   <td>{formatOperationDateTime(entry.performedAt, entry.createdAt)}</td>
                   <td>{entry.task?.title ?? '—'}</td>
-                  <td>{entry.comment || 'Sans commentaire'}</td>
+                  <td className="d-none d-sm-table-cell">{entry.comment || 'Sans commentaire'}</td>
                   <td>
                     <MaintenanceExecutionBadge executionType={entry.executionType} />
                     <MaintenanceExecutionParts entry={entry} compact />
@@ -77,7 +82,7 @@ export default function MaterialMaintenanceHistory({ materialUuid }) {
                       !entry.partsSnapshot?.length &&
                       '—'}
                   </td>
-                  <td>
+                  <td className="d-none d-sm-table-cell">
                     {entry.performedByUser
                       ? `${entry.performedByUser.firstName} ${entry.performedByUser.lastName}`
                       : 'Utilisateur supprimé'}
@@ -85,7 +90,7 @@ export default function MaterialMaintenanceHistory({ materialUuid }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       )}
       {!error && (

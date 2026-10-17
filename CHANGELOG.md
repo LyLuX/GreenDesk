@@ -2,6 +2,28 @@
 
 ## Non publié
 
+## 9.5.1 - 2026-10-17
+
+- [PATCH] Les en-têtes des tableaux affichent « Date » au lieu de « Date et heure »,
+  tout en conservant l’heure dans les valeurs affichées.
+
+- [PATCH] Les tableaux s’adaptent à la largeur disponible sur mobile, sans largeur
+  minimale imposée. Les tableaux trop chargés affichent leurs données verticalement
+  avec leurs libellés pour éviter le défilement horizontal.
+
+- [PATCH] Sur mobile, l’entrée « Relations des entités » n’apparaît plus dans
+  le menu de navigation.
+
+- [PATCH] Sur mobile, les groupes d’actions des tableaux sont empilés et les
+  colonnes Statut sont masquées. Les matériels masquent aussi Fabricant, Unité et
+  Tarif, les catégories Description, et les fournisseurs Contact et E-mail.
+  Dans la fiche matériel, l’historique masque Utilisateur, les plans de maintenance
+  Priorité et État, leur historique Commentaire et Utilisateur, et les interventions
+  ponctuelles Pièces utilisées et Utilisateur.
+
+- [PATCH] Le tarif des matériels est nommé « Tarif » dans les tableaux,
+  formulaires, fiches, historiques et messages de validation.
+
 ## 9.5.0 - 2026-10-17
 
 - [PATCH] La liste des matériels ne présente plus le panneau « Trier par / Ordre »

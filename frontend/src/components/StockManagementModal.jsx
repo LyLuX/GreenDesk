@@ -1,3 +1,4 @@
+import ResponsiveTable from './ResponsiveTable.jsx';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import getApiErrorMessage from '../api/get-api-error-message.js';
@@ -626,10 +627,10 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
         <Loader label="Chargement des mouvements de stock" />
       ) : movements.length ? (
         <div className="table-responsive">
-          <table className="table table-sm align-middle mb-0">
+          <ResponsiveTable className="table table-sm align-middle mb-0">
             <thead>
               <tr>
-                <th>Date et heure</th>
+                <th>Date</th>
                 <th>Opération</th>
                 <th>Stock</th>
                 <th>Commande</th>
@@ -661,7 +662,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       ) : (
         <p className="text-body-secondary mb-0">Aucun mouvement enregistré.</p>
@@ -672,10 +673,10 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
         <Loader label="Chargement de l’historique des prix" />
       ) : priceHistory.length ? (
         <div className="table-responsive">
-          <table className="table table-sm align-middle mb-0">
+          <ResponsiveTable className="table table-sm align-middle mb-0">
             <thead>
               <tr>
-                <th>Date et heure</th>
+                <th>Date</th>
                 <th>Ancien prix</th>
                 <th>Nouveau prix</th>
                 <th>Utilisateur</th>
@@ -711,7 +712,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       ) : (
         <p className="text-body-secondary mb-0">Aucune modification de prix enregistrée.</p>
