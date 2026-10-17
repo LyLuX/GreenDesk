@@ -363,7 +363,7 @@ describe('MaterialDetailPage', () => {
     await screen.findByRole('img', { name: 'Logo Green' });
     await user.click(screen.getByRole('tab', { name: 'Historique' }));
 
-    expect(screen.getByText('30/07/2026 12:00')).toBeVisible();
+    expect(screen.getByText('30/07/2026')).toBeVisible();
     expect(screen.getByText('Fabricant')).toBeVisible();
     expect(screen.getByText('GreenDesk')).toBeVisible();
     expect(screen.getByText('Nom')).toBeVisible();
@@ -565,7 +565,7 @@ describe('MaterialDetailPage', () => {
     await user.click(screen.getByRole('tab', { name: 'Maintenance' }));
 
     expect(await screen.findByText('Remplacement d’une grille cassée')).toBeVisible();
-    expect(screen.getByText('20/08/2026 10:15')).toBeVisible();
+    expect(screen.getByText('20/08/2026')).toBeVisible();
     expect(screen.getByText('Grille (1 pièce)')).toBeVisible();
     expect(screen.getByText('Paul Bournazel')).toBeVisible();
     expect(mocks.listInterventions).toHaveBeenCalledWith(

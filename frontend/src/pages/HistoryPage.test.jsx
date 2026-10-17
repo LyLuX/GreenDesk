@@ -43,7 +43,7 @@ describe('HistoryPage', () => {
     render(<HistoryPage section="maintenance" />);
 
     expect(await screen.findByText('Filtre à huile (FH-01)')).toBeInTheDocument();
-    expect(screen.getByText('22/08/2026 10:15')).toBeVisible();
+    expect(screen.getByText('22/08/2026')).toBeVisible();
     expect(screen.getByText('Réception')).toHaveClass('history-action-success');
     expect(screen.getByText('1 événement(s), page 1 sur 1')).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Fiches de maintenance' })).toHaveValue(

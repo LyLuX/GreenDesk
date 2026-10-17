@@ -4,7 +4,7 @@ import ReferencePage from './ReferencePage.jsx';
 import companyPermissions from '../permissions/company.permissions.js';
 import { activityStatusFilter } from '../filters/filter-options.js';
 import useAuth from '../auth/useAuth.js';
-import { formatDateTime } from '../utils/formatters.js';
+import { formatDate } from '../utils/formatters.js';
 
 /** Global company directory. Business data remains isolated by the active company. */
 export default function CompaniesPage() {
@@ -64,7 +64,7 @@ export default function CompaniesPage() {
               </span>
               {company.deletedAt ? (
                 <span className="d-block small mt-1 text-body-secondary fw-lighter fst-italic">
-                  {formatDateTime(company.deletedAt)}
+                  {formatDate(company.deletedAt)}
                 </span>
               ) : null}
             </>

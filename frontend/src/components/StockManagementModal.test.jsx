@@ -164,7 +164,7 @@ describe('piece history date correction', () => {
       ]),
     );
     render(<StockManagementModal part={part} onClose={vi.fn()} />);
-    await screen.findAllByText('13/10/2026 20:01');
+    await screen.findAllByText('13/10/2026');
     expect(
       screen.queryByRole('button', { name: /Corriger la date du prix/ }),
     ).not.toBeInTheDocument();
@@ -190,7 +190,7 @@ describe('piece history date correction', () => {
       mocks.movements.mockResolvedValue(response([entry]));
       mocks.permission.mockImplementation((permission) => permissions.includes(permission));
       render(<StockManagementModal part={part} onClose={vi.fn()} />);
-      await screen.findByText('13/10/2026 20:01');
+      await screen.findByText('13/10/2026');
       expect(
         screen.queryByRole('button', { name: /Corriger la date du mouvement/ }),
       ).not.toBeInTheDocument();

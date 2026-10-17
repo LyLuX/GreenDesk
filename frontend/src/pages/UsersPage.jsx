@@ -30,7 +30,7 @@ import useNotification from '../notifications/useNotification.js';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import { paginateItems } from '../utils/pagination.js';
 import { getStatusActionButtonClass } from '../utils/status-action.js';
-import { formatDateTime } from '../utils/formatters.js';
+import { formatDate } from '../utils/formatters.js';
 import administrationPermissions from '../permissions/administration.permissions.js';
 import companyPermissions from '../permissions/company.permissions.js';
 
@@ -469,7 +469,7 @@ export default function UsersPage() {
                       </span>
                       {user.deletedAt ? (
                         <span className="d-block small mt-1 text-body-secondary fw-lighter fst-italic">
-                          {formatDateTime(user.deletedAt)}
+                          {formatDate(user.deletedAt)}
                         </span>
                       ) : (
                         <span
@@ -479,7 +479,7 @@ export default function UsersPage() {
                         </span>
                       )}
                     </td>
-                    <td>{formatDateTime(user.lastLoginAt, 'Jamais')}</td>
+                    <td>{formatDate(user.lastLoginAt, 'Jamais')}</td>
                     <td>
                       {user.deletedAt ? (
                         canRestore && (

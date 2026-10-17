@@ -15,7 +15,7 @@ import {
   historyTypeLabels,
 } from '../history/history.config.js';
 import { auditValuesAreEqual } from '../history/audit-values.js';
-import { formatCurrency, formatDate, formatOperationDateTime } from '../utils/formatters.js';
+import { formatCurrency, formatDate } from '../utils/formatters.js';
 
 const fieldLabels = Object.freeze({
   performedAt: 'Date de l’opération',
@@ -140,7 +140,7 @@ const columns = [
   {
     key: 'occurredAt',
     label: 'Date',
-    render: (value, row) => formatOperationDateTime(value, row.recordedAt),
+    render: (value) => formatDate(value),
   },
   {
     key: 'type',

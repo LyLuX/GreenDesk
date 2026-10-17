@@ -2,6 +2,10 @@
 
 ## Non publié
 
+## 9.5.2 - 2026-10-17
+
+- [PATCH] Les dates des tableaux s’affichent sans l’heure sur ordinateur et sur mobile.
+
 ## 9.5.1 - 2026-10-17
 
 - [PATCH] Les en-têtes des tableaux affichent « Date » au lieu de « Date et heure »,

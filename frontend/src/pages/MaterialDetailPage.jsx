@@ -33,12 +33,7 @@ import {
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import { auditValuesAreEqual } from '../history/audit-values.js';
 import fleetPermissions from '../permissions/fleet.permissions.js';
-import {
-  formatCurrency,
-  formatDate,
-  formatDateTime,
-  formatOperationDateTime,
-} from '../utils/formatters.js';
+import { formatCurrency, formatDate } from '../utils/formatters.js';
 import { paginateItems } from '../utils/pagination.js';
 import { getMaterialPhotoDisplayName } from '../utils/material-photo.js';
 
@@ -845,12 +840,7 @@ export default function MaterialDetailPage() {
                         <tbody>
                           {interventions.map((intervention) => (
                             <tr key={intervention.uuid}>
-                              <td>
-                                {formatOperationDateTime(
-                                  intervention.performedAt,
-                                  intervention.createdAt,
-                                )}
-                              </td>
+                              <td>{formatDate(intervention.performedAt)}</td>
                               <td>{intervention.description}</td>
                               <td className="d-none d-sm-table-cell">
                                 {(intervention.parts ?? [])
@@ -907,7 +897,7 @@ export default function MaterialDetailPage() {
                     const changes = eventChanges(event);
                     return (
                       <tr key={event.uuid}>
-                        <td>{formatDateTime(event.createdAt)}</td>
+                        <td>{formatDate(event.createdAt)}</td>
                         <td>
                           <span
                             className={`status-badge ${auditActionClasses[event.action] ?? ''}`}

@@ -2,7 +2,7 @@ import ResponsiveTable from './ResponsiveTable.jsx';
 import { useEffect, useState } from 'react';
 import { listMaterialMaintenanceHistory } from '../api/maintenance.api.js';
 import getApiErrorMessage from '../api/get-api-error-message.js';
-import { formatOperationDateTime } from '../utils/formatters.js';
+import { formatDate } from '../utils/formatters.js';
 import Button from './Button.jsx';
 import Loader from './Loader.jsx';
 import PaginationControls from './PaginationControls.jsx';
@@ -72,7 +72,7 @@ export default function MaterialMaintenanceHistory({ materialUuid }) {
             <tbody>
               {result.items.map((entry) => (
                 <tr key={entry.uuid} className={maintenanceHistoryClass(entry.executionType)}>
-                  <td>{formatOperationDateTime(entry.performedAt, entry.createdAt)}</td>
+                  <td>{formatDate(entry.performedAt)}</td>
                   <td>{entry.task?.title ?? '—'}</td>
                   <td className="d-none d-sm-table-cell">{entry.comment || 'Sans commentaire'}</td>
                   <td>
