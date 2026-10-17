@@ -38,6 +38,7 @@ export default function ManufacturersPage() {
         },
         {
           key: 'active',
+          hideOnMobile: true,
           label: 'Statut',
           render: (value) => (
             <span className={`status-badge ${value ? '' : 'inactive'}`}>

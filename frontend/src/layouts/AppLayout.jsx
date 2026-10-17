@@ -11,7 +11,8 @@ import { lockPageScroll } from '../utils/page-scroll-lock.js';
 
 const focusableElements = (container) =>
   [...(container?.querySelectorAll('a[href], button:not([disabled])') ?? [])].filter(
-    (element) => !element.closest('[hidden]'),
+    (element) =>
+      !element.closest('[hidden]') && window.getComputedStyle(element).display !== 'none',
   );
 
 export default function AppLayout() {
@@ -127,19 +128,19 @@ export default function AppLayout() {
         )}
         <div className="app-workspace" inert={isSidebarOpen}>
           <header className="app-header">
-            <div className="header-inner d-flex align-items-center justify-content-between gap-3">
-              <div className="header-brand d-flex align-items-center gap-3">
+            <div className="header-inner d-flex align-items-center justify-content-between gap-2 gap-sm-3">
+              <div className="header-brand d-flex align-items-center gap-2 gap-sm-3">
                 <button
                   ref={menuButtonRef}
                   aria-controls="main-navigation"
                   aria-expanded={isSidebarOpen}
-                  className="btn btn-sm btn-outline-secondary d-lg-none"
+                  className="btn btn-sm btn-outline-secondary d-lg-none text-nowrap"
                   type="button"
                   onClick={() => setSidebarOpen(true)}
                 >
                   <Icon name="menu" /> Menu
                 </button>
-                <div className="brand-lockup d-flex align-items-center gap-3">
+                <div className="brand-lockup d-flex align-items-center gap-2 gap-sm-3">
                   <NavLink
                     className="flex-shrink-0"
                     to="/dashboard"
@@ -159,7 +160,7 @@ export default function AppLayout() {
                   </div>
                 </div>
               </div>
-              <div className="header-actions d-flex align-items-center gap-3">
+              <div className="header-actions d-flex align-items-center gap-2 gap-sm-3">
                 <span className="user-identity d-none d-sm-inline">
                   <span className="context-label d-block">Mon compte</span>
                   {user?.firstName} {user?.lastName}

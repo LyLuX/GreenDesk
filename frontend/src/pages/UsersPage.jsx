@@ -1,3 +1,4 @@
+import ResponsiveTable from '../components/ResponsiveTable.jsx';
 import TableActions from '../components/TableActions.jsx';
 import { useCallback, useEffect, useState } from 'react';
 import getApiErrorMessage, { getRetryAfterSeconds } from '../api/get-api-error-message.js';
@@ -29,7 +30,7 @@ import useNotification from '../notifications/useNotification.js';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import { paginateItems } from '../utils/pagination.js';
 import { getStatusActionButtonClass } from '../utils/status-action.js';
-import { formatDateTime } from '../utils/formatters.js';
+import { formatDate } from '../utils/formatters.js';
 import administrationPermissions from '../permissions/administration.permissions.js';
 import companyPermissions from '../permissions/company.permissions.js';
 
@@ -422,13 +423,13 @@ export default function UsersPage() {
         <Loader label="Chargement des utilisateurs" />
       ) : (
         <div className="table-shell table-responsive">
-          <table className="table table-hover align-middle">
+          <ResponsiveTable className="table table-hover align-middle">
             <thead>
               <tr>
                 <th>Utilisateur</th>
                 <th>Rôles</th>
                 <th>Sociétés</th>
-                <th>Statut</th>
+                <th className="d-none d-sm-table-cell">Statut</th>
                 <th>Dernière connexion</th>
                 <th>
                   <span className="visually-hidden">Actions</span>
@@ -458,7 +459,7 @@ export default function UsersPage() {
                       {user.companies?.map((company) => company.name).join(', ') ||
                         'Aucune société'}
                     </td>
-                    <td>
+                    <td className="d-none d-sm-table-cell">
                       <span
                         className={`status-badge ${
                           user.deletedAt ? 'deleted' : user.isActive ? '' : 'inactive'
@@ -468,7 +469,7 @@ export default function UsersPage() {
                       </span>
                       {user.deletedAt ? (
                         <span className="d-block small mt-1 text-body-secondary fw-lighter fst-italic">
-                          {formatDateTime(user.deletedAt)}
+                          {formatDate(user.deletedAt)}
                         </span>
                       ) : (
                         <span
@@ -478,7 +479,7 @@ export default function UsersPage() {
                         </span>
                       )}
                     </td>
-                    <td>{formatDateTime(user.lastLoginAt, 'Jamais')}</td>
+                    <td>{formatDate(user.lastLoginAt, 'Jamais')}</td>
                     <td>
                       {user.deletedAt ? (
                         canRestore && (
@@ -562,7 +563,7 @@ export default function UsersPage() {
                 ))
               )}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       )}
       {!loading && (

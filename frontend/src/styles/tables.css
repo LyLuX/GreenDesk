@@ -1,6 +1,6 @@
 .table-shell {
   width: 100%;
-  min-width: min(100%, 48rem);
+  min-width: 0;
   max-width: 100%;
   margin-inline: auto;
   overflow: visible;
@@ -20,7 +20,7 @@
 }
 
 .table-responsive > .table {
-  min-width: 40rem;
+  min-width: 0;
   max-width: 100%;
   white-space: normal;
 }

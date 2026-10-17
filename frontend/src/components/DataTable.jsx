@@ -1,3 +1,4 @@
+import ResponsiveTable from './ResponsiveTable.jsx';
 import TableActions from './TableActions.jsx';
 import Icon from './Icon.jsx';
 import { getStatusActionButtonClass } from '../utils/status-action.js';
@@ -18,15 +19,22 @@ export default function DataTable({
   const hasActions = Boolean(
     renderActions || onView || onEdit || onStatus || onDelete || onRestore,
   );
-  const cellSpacing = compact ? 'px-3 py-3' : 'px-4 py-3';
+  const hasMobileColumns = columns.some((column) => column.hideOnMobile);
+  const cellSpacing = hasMobileColumns
+    ? `px-2 ${compact ? 'px-sm-3' : 'px-sm-4'} py-3`
+    : compact
+      ? 'px-3 py-3'
+      : 'px-4 py-3';
+  const columnClassName = (column) =>
+    `${cellSpacing}${column.hideOnMobile ? ' d-none d-sm-table-cell' : ''}`;
   return (
     <div className="table-shell">
       <div className="table-responsive">
-        <table className="table table-hover align-middle">
+        <ResponsiveTable className="table table-hover align-middle">
           <thead>
             <tr>
               {columns.map((column) => (
-                <th className={cellSpacing} scope="col" key={column.key}>
+                <th className={columnClassName(column)} scope="col" key={column.key}>
                   {column.label}
                 </th>
               ))}
@@ -54,7 +62,7 @@ export default function DataTable({
               rows.map((row) => (
                 <tr key={row.uuid}>
                   {columns.map((column) => (
-                    <td className={cellSpacing} key={column.key}>
+                    <td className={columnClassName(column)} key={column.key}>
                       {column.render
                         ? column.render(row[column.key], row)
                         : (row[column.key] ?? '—')}
@@ -134,7 +142,7 @@ export default function DataTable({
               ))
             )}
           </tbody>
-        </table>
+        </ResponsiveTable>
       </div>
     </div>
   );

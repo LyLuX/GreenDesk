@@ -15,7 +15,7 @@ import {
   historyTypeLabels,
 } from '../history/history.config.js';
 import { auditValuesAreEqual } from '../history/audit-values.js';
-import { formatCurrency, formatDate, formatOperationDateTime } from '../utils/formatters.js';
+import { formatCurrency, formatDate } from '../utils/formatters.js';
 
 const fieldLabels = Object.freeze({
   performedAt: 'Date de l’opération',
@@ -32,6 +32,7 @@ const fieldLabels = Object.freeze({
   quantityOnHand: 'Stock disponible',
   quantityOnOrder: 'Quantité commandée',
   unitPrice: 'Prix unitaire',
+  purchasePrice: 'Tarif',
   permissions: 'Permissions',
   roles: 'Rôles',
   logoOriginalName: 'Logo',
@@ -138,8 +139,8 @@ const renderDetails = (row) => {
 const columns = [
   {
     key: 'occurredAt',
-    label: 'Date et heure',
-    render: (value, row) => formatOperationDateTime(value, row.recordedAt),
+    label: 'Date',
+    render: (value) => formatDate(value),
   },
   {
     key: 'type',

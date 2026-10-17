@@ -1,3 +1,4 @@
+import ResponsiveTable from './ResponsiveTable.jsx';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -86,7 +87,7 @@ function MaintenanceSheet({ sheet, printable = false }) {
         <h3>Pièces prévues</h3>
         {sheet.parts?.length ? (
           <div className="table-shell">
-            <table className="table table-sm align-middle mb-0">
+            <ResponsiveTable className="table table-sm align-middle mb-0">
               <thead>
                 <tr>
                   <th>Pièce</th>
@@ -112,7 +113,7 @@ function MaintenanceSheet({ sheet, printable = false }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </ResponsiveTable>
           </div>
         ) : (
           <p className="mb-0">Aucune pièce prévue.</p>

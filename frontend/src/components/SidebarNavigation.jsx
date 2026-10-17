@@ -52,7 +52,7 @@ export default function SidebarNavigation({
     return (
       <NavLink
         className={({ isActive }) =>
-          `sidebar-link ${nested ? 'sidebar-sublink' : ''} ${isActive ? 'active' : ''}`.trim()
+          `sidebar-link ${nested ? 'sidebar-sublink' : ''} ${item.hideOnMobile ? 'd-none d-sm-flex' : ''} ${isActive ? 'active' : ''}`.trim()
         }
         end={hasDedicatedChildRoute}
         key={item.path}

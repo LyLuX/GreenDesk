@@ -8,13 +8,15 @@ const columns = [
   { key: 'name', label: 'Nom' },
   {
     key: 'manufacturer',
+    hideOnMobile: true,
     label: 'Fabricant',
     render: (value) => <MaterialManufacturerCell manufacturer={value} />,
   },
-  { key: 'unit', label: 'Unité' },
-  { key: 'purchasePrice', label: 'Achat', render: formatCurrency },
+  { key: 'unit', label: 'Unité', hideOnMobile: true },
+  { key: 'purchasePrice', label: 'Tarif', render: formatCurrency, hideOnMobile: true },
   {
     key: 'active',
+    hideOnMobile: true,
     label: 'Statut',
     render: (value) => (
       <span className={`status-badge ${value ? '' : 'inactive'}`}>
@@ -53,7 +55,7 @@ const fields = [
   },
   {
     name: 'purchasePrice',
-    label: 'Prix achat',
+    label: 'Tarif',
     type: 'number',
     valueType: 'number',
     step: '0.01',

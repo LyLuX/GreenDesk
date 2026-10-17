@@ -1,3 +1,4 @@
+import ResponsiveTable from './ResponsiveTable.jsx';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import getApiErrorMessage from '../api/get-api-error-message.js';
@@ -24,7 +25,7 @@ import useNotification from '../notifications/useNotification.js';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import { MAX_MAINTENANCE_PART_UNIT_PRICE } from '../maintenance/maintenance-costs.js';
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
-import { formatCurrency, formatOperationDateTime } from '../utils/formatters.js';
+import { formatCurrency, formatDate, formatOperationDateTime } from '../utils/formatters.js';
 import Button from './Button.jsx';
 import ConfirmDialog from './ConfirmDialog.jsx';
 import FormField from './FormField.jsx';
@@ -626,10 +627,10 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
         <Loader label="Chargement des mouvements de stock" />
       ) : movements.length ? (
         <div className="table-responsive">
-          <table className="table table-sm align-middle mb-0">
+          <ResponsiveTable className="table table-sm align-middle mb-0">
             <thead>
               <tr>
-                <th>Date et heure</th>
+                <th>Date</th>
                 <th>Opération</th>
                 <th>Stock</th>
                 <th>Commande</th>
@@ -639,7 +640,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
             <tbody>
               {movements.map((movement) => (
                 <tr key={movement.uuid}>
-                  <td>{formatOperationDateTime(movement.performedAt, movement.createdAt)}</td>
+                  <td>{formatDate(movement.performedAt)}</td>
                   <td>{stockOperationPresentation[movement.operation] ?? movement.operation}</td>
                   <td>{formatChange(movement.quantityOnHandChange, currentPart.unit)}</td>
                   <td>{formatChange(movement.quantityOnOrderChange, currentPart.unit)}</td>
@@ -649,7 +650,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                         type="button"
                         className="btn btn-outline-danger btn-sm text-nowrap"
                         disabled={busy || correctingDate || Boolean(dateCorrection)}
-                        aria-label={`Corriger la date du mouvement du ${formatOperationDateTime(movement.performedAt, movement.createdAt)}`}
+                        aria-label={`Corriger la date du mouvement du ${formatDate(movement.performedAt)}`}
                         onClick={() => beginDateCorrection(movement, 'stock')}
                       >
                         Corriger la date
@@ -661,7 +662,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       ) : (
         <p className="text-body-secondary mb-0">Aucun mouvement enregistré.</p>
@@ -672,10 +673,10 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
         <Loader label="Chargement de l’historique des prix" />
       ) : priceHistory.length ? (
         <div className="table-responsive">
-          <table className="table table-sm align-middle mb-0">
+          <ResponsiveTable className="table table-sm align-middle mb-0">
             <thead>
               <tr>
-                <th>Date et heure</th>
+                <th>Date</th>
                 <th>Ancien prix</th>
                 <th>Nouveau prix</th>
                 <th>Utilisateur</th>
@@ -685,7 +686,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
             <tbody>
               {priceHistory.map((entry) => (
                 <tr key={entry.uuid}>
-                  <td>{formatOperationDateTime(entry.performedAt, entry.createdAt)}</td>
+                  <td>{formatDate(entry.performedAt)}</td>
                   <td>{formatCurrency(entry.previousUnitPrice)}</td>
                   <td>{formatCurrency(entry.unitPrice)}</td>
                   <td>
@@ -699,7 +700,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                         type="button"
                         className="btn btn-outline-danger btn-sm text-nowrap"
                         disabled={busy || correctingDate || Boolean(dateCorrection)}
-                        aria-label={`Corriger la date du prix du ${formatOperationDateTime(entry.performedAt, entry.createdAt)}`}
+                        aria-label={`Corriger la date du prix du ${formatDate(entry.performedAt)}`}
                         onClick={() => beginDateCorrection(entry, 'price')}
                       >
                         Corriger la date
@@ -711,7 +712,7 @@ export default function StockManagementModal({ part, onClose, onUpdated }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </ResponsiveTable>
         </div>
       ) : (
         <p className="text-body-secondary mb-0">Aucune modification de prix enregistrée.</p>

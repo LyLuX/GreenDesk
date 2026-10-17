@@ -223,7 +223,8 @@ const material = {
       type: 'string',
       pattern: '^\\d+(\\.\\d{1,2})?$',
       example: '930.00',
-      description: 'Valeur DECIMAL renvoyée sans perte de précision.',
+      title: 'Tarif',
+      description: 'Tarif du matériel, renvoyé sans perte de précision (DECIMAL).',
     },
     model: { ...nullableString, maxLength: 150 },
     serialNumber: { ...nullableString, maxLength: 150 },
@@ -491,7 +492,13 @@ const pagination = {
 const materialWriteProperties = {
   name: writeText(150),
   unit: writeText(50),
-  purchasePrice: { type: 'number', minimum: 0, maximum: MAX_UNIT_PRICE },
+  purchasePrice: {
+    type: 'number',
+    minimum: 0,
+    maximum: MAX_UNIT_PRICE,
+    title: 'Tarif',
+    description: 'Tarif du matériel, positif ou nul.',
+  },
   manufacturerUuid: { ...uuid, nullable: true },
   brandUuid: {
     ...uuid,

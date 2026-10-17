@@ -1,3 +1,4 @@
+import ResponsiveTable from './ResponsiveTable.jsx';
 import { getStockQuantityStep } from '../inventory/stock-status.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -82,7 +83,7 @@ function OrderPartsTable({
   return (
     <div className="table-shell">
       <div className="table-responsive">
-        <table className="maintenance-order-list-table table table-hover align-middle">
+        <ResponsiveTable className="maintenance-order-list-table table table-hover align-middle">
           <thead>
             <tr>
               <th>Pièce</th>
@@ -213,7 +214,7 @@ function OrderPartsTable({
               );
             })}
           </tbody>
-        </table>
+        </ResponsiveTable>
       </div>
     </div>
   );

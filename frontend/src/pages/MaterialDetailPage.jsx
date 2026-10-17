@@ -1,3 +1,4 @@
+import ResponsiveTable from '../components/ResponsiveTable.jsx';
 import TableActions from '../components/TableActions.jsx';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -32,12 +33,7 @@ import {
 import maintenancePermissions from '../maintenance/maintenance.permissions.js';
 import { auditValuesAreEqual } from '../history/audit-values.js';
 import fleetPermissions from '../permissions/fleet.permissions.js';
-import {
-  formatCurrency,
-  formatDate,
-  formatDateTime,
-  formatOperationDateTime,
-} from '../utils/formatters.js';
+import { formatCurrency, formatDate } from '../utils/formatters.js';
 import { paginateItems } from '../utils/pagination.js';
 import { getMaterialPhotoDisplayName } from '../utils/material-photo.js';
 
@@ -66,7 +62,7 @@ const auditFieldLabels = Object.freeze({
   name: 'Nom',
   description: 'Description',
   unit: 'Unité',
-  purchasePrice: 'Prix d’achat',
+  purchasePrice: 'Tarif',
   manufacturer: 'Fabricant',
   category: 'Catégorie',
   model: 'Modèle',
@@ -446,7 +442,7 @@ export default function MaterialDetailPage() {
               Informations
             </h2>
             <div className="table-shell table-responsive">
-              <table className="table detail-table align-middle">
+              <ResponsiveTable className="table detail-table align-middle">
                 <tbody>
                   <Field
                     label="Fabricant"
@@ -460,13 +456,13 @@ export default function MaterialDetailPage() {
                   <Field label="Numéro de série" value={material.serialNumber} />
                   <Field label="Catégorie" value={material.category?.name} />
                   <Field label="Unité" value={material.unit} />
-                  <Field label="Prix d’achat" value={formatCurrency(material.purchasePrice)} />
+                  <Field label="Tarif" value={formatCurrency(material.purchasePrice)} />
                   <Field label="Date d’achat" value={formatDate(material.purchaseDate)} />
                   <Field label="Mise en service" value={formatDate(material.commissionedAt)} />
                   <Field label="Sortie de service" value={formatDate(material.retiredAt)} />
                   <Field label="Notes" value={material.notes} />
                 </tbody>
-              </table>
+              </ResponsiveTable>
             </div>
           </section>
           <section className="surface mt-5 p-4">
@@ -664,7 +660,7 @@ export default function MaterialDetailPage() {
             )}
             {documents.length > 0 ? (
               <div className="table-shell table-responsive mt-4">
-                <table className="table table-hover align-middle">
+                <ResponsiveTable className="table table-hover align-middle">
                   <thead>
                     <tr>
                       <th>Document</th>
@@ -702,7 +698,7 @@ export default function MaterialDetailPage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </ResponsiveTable>
               </div>
             ) : (
               <p className="mb-0 mt-4 text-body-secondary">Aucun document ajouté.</p>
@@ -720,13 +716,13 @@ export default function MaterialDetailPage() {
                 </div>
               ) : (
                 <div className="table-shell table-responsive">
-                  <table className="table table-hover align-middle">
+                  <ResponsiveTable className="table table-hover align-middle">
                     <thead>
                       <tr>
                         <th>Plan</th>
-                        <th>Priorité</th>
+                        <th className="d-none d-sm-table-cell">Priorité</th>
                         <th>Échéance</th>
-                        <th>État</th>
+                        <th className="d-none d-sm-table-cell">État</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -749,7 +745,7 @@ export default function MaterialDetailPage() {
                                 .join(' · ')}
                             </span>
                           </td>
-                          <td>
+                          <td className="d-none d-sm-table-cell">
                             {maintenancePriorityLabels[task.priority] ? (
                               <span
                                 className={`status-badge ${maintenancePriorityBadgeClasses[task.priority]}`}
@@ -768,7 +764,7 @@ export default function MaterialDetailPage() {
                               Dernier entretien : {formatDate(task.lastMaintenanceDate)}
                             </span>
                           </td>
-                          <td>
+                          <td className="d-none d-sm-table-cell">
                             <span
                               className={`status-badge ${maintenanceStatusClasses[task.status] ?? ''}`}
                             >
@@ -779,7 +775,7 @@ export default function MaterialDetailPage() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </ResponsiveTable>
                 </div>
               )}
               <PaginationControls
@@ -831,33 +827,28 @@ export default function MaterialDetailPage() {
                     </p>
                   ) : (
                     <div className="table-shell table-responsive">
-                      <table className="table table-hover align-middle">
+                      <ResponsiveTable className="table table-hover align-middle">
                         <thead>
                           <tr>
-                            <th>Date et heure</th>
+                            <th>Date</th>
                             <th>Description</th>
-                            <th>Pièces utilisées</th>
+                            <th className="d-none d-sm-table-cell">Pièces utilisées</th>
                             <th>Coût</th>
-                            <th>Utilisateur</th>
+                            <th className="d-none d-sm-table-cell">Utilisateur</th>
                           </tr>
                         </thead>
                         <tbody>
                           {interventions.map((intervention) => (
                             <tr key={intervention.uuid}>
-                              <td>
-                                {formatOperationDateTime(
-                                  intervention.performedAt,
-                                  intervention.createdAt,
-                                )}
-                              </td>
+                              <td>{formatDate(intervention.performedAt)}</td>
                               <td>{intervention.description}</td>
-                              <td>
+                              <td className="d-none d-sm-table-cell">
                                 {(intervention.parts ?? [])
                                   .map((part) => `${part.name} (${part.quantity} ${part.unit})`)
                                   .join(', ')}
                               </td>
                               <td>{formatCurrency(intervention.totalCost)}</td>
-                              <td>
+                              <td className="d-none d-sm-table-cell">
                                 {intervention.performedByUser
                                   ? `${intervention.performedByUser.firstName} ${intervention.performedByUser.lastName}`
                                   : 'Utilisateur supprimé'}
@@ -865,7 +856,7 @@ export default function MaterialDetailPage() {
                             </tr>
                           ))}
                         </tbody>
-                      </table>
+                      </ResponsiveTable>
                     </div>
                   )}
                   <PaginationControls
@@ -892,12 +883,12 @@ export default function MaterialDetailPage() {
             </div>
           ) : (
             <div className="table-shell table-responsive">
-              <table className="table history-table align-middle">
+              <ResponsiveTable className="table history-table align-middle">
                 <thead>
                   <tr>
                     <th>Date</th>
                     <th>Action</th>
-                    <th>Utilisateur</th>
+                    <th className="d-none d-sm-table-cell">Utilisateur</th>
                     <th>Modifications</th>
                   </tr>
                 </thead>
@@ -906,7 +897,7 @@ export default function MaterialDetailPage() {
                     const changes = eventChanges(event);
                     return (
                       <tr key={event.uuid}>
-                        <td>{formatDateTime(event.createdAt)}</td>
+                        <td>{formatDate(event.createdAt)}</td>
                         <td>
                           <span
                             className={`status-badge ${auditActionClasses[event.action] ?? ''}`}
@@ -914,7 +905,7 @@ export default function MaterialDetailPage() {
                             {auditActionLabels[event.action] ?? event.action}
                           </span>
                         </td>
-                        <td>
+                        <td className="d-none d-sm-table-cell">
                           {event.user
                             ? `${event.user.firstName} ${event.user.lastName}`
                             : 'Système'}
@@ -939,7 +930,7 @@ export default function MaterialDetailPage() {
                     );
                   })}
                 </tbody>
-              </table>
+              </ResponsiveTable>
             </div>
           )}
           <PaginationControls

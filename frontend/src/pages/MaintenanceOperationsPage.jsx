@@ -42,6 +42,7 @@ export default function MaintenanceOperationsPage() {
         },
         {
           key: 'active',
+          hideOnMobile: true,
           label: 'Statut',
           render: (value) => (
             <span className={`status-badge ${value ? '' : 'inactive'}`}>
