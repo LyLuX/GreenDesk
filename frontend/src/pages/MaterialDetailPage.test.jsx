@@ -7,6 +7,9 @@ const mocks = vi.hoisted(() => ({
   getReference: vi.fn(),
   hasPermission: vi.fn(),
   history: [],
+  listParts: vi.fn(),
+  createIntervention: vi.fn(),
+  notify: vi.fn(),
   listMaintenance: vi.fn(),
   listInterventions: vi.fn(),
   listMaterialMaintenanceHistory: vi.fn(),
@@ -27,7 +30,12 @@ vi.mock('../api/material-files.api.js', () => ({
   uploadMaterialDocument: vi.fn(),
   uploadMaterialPhoto: mocks.uploadPhoto,
 }));
+vi.mock('../notifications/useNotification.js', () => ({
+  default: () => ({ notify: mocks.notify }),
+}));
 vi.mock('../api/maintenance.api.js', () => ({
+  listMaintenanceParts: mocks.listParts,
+  createMaintenanceIntervention: mocks.createIntervention,
   listMaintenance: mocks.listMaintenance,
   listMaintenanceInterventions: mocks.listInterventions,
   listMaterialMaintenanceHistory: mocks.listMaterialMaintenanceHistory,
@@ -54,6 +62,8 @@ describe('MaterialDetailPage', () => {
     mocks.materialFiles = [];
     mocks.uploadPhoto.mockResolvedValue({ data: { data: { uuid: 'uploaded-photo' } } });
     mocks.hasPermission.mockReturnValue(false);
+    mocks.listParts.mockResolvedValue({ data: { data: { items: [] } } });
+    mocks.createIntervention.mockResolvedValue({ data: { data: {} } });
     mocks.listMaintenance.mockResolvedValue({ data: { data: { items: [] } } });
     mocks.listInterventions.mockResolvedValue({ data: { data: { items: [] } } });
     mocks.listMaterialMaintenanceHistory.mockResolvedValue({ data: { data: { items: [] } } });
@@ -63,6 +73,7 @@ describe('MaterialDetailPage', () => {
           data: path.endsWith('/history')
             ? mocks.history
             : {
+                active: true,
                 uuid: 'material-uuid',
                 name: 'Tronçonneuse',
                 manufacturer: {
@@ -75,6 +86,109 @@ describe('MaterialDetailPage', () => {
         },
       }),
     );
+  });
+
+  it('opens part usage with the material fixed and reloads interventions after saving', async () => {
+    mocks.hasPermission.mockReturnValue(true);
+    mocks.listParts.mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'part',
+              name: 'Butée de siège',
+              reference: '135-0505',
+              unit: 'pièce(s)',
+              quantityOnHand: 2,
+              unitPrice: 5,
+            },
+          ],
+        },
+      },
+    });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/materials/material-uuid']}>
+        <Routes>
+          <Route path="/materials/:uuid" element={<MaterialDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByRole('img', { name: 'Logo Green' });
+    await user.click(screen.getByRole('tab', { name: 'Maintenance' }));
+    await user.click(screen.getByRole('button', { name: 'Utiliser des pièces en maintenance' }));
+    const search = screen.getByRole('combobox', {
+      name: 'Rechercher une pièce par nom ou référence',
+    });
+    await user.type(search, 'Butée');
+    await user.click(await screen.findByRole('option', { name: /Butée de siège/ }));
+    await user.type(
+      screen.getByLabelText('Description de l’intervention'),
+      'Remplacement des butées',
+    );
+    await user.clear(screen.getByLabelText(/Quantité utilisée/));
+    await user.type(screen.getByLabelText(/Quantité utilisée/), '2');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer l’utilisation' }));
+    await waitFor(() =>
+      expect(mocks.createIntervention).toHaveBeenCalledWith(
+        expect.objectContaining({
+          materialUuid: 'material-uuid',
+          parts: [{ partUuid: 'part', quantity: 2 }],
+        }),
+        expect.any(String),
+      ),
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Utiliser des pièces en maintenance' }),
+      ).not.toBeInTheDocument(),
+    );
+    await waitFor(() => expect(mocks.listInterventions).toHaveBeenCalledTimes(2));
+  });
+
+  it('allows consumption with catalogue access without requiring maintenance-plan read access', async () => {
+    mocks.hasPermission.mockImplementation((permission) =>
+      ['maintenance.parts.read', 'maintenance.parts.stock.consume'].includes(permission),
+    );
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/materials/material-uuid']}>
+        <Routes>
+          <Route path="/materials/:uuid" element={<MaterialDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByRole('img', { name: 'Logo Green' });
+    await user.click(screen.getByRole('tab', { name: 'Maintenance' }));
+    expect(
+      screen.getByRole('button', { name: 'Utiliser des pièces en maintenance' }),
+    ).toBeEnabled();
+    expect(mocks.listMaintenance).not.toHaveBeenCalled();
+    expect(mocks.listInterventions).not.toHaveBeenCalled();
+    const interventionSection = screen.getByRole('region', { name: 'Interventions ponctuelles' });
+    expect(
+      within(interventionSection).getByRole('button', {
+        name: 'Utiliser des pièces en maintenance',
+      }),
+    ).toHaveClass('btn-outline-brand');
+    expect(within(interventionSection).queryByRole('table')).not.toBeInTheDocument();
+  });
+
+  it('hides part usage from a maintenance reader without consumption permission', async () => {
+    mocks.hasPermission.mockImplementation((permission) => permission === 'maintenance.read');
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/materials/material-uuid']}>
+        <Routes>
+          <Route path="/materials/:uuid" element={<MaterialDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByRole('img', { name: 'Logo Green' });
+    await user.click(screen.getByRole('tab', { name: 'Maintenance' }));
+    expect(
+      screen.queryByRole('button', { name: 'Utiliser des pièces en maintenance' }),
+    ).not.toBeInTheDocument();
   });
 
   it('shows the manufacturer logo instead of its name', async () => {

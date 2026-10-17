@@ -8,6 +8,7 @@ vi.mock('../api/material-files.api.js', () => ({ getMaterialFileContent: vi.fn()
 
 describe('AuthenticatedImage', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     clearAuthenticatedImageCache();
     URL.createObjectURL = vi.fn().mockReturnValue('blob:photo');
     URL.revokeObjectURL = vi.fn();

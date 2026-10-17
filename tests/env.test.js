@@ -149,6 +149,34 @@ describe('runtime environment configuration', () => {
     ).toEqual(['https://legacy.example.com']);
   });
 
+  it('requires HTTPS origins and enabled quotas in production', () => {
+    expect(() =>
+      createEnvironment({ ...productionEnvironment, CORS_ORIGINS: 'http://greendesk.example.com' }),
+    ).toThrow(/CORS_ORIGINS doit utiliser HTTPS en production/);
+    expect(() =>
+      createEnvironment({ ...productionEnvironment, RATE_LIMIT_ENABLED: 'false' }),
+    ).toThrow(/RATE_LIMIT_ENABLED doit valoir "true" en production/);
+  });
+
+  it('requires STARTTLS in production unless SMTP uses implicit TLS', () => {
+    expect(createEnvironment(productionEnvironment).mail.smtp).toMatchObject({
+      secure: false,
+      requireTLS: true,
+    });
+    expect(
+      createEnvironment({ ...productionEnvironment, SMTP_SECURE: 'true' }).mail.smtp,
+    ).toMatchObject({ secure: true, requireTLS: false });
+    expect(createEnvironment({ NODE_ENV: 'test' }).mail.smtp.requireTLS).toBe(false);
+    expect(
+      createEnvironment({
+        NODE_ENV: 'test',
+        SMTP_AUTH_TYPE: 'password',
+        SMTP_USER: 'test-user',
+        SMTP_PASSWORD: 'test-password',
+      }).mail.smtp.requireTLS,
+    ).toBe(true);
+  });
+
   it('rejects ambiguous CORS variables', () => {
     expect(() =>
       createEnvironment({

@@ -2,6 +2,19 @@
 
 ## Non publié
 
+## 9.3.0 - 2026-10-17
+
+- [PATCH] Le durcissement R5 met à jour les dépendances de sécurité, protège
+  les téléversements et les réponses interrompues, et impose HTTPS, les quotas
+  et le chiffrement SMTP lors d’un futur déploiement en production.
+
+- [PATCH] L’historique de l’administration affiche uniquement les permissions
+  ajoutées ou retirées lors d’une modification, sans répéter les permissions inchangées.
+
+- [MINOR] La section « Interventions ponctuelles » de la fiche d’un matériel
+  permet d’enregistrer une intervention avec plusieurs pièces, leur quantité, la
+  date et le coût, en mettant à jour le stock et l’historique du matériel.
+
 ## 9.2.0 - 2026-10-13
 
 - [PATCH] Les descriptions longues du tableau des permissions sont raccourcies

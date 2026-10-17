@@ -28,6 +28,9 @@ export const buildSmtpTransportOptions = (smtp, getCACertificates = tls.getCACer
     host: smtp.host,
     port: smtp.port,
     secure: smtp.secure,
+    requireTLS:
+      !smtp.secure &&
+      (env.nodeEnv === 'production' || smtp.requireTLS === true || smtp.auth.type !== 'none'),
     pool: smtp.pool,
     maxConnections: smtp.maxConnections,
     maxMessages: smtp.maxMessages,

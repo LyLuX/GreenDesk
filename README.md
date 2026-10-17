@@ -9,7 +9,7 @@ entre fiches papier, tableaux et documents : matériels en service,
 caractéristiques, photos, entretiens à prévoir, pièces nécessaires, état des
 stocks, coûts et historique des actions réalisées.
 
-La version actuelle de GreenDesk est **9.2.0**.
+La version actuelle de GreenDesk est **9.3.0**.
 
 ## Ce que permet GreenDesk
 
@@ -330,3 +330,46 @@ Le build de production du frontend est généré dans `frontend/dist`. L’API n
 sert pas automatiquement ce dossier : en production, l’interface compilée et
 l’API doivent être publiées par l’infrastructure choisie, avec le routage de
 `/api` vers le backend.
+
+### Sécurité avant une mise en production
+
+Le fonctionnement actuel reste local, avec une seule instance démarrée par les
+scripts de développement. Ces serveurs ne constituent pas un hébergement de production.
+
+En production, GreenDesk refuse les origines CORS sans HTTPS et la désactivation
+des quotas. Le transport SMTP exige STARTTLS lorsque TLS implicite
+(`SMTP_SECURE=true`) n’est pas utilisé ; un relais sans TLS est alors refusé
+avant l’envoi des identifiants ou des messages. STARTTLS est également exigé
+hors production dès qu’une authentification SMTP est utilisée. Les relais de
+développement sans authentification restent utilisables.
+
+Avant tout déploiement, vérifier les exigences suivantes avec la configuration réelle :
+
+- Terminer HTTPS pour le frontend et l’API, publier uniquement le build
+  `frontend/dist`, filtrer l’accès direct au port backend et transmettre
+  `/api` au backend.
+- Définir `TRUSTED_PROXIES` avec les seules adresses des proxys fiables et
+  nettoyer les en-têtes transférés à l’entrée ; ne pas faire confiance aux
+  en-têtes fournis directement par un client.
+- Garder une seule instance API avec le stockage actuel des quotas en mémoire.
+  Avant plusieurs processus ou réplicas, ajouter des quotas partagés avec
+  comportement de panne vérifié ; les redémarrages réinitialisent les compteurs.
+- Garder MySQL sur la machine locale ou un réseau de confiance. Une base distante
+  sur un réseau non fiable nécessite un transport chiffré vérifié ou un tunnel ;
+  les configurations Sequelize actuelles ne configurent pas TLS.
+- Restreindre les droits MySQL de l’application, les fichiers `.env`, les
+  répertoires `uploads` et la collecte des logs. Ne jamais publier la racine du
+  dépôt, les uploads ni les logs comme fichiers statiques. Lancer le backend et
+  les migrations depuis la racine attendue : `.env` et les uploads dépendent
+  du répertoire courant.
+- Fournir explicitement les identifiants de la base aux commandes de migration :
+  la configuration CLI conserve des valeurs de repli locales et ne reprend pas
+  la validation de production du runtime.
+- Ne placer aucun secret dans les variables `VITE_*`, qui peuvent être intégrées
+  au code public. Si un secret est exposé, le révoquer chez son fournisseur,
+  remplacer sa référence locale et reconstruire les artefacts concernés ;
+  changer `JWT_SECRET` invalide les sessions signées avec l’ancien secret.
+- Relancer `npm audit` et `npm audit --prefix frontend` après les changements
+  de dépendances, puis examiner l’accessibilité des chemins signalés. Un avis
+  portant sur un outil de build ou un chemin inutilisé ne démontre pas à lui
+  seul une vulnérabilité du site.

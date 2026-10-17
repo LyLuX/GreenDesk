@@ -43,6 +43,28 @@ describe('HTTP rate limiting', () => {
     expect(JSON.stringify(securityLogger.warn.mock.calls[0])).not.toContain('never-log-this-query');
   });
 
+  it.each([['loopback']])(
+    'does not let forged forwarded prefixes reset a quota with trust proxy %j',
+    async (trustedProxies) => {
+      const app = express();
+      app.set('trust proxy', trustedProxies);
+      app.get(
+        '/limited',
+        createRateLimiters(configuration(), { warn: jest.fn() }).apiRateLimiter,
+        (_request, response) => response.sendStatus(204),
+      );
+      const forwarded = (prefix) => `${prefix}, 203.0.113.10`;
+      expect(
+        (await request(app).get('/limited').set('X-Forwarded-For', forwarded('198.51.100.1')))
+          .status,
+      ).toBe(204);
+      expect(
+        (await request(app).get('/limited').set('X-Forwarded-For', forwarded('198.51.100.2')))
+          .status,
+      ).toBe(429);
+    },
+  );
+
   it('counts failed logins while releasing successful requests', async () => {
     const successfulApp = express();
     successfulApp.get(

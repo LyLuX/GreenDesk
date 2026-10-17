@@ -56,8 +56,30 @@ const auditChanges = ({ oldValues, newValues }) => {
   return [...keys]
     .filter((key) => !auditValuesAreEqual(key, oldValues?.[key], newValues?.[key]))
     .slice(0, 3)
-    .map((key) => {
+    .flatMap((key) => {
       const label = fieldLabels[key] || key;
+      if (
+        key === 'permissions' &&
+        oldValues &&
+        newValues &&
+        Array.isArray(oldValues[key]) &&
+        Array.isArray(newValues[key])
+      ) {
+        const before = oldValues[key];
+        const after = newValues[key];
+        const identity = (permission) =>
+          typeof permission === 'object'
+            ? permission.uuid || permission.name || permission.label
+            : permission;
+        const beforeIds = new Set(before.map(identity));
+        const afterIds = new Set(after.map(identity));
+        const added = after.filter((permission) => !beforeIds.has(identity(permission)));
+        const removed = before.filter((permission) => !afterIds.has(identity(permission)));
+        return [
+          added.length ? `Permissions ajoutées : ${displayValue(added, key)}` : null,
+          removed.length ? `Permissions retirées : ${displayValue(removed, key)}` : null,
+        ].filter(Boolean);
+      }
       if (!oldValues) return `${label} : ${displayValue(newValues?.[key], key)}`;
       if (!newValues) return `${label} : ${displayValue(oldValues?.[key], key)}`;
       return `${label} : ${displayValue(oldValues?.[key], key)} → ${displayValue(newValues?.[key], key)}`;

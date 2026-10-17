@@ -17,6 +17,7 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Loader from '../components/Loader.jsx';
 import ManufacturerLogo from '../components/ManufacturerLogo.jsx';
 import MaterialPhotoViewer from '../components/MaterialPhotoViewer.jsx';
+import MaterialPartUsageModal from '../components/MaterialPartUsageModal.jsx';
 import MaterialMaintenanceHistory from '../components/MaterialMaintenanceHistory.jsx';
 import PaginationControls from '../components/PaginationControls.jsx';
 import useRuntimeConfig from '../config/useRuntimeConfig.js';
@@ -131,6 +132,12 @@ export default function MaterialDetailPage() {
   const [maintenancePage, setMaintenancePage] = useState(1);
   const [maintenanceLimit, setMaintenanceLimit] = useState(5);
   const [maintenancePagination, setMaintenancePagination] = useState(null);
+  const [partUsageOpen, setPartUsageOpen] = useState(false);
+  const [interventionRevision, setInterventionRevision] = useState(0);
+  const canReadMaintenance = hasPermission(maintenancePermissions.plans.read);
+  const canUseParts =
+    hasPermission(maintenancePermissions.parts.stock.consume) &&
+    (hasPermission(maintenancePermissions.parts.read) || canReadMaintenance);
   const [interventions, setInterventions] = useState([]);
   const [interventionPage, setInterventionPage] = useState(1);
   const [interventionLimit, setInterventionLimit] = useState(5);
@@ -205,7 +212,7 @@ export default function MaterialDetailPage() {
       })
       .catch(() => {});
     return () => controller.abort();
-  }, [hasPermission, interventionLimit, interventionPage, uuid]);
+  }, [hasPermission, interventionLimit, interventionPage, interventionRevision, uuid]);
   useEffect(() => () => previewsRef.current.forEach((url) => URL.revokeObjectURL(url)), []);
 
   const photos = useMemo(
@@ -418,7 +425,7 @@ export default function MaterialDetailPage() {
         >
           Historique
         </button>
-        {hasPermission(maintenancePermissions.plans.read) && (
+        {(canReadMaintenance || canUseParts) && (
           <button
             className="p-2"
             role="tab"
@@ -693,141 +700,176 @@ export default function MaterialDetailPage() {
       ) : activeTab === 'maintenance' ? (
         <section className="mt-4">
           <h2 className="h4 mb-3">Maintenance</h2>
-          {maintenance.length === 0 ? (
-            <div className="surface p-4">
-              <p className="mb-0 text-body-secondary">Aucun plan d’entretien actif.</p>
-            </div>
-          ) : (
-            <div className="table-shell table-responsive">
-              <table className="table table-hover align-middle">
-                <thead>
-                  <tr>
-                    <th>Plan</th>
-                    <th>Priorité</th>
-                    <th>Échéance</th>
-                    <th>État</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {maintenance.map((task) => (
-                    <tr key={task.uuid}>
-                      <td>
-                        <span className="d-block">{task.title}</span>
-                        <span className="d-block small text-body-secondary">
-                          {[
-                            maintenanceTypeLabels[task.maintenanceType],
-                            task.intervalDays === 0
+          {canReadMaintenance && (
+            <>
+              {maintenance.length === 0 ? (
+                <div className="surface p-4">
+                  <p className="mb-0 text-body-secondary">Aucun plan d’entretien actif.</p>
+                </div>
+              ) : (
+                <div className="table-shell table-responsive">
+                  <table className="table table-hover align-middle">
+                    <thead>
+                      <tr>
+                        <th>Plan</th>
+                        <th>Priorité</th>
+                        <th>Échéance</th>
+                        <th>État</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {maintenance.map((task) => (
+                        <tr key={task.uuid}>
+                          <td>
+                            <span className="d-block">{task.title}</span>
+                            <span className="d-block small text-body-secondary">
+                              {[
+                                maintenanceTypeLabels[task.maintenanceType],
+                                task.intervalDays === 0
+                                  ? 'Selon l’usure'
+                                  : task.intervalDays > 0
+                                    ? task.intervalDays === 1
+                                      ? 'Chaque jour'
+                                      : `Tous les ${task.intervalDays} jours`
+                                    : null,
+                              ]
+                                .filter(Boolean)
+                                .join(' · ')}
+                            </span>
+                          </td>
+                          <td>
+                            {maintenancePriorityLabels[task.priority] ? (
+                              <span
+                                className={`status-badge ${maintenancePriorityBadgeClasses[task.priority]}`}
+                              >
+                                {maintenancePriorityLabels[task.priority]}
+                              </span>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                          <td>
+                            {task.status === 'wearBased'
                               ? 'Selon l’usure'
-                              : task.intervalDays > 0
-                                ? task.intervalDays === 1
-                                  ? 'Chaque jour'
-                                  : `Tous les ${task.intervalDays} jours`
-                                : null,
-                          ]
-                            .filter(Boolean)
-                            .join(' · ')}
-                        </span>
-                      </td>
-                      <td>
-                        {maintenancePriorityLabels[task.priority] ? (
-                          <span
-                            className={`status-badge ${maintenancePriorityBadgeClasses[task.priority]}`}
-                          >
-                            {maintenancePriorityLabels[task.priority]}
-                          </span>
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td>
-                        {task.status === 'wearBased'
-                          ? 'Selon l’usure'
-                          : formatDate(task.nextMaintenanceDate)}
-                        <span className="d-block small text-body-secondary">
-                          Dernier entretien : {formatDate(task.lastMaintenanceDate)}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`status-badge ${maintenanceStatusClasses[task.status] ?? ''}`}
-                        >
-                          {maintenanceStatusLabels[task.status] ?? maintenanceStatusLabels.upToDate}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                              : formatDate(task.nextMaintenanceDate)}
+                            <span className="d-block small text-body-secondary">
+                              Dernier entretien : {formatDate(task.lastMaintenanceDate)}
+                            </span>
+                          </td>
+                          <td>
+                            <span
+                              className={`status-badge ${maintenanceStatusClasses[task.status] ?? ''}`}
+                            >
+                              {maintenanceStatusLabels[task.status] ??
+                                maintenanceStatusLabels.upToDate}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <PaginationControls
+                pagination={maintenancePagination}
+                limit={maintenanceLimit}
+                itemLabel="plan(s) d’entretien"
+                onLimitChange={(value) => {
+                  setMaintenanceLimit(value);
+                  setMaintenancePage(1);
+                }}
+                onPageChange={setMaintenancePage}
+              />
+              <Link
+                className="btn btn-outline-brand mt-3"
+                to={`/maintenance?materialUuid=${encodeURIComponent(uuid)}`}
+              >
+                Voir la maintenance
+              </Link>
+              {hasPermission(maintenancePermissions.plans.read) && (
+                <MaterialMaintenanceHistory key={uuid} materialUuid={uuid} />
+              )}
+            </>
           )}
-          <PaginationControls
-            pagination={maintenancePagination}
-            limit={maintenanceLimit}
-            itemLabel="plan(s) d’entretien"
-            onLimitChange={(value) => {
-              setMaintenanceLimit(value);
-              setMaintenancePage(1);
-            }}
-            onPageChange={setMaintenancePage}
-          />
-          <Link
-            className="btn btn-outline-brand mt-3"
-            to={`/maintenance?materialUuid=${encodeURIComponent(uuid)}`}
-          >
-            Voir la maintenance
-          </Link>
-          {hasPermission(maintenancePermissions.plans.read) && (
-            <MaterialMaintenanceHistory key={uuid} materialUuid={uuid} />
+          {(canReadMaintenance || canUseParts) && (
+            <section className="mt-5" aria-label="Interventions ponctuelles">
+              <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                <h3 className="h5 mb-0">Interventions ponctuelles</h3>
+                {canUseParts && (
+                  <button
+                    className="btn btn-outline-brand"
+                    type="button"
+                    disabled={!material.active}
+                    onClick={() => setPartUsageOpen(true)}
+                  >
+                    Utiliser des pièces en maintenance
+                  </button>
+                )}
+              </div>
+              {canUseParts && !material.active && (
+                <p className="text-body-secondary">
+                  Les pièces peuvent être utilisées uniquement sur un matériel actif.
+                </p>
+              )}
+              {canReadMaintenance && (
+                <>
+                  {interventions.length === 0 ? (
+                    <p className="text-body-secondary">
+                      Aucune intervention ponctuelle enregistrée.
+                    </p>
+                  ) : (
+                    <div className="table-shell table-responsive">
+                      <table className="table table-hover align-middle">
+                        <thead>
+                          <tr>
+                            <th>Date et heure</th>
+                            <th>Description</th>
+                            <th>Pièces utilisées</th>
+                            <th>Coût</th>
+                            <th>Utilisateur</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {interventions.map((intervention) => (
+                            <tr key={intervention.uuid}>
+                              <td>
+                                {formatOperationDateTime(
+                                  intervention.performedAt,
+                                  intervention.createdAt,
+                                )}
+                              </td>
+                              <td>{intervention.description}</td>
+                              <td>
+                                {(intervention.parts ?? [])
+                                  .map((part) => `${part.name} (${part.quantity} ${part.unit})`)
+                                  .join(', ')}
+                              </td>
+                              <td>{formatCurrency(intervention.totalCost)}</td>
+                              <td>
+                                {intervention.performedByUser
+                                  ? `${intervention.performedByUser.firstName} ${intervention.performedByUser.lastName}`
+                                  : 'Utilisateur supprimé'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  <PaginationControls
+                    pagination={interventionPagination}
+                    limit={interventionLimit}
+                    itemLabel="intervention(s) ponctuelle(s)"
+                    onLimitChange={(value) => {
+                      setInterventionLimit(value);
+                      setInterventionPage(1);
+                    }}
+                    onPageChange={setInterventionPage}
+                  />
+                </>
+              )}
+            </section>
           )}
-          <h3 className="h5 mb-3 mt-5">Interventions ponctuelles</h3>
-          {interventions.length === 0 ? (
-            <p className="text-body-secondary">Aucune intervention ponctuelle enregistrée.</p>
-          ) : (
-            <div className="table-shell table-responsive">
-              <table className="table table-hover align-middle">
-                <thead>
-                  <tr>
-                    <th>Date et heure</th>
-                    <th>Description</th>
-                    <th>Pièces utilisées</th>
-                    <th>Coût</th>
-                    <th>Utilisateur</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {interventions.map((intervention) => (
-                    <tr key={intervention.uuid}>
-                      <td>
-                        {formatOperationDateTime(intervention.performedAt, intervention.createdAt)}
-                      </td>
-                      <td>{intervention.description}</td>
-                      <td>
-                        {(intervention.parts ?? [])
-                          .map((part) => `${part.name} (${part.quantity} ${part.unit})`)
-                          .join(', ')}
-                      </td>
-                      <td>{formatCurrency(intervention.totalCost)}</td>
-                      <td>
-                        {intervention.performedByUser
-                          ? `${intervention.performedByUser.firstName} ${intervention.performedByUser.lastName}`
-                          : 'Utilisateur supprimé'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          <PaginationControls
-            pagination={interventionPagination}
-            limit={interventionLimit}
-            itemLabel="intervention(s) ponctuelle(s)"
-            onLimitChange={(value) => {
-              setInterventionLimit(value);
-              setInterventionPage(1);
-            }}
-            onPageChange={setInterventionPage}
-          />
         </section>
       ) : (
         <section className="mt-4">
@@ -899,6 +941,18 @@ export default function MaterialDetailPage() {
             onPageChange={setHistoryPage}
           />
         </section>
+      )}
+      {partUsageOpen && canUseParts && material.active && (
+        <MaterialPartUsageModal
+          key={uuid}
+          material={material}
+          onClose={() => setPartUsageOpen(false)}
+          onSaved={() => {
+            setPartUsageOpen(false);
+            setInterventionPage(1);
+            setInterventionRevision((revision) => revision + 1);
+          }}
+        />
       )}
       <ConfirmDialog
         open={Boolean(fileToDelete)}

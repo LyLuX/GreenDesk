@@ -157,6 +157,45 @@ describe('HistoryPage', () => {
     expect(screen.queryByText(/950\.00.*950/)).not.toBeInTheDocument();
   });
 
+  it.each([
+    [['read'], ['read', 'write'], 'Permissions ajoutées : write'],
+    [['read', 'write'], ['read'], 'Permissions retirées : write'],
+    [['read', 'delete'], ['read', 'write'], 'Permissions ajoutées : write'],
+    [[], ['write'], 'Permissions ajoutées : write'],
+    [['write'], [], 'Permissions retirées : write'],
+    [['read', 'write'], ['write', 'read'], null],
+  ])('shows only changed permissions (%j → %j)', async (before, after, expected) => {
+    const permissions = (names) => names.map((name) => ({ uuid: name, name }));
+    listHistory.mockResolvedValueOnce({
+      data: {
+        data: {
+          items: [
+            {
+              uuid: 'role-update',
+              occurredAt: '2026-10-14T08:00:00.000Z',
+              type: 'role',
+              action: 'UPDATE',
+              subject: { label: 'Technicien' },
+              details: {
+                oldValues: { permissions: permissions(before) },
+                newValues: { permissions: permissions(after) },
+              },
+            },
+          ],
+          pagination: { page: 1, limit: 5, total: 1, totalPages: 1 },
+        },
+      },
+    });
+    render(<HistoryPage section="administration" />);
+    await screen.findByText('Technicien');
+    if (expected) expect(screen.getByText(expected, { exact: false })).toBeVisible();
+    if (before.includes('delete'))
+      expect(screen.getByText(/Permissions retirées : delete/)).toBeVisible();
+    expect(screen.queryByText(/Permissions.*read/)).not.toBeInTheDocument();
+    if (!expected)
+      expect(screen.queryByText(/Permissions (ajoutées|retirées)/)).not.toBeInTheDocument();
+  });
+
   it('resets every filter when the history section changes', async () => {
     const user = userEvent.setup();
     const { rerender } = render(<HistoryPage section="maintenance" />);

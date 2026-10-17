@@ -1,4 +1,6 @@
 import { jest } from '@jest/globals';
+import net from 'node:net';
+import nodemailer from 'nodemailer';
 
 import MailService, { buildSmtpTransportOptions } from '../src/core/mail/mail.service.js';
 
@@ -15,6 +17,82 @@ const smtpConfiguration = (auth, overrides = {}) => ({
 });
 
 describe('MailService', () => {
+  it('requires STARTTLS for credentials even outside production', () => {
+    expect(
+      buildSmtpTransportOptions(
+        smtpConfiguration({ type: 'password', user: 'mailer', password: 'secret' }),
+      ),
+    ).toMatchObject({ secure: false, requireTLS: true });
+    expect(buildSmtpTransportOptions(smtpConfiguration({ type: 'none' }))).toMatchObject({
+      secure: false,
+      requireTLS: false,
+    });
+  });
+
+  it('passes the mandatory STARTTLS policy to the SMTP transport', () => {
+    const options = buildSmtpTransportOptions(
+      smtpConfiguration(
+        { type: 'password', user: 'mailer', password: 'secret' },
+        { requireTLS: true },
+      ),
+    );
+    expect(options).toMatchObject({ secure: false, requireTLS: true });
+    expect(options).not.toHaveProperty('ignoreTLS');
+    expect(options).not.toHaveProperty('opportunisticTLS');
+  });
+
+  it('refuses SMTP without STARTTLS before sending credentials or message content', async () => {
+    const commands = [];
+    const sockets = new Set();
+    const server = net.createServer((socket) => {
+      sockets.add(socket);
+      socket.on('close', () => sockets.delete(socket));
+      socket.write('220 local.test ESMTP ready\r\n');
+      let pending = '';
+      socket.on('data', (chunk) => {
+        pending += chunk.toString();
+        const lines = pending.split('\r\n');
+        pending = lines.pop();
+        for (const line of lines) {
+          commands.push(line);
+          socket.write(
+            line.startsWith('EHLO')
+              ? '250-local.test\r\n250 AUTH PLAIN LOGIN\r\n'
+              : '454 4.7.0 TLS unavailable\r\n',
+          );
+        }
+      });
+    });
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const transport = nodemailer.createTransport({
+      ...buildSmtpTransportOptions(
+        smtpConfiguration(
+          { type: 'password', user: 'test-user', password: 'test-password' },
+          { host: '127.0.0.1', port: server.address().port, pool: false, requireTLS: true },
+        ),
+      ),
+      connectionTimeout: 1000,
+      greetingTimeout: 1000,
+      socketTimeout: 1000,
+    });
+    try {
+      await expect(
+        transport.sendMail({
+          from: 'sender@example.test',
+          to: 'recipient@example.test',
+          subject: 'TLS test',
+          text: 'Content must never be sent',
+        }),
+      ).rejects.toMatchObject({ code: 'ETLS' });
+      expect(commands).toContain('STARTTLS');
+      expect(commands.some((line) => /^(AUTH|MAIL|RCPT|DATA)\b/.test(line))).toBe(false);
+    } finally {
+      transport.close();
+      for (const socket of sockets) socket.destroy();
+      await new Promise((resolve) => server.close(resolve));
+    }
+  });
+
   it('builds password and OAuth2 transports from the same SMTP abstraction', () => {
     expect(
       buildSmtpTransportOptions(

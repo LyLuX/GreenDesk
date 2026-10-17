@@ -152,6 +152,9 @@ const parseCorsOrigins = (source, isProduction, errors) => {
       ) {
         throw new Error('Invalid origin');
       }
+      if (isProduction && origin.protocol !== 'https:') {
+        errors.push('CORS_ORIGINS doit utiliser HTTPS en production.');
+      }
       origins.push(origin.origin);
     } catch {
       errors.push('Chaque valeur de CORS_ORIGINS doit être une origine HTTP(S) sans chemin.');
@@ -337,6 +340,9 @@ export function createEnvironment(source = process.env) {
   const smtpMaxConnections = parsePositiveInteger(source, 'SMTP_MAX_CONNECTIONS', 5, errors);
   const smtpMaxMessages = parsePositiveInteger(source, 'SMTP_MAX_MESSAGES', 100, errors);
   const rateLimitEnabled = parseBoolean(source, 'RATE_LIMIT_ENABLED', true, errors);
+  if (isProduction && !rateLimitEnabled) {
+    errors.push('RATE_LIMIT_ENABLED doit valoir "true" en production.');
+  }
   const authorizationDenialThreshold = parsePositiveInteger(
     source,
     'SECURITY_AUTHORIZATION_DENIAL_THRESHOLD',
@@ -422,6 +428,7 @@ export function createEnvironment(source = process.env) {
         host: smtpHost,
         port: smtpPort,
         secure: smtpSecure,
+        requireTLS: !smtpSecure && (isProduction || smtpAuthType !== 'none'),
         pool: smtpPool,
         maxConnections: smtpMaxConnections,
         maxMessages: smtpMaxMessages,

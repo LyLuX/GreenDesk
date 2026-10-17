@@ -19,6 +19,7 @@ import {
   STOCK_OPERATIONS,
   stockOperationPresentation,
 } from '../inventory/stock-status.js';
+import { getCurrentOperationDate } from '../inventory/operation-date.js';
 import useNotification from '../notifications/useNotification.js';
 import useDebouncedValue from '../hooks/useDebouncedValue.js';
 import { MAX_MAINTENANCE_PART_UNIT_PRICE } from '../maintenance/maintenance-costs.js';
@@ -40,22 +41,6 @@ const PRICE_OPERATION = 'price';
 const MINIMUM_STOCK_OPERATION = 'minimumStock';
 const getMaterialLabel = (material) => material.name;
 const getMaterialKey = (material) => material.uuid;
-const operationDateFormatter = new Intl.DateTimeFormat('fr-FR', {
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-  timeZone: 'Europe/Paris',
-});
-const getCurrentOperationDate = (now = new Date()) => {
-  const parts = Object.fromEntries(
-    operationDateFormatter
-      .formatToParts(now)
-      .filter(({ type }) => type !== 'literal')
-      .map(({ type, value }) => [type, value]),
-  );
-  return `${parts.year}-${parts.month}-${parts.day}`;
-};
-
 /** Shared stock-operation dialog for a maintenance part. */
 export default function StockManagementModal({ part, onClose, onUpdated }) {
   const { hasPermission } = useAuth();
