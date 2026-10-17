@@ -9,7 +9,7 @@ entre fiches papier, tableaux et documents : matériels en service,
 caractéristiques, photos, entretiens à prévoir, pièces nécessaires, état des
 stocks, coûts et historique des actions réalisées.
 
-La version actuelle de GreenDesk est **9.4.1**.
+La version actuelle de GreenDesk est **9.5.0**.
 
 ## Ce que permet GreenDesk
 

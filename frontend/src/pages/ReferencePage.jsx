@@ -57,8 +57,8 @@ export default function ReferencePage({
   );
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(5);
-  const [sort, setSort] = useState(resource === 'materials' ? 'purchaseDate' : 'name');
-  const [direction, setDirection] = useState(resource === 'materials' ? 'DESC' : 'ASC');
+  const sort = resource === 'materials' ? 'purchaseDate' : 'name';
+  const direction = resource === 'materials' ? 'DESC' : 'ASC';
   const [paginationData, setPaginationData] = useState(null);
   const [optionLists, setOptionLists] = useState({});
   const [editing, setEditing] = useState(null);
@@ -422,45 +422,6 @@ export default function ReferencePage({
           })),
         ]}
       />
-      {pagination && resource === 'materials' && (
-        <FilterPanel
-          ariaLabel="Tri"
-          className="small"
-          fields={[
-            {
-              name: 'sort',
-              type: 'select',
-              label: 'Trier par',
-              ariaLabel: 'Trier les matériels par',
-              options: [
-                { value: 'name', label: 'Nom' },
-                { value: 'purchasePrice', label: 'Prix d’achat' },
-                { value: 'purchaseDate', label: 'Date d’achat' },
-              ],
-              value: sort,
-              onChange: (value) => {
-                setSort(value);
-                resetPage();
-              },
-            },
-            {
-              name: 'direction',
-              type: 'select',
-              label: 'Ordre',
-              ariaLabel: 'Choisir l’ordre de tri des matériels',
-              options: [
-                { value: 'ASC', label: 'Croissant' },
-                { value: 'DESC', label: 'Décroissant' },
-              ],
-              value: direction,
-              onChange: (value) => {
-                setDirection(value);
-                resetPage();
-              },
-            },
-          ]}
-        />
-      )}
       {isLoading && <Loader label={`Chargement des ${title.toLowerCase()}`} />}
       {loadError && (
         <div

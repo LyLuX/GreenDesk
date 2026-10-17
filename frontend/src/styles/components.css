@@ -207,6 +207,39 @@
   gap: 1.25rem 2rem;
 }
 
+.filter-panel-fields {
+  display: flex;
+  flex: 0 0 100%;
+  min-width: 0;
+  flex-wrap: inherit;
+  justify-content: inherit;
+  gap: inherit;
+}
+.filter-panel-fields[hidden] {
+  display: none;
+}
+.filter-panel-toggle {
+  display: flex;
+  flex: 0 0 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.25rem 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.filter-panel-toggle:hover {
+  color: var(--brand-forest);
+}
+.filter-panel-toggle[aria-expanded='true'] .sidebar-chevron {
+  transform: rotate(225deg);
+}
+
 .filter-panel .form-label {
   flex: 0 0 100%;
   min-width: 0;

@@ -2,6 +2,17 @@
 
 ## Non publié
 
+## 9.5.0 - 2026-10-17
+
+- [PATCH] La liste des matériels ne présente plus le panneau « Trier par / Ordre »
+  et conserve le tri par date d’achat décroissante.
+
+- [MINOR] Sur mobile, les panneaux de recherche et de filtres sont repliés par
+  défaut et s’ouvrent avec une flèche, tout en conservant les valeurs saisies.
+
+- [PATCH] Sur mobile, le bouton de déconnexion reste sur la même ligne que le
+  menu et la société, dans un en-tête plus compact.
+
 ## 9.4.1 - 2026-10-17
 
 - [PATCH] Les boutons de modification utilisent partout le libellé « Modifier ».

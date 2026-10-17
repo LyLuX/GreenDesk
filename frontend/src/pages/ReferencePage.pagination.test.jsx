@@ -216,8 +216,9 @@ describe('ReferencePage pagination', () => {
       ),
     );
     expect(screen.getByLabelText('Filtrer par statut')).toHaveValue('true');
-    expect(screen.getByLabelText('Trier les matériels par')).toHaveValue('purchaseDate');
-    expect(screen.getByLabelText('Choisir l’ordre de tri des matériels')).toHaveValue('DESC');
+    expect(screen.queryByRole('region', { name: 'Tri' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Trier les matériels par')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Choisir l’ordre de tri des matériels')).not.toBeInTheDocument();
   });
 
   it('keeps the material form action visible outside its scrollable fields', async () => {
