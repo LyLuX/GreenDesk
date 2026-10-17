@@ -379,13 +379,13 @@ describe('administrator table pagination', () => {
     const deactivateButton = screen.getByRole('button', {
       name: 'Désactiver Utilisateur 1',
     });
-    expect(deactivateButton).toHaveClass('btn-outline-edit', 'flex-fill');
+    expect(deactivateButton).toHaveClass('btn-outline-deactivate');
 
     await user.click(deactivateButton);
 
     let dialog = within(screen.getByRole('dialog', { name: 'Désactiver l’utilisateur' }));
     expect(dialog.getByText(/ne pourra plus se connecter/)).toBeVisible();
-    expect(dialog.getByRole('button', { name: 'Désactiver' })).toHaveClass('btn-outline-edit');
+    expect(dialog.getByRole('button', { name: 'Désactiver' })).toHaveClass('btn-deactivate');
     await user.click(dialog.getByRole('button', { name: 'Désactiver' }));
 
     expect(mocks.updateUser).toHaveBeenCalledWith('user-1', { isActive: false });
@@ -394,7 +394,7 @@ describe('administrator table pagination', () => {
     const activateButton = screen.getByRole('button', {
       name: 'Activer Utilisateur 6',
     });
-    expect(activateButton).toHaveClass('btn-outline-brand', 'flex-fill');
+    expect(activateButton).toHaveClass('btn-outline-brand');
 
     await user.click(activateButton);
 

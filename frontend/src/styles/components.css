@@ -624,3 +624,36 @@ textarea.form-control {
 .btn-outline-danger:focus-visible {
   box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--critical-color) 30%, transparent);
 }
+
+.btn-outline-deactivate {
+  --bs-btn-color: var(--action-deactivate-color);
+  --bs-btn-border-color: var(--action-deactivate-color);
+  --bs-btn-hover-color: var(--surface-color);
+  --bs-btn-hover-bg: var(--action-deactivate-color);
+  --bs-btn-hover-border-color: var(--action-deactivate-color);
+  --bs-btn-active-color: var(--surface-color);
+  --bs-btn-active-bg: var(--action-deactivate-hover-color);
+  --bs-btn-active-border-color: var(--action-deactivate-hover-color);
+  --bs-btn-disabled-color: var(--action-deactivate-color);
+  --bs-btn-disabled-border-color: var(--action-deactivate-color);
+}
+
+.btn-deactivate {
+  --bs-btn-color: var(--surface-color);
+  --bs-btn-hover-color: var(--surface-color);
+  --bs-btn-active-color: var(--surface-color);
+  --bs-btn-disabled-color: var(--surface-color);
+  --bs-btn-bg: var(--action-deactivate-color);
+  --bs-btn-border-color: var(--action-deactivate-color);
+  --bs-btn-hover-bg: var(--action-deactivate-hover-color);
+  --bs-btn-hover-border-color: var(--action-deactivate-hover-color);
+  --bs-btn-active-bg: var(--action-deactivate-hover-color);
+  --bs-btn-active-border-color: var(--action-deactivate-hover-color);
+  --bs-btn-disabled-bg: var(--action-deactivate-color);
+  --bs-btn-disabled-border-color: var(--action-deactivate-color);
+}
+
+.btn-outline-deactivate:focus-visible,
+.btn-deactivate:focus-visible {
+  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--action-deactivate-color) 30%, transparent);
+}

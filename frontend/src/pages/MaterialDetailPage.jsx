@@ -1,3 +1,4 @@
+import TableActions from '../components/TableActions.jsx';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import getApiErrorMessage from '../api/get-api-error-message.js';
@@ -677,21 +678,26 @@ export default function MaterialDetailPage() {
                         <td>{file.originalName}</td>
                         <td>{documentTypeLabels[file.documentType] ?? 'Autre'}</td>
                         <td>
-                          <div className="d-flex flex-wrap gap-2">
+                          <TableActions
+                            secondary={
+                              <>
+                                {hasPermission(fleetPermissions.materials.files.delete) && (
+                                  <Button
+                                    type="button"
+                                    disabled={removingFileUuid === file.uuid}
+                                    variant="danger"
+                                    onClick={() => setFileToDelete(file)}
+                                  >
+                                    Supprimer
+                                  </Button>
+                                )}
+                              </>
+                            }
+                          >
                             <Button variant="view" type="button" onClick={() => download(file)}>
                               Télécharger
                             </Button>
-                            {hasPermission(fleetPermissions.materials.files.delete) && (
-                              <Button
-                                type="button"
-                                disabled={removingFileUuid === file.uuid}
-                                variant="danger"
-                                onClick={() => setFileToDelete(file)}
-                              >
-                                Supprimer
-                              </Button>
-                            )}
-                          </div>
+                          </TableActions>
                         </td>
                       </tr>
                     ))}

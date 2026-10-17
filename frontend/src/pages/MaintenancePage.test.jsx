@@ -357,20 +357,15 @@ describe('MaintenancePage', () => {
     });
 
     expect(editButton).toHaveClass('btn-sm', 'btn-outline-edit');
-    expect(editButton).toHaveClass('flex-fill');
+    expect(editButton).not.toHaveClass('flex-fill');
     expect(editButton).not.toHaveClass('btn-brand');
     expect(deleteButton).toHaveClass('btn-sm', 'btn-outline-danger');
     expect(screen.getByRole('button', { name: 'Désactiver Vidange annuelle' })).toHaveClass(
-      'btn-outline-edit',
+      'btn-outline-deactivate',
     );
-    expect(editButton.parentElement).toHaveClass(
-      'd-flex',
-      'h-100',
-      'w-100',
-      'flex-wrap',
-      'align-items-center',
-      'justify-content-center',
-    );
+    expect(editButton.parentElement).toHaveClass('btn-group');
+    expect(deleteButton.parentElement).toHaveClass('btn-group');
+    expect(deleteButton.parentElement).not.toBe(editButton.parentElement);
   });
 
   it('uses blue buttons to activate an inactive maintenance plan', async () => {

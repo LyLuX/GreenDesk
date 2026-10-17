@@ -1,3 +1,4 @@
+import TableActions from './TableActions.jsx';
 import Icon from './Icon.jsx';
 import { getStatusActionButtonClass } from '../utils/status-action.js';
 
@@ -61,12 +62,43 @@ export default function DataTable({
                   ))}
                   {hasActions ? (
                     <td className={cellSpacing}>
-                      <div className="table-actions">
+                      <TableActions
+                        secondary={
+                          <>
+                            {!row.deletedAt && onStatus && (
+                              <button
+                                aria-label={`${row.active ? 'Désactiver' : 'Activer'} ${row.name ?? 'l’élément'}`}
+                                className={`btn btn-sm ${getStatusActionButtonClass(row.active)}`}
+                                type="button"
+                                onClick={() => onStatus(row)}
+                                disabled={actionLoadingId === row.uuid}
+                              >
+                                {actionLoadingId === row.uuid
+                                  ? 'Mise à jour…'
+                                  : row.active
+                                    ? 'Désactiver'
+                                    : 'Activer'}
+                              </button>
+                            )}
+                            {!row.deletedAt && onDelete && (
+                              <button
+                                aria-label={`Supprimer ${row.name ?? 'l’élément'}`}
+                                className="btn btn-sm btn-outline-danger"
+                                type="button"
+                                onClick={() => onDelete(row)}
+                                disabled={actionLoadingId === row.uuid}
+                              >
+                                {actionLoadingId === row.uuid ? 'Suppression…' : 'Supprimer'}
+                              </button>
+                            )}
+                          </>
+                        }
+                      >
                         {renderActions?.(row)}
                         {row.deletedAt && onRestore ? (
                           <button
                             aria-label={`Restaurer ${row.name ?? 'l’élément'}`}
-                            className="btn btn-sm btn-outline-brand flex-fill"
+                            className="btn btn-sm btn-outline-brand"
                             type="button"
                             onClick={() => onRestore(row)}
                             disabled={actionLoadingId === row.uuid}
@@ -77,7 +109,7 @@ export default function DataTable({
                         {!row.deletedAt && onView && (
                           <button
                             aria-label={`Voir ${row.name ?? 'l’élément'}`}
-                            className="btn btn-sm btn-outline-brand-blue flex-fill"
+                            className="btn btn-sm btn-outline-brand-blue"
                             type="button"
                             onClick={() => onView(row)}
                           >
@@ -87,41 +119,15 @@ export default function DataTable({
                         {!row.deletedAt && onEdit && (
                           <button
                             aria-label={`Modifier ${row.name ?? 'l’élément'}`}
-                            className="btn btn-sm btn-outline-edit flex-fill ms-1 me-1"
+                            className="btn btn-sm btn-outline-edit"
                             type="button"
                             onClick={() => onEdit(row)}
                             disabled={actionLoadingId === row.uuid}
                           >
-                            Editer
+                            Modifier
                           </button>
                         )}
-                        {!row.deletedAt && onStatus && (
-                          <button
-                            aria-label={`${row.active ? 'Désactiver' : 'Activer'} ${row.name ?? 'l’élément'}`}
-                            className={`btn btn-sm ${getStatusActionButtonClass(row.active)} ms-1 me-1`}
-                            type="button"
-                            onClick={() => onStatus(row)}
-                            disabled={actionLoadingId === row.uuid}
-                          >
-                            {actionLoadingId === row.uuid
-                              ? 'Mise à jour…'
-                              : row.active
-                                ? 'Désactiver'
-                                : 'Activer'}
-                          </button>
-                        )}
-                        {!row.deletedAt && onDelete && (
-                          <button
-                            aria-label={`Supprimer ${row.name ?? 'l’élément'}`}
-                            className="btn btn-sm btn-outline-danger ms-1 me-1"
-                            type="button"
-                            onClick={() => onDelete(row)}
-                            disabled={actionLoadingId === row.uuid}
-                          >
-                            {actionLoadingId === row.uuid ? 'Suppression…' : 'Supprimer'}
-                          </button>
-                        )}
-                      </div>
+                      </TableActions>
                     </td>
                   ) : null}
                 </tr>

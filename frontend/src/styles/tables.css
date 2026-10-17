@@ -189,11 +189,19 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem;
-  min-width: 10rem;
+  justify-content: center;
+  margin-inline: auto;
+  gap: 0.5rem;
+  width: max-content;
+  max-width: 100%;
 }
-.table-actions > .btn {
+.table-actions .btn-group {
+  flex: 0 0 auto;
+}
+.table-actions .btn {
+  flex: 0 0 auto;
   margin: 0;
+  white-space: nowrap;
 }
 .pagination-controls {
   padding: 1rem 0.25rem;

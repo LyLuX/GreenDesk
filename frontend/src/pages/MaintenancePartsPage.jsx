@@ -196,7 +196,7 @@ export default function MaintenancePartsPage() {
         renderRowActions={(part, { reload }) => (
           <button
             type="button"
-            className="btn btn-sm btn-outline-brand-blue me-1"
+            className="btn btn-sm btn-outline-brand-blue"
             aria-label={`Gérer le stock de ${part.name}`}
             onClick={() => setStockDialog({ part, reload })}
           >

@@ -1,3 +1,4 @@
+import TableActions from '../components/TableActions.jsx';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import getApiErrorMessage from '../api/get-api-error-message.js';
 import { createReferenceApi, listPermissionOptions } from '../api/reference.api.js';
@@ -441,25 +442,32 @@ export default function RolesPage() {
                     </td>
                     <td>{renderPermissionSummary(role.permissions)}</td>
                     <td>
-                      {canOpenEdit && (
-                        <button
-                          className="btn btn-sm btn-outline-edit me-2"
-                          type="button"
-                          onClick={() => openEdit(role)}
-                        >
-                          Modifier
-                        </button>
-                      )}
-                      {canDelete && (
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          type="button"
-                          disabled={removing === role.uuid}
-                          onClick={() => setRoleToDelete(role)}
-                        >
-                          {removing === role.uuid ? 'Suppression…' : 'Supprimer'}
-                        </button>
-                      )}
+                      <TableActions
+                        secondary={
+                          <>
+                            {canDelete && (
+                              <button
+                                className="btn btn-sm btn-outline-danger"
+                                type="button"
+                                disabled={removing === role.uuid}
+                                onClick={() => setRoleToDelete(role)}
+                              >
+                                {removing === role.uuid ? 'Suppression…' : 'Supprimer'}
+                              </button>
+                            )}
+                          </>
+                        }
+                      >
+                        {canOpenEdit && (
+                          <button
+                            className="btn btn-sm btn-outline-edit"
+                            type="button"
+                            onClick={() => openEdit(role)}
+                          >
+                            Modifier
+                          </button>
+                        )}
+                      </TableActions>
                     </td>
                   </tr>
                 ))

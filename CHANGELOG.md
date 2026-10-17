@@ -2,6 +2,18 @@
 
 ## Non publié
 
+## 9.4.1 - 2026-10-17
+
+- [PATCH] Les boutons de modification utilisent partout le libellé « Modifier ».
+
+- [PATCH] Les actions se distinguent par la modification en violet, la
+  désactivation en orange vif et la suppression en rouge, avec une confirmation
+  orange pleine pour désactiver.
+
+- [PATCH] Les actions des tableaux sont compactes, centrées et
+  regroupées par usage, avec la gestion séparée des changements d’état et de
+  la suppression.
+
 ## 9.4.0 - 2026-10-17
 
 - [PATCH] Le lancement du frontend avec `dev:lan` permet aussi d’utiliser

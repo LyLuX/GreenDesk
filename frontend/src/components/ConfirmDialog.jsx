@@ -14,7 +14,7 @@ import Modal from './Modal.jsx';
  * @param {() => void} props.onClose Callback that dismisses the dialog.
  * @param {boolean} [props.busy=false] Disables actions while confirmation is processed.
  * @param {boolean} [props.destructive=true] Uses the destructive action style.
- * @param {'warning'} [props.variant] Uses amber for a reversible action requiring caution.
+ * @param {'warning'} [props.variant] Uses the vivid deactivation color for a sensitive state change.
  * @returns {JSX.Element} The confirmation dialog.
  */
 export default function ConfirmDialog({
@@ -45,7 +45,7 @@ export default function ConfirmDialog({
           Annuler
         </button>
         <button
-          className={`btn ${variant === 'warning' ? 'btn-outline-edit' : destructive ? 'btn-danger' : getStatusActionButtonClass(false)}`}
+          className={`btn ${variant === 'warning' ? 'btn-deactivate' : destructive ? 'btn-danger' : getStatusActionButtonClass(false)}`}
           type="button"
           onClick={onConfirm}
           disabled={busy}

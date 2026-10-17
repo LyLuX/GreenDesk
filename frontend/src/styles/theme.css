@@ -32,8 +32,10 @@
   --brand-sun: #d8b72a;
   --brand-blue: #2c7189;
   --brand-blue-dark: #20566b;
-  --action-edit-color: #946200;
-  --action-edit-hover-color: #754d00;
+  --action-deactivate-color: #c24700;
+  --action-deactivate-hover-color: #9b3900;
+  --action-edit-color: #7050b5;
+  --action-edit-hover-color: #563c94;
   --action-neutral-color: var(--muted);
   --critical-hover-color: #963535;
   --critical-color: #b64141;
