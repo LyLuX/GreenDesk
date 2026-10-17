@@ -443,7 +443,7 @@ export default function RolesPage() {
                     <td>
                       {canOpenEdit && (
                         <button
-                          className="btn btn-sm btn-outline-brand me-2"
+                          className="btn btn-sm btn-outline-edit me-2"
                           type="button"
                           onClick={() => openEdit(role)}
                         >

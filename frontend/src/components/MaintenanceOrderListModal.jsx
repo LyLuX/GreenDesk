@@ -446,7 +446,13 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
               <p role="alert" className="mb-0">
                 {error}
               </p>
-              <Button type="button" className="btn-sm" onClick={() => load()} disabled={loading}>
+              <Button
+                type="button"
+                variant="secondary"
+                className="btn-sm"
+                onClick={() => load()}
+                disabled={loading}
+              >
                 Réessayer
               </Button>
             </div>
@@ -497,7 +503,12 @@ export default function MaintenanceOrderListModal({ open, onClose, initialFilter
           ) : null}
           {data?.items?.length ? (
             <div className="maintenance-order-list-actions mt-3 d-flex justify-content-end">
-              <Button type="button" disabled={loading} onClick={() => window.print()}>
+              <Button
+                variant="view"
+                type="button"
+                disabled={loading}
+                onClick={() => window.print()}
+              >
                 Imprimer la liste
               </Button>
             </div>

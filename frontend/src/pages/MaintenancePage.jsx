@@ -506,7 +506,7 @@ export default function MaintenancePage() {
           {hasPermission(maintenancePermissions.sheets.read) ? (
             <button
               type="button"
-              className="btn btn-outline-brand"
+              className="btn btn-outline-brand-blue"
               onClick={() => setSheetsOpen(true)}
             >
               Fiches de maintenance
@@ -514,7 +514,7 @@ export default function MaintenancePage() {
           ) : null}
           <button
             type="button"
-            className="btn btn-outline-brand"
+            className="btn btn-outline-brand-blue"
             onClick={() => setOrderListOpen(true)}
           >
             Pièces à commander
@@ -675,7 +675,7 @@ export default function MaintenancePage() {
                       {hasPermission(maintenancePermissions.plans.update) && (
                         <button
                           aria-label={`Modifier ${item.title}`}
-                          className="btn btn-sm btn-outline-brand flex-fill"
+                          className="btn btn-sm btn-outline-edit flex-fill"
                           type="button"
                           disabled={busy}
                           onClick={() => openPlanDialog('edit', item)}
@@ -712,7 +712,7 @@ export default function MaintenancePage() {
                       )}
                       <button
                         aria-label={`Voir l’historique de ${item.title}`}
-                        className="btn btn-sm btn-outline-brand flex-fill"
+                        className="btn btn-sm btn-outline-brand-blue flex-fill"
                         type="button"
                         disabled={busy}
                         onClick={() => showHistory(item)}
@@ -1114,6 +1114,9 @@ export default function MaintenancePage() {
         onClose={() => !busy && setConfirmation(null)}
         onConfirm={confirmAction}
         busy={busy}
+        variant={
+          confirmation?.action === 'status' && confirmation?.item.active ? 'warning' : undefined
+        }
         destructive={confirmation?.action === 'delete' || confirmation?.item.active}
       />
     </main>

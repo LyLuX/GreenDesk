@@ -627,7 +627,7 @@ describe('MaintenanceOrderListModal', () => {
     const dialog = screen.getByRole('dialog');
     expect(await within(dialog).findByText('2 pièce')).toBeVisible();
     const printButton = screen.getByRole('button', { name: 'Imprimer la liste' });
-    expect(printButton).toHaveClass('btn', 'btn-brand');
+    expect(printButton).toHaveClass('btn', 'btn-outline-brand-blue');
     expect(printButton.parentElement).toHaveClass('justify-content-end');
     expect(dialog).toHaveClass('maintenance-order-list-modal');
     expect(

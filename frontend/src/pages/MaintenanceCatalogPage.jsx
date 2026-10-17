@@ -213,7 +213,9 @@ export default function MaintenanceCatalogPage({
       {partUuid && (
         <div className="alert alert-info d-flex flex-wrap align-items-center justify-content-between gap-2">
           <span>Affichage limité à la pièce sélectionnée dans les relations.</span>
-          <Button onClick={onClearPartFilter}>Afficher toutes les pièces</Button>
+          <Button variant="secondary" onClick={onClearPartFilter}>
+            Afficher toutes les pièces
+          </Button>
         </div>
       )}
       <FilterPanel
@@ -390,6 +392,9 @@ export default function MaintenanceCatalogPage({
         onClose={() => !busy && setConfirmation(null)}
         onConfirm={runConfirmedAction}
         busy={busy}
+        variant={
+          confirmation?.action === 'status' && confirmation?.row.active ? 'warning' : undefined
+        }
         destructive={confirmation?.action === 'delete' || confirmation?.row.active}
       />
     </main>

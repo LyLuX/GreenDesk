@@ -18,7 +18,7 @@ export default function StatusPanel({
     <Element className="status-panel surface p-4 text-center m-auto d-flex flex-column align-items-center justify-content-center">
       {children}
       {showDashboardLink && (
-        <Link className="btn btn-brand mt-3" to="/dashboard">
+        <Link className="btn btn-outline-secondary mt-3" to="/dashboard">
           Retour au tableau de bord
         </Link>
       )}

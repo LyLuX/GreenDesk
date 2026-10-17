@@ -1,10 +1,10 @@
-@media (max-width: 767.98px) {
-  .sidebar {
+@media (max-width: 991.98px) {
+  .sidebar-frame {
     position: fixed;
     z-index: 1050;
     inset: 0 auto 0 0;
     width: min(86vw, 300px);
-    min-height: 100dvh;
+    height: 100dvh;
     visibility: hidden;
     box-shadow: 0.9rem 0 2rem var(--sidebar-shadow-color);
     transform: translateX(-100%);
@@ -12,12 +12,16 @@
       transform 180ms ease,
       visibility 180ms ease;
   }
-
-  .sidebar.open {
+  .sidebar-frame.open {
     visibility: visible;
     transform: translateX(0);
   }
+  .header-inner {
+    padding-inline: 1.25rem;
+  }
+}
 
+@media (max-width: 767.98px) {
   .app-page {
     padding: 1.25rem;
   }
@@ -93,8 +97,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sidebar,
-  .sidebar-chevron {
+  .sidebar-frame,
+  .sidebar-chevron,
+  .company-switcher-options {
     transition: none;
   }
 }
@@ -138,5 +143,44 @@
 @media (min-width: 992px) {
   .filter-panel .form-label {
     flex-basis: calc((100% - 4rem) / 3);
+  }
+}
+
+@media (max-width: 575.98px) {
+  .header-inner {
+    padding: 0.75rem 1rem;
+    gap: 0.75rem;
+  }
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .app-page {
+    padding: 1rem;
+  }
+  .page-header {
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .page-header > .d-flex {
+    flex-wrap: wrap;
+  }
+  .modal-surface {
+    max-height: calc(100dvh - 1.5rem);
+    padding: 1rem;
+  }
+  .detail-table th {
+    width: 7rem;
+  }
+  .detail-table th,
+  .detail-table td {
+    padding: 0.75rem;
+    overflow-wrap: anywhere;
+  }
+  .confirm-dialog-actions > .btn {
+    flex: 1 1 auto;
+  }
+  .toast-stack {
+    max-width: calc(100vw - 1.5rem);
   }
 }

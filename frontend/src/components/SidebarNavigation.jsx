@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import Icon from './Icon.jsx';
 import { navigationSections } from '../navigation.js';
 
 const routeMatches = (pathname, path) => pathname === path || pathname.startsWith(`${path}/`);
@@ -58,6 +59,7 @@ export default function SidebarNavigation({
         onClick={onNavigate}
         to={item.path}
       >
+        {!nested && <Icon name={item.path === '/dashboard' ? 'dashboard' : 'relations'} />}
         {item.label}
       </NavLink>
     );
@@ -82,7 +84,8 @@ export default function SidebarNavigation({
               type="button"
               onClick={() => setOpenSectionKey(isOpen ? null : section.key)}
             >
-              <span>{section.label}</span>
+              <Icon name={section.key} />
+              <span className="sidebar-item-label">{section.label}</span>
               <span className="sidebar-chevron" aria-hidden="true" />
             </button>
             <div className="sidebar-submenu" hidden={!isOpen} id={submenuId}>

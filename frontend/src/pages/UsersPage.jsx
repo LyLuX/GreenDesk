@@ -484,7 +484,7 @@ export default function UsersPage() {
                           <div className="d-flex h-100 w-100 align-items-center justify-content-center">
                             <button
                               aria-label={`Restaurer ${user.firstName} ${user.lastName}`}
-                              className="btn btn-sm btn-outline-brand-blue flex-fill"
+                              className="btn btn-sm btn-outline-brand flex-fill"
                               type="button"
                               disabled={Boolean(restoring)}
                               onClick={() => setConfirmation({ action: 'restore', user })}
@@ -498,7 +498,7 @@ export default function UsersPage() {
                           {canOpenEdit && (
                             <button
                               aria-label={`Modifier ${user.firstName} ${user.lastName}`}
-                              className="btn btn-sm btn-outline-brand flex-fill"
+                              className="btn btn-sm btn-outline-edit flex-fill"
                               type="button"
                               disabled={Boolean(removing || changingStatus)}
                               onClick={() => openEdit(user)}
@@ -710,6 +710,9 @@ export default function UsersPage() {
         onClose={() => !removing && !restoring && !changingStatus && setConfirmation(null)}
         onConfirm={confirmAction}
         busy={Boolean(removing || restoring || changingStatus)}
+        variant={
+          confirmation?.action === 'status' && confirmation?.user.isActive ? 'warning' : undefined
+        }
         destructive={
           confirmation?.action === 'delete' ||
           (confirmation?.action === 'status' && confirmation?.user.isActive)

@@ -19,6 +19,9 @@
   --bs-btn-hover-border-color: var(--brand-forest);
   --bs-btn-active-bg: var(--brand-forest-dark);
   --bs-btn-active-border-color: var(--brand-forest-dark);
+  --bs-btn-active-color: var(--surface-color);
+  --bs-btn-disabled-color: var(--brand-forest);
+  --bs-btn-disabled-border-color: var(--brand-outline-border-color);
 }
 
 .btn-outline-critical {
@@ -147,9 +150,9 @@
   max-height: 14rem;
   overflow-y: auto;
   background: var(--surface-color);
-  border: 2px solid var(--brand-leaf);
+  border: 1px solid var(--border);
   border-radius: 0.55rem;
-  box-shadow: 0 0.85rem 2rem var(--autocomplete-shadow-color);
+  box-shadow: var(--shadow-md);
 }
 
 .autocomplete-options-top {
@@ -200,7 +203,7 @@
 .filter-panel {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-evenly;
+  justify-content: space-around;
   gap: 1.25rem 2rem;
 }
 
@@ -293,10 +296,9 @@ body.app-scroll-locked {
   overflow-y: auto;
   padding: 1.5rem;
   background: var(--surface-color);
-  border: 0;
-  border-top: 4px solid var(--brand-sun);
-  border-radius: 0.55rem;
-  box-shadow: 0 1rem 3rem var(--modal-shadow-color);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
 }
 
 .maintenance-order-list-modal > :first-child,
@@ -332,7 +334,7 @@ body.app-scroll-locked {
 }
 
 .detail-tabs button[aria-pressed='true'] {
-  border-bottom-color: var(--brand-sun);
+  border-bottom-color: var(--brand-forest);
   color: var(--brand-forest-dark);
 }
 
@@ -401,8 +403,7 @@ body.app-scroll-locked {
 
 .status-panel {
   width: min(100%, 520px);
-  height: min(100%, 360px);
-  border-top: 4px solid var(--brand-sun);
+  min-height: 16rem;
 }
 
 .toast-stack {
@@ -417,4 +418,209 @@ body.app-scroll-locked {
   padding: 0.65rem 0.75rem;
   font-size: 0.875rem;
   box-shadow: 0 0.6rem 1.4rem var(--toast-shadow-color);
+}
+
+/* Shared Bootstrap primitives keep all business modules visually consistent. */
+.btn {
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.6rem 1rem;
+  line-height: 1.4;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+.btn-sm {
+  padding: 0.4rem 0.65rem;
+  font-size: 0.76rem;
+}
+.btn > .ui-icon {
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.4rem;
+}
+.btn:disabled {
+  opacity: var(--control-disabled-opacity);
+}
+.btn-outline-secondary {
+  --bs-btn-color: var(--action-neutral-color);
+  --bs-btn-border-color: var(--control-border-color);
+  --bs-btn-hover-bg: var(--surface-highlight-color);
+  --bs-btn-hover-color: var(--ink);
+  --bs-btn-hover-border-color: var(--control-border-color);
+}
+.form-label,
+.form-check-label {
+  font-size: 0.83rem;
+  font-weight: 500;
+}
+.form-label > .form-control,
+.form-label > .form-select {
+  margin-top: 0.4rem;
+}
+.form-control,
+.form-select {
+  min-width: 0;
+  min-height: 2.65rem;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-color);
+}
+.form-select {
+  padding-right: 2.25rem;
+}
+textarea.form-control {
+  min-height: 6rem;
+  resize: vertical;
+}
+.form-control::placeholder {
+  color: var(--muted);
+  opacity: 0.85;
+}
+.form-control:disabled,
+.form-select:disabled {
+  background-color: var(--surface-highlight-color);
+}
+.form-control[aria-invalid='true'],
+.form-select[aria-invalid='true'] {
+  border-color: var(--critical-color);
+}
+.form-check-input:checked {
+  background-color: var(--brand-forest);
+  border-color: var(--brand-forest);
+}
+.form-check-input:focus {
+  border-color: var(--brand-leaf);
+  box-shadow: 0 0 0 0.2rem var(--brand-focus-color);
+}
+.form-text,
+.invalid-feedback {
+  font-size: 0.78rem;
+}
+.card {
+  --bs-card-border-color: var(--border);
+  --bs-card-border-radius: var(--radius-md);
+  --bs-card-bg: var(--surface-color);
+  box-shadow: var(--shadow-sm);
+}
+.card-header {
+  background: var(--surface-subtle);
+  border-bottom-color: var(--border);
+}
+.alert {
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.dropdown-menu {
+  --bs-dropdown-border-color: var(--border);
+  --bs-dropdown-border-radius: var(--radius-md);
+  --bs-dropdown-link-active-bg: var(--brand-forest);
+  box-shadow: var(--shadow-md);
+  padding: 0.4rem;
+}
+.dropdown-item {
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  padding: 0.6rem 0.75rem;
+}
+.detail-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+.detail-tabs button {
+  padding: 0.8rem 0.4rem;
+  font-size: 0.85rem;
+}
+.modal-surface > :first-child {
+  gap: 1rem;
+}
+.modal-surface .btn-close {
+  flex: 0 0 auto;
+}
+.modal-surface fieldset,
+.app-page fieldset {
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+}
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+.empty-state .ui-icon {
+  width: 2rem;
+  height: 2rem;
+  color: var(--muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+  .app-loader-indicator {
+    animation-duration: 2s;
+  }
+}
+
+.form-section-title {
+  margin: 0.75rem 0 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.form-label {
+  display: block;
+  min-width: 0;
+}
+
+.btn-outline-edit {
+  --bs-btn-color: var(--action-edit-color);
+  --bs-btn-border-color: var(--action-edit-color);
+  --bs-btn-hover-color: var(--surface-color);
+  --bs-btn-hover-bg: var(--action-edit-color);
+  --bs-btn-hover-border-color: var(--action-edit-color);
+  --bs-btn-active-color: var(--surface-color);
+  --bs-btn-active-bg: var(--action-edit-hover-color);
+  --bs-btn-active-border-color: var(--action-edit-hover-color);
+  --bs-btn-disabled-color: var(--action-edit-color);
+  --bs-btn-disabled-border-color: var(--action-edit-color);
+}
+
+/* Destructive Bootstrap actions share GreenDesk's critical palette. */
+.btn-danger {
+  --bs-btn-bg: var(--critical-color);
+  --bs-btn-border-color: var(--critical-color);
+  --bs-btn-hover-bg: var(--critical-hover-color);
+  --bs-btn-hover-border-color: var(--critical-hover-color);
+  --bs-btn-active-bg: var(--critical-hover-color);
+  --bs-btn-active-border-color: var(--critical-hover-color);
+  --bs-btn-disabled-bg: var(--critical-color);
+  --bs-btn-disabled-border-color: var(--critical-color);
+}
+.btn-outline-danger {
+  --bs-btn-color: var(--critical-color);
+  --bs-btn-border-color: var(--critical-color);
+  --bs-btn-hover-bg: var(--critical-color);
+  --bs-btn-hover-border-color: var(--critical-color);
+  --bs-btn-active-bg: var(--critical-hover-color);
+  --bs-btn-active-border-color: var(--critical-hover-color);
+  --bs-btn-disabled-color: var(--critical-color);
+  --bs-btn-disabled-border-color: var(--critical-color);
+}
+.btn-outline-edit:focus-visible {
+  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--action-edit-color) 30%, transparent);
+}
+.btn-outline-brand-blue:focus-visible {
+  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--brand-blue) 30%, transparent);
+}
+.btn-danger:focus-visible,
+.btn-outline-danger:focus-visible {
+  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--critical-color) 30%, transparent);
 }

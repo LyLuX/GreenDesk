@@ -1,11 +1,11 @@
 .table-shell {
-  width: fit-content;
+  width: 100%;
   min-width: min(100%, 48rem);
   max-width: 100%;
   margin-inline: auto;
   overflow: visible;
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   background: var(--surface-color);
   box-shadow: 0 0.18rem 0.7rem var(--table-shadow-color);
 }
@@ -16,11 +16,11 @@
 
 .table-responsive {
   max-width: 100%;
-  overflow-x: visible;
+  overflow-x: auto;
 }
 
 .table-responsive > .table {
-  min-width: min(100%, 48rem);
+  min-width: 40rem;
   max-width: 100%;
   white-space: normal;
 }
@@ -128,7 +128,7 @@
 
 .table-shell thead th {
   border-bottom: 1px solid var(--border);
-  background: var(--surface-highlight-color);
+  background: var(--surface-subtle);
   color: var(--table-heading-color);
   font-size: 0.76rem;
   font-weight: 700;
@@ -157,4 +157,45 @@
 
 .history-changes strong {
   color: var(--brand-forest-dark);
+}
+
+.table {
+  --bs-table-color: var(--ink);
+  --bs-table-hover-bg: var(--surface-subtle);
+  --bs-table-border-color: var(--border);
+  font-size: 0.85rem;
+}
+.table th {
+  font-weight: 600;
+}
+.table td {
+  font-variant-numeric: tabular-nums;
+}
+.table-shell .table-responsive {
+  border-radius: inherit;
+}
+.table-shell tbody tr:last-child > td {
+  border-bottom: 0;
+}
+.table-shell thead th {
+  padding-block: 0.85rem;
+  white-space: nowrap;
+}
+.table-shell td {
+  max-width: 32rem;
+  overflow-wrap: anywhere;
+}
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 10rem;
+}
+.table-actions > .btn {
+  margin: 0;
+}
+.pagination-controls {
+  padding: 1rem 0.25rem;
+  font-size: 0.8rem;
 }

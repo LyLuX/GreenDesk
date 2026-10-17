@@ -4,6 +4,7 @@ import getApiErrorMessage from '../api/get-api-error-message.js';
 import { createReferenceApi } from '../api/reference.api.js';
 import Button from '../components/Button.jsx';
 import FormField from '../components/FormField.jsx';
+import MaterialFormSectionTitle from '../components/MaterialFormSectionTitle.jsx';
 import Loader from '../components/Loader.jsx';
 import normalizeFormValues from '../utils/normalize-form-values.js';
 import { extractPageItems } from '../utils/pagination.js';
@@ -113,7 +114,7 @@ export default function MaterialEditPage() {
   const relationOptions = (items) => items.map((item) => ({ value: item.uuid, label: item.name }));
   return (
     <main className="app-page">
-      <Link className="btn btn-outline-brand" to={`/materials/${uuid}`}>
+      <Link className="btn btn-outline-secondary" to={`/materials/${uuid}`}>
         Retour à la fiche
       </Link>
       <h1 className="page-title mt-4">Modifier {material.name}</h1>
@@ -124,20 +125,22 @@ export default function MaterialEditPage() {
           </p>
         )}
         {fields.map((field) => (
-          <FormField
-            key={field.name}
-            {...field}
-            defaultValue={
-              material[field.name] ?? material[field.name.replace('Uuid', '')]?.uuid ?? ''
-            }
-            options={
-              field.name === 'manufacturerUuid'
-                ? relationOptions(options.manufacturers)
-                : field.name === 'categoryUuid'
-                  ? relationOptions(options.categories)
-                  : undefined
-            }
-          />
+          <div className="d-grid gap-2" key={field.name}>
+            <MaterialFormSectionTitle fieldName={field.name} />
+            <FormField
+              {...field}
+              defaultValue={
+                material[field.name] ?? material[field.name.replace('Uuid', '')]?.uuid ?? ''
+              }
+              options={
+                field.name === 'manufacturerUuid'
+                  ? relationOptions(options.manufacturers)
+                  : field.name === 'categoryUuid'
+                    ? relationOptions(options.categories)
+                    : undefined
+              }
+            />
+          </div>
         ))}
         <Button type="submit" disabled={saving}>
           {saving ? 'Enregistrement…' : 'Enregistrer'}

@@ -9,7 +9,7 @@ entre fiches papier, tableaux et documents : matériels en service,
 caractéristiques, photos, entretiens à prévoir, pièces nécessaires, état des
 stocks, coûts et historique des actions réalisées.
 
-La version actuelle de GreenDesk est **9.3.0**.
+La version actuelle de GreenDesk est **9.4.0**.
 
 ## Ce que permet GreenDesk
 
@@ -192,6 +192,12 @@ npm install
 npm run dev
 ```
 
+Pour autoriser aussi les connexions depuis le réseau local, utiliser
+`npm run dev:lan` à la place de `npm run dev`. Ce mode conserve l’accès par
+`http://greendesk.org:5173` et permet l’accès par l’adresse IP locale du PC.
+Le nom `greendesk.org` doit pointer vers ce PC depuis l’appareil utilisé
+(fichier hosts ou DNS local), comme pour le mode `dev`.
+
 Vite transmet par défaut les appels `/api` au backend local. Les éventuelles
 adaptations frontend peuvent être placées dans `frontend/.env`.
 
@@ -282,8 +288,12 @@ sont pas imposées. Le workflow vérifie également le formatage Prettier avec
 `npm run format:check` ; `npm run format` corrige les écarts localement. Les
 dépendances, la couverture et le build frontend sont exclus du formatage. Pour
 rendre les fusions bloquantes, configurer une protection de `main` exigeant une
-pull request et les contrôles `Validation GreenDesk` et `Validation MySQL` après
-sa première exécution réussie.
+pull request et les contrôles `Validation GreenDesk`, `Validation MySQL` et
+`Sécurité GreenDesk` après leur première exécution réussie. Le contrôle commun
+refuse également les validations annulées, ignorées ou absentes. Les rapports
+JSON sont conservés trente jours avec le SHA et la tentative du run.
+La [matrice R6 et les conditions de livraison](docs/security-release-gates.md)
+précisent les preuves, les commandes et l’activation des protections GitHub.
 
 Depuis la racine :
 

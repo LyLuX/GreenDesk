@@ -270,7 +270,7 @@ describe('DashboardPage', () => {
     );
     expect(within(dialog).getByRole('link', { name: 'Voir la maintenance' })).toHaveClass(
       'btn',
-      'btn-outline-brand',
+      'btn-outline-brand-blue',
     );
   });
 

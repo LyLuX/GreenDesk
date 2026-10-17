@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import PermissionRoute from './auth/PermissionRoute.jsx';
 import ProtectedRoute from './auth/ProtectedRoute.jsx';
 import AppFooter from './components/AppFooter.jsx';
@@ -80,23 +80,45 @@ function DocumentTitle() {
   return null;
 }
 
+/** Public and standalone status pages retain their full-width footer. */
+function StandaloneLayout() {
+  return (
+    <div className="standalone-layout">
+      <Outlet />
+      <AppFooter />
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <>
       <DocumentTitle />
-      <Suspense fallback={<Loader className="app-page" label="Chargement de la page" />}>
+      <Suspense
+        fallback={
+          <>
+            <Loader className="app-page" label="Chargement de la page" />
+            <AppFooter />
+          </>
+        }
+      >
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/verify-email" element={<EmailVerificationPage />} />
-          <Route
-            path="/register"
-            element={
-              publicRegistrationEnabled ? <RegisterPage /> : <Navigate to="/login" replace />
-            }
-          />
+          <Route element={<StandaloneLayout />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/verify-email" element={<EmailVerificationPage />} />
+            <Route
+              path="/register"
+              element={
+                publicRegistrationEnabled ? <RegisterPage /> : <Navigate to="/login" replace />
+              }
+            />
+          </Route>
           <Route element={<ProtectedRoute />}>
-            <Route path="/403" element={<ForbiddenPage />} />
+            <Route element={<StandaloneLayout />}>
+              <Route path="/403" element={<ForbiddenPage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
             <Route element={<AppLayout />}>
               <Route
                 path="/dashboard"
@@ -177,11 +199,9 @@ export default function App() {
                 )}
               />
             </Route>
-            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
       </Suspense>
-      <AppFooter />
     </>
   );
 }
