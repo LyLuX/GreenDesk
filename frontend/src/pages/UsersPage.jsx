@@ -1,3 +1,4 @@
+import ContactLink from '../components/ContactLink.jsx';
 import ResponsiveTable from '../components/ResponsiveTable.jsx';
 import TableActions from '../components/TableActions.jsx';
 import { useCallback, useEffect, useState } from 'react';
@@ -452,7 +453,9 @@ export default function UsersPage() {
                       <strong>
                         {user.firstName} {user.lastName}
                       </strong>
-                      <span className="d-block small text-body-secondary">{user.email}</span>
+                      <span className="d-block small text-body-secondary">
+                        <ContactLink value={user.email} />
+                      </span>
                     </td>
                     <td>{user.roles?.map((role) => role.name).join(', ') || 'Aucun rôle'}</td>
                     <td>

@@ -1,3 +1,4 @@
+import ContactLink from '../components/ContactLink.jsx';
 import { activityStatusFilter } from '../filters/filter-options.js';
 import ReferencePage from './ReferencePage.jsx';
 import fleetPermissions from '../permissions/fleet.permissions.js';
@@ -22,8 +23,17 @@ export default function SuppliersPage() {
       columns={[
         { key: 'name', label: 'Nom' },
         { key: 'contactName', label: 'Contact', hideOnMobile: true },
-        { key: 'email', label: 'E-mail', hideOnMobile: true },
-        { key: 'phone', label: 'Téléphone' },
+        {
+          key: 'email',
+          label: 'E-mail',
+          hideOnMobile: true,
+          render: (value) => <ContactLink value={value} />,
+        },
+        {
+          key: 'phone',
+          label: 'Téléphone',
+          render: (value) => <ContactLink type="phone" value={value} />,
+        },
         {
           key: 'active',
           hideOnMobile: true,

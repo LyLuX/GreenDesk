@@ -2,6 +2,7 @@ import { Sequelize } from 'sequelize';
 
 import env from './env.js';
 import logger from '../core/logger/logger.js';
+import { createDatabaseLoggingOptions } from '../core/logger/database-logging.js';
 
 /**
  * Sequelize connection shared by application modules.
@@ -17,9 +18,7 @@ const sequelize = new Sequelize(env.database.name, env.database.user, env.databa
     charset: 'utf8mb4',
   },
   timezone: '+00:00',
-  logging: env.database.logging
-    ? () => logger.debug('Database statement executed', { event: 'database.statement' })
-    : false,
+  ...createDatabaseLoggingOptions(env, logger),
   define: {
     underscored: true,
     timestamps: true,

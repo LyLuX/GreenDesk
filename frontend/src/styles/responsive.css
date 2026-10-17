@@ -50,6 +50,10 @@
 }
 
 @media (max-width: 575.98px) {
+  .material-interventions-table:not(.table-mobile-stacked) :is(th, td):nth-child(2) {
+    width: 50%;
+  }
+
   .table-actions {
     flex-direction: column;
   }

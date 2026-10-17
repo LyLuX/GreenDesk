@@ -118,7 +118,7 @@ export default function MaterialEditPage() {
         Retour à la fiche
       </Link>
       <h1 className="page-title mt-4">Modifier {material.name}</h1>
-      <form className="surface mt-4 d-grid gap-4 p-4" onSubmit={submit}>
+      <form className="surface mt-4 d-grid gap-4 p-2" onSubmit={submit}>
         {error && (
           <p role="alert" className="alert alert-danger mb-0">
             {error}

@@ -1,3 +1,4 @@
+import ContactLink from '../components/ContactLink.jsx';
 import { useCallback, useEffect, useState } from 'react';
 
 import getApiErrorMessage from '../api/get-api-error-message.js';
@@ -173,7 +174,11 @@ const columns = [
     key: 'user',
     label: 'Utilisateur',
     render: (value) =>
-      value ? `${value.firstName || ''} ${value.lastName || ''}`.trim() || value.email : 'Système',
+      value
+        ? `${value.firstName || ''} ${value.lastName || ''}`.trim() || (
+            <ContactLink value={value.email} />
+          )
+        : 'Système',
   },
 ];
 

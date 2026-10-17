@@ -52,7 +52,9 @@ export default function MaterialMaintenanceHistory({ materialUuid }) {
           <Button onClick={() => setAttempt((value) => value + 1)}>Réessayer</Button>
         </div>
       ) : result.items.length === 0 ? (
-        <p className="text-body-secondary">Aucun entretien enregistré.</p>
+        <div className="surface p-4">
+          <p className="mb-0 text-body-secondary">Aucun entretien enregistré.</p>
+        </div>
       ) : (
         <div className="table-shell table-responsive overflow-auto">
           <ResponsiveTable className="table table-hover align-middle maintenance-history-table">

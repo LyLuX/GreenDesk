@@ -822,12 +822,14 @@ export default function MaterialDetailPage() {
               {canReadMaintenance && (
                 <>
                   {interventions.length === 0 ? (
-                    <p className="text-body-secondary">
-                      Aucune intervention ponctuelle enregistrée.
-                    </p>
+                    <div className="surface p-4">
+                      <p className="mb-0 text-body-secondary">
+                        Aucune intervention ponctuelle enregistrée.
+                      </p>
+                    </div>
                   ) : (
                     <div className="table-shell table-responsive">
-                      <ResponsiveTable className="table table-hover align-middle">
+                      <ResponsiveTable className="table table-hover align-middle material-interventions-table">
                         <thead>
                           <tr>
                             <th>Date</th>

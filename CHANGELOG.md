@@ -2,6 +2,24 @@
 
 ## Non publié
 
+## 9.5.3 - 2026-10-17
+
+- [PATCH] En développement uniquement, les traces SQL activées affichent la requête
+  avec ses valeurs masquées, le type d’opération et la durée d’exécution.
+  Le comportement de production reste inchangé.
+
+- [PATCH] Les coordonnées des fournisseurs et les adresses e-mail des utilisateurs
+  sont cliquables pour appeler ou écrire avec l’application par défaut de l’appareil.
+
+- [PATCH] Dans la fiche matériel, les messages de maintenance sans enregistrement
+  utilisent le même encadré que les plans d’entretien vides.
+
+- [PATCH] Le formulaire de modification d’un matériel utilise des marges intérieures
+  plus compactes.
+
+- [PATCH] Sur mobile, la colonne Description des interventions ponctuelles occupe
+  moins de place pour mieux répartir l’espace avec la date et le coût.
+
 ## 9.5.2 - 2026-10-17
 
 - [PATCH] Les dates des tableaux s’affichent sans l’heure sur ordinateur et sur mobile.

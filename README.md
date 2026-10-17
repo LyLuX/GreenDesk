@@ -9,7 +9,7 @@ entre fiches papier, tableaux et documents : matériels en service,
 caractéristiques, photos, entretiens à prévoir, pièces nécessaires, état des
 stocks, coûts et historique des actions réalisées.
 
-La version actuelle de GreenDesk est **9.5.2**.
+La version actuelle de GreenDesk est **9.5.3**.
 
 ## Ce que permet GreenDesk
 
@@ -156,6 +156,12 @@ Le fichier `.env.example` documente la configuration disponible. Pour commencer,
 il suffit d’adapter la connexion MySQL, l’origine du frontend et le secret de
 session. La configuration SMTP est facultative hors des parcours qui envoient un
 email.
+
+En développement (`NODE_ENV=development`), `DATABASE_LOGGING=true` affiche au niveau
+`debug` le type d’opération SQL, la requête avec ses valeurs remplacées par `?`
+et sa durée en millisecondes. Les commentaires et les paramètres bruts ne sont pas
+journalisés ; une requête non reconnue est masquée entièrement. Le comportement
+et le niveau de journalisation de production restent inchangés.
 
 Le démarrage vérifie l’historique des migrations et ne modifie jamais le schéma.
 Après une mise à jour, exécuter `npm run db:migrate:status`,
