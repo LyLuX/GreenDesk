@@ -147,12 +147,14 @@ export default class HistoryService {
     const items = sources
       .flatMap((source) => source.items)
       .sort((left, right) => {
-        const dateOrder = businessDateKey(right.occurredAt).localeCompare(
-          businessDateKey(left.occurredAt),
-        );
+        const dateOrder =
+          section === HISTORY_SECTIONS.MAINTENANCE
+            ? businessDateKey(right.occurredAt).localeCompare(businessDateKey(left.occurredAt))
+            : new Date(right.occurredAt) - new Date(left.occurredAt);
         if (dateOrder) return dateOrder;
         const recordedOrder = new Date(right.recordedAt) - new Date(left.recordedAt);
-        return recordedOrder || right.uuid.localeCompare(left.uuid);
+        // Stable sorting preserves each journal's descending ID order for identical timestamps.
+        return recordedOrder;
       })
       .slice(pagination.offset, pagination.offset + pagination.limit);
     const total = sources.reduce((sum, source) => sum + Number(source.count || 0), 0);

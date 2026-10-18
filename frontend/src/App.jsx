@@ -166,7 +166,13 @@ export default function App() {
               <Route path="/maintenance/suppliers" element={<Navigate to="/suppliers" replace />} />
               <Route
                 path="/users"
-                element={secure(administrationPermissions.users.read, <UsersPage />)}
+                element={secure(
+                  [
+                    administrationPermissions.users.read,
+                    administrationPermissions.users.company.create,
+                  ],
+                  <UsersPage />,
+                )}
               />
               <Route
                 path="/companies"

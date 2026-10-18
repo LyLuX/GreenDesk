@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import sequelize, { connectDatabase } from '../config/database.js';
 import env from '../config/env.js';
 import permissionDefinitions from '../core/constants/permission-definitions.js';
+import administrationPermissions from '../core/constants/administration-permissions.js';
 import { roleUserReadPermissionName } from '../core/constants/user-visibility-permissions.js';
 import { initializeModels } from '../core/database/models.js';
 import { withTransaction } from '../core/database/transaction-context.js';
@@ -76,6 +77,14 @@ export async function seedDevelopmentData(credentials, dependencies = {}) {
     } else {
       await permissionService.create(definition);
     }
+  }
+
+  const managerRole = await roleRepository.findByName('MANAGER');
+  const managerCreationPermission = await permissionService.permissionRepository.findByName(
+    administrationPermissions.users.company.create,
+  );
+  if (managerRole && managerCreationPermission) {
+    await roleRepository.addPermission(managerRole, managerCreationPermission);
   }
 
   const adminRole = await roleRepository.findByName('ADMIN');

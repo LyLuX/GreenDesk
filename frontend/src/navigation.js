@@ -81,7 +81,14 @@ export const navigationSections = [
     label: 'Administration',
     items: [
       { label: 'Sociétés', path: '/companies', permission: companyPermissions.read },
-      { label: 'Utilisateurs', path: '/users', permission: administrationPermissions.users.read },
+      {
+        label: 'Utilisateurs',
+        path: '/users',
+        permission: [
+          administrationPermissions.users.read,
+          administrationPermissions.users.company.create,
+        ],
+      },
       { label: 'Rôles', path: '/roles', permission: administrationPermissions.roles.read },
       {
         label: 'Permissions',

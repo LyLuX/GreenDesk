@@ -114,17 +114,20 @@ describe('root route', () => {
   });
 
   it.each([
-    ['/users', 'Utilisateurs', 'users.read'],
+    ['/users', 'Utilisateurs', 'users.read,users.company.create'],
     ['/roles', 'Rôles', 'roles.read'],
     ['/permissions', 'Permissions', 'permissions.read'],
-  ])('protects %s with its administration read permission', async (path, heading, permission) => {
-    render(
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-      </MemoryRouter>,
-    );
+  ])(
+    'protects %s with its administration access permissions',
+    async (path, heading, permission) => {
+      render(
+        <MemoryRouter initialEntries={[path]}>
+          <App />
+        </MemoryRouter>,
+      );
 
-    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
-    expect(screen.getByTestId(permission)).toBeInTheDocument();
-  });
+      expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
+      expect(screen.getByTestId(permission)).toBeInTheDocument();
+    },
+  );
 });

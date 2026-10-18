@@ -392,12 +392,26 @@ export const openApiPaths = {
       tags: ['Users'],
       summary: 'Crée un utilisateur et lui attribue éventuellement des rôles.',
       description:
-        'Nécessite `users.create`. Fournir `roleUuids` nécessite `users.roles.update` et fournir `companyUuids` nécessite `users.companies.update`. Restaurer implicitement un compte supprimé portant le même email nécessite aussi `users.deleted.update`. Sans `companyUuids`, la société active est attribuée. Les champs hors contrat sont refusés (400), y compris les identifiants, le hash de mot de passe et la version de session. Le nom de famille est stocké en majuscules.',
+        'Nécessite `users.create` ou `users.company.create`. Avec `users.company.create` seul, le compte reçoit le rôle USER : `roleUuids` est interdit (403), seules les sociétés actives de rattachement du créateur peuvent être attribuées (403 sinon), et une liste vide est refusée (400). La société active doit aussi faire partie de ses rattachements ; `companies.access.all` n’étend pas ce droit. Un compte existant actif provoque 409, un compte supprimé ne peut pas être restauré par ce droit limité (403). Avec `users.create`, fournir `roleUuids` nécessite `users.roles.update` et fournir `companyUuids` nécessite `users.companies.update` ; la restauration implicite exige `users.deleted.update`. Sans `companyUuids`, la société active est attribuée. Les champs hors contrat sont refusés (400), y compris les identifiants, le hash de mot de passe et la version de session. Le nom de famille est stocké en majuscules.',
       security: secure,
       requestBody: jsonBody('UserCreateRequest'),
       responses: {
         201: jsonResponse('UserResponse', 'Utilisateur créé.'),
         ...writeErrors,
+      },
+    },
+  },
+  '/users/creation-companies': {
+    get: {
+      operationId: 'listUserCreationCompanies',
+      tags: ['Users'],
+      summary: 'Liste les sociétés disponibles pour une création limitée de compte.',
+      description:
+        'Nécessite `users.company.create`. Retourne uniquement les UUID et noms des sociétés actives auxquelles le créateur est réellement rattaché. `companies.access.all` ne permet pas de voir d’autres sociétés dans cette liste. Aucun droit de consultation des utilisateurs ou du référentiel des sociétés n’est ajouté.',
+      security: secure,
+      responses: {
+        200: jsonResponse('UserCreationCompaniesResponse', 'Sociétés de rattachement actives.'),
+        ...standardErrors,
       },
     },
   },

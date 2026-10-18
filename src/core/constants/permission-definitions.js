@@ -18,6 +18,10 @@ const permissionDefinitions = [
     description: 'Créer de nouveaux comptes utilisateur.',
   },
   {
+    name: administrationPermissions.users.company.create,
+    description: 'Créer des comptes USER uniquement dans ses sociétés de rattachement.',
+  },
+  {
     name: administrationPermissions.users.update,
     description: 'Modifier les informations générales des utilisateurs.',
   },

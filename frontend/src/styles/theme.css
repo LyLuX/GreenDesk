@@ -102,7 +102,7 @@
   --table-heading-color: #66756d;
   --file-error-color: #a42121;
   --maintenance-exception-background: #fff5f5;
-  --loader-track-color: #d6e2d7;
+  --loader-track-color: color-mix(in srgb, var(--brand-forest) 15%, var(--surface-color));
   --print-ink-color: #000;
   --print-heading-color: #24362b;
   --relation-edge-group-color: #82918a;

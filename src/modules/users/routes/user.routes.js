@@ -5,6 +5,7 @@ import administrationPermissions from '../../../core/constants/administration-pe
 import {
   authorize,
   authorizeBodyFields,
+  hasPermission,
 } from '../../../core/middlewares/authorization.middleware.js';
 import { validateRequest } from '../../../core/middlewares/validate-request.js';
 import { asyncHandler } from '../../../core/utils/async-handler.js';
@@ -32,6 +33,11 @@ router.get(
   asyncHandler(controller.getAll.bind(controller)),
 );
 router.get(
+  '/creation-companies',
+  authorize(administrationPermissions.users.company.create),
+  asyncHandler(controller.getCreationCompanies.bind(controller)),
+);
+router.get(
   '/:uuid',
   authorize(administrationPermissions.users.read),
   userUuidValidator,
@@ -40,11 +46,18 @@ router.get(
 );
 router.post(
   '/',
-  authorize(administrationPermissions.users.create),
-  authorizeBodyFields(null, {
-    roleUuids: administrationPermissions.users.roles.update,
-    companyUuids: administrationPermissions.users.companies.update,
-  }),
+  authorize(administrationPermissions.users.create, administrationPermissions.users.company.create),
+  (request, response, next) => {
+    const fullCreation = hasPermission(request, administrationPermissions.users.create);
+    return authorizeBodyFields(null, {
+      roleUuids: fullCreation
+        ? administrationPermissions.users.roles.update
+        : administrationPermissions.users.create,
+      companyUuids: fullCreation
+        ? administrationPermissions.users.companies.update
+        : administrationPermissions.users.company.create,
+    })(request, response, next);
+  },
   createUserValidator,
   validateRequest,
   asyncHandler(controller.create.bind(controller)),

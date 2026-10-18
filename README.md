@@ -9,7 +9,7 @@ entre fiches papier, tableaux et documents : matériels en service,
 caractéristiques, photos, entretiens à prévoir, pièces nécessaires, état des
 stocks, coûts et historique des actions réalisées.
 
-La version actuelle de GreenDesk est **9.5.3**.
+La version actuelle de GreenDesk est **9.6.0**.
 
 ## Ce que permet GreenDesk
 
@@ -25,6 +25,15 @@ maintenance imprimables.
 L’administration permet de gérer les sociétés, les utilisateurs, les rôles et
 les droits d’accès. Les sociétés et utilisateurs supprimés restent consultables
 et peuvent être restaurés lorsque l’utilisateur connecté y est autorisé.
+
+La permission `users.company.create`, attribuée au rôle MANAGER, permet de créer
+un compte avec le rôle USER dans une ou plusieurs sociétés actives auxquelles le
+créateur est rattaché. Les rôles étant globaux, le périmètre d’un manager
+correspond à tous ses rattachements. La société active doit appartenir à ce
+périmètre ; l’accès global aux sociétés ne l’élargit pas. Ce droit ne permet
+ni de choisir d’autres rôles, ni de modifier ou restaurer un compte existant, ni
+de consulter la liste des utilisateurs. Les permissions de création et de gestion
+administrative existantes restent indépendantes.
 
 ### Décrire et suivre le parc matériel
 

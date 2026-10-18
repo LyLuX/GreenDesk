@@ -15,6 +15,50 @@ const auditRow = (overrides = {}) => ({
 });
 
 describe('HistoryService', () => {
+  it.each(['fleet', 'administration'])(
+    'sorts %s events using the full timestamp',
+    async (section) => {
+      const repository = {
+        findAuditEvents: jest.fn().mockResolvedValue({
+          count: 3,
+          rows: [
+            auditRow({ uuid: 'z-oldest', createdAt: '2026-10-17T10:02:07.000Z' }),
+            auditRow({ uuid: 'm-middle', createdAt: '2026-10-17T10:02:07.001Z' }),
+            auditRow({ uuid: 'a-latest', createdAt: '2026-10-17T10:02:08.000Z' }),
+          ],
+        }),
+      };
+
+      const result = await new HistoryService(repository).list(section, { page: 1, limit: 5 });
+
+      expect(result.items.map(({ uuid }) => uuid)).toEqual(['a-latest', 'm-middle', 'z-oldest']);
+    },
+  );
+
+  it.each(['fleet', 'administration', 'maintenance'])(
+    'preserves journal order for %s events recorded at the same instant',
+    async (section) => {
+      const repository = {
+        findAuditEvents: jest.fn().mockResolvedValue({
+          count: 2,
+          rows: [
+            auditRow({ id: 1055, uuid: 'a-update', action: 'UPDATE' }),
+            auditRow({ id: 1054, uuid: 'z-create', action: 'CREATE' }),
+          ],
+        }),
+        findPlannedExecutions: jest.fn().mockResolvedValue({ count: 0, rows: [] }),
+        findInterventions: jest.fn().mockResolvedValue({ count: 0, rows: [] }),
+        findStockMovements: jest.fn().mockResolvedValue({ count: 0, rows: [], parts: [] }),
+        findPriceChanges: jest.fn().mockResolvedValue({ count: 0, rows: [] }),
+      };
+
+      const result = await new HistoryService(repository).list(section, { page: 1, limit: 5 });
+
+      expect(result.items.map(({ action }) => action)).toEqual(['UPDATE', 'CREATE']);
+      expect(result.items[0]).not.toHaveProperty('id');
+    },
+  );
+
   it('maps maintenance sheet printing to its dedicated history event', () => {
     const service = new HistoryService({});
 

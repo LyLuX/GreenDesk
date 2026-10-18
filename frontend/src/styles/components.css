@@ -417,7 +417,7 @@ body.app-scroll-locked {
   width: 2.5rem;
   aspect-ratio: 1;
   border: 0.25rem solid var(--loader-track-color);
-  border-right-color: var(--brand-sun);
+  border-right-color: var(--brand-leaf);
   border-top-color: var(--brand-forest);
   border-radius: 50%;
   animation: greendesk-loader-spin 0.8s linear infinite;

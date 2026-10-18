@@ -18,6 +18,7 @@ export default function SidebarNavigation({
   sections = navigationSections,
 }) {
   const { pathname } = useLocation();
+
   const visibleSections = useMemo(
     () =>
       sections
@@ -26,7 +27,11 @@ export default function SidebarNavigation({
             ? section
             : {
                 ...section,
-                items: section.items.filter((item) => hasPermission(item.permission)),
+                items: section.items.filter((item) =>
+                  (Array.isArray(item.permission) ? item.permission : [item.permission]).some(
+                    (permission) => hasPermission(permission),
+                  ),
+                ),
               },
         )
         .filter((section) =>

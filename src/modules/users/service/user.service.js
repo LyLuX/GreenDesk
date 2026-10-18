@@ -93,6 +93,17 @@ export default class UserService {
     return this.update(uuid, values, null, null, IDENTITY_ACCESS);
   }
 
+  /** Read actual affiliations: global company access must not expand scoped creation rights. */
+  async getCreationCompanies(actorClaims) {
+    const actor = actorClaims?.userId
+      ? await this.userRepository.findById(actorClaims.userId)
+      : null;
+    if (!actor) throw new AppError('Insufficient permissions', HTTP_STATUS.FORBIDDEN);
+    return (actor.companies ?? [])
+      .filter((company) => company.active !== false)
+      .map(({ uuid, name }) => ({ uuid, name }));
+  }
+
   async create(
     values,
     actorUserId = null,
@@ -102,6 +113,31 @@ export default class UserService {
     const isIdentity = identityAccess === IDENTITY_ACCESS;
     if (!isIdentity) requireCompanyScope();
     values = userWriteValues(values, isIdentity ? USER_UPDATE_FIELDS : USER_CREATE_FIELDS);
+    const scopedCreation =
+      !isIdentity &&
+      actorClaims?.permissions?.includes(administrationPermissions.users.company.create) &&
+      !actorClaims?.permissions?.includes(administrationPermissions.users.create);
+    if (scopedCreation) {
+      if (values.roleUuids !== undefined) {
+        throw new AppError('Insufficient permissions', HTTP_STATUS.FORBIDDEN);
+      }
+      if (
+        values.companyUuids !== undefined &&
+        (!Array.isArray(values.companyUuids) || !values.companyUuids.length)
+      ) {
+        throw new AppError('Sélectionnez au moins une société.', HTTP_STATUS.BAD_REQUEST);
+      }
+      const companies = await this.getCreationCompanies(actorClaims);
+      const allowed = new Set(companies.map(({ uuid }) => uuid));
+      const requested = values.companyUuids ?? [requireCompanyScope().companyUuid];
+      if (
+        !allowed.has(requireCompanyScope().companyUuid) ||
+        requested.some((uuid) => !allowed.has(uuid))
+      ) {
+        throw new AppError('Accès à cette société interdit.', HTTP_STATUS.FORBIDDEN);
+      }
+      defaultRoleName = 'USER';
+    }
     const email = values.email.toLowerCase();
     const { roleUuids, companyUuids, password, ...userValues } = values;
     const emailVerifiedAt = requireEmailVerification ? null : new Date();
@@ -127,7 +163,10 @@ export default class UserService {
         throw new AppError('Email is already in use', HTTP_STATUS.CONFLICT);
       const oldValues = existingUser ? this.publicUser(existingUser) : null;
       if (existingUser) {
-        if (!actorClaims?.permissions?.includes(administrationPermissions.users.deleted.update)) {
+        if (
+          scopedCreation ||
+          !actorClaims?.permissions?.includes(administrationPermissions.users.deleted.update)
+        ) {
           throw new AppError('Insufficient permissions', HTTP_STATUS.FORBIDDEN);
         }
         await this.userRepository.restore(existingUser, { transaction });

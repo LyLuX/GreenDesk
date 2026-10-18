@@ -85,9 +85,11 @@ describe('local development seeder safety', () => {
     async ({ existingAdmin, operation }) => {
       const admin = { uuid: `${operation}-admin` };
       const adminRole = { uuid: 'admin-role', name: 'ADMIN' };
+      const managerRole = { uuid: 'manager-role', name: 'MANAGER' };
       const roleRepository = {
-        findByName: jest.fn().mockResolvedValue(adminRole),
+        findByName: jest.fn(async (name) => (name === 'MANAGER' ? managerRole : adminRole)),
         setPermissions: jest.fn().mockResolvedValue(undefined),
+        addPermission: jest.fn().mockResolvedValue(undefined),
       };
       const permissionService = {
         permissionRepository: {
@@ -141,6 +143,10 @@ describe('local development seeder safety', () => {
         expect(userService.createIdentity).toHaveBeenCalledWith(expectedValues);
         expect(userService.updateIdentity).not.toHaveBeenCalled();
       }
+      expect(roleRepository.addPermission).toHaveBeenCalledWith(
+        managerRole,
+        expect.objectContaining({ name: 'users.company.create' }),
+      );
       expect(userRepository.setRoles).toHaveBeenCalledWith(admin, [adminRole]);
       expect(roleRepository.setPermissions).toHaveBeenCalledWith(
         adminRole,

@@ -2,6 +2,19 @@
 
 ## Non publié
 
+## 9.6.0 - 2026-10-18
+
+- [PATCH] Les indicateurs de chargement utilisent les verts du thème actuel
+  de GreenDesk sur toutes les pages.
+
+- [PATCH] Les historiques conservent la date et l’heure complètes pour le tri et
+  respectent l’ordre d’enregistrement lorsque deux événements ont le même horodatage.
+
+- [MINOR] Les managers peuvent créer des comptes USER dans une ou plusieurs de
+  leurs sociétés de rattachement grâce à la permission dédiée
+  `users.company.create`, sans pouvoir attribuer d’autres rôles ni agir hors de
+  leur périmètre.
+
 ## 9.5.3 - 2026-10-17
 
 - [PATCH] En développement uniquement, les traces SQL activées affichent la requête

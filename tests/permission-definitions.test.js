@@ -17,7 +17,7 @@ describe('permission definitions', () => {
     const names = permissionDefinitions.map(({ name }) => name);
 
     expect(new Set(names).size).toBe(names.length);
-    expect(names).toHaveLength(88);
+    expect(names).toHaveLength(89);
     expect(names).toEqual(
       expect.arrayContaining([
         'maintenance.operations.read',
@@ -47,6 +47,7 @@ describe('permission definitions', () => {
         'dashboard.read.financial',
         'users.read',
         'users.all.read',
+        'users.company.create',
         'users.deleted.read',
         'users.deleted.update',
         'users.status.update',

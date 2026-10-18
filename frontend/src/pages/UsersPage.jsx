@@ -9,6 +9,7 @@ import {
   createUser,
   deleteUser,
   listUsers,
+  listUserCreationCompanies,
   resendUserEmailVerification,
   restoreUser,
   updateUser,
@@ -50,7 +51,11 @@ const companiesApi = createReferenceApi('companies');
 export default function UsersPage() {
   const { hasPermission, activeCompany } = useAuth();
   const { notify } = useNotification();
-  const canCreate = hasPermission(administrationPermissions.users.create);
+  const canReadUsers = hasPermission(administrationPermissions.users.read);
+  const canCreateGlobally = hasPermission(administrationPermissions.users.create);
+  const canCreateInCompanies = hasPermission(administrationPermissions.users.company.create);
+  const companyCreationOnly = canCreateInCompanies && !canCreateGlobally;
+  const canCreate = canCreateGlobally || canCreateInCompanies;
   const canUpdate = hasPermission(administrationPermissions.users.update);
   const canUpdateStatus = hasPermission(administrationPermissions.users.status.update);
   const canUpdatePassword = hasPermission(administrationPermissions.users.password.update);
@@ -72,6 +77,8 @@ export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [companies, setCompanies] = useState([]);
+  const [creationCompanies, setCreationCompanies] = useState([]);
+  const [loadingCreationCompanies, setLoadingCreationCompanies] = useState(true);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyUser);
   const [error, setError] = useState('');
@@ -94,6 +101,10 @@ export default function UsersPage() {
 
   const load = useCallback(
     async (signal) => {
+      if (!canReadUsers) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
         const usersResponse = await listUsers(
@@ -142,7 +153,7 @@ export default function UsersPage() {
         if (!signal?.aborted) setLoading(false);
       }
     },
-    [active, canReadDeletedUsers, debouncedSearch, limit, page, roleUuid],
+    [active, canReadUsers, canReadDeletedUsers, debouncedSearch, limit, page, roleUuid],
   );
 
   useEffect(() => {
@@ -173,11 +184,35 @@ export default function UsersPage() {
     return () => controller.abort();
   }, [canReadCompanies]);
 
+  useEffect(() => {
+    if (!companyCreationOnly) return undefined;
+    const controller = new AbortController();
+    setLoadingCreationCompanies(true);
+    listUserCreationCompanies(controller.signal)
+      .then(({ data }) => setCreationCompanies(data.data))
+      .catch((requestError) => {
+        if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoadingCreationCompanies(false);
+      });
+    return () => controller.abort();
+  }, [companyCreationOnly]);
+
+  const isScopedCreation = companyCreationOnly && !editing?.uuid;
+  const formCompanies = isScopedCreation ? creationCompanies : companies;
   const openCreate = () => {
     setEditing({});
     setForm({
       ...emptyUser(),
-      companyUuids: activeCompany ? [activeCompany.uuid] : [],
+      companyUuids: companyCreationOnly
+        ? [
+            creationCompanies.find(({ uuid }) => uuid === activeCompany?.uuid)?.uuid ??
+              creationCompanies[0]?.uuid,
+          ].filter(Boolean)
+        : activeCompany
+          ? [activeCompany.uuid]
+          : [],
     });
     setFormError('');
   };
@@ -241,6 +276,10 @@ export default function UsersPage() {
       return;
     }
 
+    if (isScopedCreation && !form.companyUuids.length) {
+      setFormError('Sélectionnez au moins une société.');
+      return;
+    }
     const payload = editing?.uuid
       ? {
           ...(canUpdate
@@ -259,8 +298,12 @@ export default function UsersPage() {
           lastName: form.lastName.trim(),
           email: form.email.trim(),
           password: form.password,
-          ...(canUpdateRoles && canReadRoles ? { roleUuids: form.roleUuids } : {}),
-          ...(canUpdateCompanies && canReadCompanies ? { companyUuids: form.companyUuids } : {}),
+          ...(!companyCreationOnly && canUpdateRoles && canReadRoles
+            ? { roleUuids: form.roleUuids }
+            : {}),
+          ...(companyCreationOnly || (canUpdateCompanies && canReadCompanies)
+            ? { companyUuids: form.companyUuids }
+            : {}),
         };
     setSaving(true);
     setFormError('');
@@ -366,210 +409,232 @@ export default function UsersPage() {
           <h1 className="page-title">Utilisateurs</h1>
           <p className="page-subtitle">Comptes, accès et rôles de l’application.</p>
         </div>
-        {canCreate && <Button onClick={openCreate}>Créer un utilisateur</Button>}
+        {canCreate && (
+          <Button
+            onClick={openCreate}
+            disabled={
+              companyCreationOnly &&
+              (loadingCreationCompanies ||
+                !creationCompanies.some(({ uuid }) => uuid === activeCompany?.uuid))
+            }
+          >
+            Créer un utilisateur
+          </Button>
+        )}
       </div>
-      <FilterPanel
-        fields={[
-          {
-            name: 'search',
-            type: 'search',
-            ariaLabel: 'Rechercher un utilisateur',
-            placeholder: 'Nom, prénom ou email',
-            value: search,
-            onChange: (value) => {
-              setSearch(value);
-              setPage(1);
+      {companyCreationOnly &&
+        !loadingCreationCompanies &&
+        !creationCompanies.some(({ uuid }) => uuid === activeCompany?.uuid) && (
+          <p className="alert alert-info">
+            Sélectionnez une société de rattachement active dans l’en-tête pour créer un
+            utilisateur.
+          </p>
+        )}
+      {canReadUsers && (
+        <FilterPanel
+          fields={[
+            {
+              name: 'search',
+              type: 'search',
+              ariaLabel: 'Rechercher un utilisateur',
+              placeholder: 'Nom, prénom ou email',
+              value: search,
+              onChange: (value) => {
+                setSearch(value);
+                setPage(1);
+              },
             },
-          },
-          {
-            name: 'active',
-            type: 'select',
-            ...activityStatusFilter,
-            options: [
-              ...activityStatusFilter.options,
-              ...(canReadDeletedUsers ? [{ value: 'deleted', label: 'Supprimés' }] : []),
-            ],
-            ariaLabel: 'Filtrer par statut',
-            value: active,
-            onChange: (value) => {
-              setActive(value);
-              setPage(1);
+            {
+              name: 'active',
+              type: 'select',
+              ...activityStatusFilter,
+              options: [
+                ...activityStatusFilter.options,
+                ...(canReadDeletedUsers ? [{ value: 'deleted', label: 'Supprimés' }] : []),
+              ],
+              ariaLabel: 'Filtrer par statut',
+              value: active,
+              onChange: (value) => {
+                setActive(value);
+                setPage(1);
+              },
             },
-          },
-          ...(canReadRoles
-            ? [
-                {
-                  name: 'roleUuid',
-                  type: 'select',
-                  label: 'Rôle',
-                  ariaLabel: 'Filtrer par rôle',
-                  emptyLabel: 'Tous les rôles',
-                  options: roles.map((role) => ({ value: role.uuid, label: role.name })),
-                  value: roleUuid,
-                  onChange: (value) => {
-                    setRoleUuid(value);
-                    setPage(1);
+            ...(canReadRoles
+              ? [
+                  {
+                    name: 'roleUuid',
+                    type: 'select',
+                    label: 'Rôle',
+                    ariaLabel: 'Filtrer par rôle',
+                    emptyLabel: 'Tous les rôles',
+                    options: roles.map((role) => ({ value: role.uuid, label: role.name })),
+                    value: roleUuid,
+                    onChange: (value) => {
+                      setRoleUuid(value);
+                      setPage(1);
+                    },
                   },
-                },
-              ]
-            : []),
-        ]}
-      />
+                ]
+              : []),
+          ]}
+        />
+      )}
       {error && (
         <p className="alert alert-danger" role="alert">
           {error}
         </p>
       )}
-      {loading ? (
-        <Loader label="Chargement des utilisateurs" />
-      ) : (
-        <div className="table-shell table-responsive">
-          <ResponsiveTable className="table table-hover align-middle">
-            <thead>
-              <tr>
-                <th>Utilisateur</th>
-                <th>Rôles</th>
-                <th>Sociétés</th>
-                <th className="d-none d-sm-table-cell">Statut</th>
-                <th>Dernière connexion</th>
-                <th>
-                  <span className="visually-hidden">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagination?.total === 0 ? (
+      {canReadUsers &&
+        (loading ? (
+          <Loader label="Chargement des utilisateurs" />
+        ) : (
+          <div className="table-shell table-responsive">
+            <ResponsiveTable className="table table-hover align-middle">
+              <thead>
                 <tr>
-                  <td className="py-5 text-center text-body-secondary" colSpan="6">
-                    {search.trim() || active || roleUuid
-                      ? 'Aucun utilisateur ne correspond aux filtres.'
-                      : 'Aucun utilisateur.'}
-                  </td>
+                  <th>Utilisateur</th>
+                  <th>Rôles</th>
+                  <th>Sociétés</th>
+                  <th className="d-none d-sm-table-cell">Statut</th>
+                  <th>Dernière connexion</th>
+                  <th>
+                    <span className="visually-hidden">Actions</span>
+                  </th>
                 </tr>
-              ) : (
-                users.map((user) => (
-                  <tr key={user.uuid}>
-                    <td>
-                      <strong>
-                        {user.firstName} {user.lastName}
-                      </strong>
-                      <span className="d-block small text-body-secondary">
-                        <ContactLink value={user.email} />
-                      </span>
-                    </td>
-                    <td>{user.roles?.map((role) => role.name).join(', ') || 'Aucun rôle'}</td>
-                    <td>
-                      {user.companies?.map((company) => company.name).join(', ') ||
-                        'Aucune société'}
-                    </td>
-                    <td className="d-none d-sm-table-cell">
-                      <span
-                        className={`status-badge ${
-                          user.deletedAt ? 'deleted' : user.isActive ? '' : 'inactive'
-                        }`}
-                      >
-                        {user.deletedAt ? 'Supprimé' : user.isActive ? 'Actif' : 'Inactif'}
-                      </span>
-                      {user.deletedAt ? (
-                        <span className="d-block small mt-1 text-body-secondary fw-lighter fst-italic">
-                          {formatDate(user.deletedAt)}
-                        </span>
-                      ) : (
-                        <span
-                          className={`d-block small mt-1 ${user.emailVerifiedAt ? 'text-success' : 'text-warning-emphasis'}`}
-                        >
-                          Email {user.emailVerifiedAt ? 'vérifié' : 'à vérifier'}
-                        </span>
-                      )}
-                    </td>
-                    <td>{formatDate(user.lastLoginAt, 'Jamais')}</td>
-                    <td>
-                      {user.deletedAt ? (
-                        canRestore && (
-                          <TableActions>
-                            <button
-                              aria-label={`Restaurer ${user.firstName} ${user.lastName}`}
-                              className="btn btn-sm btn-outline-brand"
-                              type="button"
-                              disabled={Boolean(restoring)}
-                              onClick={() => setConfirmation({ action: 'restore', user })}
-                            >
-                              {restoring === user.uuid ? 'Restauration…' : 'Restaurer'}
-                            </button>
-                          </TableActions>
-                        )
-                      ) : (
-                        <TableActions
-                          secondary={
-                            <>
-                              {canUpdateStatus && (
-                                <button
-                                  aria-label={`${user.isActive ? 'Désactiver' : 'Activer'} ${
-                                    user.firstName
-                                  } ${user.lastName}`}
-                                  className={`btn btn-sm ${getStatusActionButtonClass(
-                                    user.isActive,
-                                  )}`}
-                                  type="button"
-                                  disabled={Boolean(removing || changingStatus)}
-                                  onClick={() => setConfirmation({ action: 'status', user })}
-                                >
-                                  {user.isActive ? 'Désactiver' : 'Activer'}
-                                </button>
-                              )}
-                              {canDelete && (
-                                <button
-                                  aria-label={`Supprimer ${user.firstName} ${user.lastName}`}
-                                  className="btn btn-sm btn-outline-danger"
-                                  type="button"
-                                  disabled={Boolean(removing || changingStatus)}
-                                  onClick={() => setConfirmation({ action: 'delete', user })}
-                                >
-                                  {removing === user.uuid ? 'Suppression…' : 'Supprimer'}
-                                </button>
-                              )}
-                            </>
-                          }
-                        >
-                          {canOpenEdit && (
-                            <button
-                              aria-label={`Modifier ${user.firstName} ${user.lastName}`}
-                              className="btn btn-sm btn-outline-edit"
-                              type="button"
-                              disabled={Boolean(removing || changingStatus)}
-                              onClick={() => openEdit(user)}
-                            >
-                              Modifier
-                            </button>
-                          )}
-                          {canResendVerification && !user.emailVerifiedAt && (
-                            <TimedProgressButton
-                              aria-label={`Renvoyer l’email de vérification à ${user.firstName} ${user.lastName}`}
-                              busy={resendingVerification === user.uuid}
-                              busyLabel="Envoi…"
-                              className="btn btn-sm btn-outline-secondary"
-                              cooldown={verificationCooldowns[user.uuid]}
-                              cooldownLabel={(seconds) => `Disponible dans ${seconds} s`}
-                              type="button"
-                              disabled={Boolean(
-                                removing || changingStatus || resendingVerification,
-                              )}
-                              onClick={() => resendVerification(user)}
-                            >
-                              Renvoyer la vérification
-                            </TimedProgressButton>
-                          )}
-                        </TableActions>
-                      )}
+              </thead>
+              <tbody>
+                {pagination?.total === 0 ? (
+                  <tr>
+                    <td className="py-5 text-center text-body-secondary" colSpan="6">
+                      {search.trim() || active || roleUuid
+                        ? 'Aucun utilisateur ne correspond aux filtres.'
+                        : 'Aucun utilisateur.'}
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </ResponsiveTable>
-        </div>
-      )}
-      {!loading && (
+                ) : (
+                  users.map((user) => (
+                    <tr key={user.uuid}>
+                      <td>
+                        <strong>
+                          {user.firstName} {user.lastName}
+                        </strong>
+                        <span className="d-block small text-body-secondary">
+                          <ContactLink value={user.email} />
+                        </span>
+                      </td>
+                      <td>{user.roles?.map((role) => role.name).join(', ') || 'Aucun rôle'}</td>
+                      <td>
+                        {user.companies?.map((company) => company.name).join(', ') ||
+                          'Aucune société'}
+                      </td>
+                      <td className="d-none d-sm-table-cell">
+                        <span
+                          className={`status-badge ${
+                            user.deletedAt ? 'deleted' : user.isActive ? '' : 'inactive'
+                          }`}
+                        >
+                          {user.deletedAt ? 'Supprimé' : user.isActive ? 'Actif' : 'Inactif'}
+                        </span>
+                        {user.deletedAt ? (
+                          <span className="d-block small mt-1 text-body-secondary fw-lighter fst-italic">
+                            {formatDate(user.deletedAt)}
+                          </span>
+                        ) : (
+                          <span
+                            className={`d-block small mt-1 ${user.emailVerifiedAt ? 'text-success' : 'text-warning-emphasis'}`}
+                          >
+                            Email {user.emailVerifiedAt ? 'vérifié' : 'à vérifier'}
+                          </span>
+                        )}
+                      </td>
+                      <td>{formatDate(user.lastLoginAt, 'Jamais')}</td>
+                      <td>
+                        {user.deletedAt ? (
+                          canRestore && (
+                            <TableActions>
+                              <button
+                                aria-label={`Restaurer ${user.firstName} ${user.lastName}`}
+                                className="btn btn-sm btn-outline-brand"
+                                type="button"
+                                disabled={Boolean(restoring)}
+                                onClick={() => setConfirmation({ action: 'restore', user })}
+                              >
+                                {restoring === user.uuid ? 'Restauration…' : 'Restaurer'}
+                              </button>
+                            </TableActions>
+                          )
+                        ) : (
+                          <TableActions
+                            secondary={
+                              <>
+                                {canUpdateStatus && (
+                                  <button
+                                    aria-label={`${user.isActive ? 'Désactiver' : 'Activer'} ${
+                                      user.firstName
+                                    } ${user.lastName}`}
+                                    className={`btn btn-sm ${getStatusActionButtonClass(
+                                      user.isActive,
+                                    )}`}
+                                    type="button"
+                                    disabled={Boolean(removing || changingStatus)}
+                                    onClick={() => setConfirmation({ action: 'status', user })}
+                                  >
+                                    {user.isActive ? 'Désactiver' : 'Activer'}
+                                  </button>
+                                )}
+                                {canDelete && (
+                                  <button
+                                    aria-label={`Supprimer ${user.firstName} ${user.lastName}`}
+                                    className="btn btn-sm btn-outline-danger"
+                                    type="button"
+                                    disabled={Boolean(removing || changingStatus)}
+                                    onClick={() => setConfirmation({ action: 'delete', user })}
+                                  >
+                                    {removing === user.uuid ? 'Suppression…' : 'Supprimer'}
+                                  </button>
+                                )}
+                              </>
+                            }
+                          >
+                            {canOpenEdit && (
+                              <button
+                                aria-label={`Modifier ${user.firstName} ${user.lastName}`}
+                                className="btn btn-sm btn-outline-edit"
+                                type="button"
+                                disabled={Boolean(removing || changingStatus)}
+                                onClick={() => openEdit(user)}
+                              >
+                                Modifier
+                              </button>
+                            )}
+                            {canResendVerification && !user.emailVerifiedAt && (
+                              <TimedProgressButton
+                                aria-label={`Renvoyer l’email de vérification à ${user.firstName} ${user.lastName}`}
+                                busy={resendingVerification === user.uuid}
+                                busyLabel="Envoi…"
+                                className="btn btn-sm btn-outline-secondary"
+                                cooldown={verificationCooldowns[user.uuid]}
+                                cooldownLabel={(seconds) => `Disponible dans ${seconds} s`}
+                                type="button"
+                                disabled={Boolean(
+                                  removing || changingStatus || resendingVerification,
+                                )}
+                                onClick={() => resendVerification(user)}
+                              >
+                                Renvoyer la vérification
+                              </TimedProgressButton>
+                            )}
+                          </TableActions>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </ResponsiveTable>
+          </div>
+        ))}
+      {canReadUsers && !loading && (
         <PaginationControls
           pagination={pagination}
           limit={limit}
@@ -638,7 +703,7 @@ export default function UsersPage() {
               />
             </label>
           )}
-          {canUpdateRoles && canReadRoles && (
+          {!isScopedCreation && canUpdateRoles && canReadRoles && (
             <div>
               <p className="form-label mb-2 text-body-secondary">Rôles</p>
               {roles.map((role) => (
@@ -658,10 +723,16 @@ export default function UsersPage() {
               ))}
             </div>
           )}
-          {canUpdateCompanies && canReadCompanies && (
+          {isScopedCreation && (
+            <p className="text-body-secondary mb-0">
+              Le compte recevra le rôle USER. Seules vos sociétés de rattachement peuvent être
+              sélectionnées.
+            </p>
+          )}
+          {(isScopedCreation || (canUpdateCompanies && canReadCompanies)) && (
             <div>
               <p className="form-label mb-2 text-body-secondary">Sociétés</p>
-              {companies.map((company) => (
+              {formCompanies.map((company) => (
                 <div className="form-check" key={company.uuid}>
                   <input
                     className="form-check-input"

@@ -874,11 +874,13 @@ export const openApiSchemas = {
       password: { type: 'string', format: 'password', minLength: 8, writeOnly: true },
       roleUuids: {
         ...arrayOf(uuid),
-        description: 'Nécessite `users.roles.update`.',
+        description:
+          'Nécessite `users.roles.update` avec `users.create`. Interdit pour la création limitée `users.company.create`, qui attribue automatiquement le rôle USER.',
       },
       companyUuids: {
         ...arrayOf(uuid),
-        description: 'Nécessite `users.companies.update`.',
+        description:
+          'Nécessite `users.companies.update` avec `users.create`, ou `users.company.create`. Dans ce dernier cas : au moins une société active de rattachement du créateur, sans extension par `companies.access.all`. Sans ce champ, la société active est attribuée.',
       },
     },
   },
@@ -1702,6 +1704,14 @@ export const openApiSchemas = {
     required: ['message'],
     properties: { message: { type: 'string' } },
   }),
+  UserCreationCompaniesResponse: success(
+    arrayOf({
+      type: 'object',
+      additionalProperties: false,
+      required: ['uuid', 'name'],
+      properties: { uuid, name: writeText(150) },
+    }),
+  ),
   UserResponse: success(reference('User')),
   UserListResponse: success(reference('UserPage')),
   CompanyResponse: success(reference('Company')),

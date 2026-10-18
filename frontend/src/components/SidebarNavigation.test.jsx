@@ -72,6 +72,17 @@ describe('SidebarNavigation', () => {
     expect(screen.queryByRole('link', { name: 'Pièces' })).not.toBeInTheDocument();
   });
 
+  it('shows only the users entry for the scoped account creation permission', () => {
+    render(
+      <MemoryRouter initialEntries={['/users']}>
+        <SidebarNavigation hasPermission={(permission) => permission === 'users.company.create'} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link', { name: 'Utilisateurs' })).toBeVisible();
+    expect(screen.queryByRole('link', { name: 'Sociétés' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Rôles' })).not.toBeInTheDocument();
+  });
+
   it('notifies the drawer after a link is selected', async () => {
     const onNavigate = vi.fn();
     const user = userEvent.setup();

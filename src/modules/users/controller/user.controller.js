@@ -17,6 +17,9 @@ export default class UserController {
       successResponse(await this.userService.getAll(request.query, request.user?.permissions)),
     );
   }
+  async getCreationCompanies(request, response) {
+    response.json(successResponse(await this.userService.getCreationCompanies(request.user)));
+  }
   async getByUuid(request, response) {
     response.json(
       successResponse(
