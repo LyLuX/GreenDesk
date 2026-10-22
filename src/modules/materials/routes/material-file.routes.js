@@ -79,6 +79,7 @@ router.post(
       success: true,
       data: await service.add(request.params.uuid, request.file, 'photo', {
         name: request.body.name,
+        userId: request.user.userId,
       }),
     }),
   ),

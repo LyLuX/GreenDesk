@@ -624,9 +624,9 @@ export default function MaintenancePage() {
               <tr>
                 <th>Matériel</th>
                 <th>Plan</th>
-                <th>Échéance</th>
+                <th className="d-none d-sm-table-cell">Échéance</th>
                 <th>Restant</th>
-                <th>Priorité</th>
+                <th className="d-none d-sm-table-cell">Priorité</th>
                 <th>État</th>
                 <th>Actions</th>
               </tr>
@@ -647,13 +647,13 @@ export default function MaintenancePage() {
                       </small>
                     )}
                   </td>
-                  <td>
+                  <td className="d-none d-sm-table-cell">
                     {item.status === 'wearBased'
                       ? 'Selon l’usure'
                       : formatDate(item.nextMaintenanceDate)}
                   </td>
                   <td>{item.status === 'wearBased' ? '—' : remainingDays(item.remainingDays)}</td>
-                  <td>
+                  <td className="d-none d-sm-table-cell">
                     <span
                       className={`status-badge ${
                         maintenancePriorityBadgeClasses[item.priority] ?? 'priority-normal'

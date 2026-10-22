@@ -230,6 +230,17 @@ describe('MaterialDetailPage', () => {
     expect(screen.getByAltText('Aperçu photo.jpg')).toBeVisible();
     const photoName = screen.getByRole('textbox', { name: 'Nom de la photo photo.jpg' });
     await user.type(photoName, 'Vue du moteur');
+    mocks.uploadPhoto.mockImplementationOnce(async () => {
+      mocks.history = [
+        {
+          uuid: 'photo-event',
+          action: 'PHOTO_ADD',
+          createdAt: '2026-10-22T08:00:00Z',
+          newValues: { photo: 'Vue du moteur' },
+        },
+      ];
+      return { data: { data: { uuid: 'uploaded-photo' } } };
+    });
     await user.click(submit);
     await waitFor(() =>
       expect(mocks.uploadPhoto).toHaveBeenCalledWith(
@@ -239,6 +250,12 @@ describe('MaterialDetailPage', () => {
         expect.any(Function),
       ),
     );
+
+    await user.click(screen.getByRole('tab', { name: 'Historique' }));
+    expect(await screen.findByText('Ajout de photo')).toBeVisible();
+    expect(screen.getByText('Photo ajoutée')).toBeVisible();
+    expect(screen.getByText('Vue du moteur')).toBeVisible();
+    await user.click(screen.getByRole('tab', { name: 'Informations' }));
 
     const documentInput = screen.getByLabelText('Ajouter un document');
     const documentSubmit = screen.getByRole('button', { name: 'Envoyer le document' });

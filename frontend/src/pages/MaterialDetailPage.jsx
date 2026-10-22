@@ -47,18 +47,21 @@ const documentTypeLabels = Object.freeze({
   other: 'Autre',
 });
 const auditActionLabels = Object.freeze({
+  PHOTO_ADD: 'Ajout de photo',
   CREATE: 'Création',
   UPDATE: 'Modification',
   RESTORE: 'Restauration',
   DELETE: 'Suppression',
 });
 const auditActionClasses = Object.freeze({
+  PHOTO_ADD: 'audit-create',
   CREATE: 'audit-create',
   UPDATE: 'audit-update',
   RESTORE: 'audit-restore',
   DELETE: 'audit-delete',
 });
 const auditFieldLabels = Object.freeze({
+  photo: 'Photo ajoutée',
   name: 'Nom',
   description: 'Description',
   unit: 'Unité',
@@ -122,6 +125,7 @@ export default function MaterialDetailPage() {
   const { uploadLimits } = useRuntimeConfig();
   const [material, setMaterial] = useState(null);
   const [history, setHistory] = useState([]);
+  const [historyRevision, setHistoryRevision] = useState(0);
   const [maintenance, setMaintenance] = useState([]);
   const [historyPage, setHistoryPage] = useState(1);
   const [historyLimit, setHistoryLimit] = useState(5);
@@ -181,7 +185,7 @@ export default function MaterialDetailPage() {
         if (requestError.code !== 'ERR_CANCELED') setError(getApiErrorMessage(requestError));
       });
     return () => controller.abort();
-  }, [historyLimit, historyPage, uuid]);
+  }, [historyLimit, historyPage, historyRevision, uuid]);
   useEffect(() => {
     if (!hasPermission(maintenancePermissions.plans.read)) return undefined;
     const controller = new AbortController();
@@ -293,6 +297,8 @@ export default function MaterialDetailPage() {
             item.name,
           );
           setQueuedPhoto(item.localId, { status: 'success', progress: 100 });
+          setHistoryPage(1);
+          setHistoryRevision((revision) => revision + 1);
         } catch (err) {
           setQueuedPhoto(item.localId, { status: 'error', error: getApiErrorMessage(err) });
         }

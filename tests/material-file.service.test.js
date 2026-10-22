@@ -16,6 +16,7 @@ describe('MaterialFileService', () => {
         ...overrides,
       },
       materialService,
+      { record: jest.fn() },
     );
 
   it('rejects an upload without a file', async () => {
@@ -57,12 +58,60 @@ describe('MaterialFileService', () => {
     };
 
     await expect(
-      service.add('material-uuid', file, 'photo', { name: '  Vue du moteur  ' }),
+      service.add('material-uuid', file, 'photo', { name: '  Vue du moteur  ', userId: 7 }),
     ).resolves.toEqual(expect.objectContaining({ name: 'Vue du moteur' }));
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'Vue du moteur', originalName: 'IMG_1234.jpg' }),
       { transaction },
     );
+  });
+
+  it('records each photo with its actor and display name in the upload transaction', async () => {
+    const service = createService(
+      {
+        countPhotos: jest.fn().mockResolvedValue(0),
+        create: jest.fn().mockResolvedValue({ uuid: 'photo' }),
+      },
+      { getEntityByUuid: jest.fn().mockResolvedValue({ id: 12 }) },
+    );
+    const file = { mimetype: 'image/jpeg', originalname: 'moteur.jpg' };
+    await service.add('material-uuid', file, 'photo', { userId: 7, name: ' Vue moteur ' });
+    expect(service.auditService.record).toHaveBeenCalledWith(
+      {
+        userId: 7,
+        action: 'PHOTO_ADD',
+        entity: 'MATERIAL',
+        entityUuid: 'material-uuid',
+        newValues: { photo: 'Vue moteur' },
+      },
+      { transaction },
+    );
+    await service.add('material-uuid', file, 'photo', { userId: 7 });
+    expect(service.auditService.record).toHaveBeenLastCalledWith(
+      expect.objectContaining({ newValues: { photo: 'moteur.jpg' } }),
+      { transaction },
+    );
+  });
+
+  it('aborts the transaction and cleans up the upload if auditing fails', async () => {
+    const service = createService(
+      {
+        countPhotos: jest.fn().mockResolvedValue(0),
+        create: jest.fn().mockResolvedValue({ uuid: 'photo' }),
+      },
+      { getEntityByUuid: jest.fn().mockResolvedValue({ id: 12 }) },
+    );
+    service.auditService.record.mockRejectedValue(new Error('audit failed'));
+    service.safeDeletePhysicalFile = jest.fn();
+    await expect(
+      service.add(
+        'material-uuid',
+        { path: 'temporary-file', mimetype: 'image/jpeg', originalname: 'photo.jpg' },
+        'photo',
+        { userId: 7 },
+      ),
+    ).rejects.toThrow('audit failed');
+    expect(service.safeDeletePhysicalFile).toHaveBeenCalledWith('temporary-file');
   });
 
   it('rejects a material photo name longer than 150 characters', async () => {

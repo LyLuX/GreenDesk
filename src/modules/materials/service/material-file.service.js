@@ -6,12 +6,18 @@ import logger from '../../../core/logger/logger.js';
 import MaterialFileRepository from '../repository/material-file.repository.js';
 import { DOCUMENT_TYPES, PHOTO_MIME_TYPES } from '../material-file.constants.js';
 import MaterialService from './material.service.js';
+import AuditService from '../../audit/service/audit.service.js';
 export default class MaterialFileService {
-  constructor(repository = new MaterialFileRepository(), materialService = new MaterialService()) {
+  constructor(
+    repository = new MaterialFileRepository(),
+    materialService = new MaterialService(),
+    auditService = new AuditService(),
+  ) {
     this.repository = repository;
     this.materialService = materialService;
+    this.auditService = auditService;
   }
-  async add(materialUuid, file, kind, { documentType, name } = {}) {
+  async add(materialUuid, file, kind, { documentType, name, userId } = {}) {
     try {
       if (!file) throw new AppError('Aucun fichier fourni.', HTTP_STATUS.BAD_REQUEST);
       if (kind === 'photo' && !PHOTO_MIME_TYPES.includes(file.mimetype))
@@ -26,7 +32,7 @@ export default class MaterialFileService {
             'Un matériel ne peut contenir que 10 photos.',
             HTTP_STATUS.BAD_REQUEST,
           );
-        return this.toPublic(
+        const addedFile = this.toPublic(
           await this.repository.create(
             {
               materialId: material.id,
@@ -41,6 +47,19 @@ export default class MaterialFileService {
             { transaction },
           ),
         );
+        if (kind === 'photo') {
+          await this.auditService.record(
+            {
+              userId,
+              action: 'PHOTO_ADD',
+              entity: 'MATERIAL',
+              entityUuid: materialUuid,
+              newValues: { photo: normalizedName || file.originalname },
+            },
+            { transaction },
+          );
+        }
+        return addedFile;
       });
       return persistedFile;
     } catch (error) {

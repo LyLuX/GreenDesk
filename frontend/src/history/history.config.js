@@ -47,6 +47,7 @@ export const historyTypeLabels = Object.freeze(
 );
 
 export const historyActionLabels = Object.freeze({
+  PHOTO_ADD: 'Ajout de photo',
   CREATE: 'Création',
   USER_CREATED: 'Création',
   RESTORE: 'Restauration',
@@ -76,6 +77,7 @@ export const historyActionLabels = Object.freeze({
 });
 
 export const historyActionVariants = Object.freeze({
+  PHOTO_ADD: 'success',
   CREATE: 'success',
   USER_CREATED: 'success',
   RESTORE: 'success',

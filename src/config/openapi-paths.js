@@ -901,7 +901,7 @@ export const openApiPaths = {
       tags: ['Materials'],
       summary: 'Retourne le journal d’audit d’un matériel.',
       description:
-        'Nécessite `materials.read`. Les identifiants relationnels internes sont remplacés par les noms du fabricant et de la catégorie.',
+        'Nécessite `materials.read`. Les identifiants relationnels internes sont remplacés par les noms du fabricant et de la catégorie. Les ajouts de photos sont enregistrés avec l’action PHOTO_ADD et leur nom dans newValues.photo.',
       security: secure,
       parameters: [pageParameter, limitParameter],
       responses: {
@@ -917,7 +917,7 @@ export const openApiPaths = {
       tags: ['Material files'],
       summary: 'Ajoute une photo au matériel (10 photos maximum).',
       description:
-        'Nécessite `materials.photos.create`. Un nom facultatif de 150 caractères maximum peut identifier la photo. Formats acceptés : JPEG, PNG et WebP, avec correspondance obligatoire entre le MIME déclaré et la signature binaire. La taille maximale est fournie par la configuration publique de l’API.',
+        'Nécessite `materials.photos.create`. Un nom facultatif de 150 caractères maximum peut identifier la photo. Chaque ajout crée un événement PHOTO_ADD dans l’historique du matériel, avec l’utilisateur connecté et le nom choisi ou, à défaut, le nom original du fichier. La photo et son événement sont enregistrés dans une même transaction. Formats acceptés : JPEG, PNG et WebP, avec correspondance obligatoire entre le MIME déclaré et la signature binaire. La taille maximale est fournie par la configuration publique de l’API.',
       security: secure,
       requestBody: {
         required: true,

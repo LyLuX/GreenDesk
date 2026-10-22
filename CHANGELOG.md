@@ -2,6 +2,17 @@
 
 ## Non publié
 
+## 9.7.0 - 2026-10-22
+
+- [PATCH] Chaque ajout de photo apparaît immédiatement dans l’historique du matériel
+  et du parc, avec le nom de la photo et l’utilisateur à l’origine de l’ajout.
+
+- [MINOR] Les photos du matériel peuvent être agrandies jusqu’à 400 % dans la
+  visionneuse, avec défilement des détails et retour à la vue ajustée.
+
+- [PATCH] Sur mobile, le tableau de la page Maintenance masque les colonnes
+  Échéance et Priorité pour laisser davantage de place aux autres informations.
+
 ## 9.6.0 - 2026-10-18
 
 - [PATCH] Les indicateurs de chargement utilisent les verts du thème actuel

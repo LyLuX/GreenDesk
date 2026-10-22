@@ -468,6 +468,10 @@ const auditLog = {
       description:
         'Valeurs métier après l’action. Les identifiants techniques sont masqués et les relations fabricant/catégorie sont exposées par leur nom.',
       properties: {
+        photo: {
+          type: 'string',
+          description: 'Nom de la photo ajoutée pour une action PHOTO_ADD sur un matériel.',
+        },
         manufacturer: { type: 'string', nullable: true },
         category: { type: 'string', nullable: true },
         purchasePrice: { type: 'number', minimum: 0, maximum: MAX_UNIT_PRICE },

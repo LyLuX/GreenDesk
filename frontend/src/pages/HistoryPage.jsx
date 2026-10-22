@@ -19,6 +19,7 @@ import { auditValuesAreEqual } from '../history/audit-values.js';
 import { formatCurrency, formatDate } from '../utils/formatters.js';
 
 const fieldLabels = Object.freeze({
+  photo: 'Photo ajoutée',
   performedAt: 'Date de l’opération',
   entryUuid: 'Événement',
   kind: 'Type d’historique',
